@@ -1,0 +1,26 @@
+-buildpath: \
+	org.apache.felix.dependencymanager,\
+	org.apache.felix.dependencymanager.annotation,\
+	org.apache.felix.dependencymanager.runtime,\
+	biz.aQute.bnd.annotation,\
+	pnnl.goss.core.core-api,\
+	pnnl.goss.core.goss-core-security,\
+	pnnl.goss.core.goss-core-server-api,\
+	pnnl.goss.core.goss-client,\
+	pnnl.goss.core.goss-core-server,\
+	pnnl.goss.core.goss-core-server-web,\
+	pnnl.goss.core.goss-core-server-registry,\
+	org.apache.httpcomponents.httpclient,\
+	junit.osgi,\
+	javax.jms-api,\
+	slf4j.api,\
+	org.apache.activemq.activemq-osgi,\
+	com.springsource.javax.management.j2ee,\
+	org.apache.felix.http.jetty
+
+-plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
+	
+-sub: *.bnd
+-runee: JavaSE-1.8
+-runfw: org.apache.felix.framework;version='5.4.0'
+-resolve: auto
