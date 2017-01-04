@@ -22,15 +22,12 @@ public class SimulationEvent implements GossResponseEvent {
 		/*  Parse message. message is in JSON string.
 		 *  create and return response as simulation id
 		 *  
-		 *  make synchronous call to DataManager and receive file location
-		 *  
 		 *  Start FNCS
 		 *	Start GridLAB-D with input file location and name
 		 *	Start GOSS-FNCS Bridge
 		 *	Call FNCS IsInitialized()
-		 *  
-		 *	Publish 'Simulation Initialized' on 'simulation/[id]/status' once IsInitialized() returns.
-		 *		If IsInitialized() does not return in given time then publish error on 'simulation/[id]/status' and send 'die' message to GOSS-FNCS topic simulation/[id]/input
+		 *  Update ProcessManager with status at each step.
+		 *	
 		*/
 		
 		

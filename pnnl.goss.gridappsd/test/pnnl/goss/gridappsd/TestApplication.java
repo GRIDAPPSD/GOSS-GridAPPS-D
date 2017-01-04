@@ -8,9 +8,9 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.client.ClientServiceFactory;
 import pnnl.goss.gridappsd.requests.PowerSystemConfig;
 import pnnl.goss.gridappsd.requests.RequestSimulation;

@@ -1,6 +1,9 @@
-Export-Package: \
-	pnnl.goss.gridappsd.configuration,\
-	pnnl.goss.gridappsd.simulation,\
-	pnnl.goss.gridappsd.utils
 Bundle-Version: 0.0.1.${tstamp}
 Service-Component: *
+Private-Package: \
+	pnnl.goss.gridappsd.configuration,\
+	pnnl.goss.gridappsd.data,\
+	pnnl.goss.gridappsd.process,\
+	pnnl.goss.gridappsd.requests,\
+	pnnl.goss.gridappsd.simulation,\
+	pnnl.goss.gridappsd.utils
