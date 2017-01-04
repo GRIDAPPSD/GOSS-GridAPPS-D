@@ -2,14 +2,25 @@ package pnnl.goss.gridappsd.process;
 
 import java.io.Serializable;
 
+import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class ProcessEvent implements GossResponseEvent {
 	
 	@Override
 	public void onMessage(Serializable message) {
 		
-		System.out.println(message);
+		DataResponse event = (DataResponse)message;
+		System.out.println(event);
+		
+		switch(event.getDestination()){
+			case GridAppsDConstants.topic_requestSimulation : processSimulationRequest(); break;
+			case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+			case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+			
+		}
+
 		/*
 		 * TODO: 
 		 * Create simulation id and send back to TestApp
@@ -20,6 +31,18 @@ public class ProcessEvent implements GossResponseEvent {
 		 */
 		
 		
+		
+	}
+		
+	private void processSimulationRequest(){
+		
+	}
+	
+	private void processDataRequest(){
+		
+	}
+	
+	private void processSimulationStatusRequest(){
 		
 	}
 	

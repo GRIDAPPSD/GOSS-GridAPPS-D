@@ -7,6 +7,8 @@ import junit.framework.TestCase;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -49,9 +51,10 @@ public class TestApplication extends TestCase {
 			
 			RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
 			
-			String request = requestSimulation.toString(); 
+			Gson  gson = new Gson();
+			String request = gson.toJson(requestSimulation); 
 			
-			String simulationId = client.getResponse(GridAppsDConstants.topic_request,request,null).toString();
+			String simulationId = client.getResponse(request, GridAppsDConstants.topic_request, null).toString();
 			
 			client.subscribe(GridAppsDConstants.topic_simulationOutput+simulationId, new GossResponseEvent() {
 				
