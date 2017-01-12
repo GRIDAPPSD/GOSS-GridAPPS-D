@@ -1,5 +1,7 @@
 package pnnl.goss.gridappsd.configuration;
 
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -20,10 +22,12 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  *
  */
 
+@Component
 public class ConfigurationManager {
 	
 	Client client = null; 
 	
+	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
 	@Start

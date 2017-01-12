@@ -9,9 +9,6 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.server.DataSourceRegistry;
-import pnnl.goss.core.server.RequestHandlerRegistry;
-import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -22,19 +19,9 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  */
 @Component
 public class ProcessManager {
-	
-	@ServiceDependency
-	private volatile ServerControl serverControl;
-	
-	@ServiceDependency
-	private volatile RequestHandlerRegistry handler;
-	
+		
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
-	
-	@ServiceDependency
-	private volatile DataSourceRegistry datasourceRegistry;
-
 	
 	@Start
 	public void start(){

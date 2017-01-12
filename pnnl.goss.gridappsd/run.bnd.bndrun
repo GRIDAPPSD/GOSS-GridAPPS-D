@@ -55,9 +55,9 @@
 	pnnl.goss.core.goss-core-server-registry;version=latest,\
 	pnnl.goss.core.security-propertyfile;version=latest,\
 	com.springsource.javax.jms,\
-	pnnl.goss.gridappsd.gridappsd;version=latest,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
-	org.eclipse.jetty.aggregate.jetty-all-server;version='[7.6,7.7)'
+	org.eclipse.jetty.aggregate.jetty-all-server;version='[7.6,7.7)',\
+	pnnl.goss.gridappsd.gridappsd;version=latest
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\

@@ -10,40 +10,19 @@ public class ProcessEvent implements GossResponseEvent {
 	
 	@Override
 	public void onMessage(Serializable message) {
-		
-		DataResponse event = (DataResponse)message;
-		System.out.println(event);
-		
-		switch(event.getDestination()){
-			case GridAppsDConstants.topic_requestSimulation : processSimulationRequest(); break;
-			case GridAppsDConstants.topic_requestData : processDataRequest(); break;
-			case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+		try{
+			DataResponse event = (DataResponse)message;
+			System.out.println(event.getDestination());
 			
+			//TODO: create registry mapping between request topics and request handlers.
+			switch(event.getDestination()){
+				case GridAppsDConstants.topic_requestSimulation : new ProcessSimulationRequest().process(event); break;
+				//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+				//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+			}
 		}
-
-		/*
-		 * TODO: 
-		 * Create simulation id and send back to TestApp
-		 * Persist simulationId with current status in memory
-		 * Make getResponse() call to configuration Manager and get file locations
-		 * Make getResponse() call to Simulation manager
-		 * After each step update status on topic_simulationStatus+simulationId
-		 */
-		
-		
-		
+		catch(Exception e){
+			e.printStackTrace();
+		}
 	}
-		
-	private void processSimulationRequest(){
-		
-	}
-	
-	private void processDataRequest(){
-		
-	}
-	
-	private void processSimulationStatusRequest(){
-		
-	}
-	
 }
