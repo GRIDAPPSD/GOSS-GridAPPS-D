@@ -54,13 +54,22 @@ public class TestApplication extends TestCase {
 			Gson  gson = new Gson();
 			String request = gson.toJson(requestSimulation); 
 			
-			String simulationId = client.getResponse(request, GridAppsDConstants.topic_request, null).toString();
+			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, null).toString();
 			
 			client.subscribe(GridAppsDConstants.topic_simulationOutput+simulationId, new GossResponseEvent() {
 				
 				@Override
 				public void onMessage(Serializable response) {
 					System.out.println("simulation output is: "+response);
+					
+				}
+			});
+			
+			client.subscribe(GridAppsDConstants.topic_simulationStatus+simulationId, new GossResponseEvent() {
+				
+				@Override
+				public void onMessage(Serializable response) {
+					System.out.println("simulation status is: "+response);
 					
 				}
 			});

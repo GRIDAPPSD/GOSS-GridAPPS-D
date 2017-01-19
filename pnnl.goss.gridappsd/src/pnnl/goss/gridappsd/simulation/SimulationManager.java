@@ -37,7 +37,7 @@ public class SimulationManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			client.subscribe(GridAppsDConstants.topic_requestSimulation, new SimulationEvent());
+			client.subscribe(GridAppsDConstants.topic_simulation, new SimulationEvent());
 			
 			
 		}
