@@ -1,42 +1,53 @@
-package pnnl.goss.gridappsd.process;
+package pnnl.goss.gridappsd.simulation;
+
+import java.io.Serializable;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
- * Process Manager subscribe to all the requests coming from Applications
- * and forward them to appropriate managers.
+ * FNCSOutputEvent processes all messages coming from fncs-goss-bridge.py
  * @author shar064
  *
  */
 @Component
-public class ProcessManager {
-		
+public class FNCSOutputEvent implements GossResponseEvent {
+	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-	@Start
-	public void start(){
-		try{
+	/**
+	 * message is in the JSON string format
+	 * {}
+	 */
+	@Override
+	public void onMessage(Serializable message) {
+		
+		try {
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
+			
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
-			client.subscribe(GridAppsDConstants.topic_requestSimulation, new ProcessEvent());
-		}
-		catch(Exception e){
-				e.printStackTrace();
+			
+			//TODO: Parse message and update simulation status or communicate with bridge accordingly
+			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
+					
+		
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}
 	
+
 }

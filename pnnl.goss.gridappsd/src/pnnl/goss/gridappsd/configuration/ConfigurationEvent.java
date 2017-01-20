@@ -29,8 +29,9 @@ public class ConfigurationEvent implements GossResponseEvent {
 			
 			/*
 			 * Receives config message from ProcessManager
-			 * Call getResponse() to DataManger and get data file locations and simulation file locations.
-			 * response back to Process manager with file locations.
+			 * Call getResponse() to DataManger and get data file locations 
+			 * Create simulation files.
+			 * response back to Process manager with simulation file location with name.
 			 */
 			//Recieves configuration message from ProcessManager
 			DataResponse event = (DataResponse)message;
@@ -45,10 +46,11 @@ public class ConfigurationEvent implements GossResponseEvent {
 			//make request to DataManager to get power grid model files location
 			Serializable response = client.getResponse(event.getData(), GridAppsDConstants.topic_getDataFilesLocation, null);
 			
+			//Create simulation files
 			
 			
-			
-			client.publish(event.getReplyDestination(), response);
+			//response back to process manager
+			client.publish(event.getReplyDestination(), "sim_filename");
 		
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
