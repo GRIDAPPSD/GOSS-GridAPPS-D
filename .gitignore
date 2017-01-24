@@ -1,3 +1,6 @@
 /.gradle/
 /reports/
 /generated/
+.metadata/
+.recommenders/
+pnnl.goss.gridappsd/log/

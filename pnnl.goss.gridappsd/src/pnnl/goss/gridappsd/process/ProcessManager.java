@@ -25,6 +25,7 @@ public class ProcessManager {
 	
 	@Start
 	public void start(){
+		System.out.println("IN PROCESS MANAGER START");
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
