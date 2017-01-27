@@ -1,16 +1,20 @@
 package pnnl.goss.gridappsd.simulation;
 
+import java.io.File;
+import java.io.Serializable;
+
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.utils.RunCommandLine;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -22,7 +26,7 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 public class SimulationManager {
 	
 	@ServiceDependency
-	Client client = null; 
+	private volatile Client client = null; 
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
@@ -30,14 +34,72 @@ public class SimulationManager {
 	@ServiceDependency
 	ServerControl serverControl;
 	
-	@Start
-	public void start(){
+	//TODO: Get these paths from pnnl.goss.gridappsd.cfg file
+	String commandFNCS = "./fncs_broker 2";
+	String commandGridLABD = "gridlabd";
+	String commandFNCS_GOSS_Bridge = "python ./scripts/fncs_goss_bridge.py";
+	
+	/**
+	 * This method is called by Process Manager to start a simulation
+	 * @param simulationId
+	 * @param simulationFile
+	 */
+	public void startSimulation(int simulationId, File simulationFile){
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			client.subscribe(GridAppsDConstants.topic_simulation, new SimulationEvent());
+			Thread thread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					
+					int currentTime = 0; //incrementing integer 0 ,1, 2.. representing seconds
+					
+					//Start FNCS
+					RunCommandLine.runCommand(commandFNCS);
+					
+					//TODO: check if FNCS is started correctly and send publish simulation status accordingly
+					client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
+					
+					//Start GridLAB-D
+					RunCommandLine.runCommand(commandGridLABD+" "+simulationFile);
+					
+					//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
+					client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
+					
+					//Start GOSS-FNCS Bridge
+					RunCommandLine.runCommand(commandFNCS_GOSS_Bridge);
+					
+					//TODO: check if bridge is started correctly and send publish simulation status accordingly
+					client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
+					
+					//Subscribe to fncs-goss-bridge output topic
+					client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+						
+						@Override
+						public void onMessage(Serializable response) {
+							
+							//TODO: check response from fncs_goss_bridge
+							System.out.print(response);
+							
+							//Send message to fncs_goss_bridge to get output of next time step
+							String message = "{'command': 'nextTimeStep', 'currentTime': "+currentTime+"}";
+							client.publish(GridAppsDConstants.topic_FNCS_input, message);
+							
+						}
+					});
+					
+					//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
+					//This call would return true/false for initialization and simulation output of time step 0.
+					client.publish(GridAppsDConstants.topic_FNCS_input, "{'command': 'isInitialized'");
+
+					
+				}
+			});
+			
+			thread.start();
 			
 			
 		}

@@ -2,13 +2,14 @@ package pnnl.goss.gridappsd;
 
 import java.io.Serializable;
 
-import junit.framework.TestCase;
-
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import junit.framework.TestCase;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -24,7 +25,7 @@ public class TestApplication extends TestCase {
 	ClientFactory clientFactory = new ClientServiceFactory();
 	
 	Client client;
-
+	
 	public void testApplication() {
 
 		try {
@@ -55,6 +56,7 @@ public class TestApplication extends TestCase {
 			String request = gson.toJson(requestSimulation); 
 			
 			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, null).toString();
+			assertNotNull(simulationId);
 			
 			client.subscribe(GridAppsDConstants.topic_simulationOutput+simulationId, new GossResponseEvent() {
 				

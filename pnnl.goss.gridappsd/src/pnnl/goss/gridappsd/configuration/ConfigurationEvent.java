@@ -22,6 +22,9 @@ public class ConfigurationEvent implements GossResponseEvent {
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+	@ServiceDependency
+	
+	
 	@Override
 	public void onMessage(Serializable message) {
 		
