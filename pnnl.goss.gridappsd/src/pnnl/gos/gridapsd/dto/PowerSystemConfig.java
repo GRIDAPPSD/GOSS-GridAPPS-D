@@ -1,5 +1,6 @@
-package pnnl.goss.gridappsd.requests;
+package pnnl.gos.gridapsd.dto;
 
+// TODO change to be a dto rather than full implementation of getters and setters.
 public class PowerSystemConfig {
 	private String SubGeographicalRegion_name;
 
