@@ -22,6 +22,8 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class TestApplication extends TestCase {
 
+	private static Logger log = LoggerFactory.getLogger(TestApplication.class);
+	
 	ClientFactory clientFactory = new ClientServiceFactory();
 	
 	Client client;
@@ -57,6 +59,7 @@ public class TestApplication extends TestCase {
 			
 			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, null).toString();
 			assertNotNull(simulationId);
+			log.debug("REceived simulation id  = "+simulationId);
 			
 			client.subscribe(GridAppsDConstants.topic_simulationOutput+simulationId, new GossResponseEvent() {
 				

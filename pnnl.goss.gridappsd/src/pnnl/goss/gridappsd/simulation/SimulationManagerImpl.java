@@ -5,14 +5,18 @@ import java.io.Serializable;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
+import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.gridappsd.utils.RunCommandLine;
 
@@ -23,10 +27,11 @@ import pnnl.goss.gridappsd.utils.RunCommandLine;
  */
 
 @Component
-public class SimulationManager {
+public class SimulationManagerImpl implements SimulationManager{
 	
-	@ServiceDependency
-	private volatile Client client = null; 
+	private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
+	
+	Client client = null; 
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
@@ -39,16 +44,32 @@ public class SimulationManager {
 	String commandGridLABD = "gridlabd";
 	String commandFNCS_GOSS_Bridge = "python ./scripts/fncs_goss_bridge.py";
 	
+	
+	@Start
+	public void start(){
+		try{ 
+			
+			log.debug("Starting "+this.getClass().getName());
+			
+			Credentials credentials = new UsernamePasswordCredentials(
+					GridAppsDConstants.username, GridAppsDConstants.password);
+			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		
+	}
+	
 	/**
 	 * This method is called by Process Manager to start a simulation
 	 * @param simulationId
 	 * @param simulationFile
 	 */
+	@Override
 	public void startSimulation(int simulationId, File simulationFile){
 		try{
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			
 			
 			Thread thread = new Thread(new Runnable() {
 				

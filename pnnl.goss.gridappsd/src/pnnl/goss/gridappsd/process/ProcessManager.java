@@ -7,12 +7,16 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -27,9 +31,20 @@ public class ProcessManager {
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+	@ServiceDependency
+	private volatile ConfigurationManager configurationManager;
+	
+	@ServiceDependency
+	private volatile SimulationManager simulationManager;
+	
+	private static Logger log = LoggerFactory.getLogger(ProcessManager.class);
+	
 	@Start
 	public void start(){
 		try{
+			
+			log.debug("Starting "+this.getClass().getName());
+			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
@@ -43,7 +58,7 @@ public class ProcessManager {
 					
 					//TODO: create registry mapping between request topics and request handlers.
 					switch(event.getDestination().replace("/queue/", "")){
-						case GridAppsDConstants.topic_requestSimulation : new ProcessSimulationRequest().process(event, client); break;
+						case GridAppsDConstants.topic_requestSimulation : new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
 						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
 					}

@@ -1,41 +1,21 @@
 package pnnl.goss.gridappsd.process;
 
+import java.io.File;
 import java.util.Random;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.gridappsd.configuration.ConfigurationManager;
-import pnnl.goss.gridappsd.data.DataManager;
-import pnnl.goss.gridappsd.simulation.SimulationManager;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.SimulationManager;
 
-@Component
 public class ProcessSimulationRequest {
-	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	
-	@ServiceDependency
-	private SimulationManager simulationManager;
-	
-	@ServiceDependency
-	private DataManager dataManager;
-	
-	@ServiceDependency
-	private ConfigurationManager configurationManager;
 	
 	private static Logger log = LoggerFactory.getLogger(ProcessSimulationRequest.class);
 	
-	public void process(DataResponse event, Client client){
+	public void process(DataResponse event, Client client, ConfigurationManager configurationManager, SimulationManager simulationManager){
 		
 		log.debug("Received simulation request: "+ event.getData());
 		
@@ -45,12 +25,13 @@ public class ProcessSimulationRequest {
 		
 		//make request to configuration Manager to get power grid model file locations and names
 		log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
-		//File simulationFile = configurationManager.createSimulationFiles(simulationId, event.getData());
-		//dataManager.createModelFiles(simulationId, event.getData());
+		File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
 		log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
 		
 		//start simulation
-		//simulationManager.startSimulation(simulationId, simulationFilePathWithName);
+		log.debug("Starting simulation for id "+ simulationId);
+		simulationManager.startSimulation(simulationId, simulationFile);
+		log.debug("Starting simulation for id "+ simulationId);
 		
 	}
 	
