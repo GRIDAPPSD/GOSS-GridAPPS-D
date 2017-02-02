@@ -10,6 +10,10 @@ public class RequestSimulation implements Serializable {
 
 	private SimulationConfig simulation_config;
 	
+	public RequestSimulation(){
+		
+	}
+	
 	public RequestSimulation(PowerSystemConfig power_system_config, SimulationConfig simulation_config){
 		this.power_system_config = power_system_config;
 		this.simulation_config = simulation_config;

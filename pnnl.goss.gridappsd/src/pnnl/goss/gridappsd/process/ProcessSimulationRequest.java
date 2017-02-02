@@ -1,51 +1,37 @@
 package pnnl.goss.gridappsd.process;
 
+import java.io.File;
 import java.util.Random;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.SimulationManager;
 
-@Component
 public class ProcessSimulationRequest {
 	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
+	private static Logger log = LoggerFactory.getLogger(ProcessSimulationRequest.class);
 	
-	public void process(DataResponse event) throws Exception{
+	public void process(DataResponse event, Client client, ConfigurationManager configurationManager, SimulationManager simulationManager){
 		
-		/*
-		 * Make getResponse() call to configuration Manager and get file locations
-		 * MAke Asynchronous call to Simulation manager with simulation id and files path
-		 * After each step update status on topic_simulationStatus+simulationId
-		 */
-		
-		Credentials credentials = new UsernamePasswordCredentials(
-				GridAppsDConstants.username, GridAppsDConstants.password);
-		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+		log.debug("Received simulation request: "+ event.getData());
 		
 		//generate simulation id and reply to event's reply destination.
 		int simulationId = generateSimulationId();
 		client.publish(event.getReplyDestination(), simulationId);
 		
 		//make request to configuration Manager to get power grid model file locations and names
-		String simulationFilePathWithName = client.getResponse(event.getData(), GridAppsDConstants.topic_configuration, null).toString();
-		System.out.println("Response from Config Manager: "+simulationFilePathWithName);
+		log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
+		File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
+		log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
 		
-		
-		String message = "{'SimulationId':"+simulationId+", 'SimulationFile': '"+simulationFilePathWithName+"'}";
-		client.publish(GridAppsDConstants.topic_simulation,message);
-		
-		
-		
-		
+		//start simulation
+		log.debug("Starting simulation for id "+ simulationId);
+		simulationManager.startSimulation(simulationId, simulationFile);
+		log.debug("Starting simulation for id "+ simulationId);
 		
 	}
 	
