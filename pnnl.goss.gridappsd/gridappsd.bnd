@@ -1,5 +1,5 @@
 Bundle-Version: 0.0.1.${tstamp}
-Service-Component: *
+
 Private-Package: \
 	pnnl.goss.gridappsd.configuration,\
 	pnnl.goss.gridappsd.data.handlers,\

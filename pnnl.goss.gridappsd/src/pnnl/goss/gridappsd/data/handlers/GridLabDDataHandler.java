@@ -25,8 +25,9 @@ import pnnl.goss.core.Response;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
-import pnnl.goss.gridappsd.data.DataManager;
-import pnnl.goss.gridappsd.requests.PowerSystemConfig;
+import pnnl.goss.gridappsd.api.DataManager;
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+
 
 @Component
 public class GridLabDDataHandler implements GridAppsDataHandler {
@@ -40,8 +41,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
     private final String datasourceName = "powergrid-adms";
 	
 	public static void main(String[] args) {
-		PowerSystemConfig req = new PowerSystemConfig("ieee8500","ieee8500_SubRegion","ieee8500_Region");
-		new GridLabDDataHandler().handle(req);
+		PowerSystemConfig config = new PowerSystemConfig();
+		config.GeographicalRegion_name = "ieee8500_Region";
+		config.Line_name = "ieee8500";
+		config.SubGeographicalRegion_name = "ieee8500_SubRegion";
+		new GridLabDDataHandler().handle(config);
 	}
 
 	
@@ -95,7 +99,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				rdfOut = new FileWriter(rdfFile);
 				rdfWriter = new BufferedWriter(rdfOut);
 				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
-				sqlToRDF.outputModel(dataRequest.getLine_name(), rdfWriter, conn);
+				sqlToRDF.outputModel(dataRequest.Line_name, rdfWriter, conn);
 				rdfWriter.flush();
 				
 				

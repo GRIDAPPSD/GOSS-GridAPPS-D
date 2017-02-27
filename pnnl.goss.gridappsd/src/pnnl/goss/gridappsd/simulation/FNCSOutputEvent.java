@@ -38,6 +38,8 @@ public class FNCSOutputEvent implements GossResponseEvent {
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
 			
+			
+			
 			//TODO: Parse message and update simulation status or communicate with bridge accordingly
 			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
 					

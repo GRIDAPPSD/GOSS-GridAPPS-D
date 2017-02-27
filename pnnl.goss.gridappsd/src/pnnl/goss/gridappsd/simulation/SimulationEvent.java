@@ -22,7 +22,7 @@ import pnnl.goss.gridappsd.utils.RunCommandLine;
 @Component
 public class SimulationEvent implements GossResponseEvent {
 	
-	//TODO: Get these paths from configuration files
+	//TODO: Get these paths from pnnl.goss.gridappsd.cfg file
 	String commandFNCS = "./fncs_broker 2";
 	String commandGridLABD = "gridlabd";
 	String commandFNCS_GOSS_Bridge = "python ./scripts/fncs_goss_bridge.py";
@@ -56,7 +56,7 @@ public class SimulationEvent implements GossResponseEvent {
 			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 			
 			//Start GridLAB-D
-			RunCommandLine.runCommand(commandFNCS+" "+simulationFile+" "+simulationId);
+			RunCommandLine.runCommand(commandGridLABD+" "+simulationFile);
 			
 			//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");

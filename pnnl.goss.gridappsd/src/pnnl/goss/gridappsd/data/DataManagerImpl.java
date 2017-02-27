@@ -11,50 +11,61 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Response;
+import pnnl.goss.core.server.ServerControl;
+import pnnl.goss.gridappsd.api.DataManager;
+import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.data.handlers.GridAppsDataHandler;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * This represents Internal Function 404 Data Manager.
- * This is the management function that controls the submission/retrieval of data.
- * @author tara 
+ * This represents Internal Function 405 Simulation Control Manager.
+ * This is the management function that controls the running/execution of the Distribution Simulator (401).
+ * @author shar064 
  */
 
-@Component 
-public class DataManagerImpl implements DataManager{
+@Component
+public class DataManagerImpl implements DataManager {
+	
+	private Map<Class<?>, List<GridAppsDataHandler>> handlers = new HashMap<Class<?>, List<GridAppsDataHandler>>();
+    private Logger log = LoggerFactory.getLogger(getClass());
+    
+	@ServiceDependency
+	Client client = null; 
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-	private Map<Class<?>, List<GridAppsDataHandler>> handlers = new HashMap<Class<?>, List<GridAppsDataHandler>>();
-    private Logger log = LoggerFactory.getLogger(getClass());
-
+	@ServiceDependency
+	ServerControl serverControl;
+	
+	@ServiceDependency
+	private volatile StatusReporter statusReporter;
 	
 	@Start
 	public void start(){
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
 			client.subscribe(GridAppsDConstants.topic_requestData, new DataEvent(this));
 			
-			log.debug("Data Manager Initiated");
+			
 		}
 		catch(Exception e){
 				e.printStackTrace();
 		}
 		
 	}
-	
-	
+
 	@Override
 	public void registerHandler(GridAppsDataHandler handler, Class<?> requestClass){
 		//TODO Should it support multiple handlers per request type???
@@ -116,6 +127,5 @@ public class DataManagerImpl implements DataManager{
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 
 }

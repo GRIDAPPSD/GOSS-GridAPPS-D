@@ -2,29 +2,32 @@ package pnnl.goss.gridappsd;
 
 import java.io.Serializable;
 
-import junit.framework.TestCase;
-
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import junit.framework.TestCase;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.client.ClientServiceFactory;
-import pnnl.goss.gridappsd.requests.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
-import pnnl.goss.gridappsd.requests.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class TestApplication extends TestCase {
 
+	private static Logger log = LoggerFactory.getLogger(TestApplication.class);
+	
 	ClientFactory clientFactory = new ClientServiceFactory();
 	
 	Client client;
-
+	
 	public void testApplication() {
 
 		try {
@@ -36,18 +39,20 @@ public class TestApplication extends TestCase {
 			
 			//Create Request Simulation object
 			PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-			powerSystemConfig.setGeographicalRegion_name("");
-			powerSystemConfig.setSubGeographicalRegion_name("");
-			powerSystemConfig.setLine_name("");
+			powerSystemConfig.GeographicalRegion_name = "";
+			powerSystemConfig.SubGeographicalRegion_name = "";
+			powerSystemConfig.Line_name = "";
 			
 			SimulationConfig simulationConfig = new SimulationConfig();
-			simulationConfig.setDuration("");
-			simulationConfig.setOutput_object_mrid(null);
-			simulationConfig.setPower_flow_solver_method("");
-			simulationConfig.setSimulation_name("");
-			simulationConfig.setSimulator("");
-			simulationConfig.setSimulator_name(null);
-			simulationConfig.setStart_time("");
+			simulationConfig.duration = ""; //.setDuration("");
+			// TODO: Should this be an array?
+			//simulationConfig.output_object_mrid = ""; //.setOutput_object_mrid(null);
+			simulationConfig.power_flow_solver_method = ""; //.setPower_flow_solver_method("");
+			simulationConfig.simulation_name = ""; //.setSimulation_name("");
+			simulationConfig.simulator = ""; //.setSimulator("");
+			// TODO: Should this be an array?
+			//simulationConfig.simulator_name  ""; //.setSimulator_name(null);
+			simulationConfig.start_time = ""; //.setStart_time("");
 			
 			RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
 			
@@ -55,6 +60,8 @@ public class TestApplication extends TestCase {
 			String request = gson.toJson(requestSimulation); 
 			
 			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, null).toString();
+			assertNotNull(simulationId);
+			log.debug("REceived simulation id  = "+simulationId);
 			
 			client.subscribe(GridAppsDConstants.topic_simulationOutput+simulationId, new GossResponseEvent() {
 				
