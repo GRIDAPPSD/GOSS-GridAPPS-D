@@ -10,6 +10,8 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.server.ServerControl;
+import pnnl.goss.gridappsd.api.DataManager;
+import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -19,7 +21,7 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  */
 
 @Component
-public class DataManager {
+public class DataManagerImpl implements DataManager {
 	
 	@ServiceDependency
 	Client client = null; 
@@ -29,6 +31,9 @@ public class DataManager {
 	
 	@ServiceDependency
 	ServerControl serverControl;
+	
+	@ServiceDependency
+	private volatile StatusReporter statusReporter;
 	
 	@Start
 	public void start(){

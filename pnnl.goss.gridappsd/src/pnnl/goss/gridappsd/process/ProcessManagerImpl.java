@@ -17,6 +17,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
+import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -26,8 +27,10 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  *
  */
 @Component
-public class ProcessManager {
+public class ProcessManagerImpl {
 		
+	private static Logger log = LoggerFactory.getLogger(ProcessManagerImpl.class);
+	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
@@ -37,7 +40,8 @@ public class ProcessManager {
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
 	
-	private static Logger log = LoggerFactory.getLogger(ProcessManager.class);
+	@ServiceDependency
+	private volatile StatusReporter statusReporter;
 	
 	@Start
 	public void start(){
@@ -56,6 +60,7 @@ public class ProcessManager {
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
 					
+					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
 					//TODO: create registry mapping between request topics and request handlers.
 					switch(event.getDestination().replace("/queue/", "")){
 						case GridAppsDConstants.topic_requestSimulation : new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;

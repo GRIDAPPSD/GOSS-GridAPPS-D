@@ -17,6 +17,7 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -40,22 +41,27 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+	@ServiceDependency
+	private volatile StatusReporter statusReporter;
+	
 	//@ServiceDependency 
 	//private volatile DataManager dataManager;
 	
 	@Start
 	public void start(){
 		
-		log.debug("Starting "+this.getClass().getName());
+		statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		
-		try{
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP,credentials);
-		}
-		catch(Exception e){
-				e.printStackTrace();
-		}
+//		log.debug("Starting "+this.getClass().getName());
+//		
+//		try{
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
+//			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+//		}
+//		catch(Exception e){
+//				e.printStackTrace();
+//		}
 		
 	}
 	
@@ -77,8 +83,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		//dataManager.getModelData(requestSimulation.getPower_system_config());
 		
 		//Update simulation status after every step, for example:
-		client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation files created");
-
+		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation files created");
+		
 		return new File("test");
 		
 	}
