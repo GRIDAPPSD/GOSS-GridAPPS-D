@@ -1,7 +1,9 @@
-package pnnl.goss.gridapsd.dto;
+package pnnl.goss.gridappsd.dto;
+
+import java.io.Serializable;
 
 //TODO change to be a dto rather than full implementation of getters and setters.
-public class SimulationConfig {
+public class SimulationConfig  implements Serializable {
 	public static String power_flow_solver_method;
 
 	public static String duration;

@@ -1,4 +1,4 @@
 Bundle-Version: 1.0.0.${tstamp}
 Export-Package: \
 	pnnl.goss.gridappsd.api,\
-	pnnl.goss.gridapsd.dto
+	pnnl.goss.gridappsd.dto

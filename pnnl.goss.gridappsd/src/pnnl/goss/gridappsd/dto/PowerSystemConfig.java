@@ -1,7 +1,10 @@
-package pnnl.goss.gridapsd.dto;
+package pnnl.goss.gridappsd.dto;
+
+import java.io.Serializable;
 
 // TODO change to be a dto rather than full implementation of getters and setters.
-public class PowerSystemConfig {
+public class PowerSystemConfig implements Serializable {
+	
 	public static String SubGeographicalRegion_name;
 
 	public static String GeographicalRegion_name;

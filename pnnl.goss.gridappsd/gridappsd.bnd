@@ -2,6 +2,7 @@ Bundle-Version: 0.0.1.${tstamp}
 
 Private-Package: \
 	pnnl.goss.gridappsd.configuration,\
+	pnnl.goss.gridappsd.data.handlers,\
 	pnnl.goss.gridappsd.data,\
 	pnnl.goss.gridappsd.process,\
 	pnnl.goss.gridappsd.requests,\

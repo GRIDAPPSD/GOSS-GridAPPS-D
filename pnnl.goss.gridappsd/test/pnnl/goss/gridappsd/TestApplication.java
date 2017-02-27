@@ -10,13 +10,13 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 
 import junit.framework.TestCase;
-import pnnl.goss.gridapsd.dto.PowerSystemConfig;
-import pnnl.goss.gridapsd.dto.SimulationConfig;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.client.ClientServiceFactory;
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 

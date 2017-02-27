@@ -2,3 +2,5 @@
 /reports/
 /generated/
 log/
+.metadata/
+.recommenders/

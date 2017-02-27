@@ -1,5 +1,20 @@
 package pnnl.goss.gridappsd.api;
 
-public interface DataManager {
+import java.io.Serializable;
+import java.util.List;
 
+import pnnl.goss.core.Response;
+import pnnl.goss.gridappsd.data.handlers.GridAppsDataHandler;
+
+public interface DataManager {
+	
+	List<GridAppsDataHandler> getHandlers(Class<?> requestClass);
+	
+	GridAppsDataHandler getHandler(Class<?> requestClass, Class<?> handlerClass);
+	
+	List<GridAppsDataHandler> getAllHandlers();
+	
+	void registerHandler(GridAppsDataHandler handler, Class<?> requestClass);
+	
+	Response processRequest(Serializable request);
 }

@@ -2,8 +2,8 @@ package pnnl.goss.gridappsd.requests;
 
 import java.io.Serializable;
 
-import pnnl.goss.gridapsd.dto.PowerSystemConfig;
-import pnnl.goss.gridapsd.dto.SimulationConfig;
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.SimulationConfig;
 
 public class RequestSimulation implements Serializable {
 	
