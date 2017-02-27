@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 
 import junit.framework.TestCase;
+import pnnl.goss.gridapsd.dto.PowerSystemConfig;
+import pnnl.goss.gridapsd.dto.SimulationConfig;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.client.ClientServiceFactory;
-import pnnl.goss.gridappsd.requests.PowerSystemConfig;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
-import pnnl.goss.gridappsd.requests.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class TestApplication extends TestCase {
@@ -39,18 +39,20 @@ public class TestApplication extends TestCase {
 			
 			//Create Request Simulation object
 			PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-			powerSystemConfig.setGeographicalRegion_name("");
-			powerSystemConfig.setSubGeographicalRegion_name("");
-			powerSystemConfig.setLine_name("");
+			powerSystemConfig.GeographicalRegion_name = "";
+			powerSystemConfig.SubGeographicalRegion_name = "";
+			powerSystemConfig.Line_name = "";
 			
 			SimulationConfig simulationConfig = new SimulationConfig();
-			simulationConfig.setDuration("");
-			simulationConfig.setOutput_object_mrid(null);
-			simulationConfig.setPower_flow_solver_method("");
-			simulationConfig.setSimulation_name("");
-			simulationConfig.setSimulator("");
-			simulationConfig.setSimulator_name(null);
-			simulationConfig.setStart_time("");
+			simulationConfig.duration = ""; //.setDuration("");
+			// TODO: Should this be an array?
+			//simulationConfig.output_object_mrid = ""; //.setOutput_object_mrid(null);
+			simulationConfig.power_flow_solver_method = ""; //.setPower_flow_solver_method("");
+			simulationConfig.simulation_name = ""; //.setSimulation_name("");
+			simulationConfig.simulator = ""; //.setSimulator("");
+			// TODO: Should this be an array?
+			//simulationConfig.simulator_name  ""; //.setSimulator_name(null);
+			simulationConfig.start_time = ""; //.setStart_time("");
 			
 			RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
 			

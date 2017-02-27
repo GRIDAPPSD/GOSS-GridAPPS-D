@@ -2,6 +2,9 @@ package pnnl.goss.gridappsd.requests;
 
 import java.io.Serializable;
 
+import pnnl.goss.gridapsd.dto.PowerSystemConfig;
+import pnnl.goss.gridapsd.dto.SimulationConfig;
+
 public class RequestSimulation implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
