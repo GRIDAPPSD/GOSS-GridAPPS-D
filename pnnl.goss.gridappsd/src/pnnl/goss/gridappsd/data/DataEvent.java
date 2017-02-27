@@ -63,7 +63,7 @@ public class DataEvent implements GossResponseEvent {
 			requestData = message;
 		}
 		
-		Response r = dataManager.processRequest(requestData);
+		Response r = dataManager.processDataRequest(requestData);
 		//TODO create client and send response on it
 		
 		

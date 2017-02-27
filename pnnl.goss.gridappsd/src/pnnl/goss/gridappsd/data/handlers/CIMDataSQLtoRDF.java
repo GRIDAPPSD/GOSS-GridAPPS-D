@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,7 +41,9 @@ public class CIMDataSQLtoRDF {
 	public static final String RESOURCE_ATTRIBUTE = "resource";
 	static HashMap<String, String> fieldNameMap = new HashMap<String, String>();
 	static HashMap<String, String> referenceMap = new HashMap<String, String>();
-
+//	static List<String> typesWithParent = new ArrayList<String>();
+	static List<String> booleanColumns = new ArrayList<String>();
+	
     private Logger log = LoggerFactory.getLogger(getClass());
 
 	
@@ -61,8 +64,9 @@ public class CIMDataSQLtoRDF {
 			conn = DriverManager.getConnection(db, user, pw);
 			CIMDataSQLtoRDF parse = new CIMDataSQLtoRDF();
 			out = new FileOutputStream(dataLocation);
-			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
-		
+//			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
+			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
+			
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -108,7 +112,7 @@ public class CIMDataSQLtoRDF {
 			//All components that belong in the same model as the line
 			String lineLookup = "SELECT distinct mc2.componentMRID, mc2.tableName"
 						+ "	FROM ModelComponents mc1, Line l, ModelComponents mc2"
-						+ " where mc1.componentMRID=l.mRID and l.name='"+lineName+"' and mc1.mRID=mc2.mRID ";
+						+ " where mc1.componentMRID=l.mRID and l.name='"+lineName+"' and mc1.mRID=mc2.mRID order by mc2.id";
 			log.debug("Querying line components: "+lineLookup);
 			
 			
@@ -120,7 +124,8 @@ public class CIMDataSQLtoRDF {
 				count++;
 				String tableName = results.getString("tableName");
 				String mrid = results.getString("componentMRID");
-				Element next = doc.createElementNS(CIM_NS, CIM_PREFIX+results.getString("tableName"));
+				System.out.println(tableName+" "+mrid);
+				Element next = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName);
 				next.setAttributeNS(RDF_NS, RDF_PREFIX+ID_ATTRIBUTE, mrid);
 				rootElement.appendChild(next);
 //				out.write(results.getString("componentMRID")+" "+results.getString("tableName"));
@@ -130,10 +135,10 @@ public class CIMDataSQLtoRDF {
 				ResultSet tableResults = tableLookupStmt.executeQuery(tableLookup);
 				tableResults.next();
 				ResultSetMetaData metadata = tableResults.getMetaData();
-				for(int i=1;i<=tableResults.getMetaData().getColumnCount();i++){
+				for(int i=1;i<=metadata.getColumnCount();i++){
 					//create element with the table name and rdf:ID of the mRID
 					//add element for each field that it has content for, do a lookup by name and table name to see what it should be written out as
-					String column = tableResults.getMetaData().getColumnName(i);
+					String column = metadata.getColumnName(i);
 					String fullColumn = tableName+"."+column;
 //					System.out.println(fullColumn);
 					
@@ -148,16 +153,28 @@ public class CIMDataSQLtoRDF {
 						}
 						
 						
-						
-						Element field = doc.createElementNS(CIM_NS, CIM_PREFIX+fullColumn);
-						if(referenceMap.containsKey(column)){
-							field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, CIM_NS+referenceMap.get(column)+"."+value);
-						} else if(value.startsWith("_") && !column.equals("mRID")&& !column.equals("name")){
-							field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, "#"+value);
-						} else {
-							field.setTextContent(value);
+						if(!column.equals("Parent") &&!column.equals("SwtParent") && !column.equals("PowerSystemResource")){
+							Element field = doc.createElementNS(CIM_NS, CIM_PREFIX+fullColumn);
+							if(referenceMap.containsKey(column)){
+								field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, CIM_NS+referenceMap.get(column)+"."+value);
+							} else if(value.startsWith("_") && !column.equals("mRID")&& !column.equals("name")){
+								field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, "#"+value);
+							} else {
+								if(booleanColumns.contains(fullColumn)){
+									if("1".equals(value)){
+										field.setTextContent("true");
+									} else if("0".equals(value)){
+										field.setTextContent("false");
+									} else {
+										Boolean b = new Boolean(value);
+										field.setTextContent(b.toString());
+									}
+								} else {
+									field.setTextContent(value);
+								}
+							}
+							next.appendChild(field);
 						}
-						next.appendChild(field);
 					}
 							
 				}
@@ -169,6 +186,7 @@ public class CIMDataSQLtoRDF {
 		    Transformer transformer = tFactory.newTransformer();
 		    transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		    
 
 		    log.debug("Writing output model to file");
 			DOMSource source = new DOMSource(doc);
@@ -357,6 +375,33 @@ public class CIMDataSQLtoRDF {
 		referenceMap.put("mode","PhaseCode");
 		referenceMap.put("monitoredPhase","RegulatingControlModeKind");
 		referenceMap.put("tculControlMode","TransformerControlMode");
+//		
+//		typesWithParent.add("ConcentricNeutralCableInfo");
+//		typesWithParent.add("TapeShieldCableInfo");
+//		typesWithParent.add("OverheadWireInfo");
+//		typesWithParent.add("WireSpacingInfo");
+//		typesWithParent.add("TapChangerInfo");
+//		typesWithParent.add("TransformerTankInfo");
+//		typesWithParent.add("PowerTransformerEnd");
+//		typesWithParent.add("TransformerTankEnd");
+//		typesWithParent.add("PerLengthPhaseImpedance");
+//		typesWithParent.add("PerLengthSequenceImpedance");
+//		typesWithParent.add("ACLineSegment");
+//		typesWithParent.add("EnergySource");
+//		typesWithParent.add("EnergyConsumer");
+//		typesWithParent.add("LinearShuntCompensator");
+//		typesWithParent.add("PowerTransformer");
+//		typesWithParent.add("Breaker");
+//		typesWithParent.add("Recloser");
+//		typesWithParent.add("LoadBreakSwitch");
+//		typesWithParent.add("Sectionaliser");
+//		typesWithParent.add("Jumper");
+//		typesWithParent.add("Fuse");
+//		typesWithParent.add("Disconnector");
+		booleanColumns.add("ShuntCompensator.grounded");
+		booleanColumns.add("TransformerEnd.grounded");
+		booleanColumns.add("EnergyConsumer.grounded");
+		
 	}
 
 }

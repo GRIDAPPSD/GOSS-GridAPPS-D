@@ -1,6 +1,8 @@
 package pnnl.goss.gridappsd.process;
 
+import java.io.File;
 import java.io.Serializable;
+import java.util.Random;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -63,7 +65,28 @@ public class ProcessManagerImpl {
 					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
 					//TODO: create registry mapping between request topics and request handlers.
 					switch(event.getDestination().replace("/queue/", "")){
-						case GridAppsDConstants.topic_requestSimulation : new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+						case GridAppsDConstants.topic_requestSimulation : {
+							log.debug("Received simulation request: "+ event.getData());
+							
+							// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+							
+							//generate simulation id and reply to event's reply destination.
+							int simulationId = generateSimulationId();
+							client.publish(event.getReplyDestination(), simulationId);
+							
+							//make request to configuration Manager to get power grid model file locations and names
+							log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
+							File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
+						
+							log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
+							
+							//start simulation
+							log.debug("Starting simulation for id "+ simulationId);
+							simulationManager.startSimulation(simulationId, simulationFile);
+							log.debug("Starting simulation for id "+ simulationId);
+							
+//							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+						}
 						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
 					}
@@ -75,6 +98,21 @@ public class ProcessManagerImpl {
 				e.printStackTrace();
 		}
 		
+	}
+	
+	
+
+	/**
+	 * Generates and returns simulation id
+	 * @return simulation id
+	 */
+	static int generateSimulationId(){
+		/*
+		 * TODO: 
+		 * Get the latest simulation id from database and return +1 
+		 * Store the new id in database
+		 */
+		return new Random().nextInt();
 	}
 	
 }

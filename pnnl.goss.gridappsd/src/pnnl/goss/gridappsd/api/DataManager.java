@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import pnnl.goss.core.Response;
-import pnnl.goss.gridappsd.data.handlers.GridAppsDataHandler;
 
 public interface DataManager {
 	
@@ -16,5 +15,5 @@ public interface DataManager {
 	
 	void registerHandler(GridAppsDataHandler handler, Class<?> requestClass);
 	
-	Response processRequest(Serializable request);
+	Response processDataRequest(Serializable request);
 }

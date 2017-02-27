@@ -1,4 +1,4 @@
-package pnnl.goss.gridappsd.data.handlers;
+package pnnl.goss.gridappsd.api;
 
 import java.io.Serializable;
 import java.util.List;

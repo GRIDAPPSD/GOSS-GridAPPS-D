@@ -26,6 +26,7 @@ import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.gridappsd.api.DataManager;
+import pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 
 
@@ -104,6 +105,14 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				
 				//call cim to glm
+//				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
+//							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
+				
+				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
+						"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee13"};  //13 args
+				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+				rdfToGLM.process(args);
+				
 				//cleanup rdf file
 				rdfFile.delete();
 				

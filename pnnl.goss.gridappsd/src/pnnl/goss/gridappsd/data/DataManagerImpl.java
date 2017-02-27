@@ -18,8 +18,8 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Response;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.api.DataManager;
+import pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import pnnl.goss.gridappsd.api.StatusReporter;
-import pnnl.goss.gridappsd.data.handlers.GridAppsDataHandler;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import org.slf4j.Logger;
@@ -82,7 +82,7 @@ public class DataManagerImpl implements DataManager {
 
 
 	@Override
-	public Response processRequest(Serializable request) {
+	public Response processDataRequest(Serializable request) {
 		List<GridAppsDataHandler> handlers = getHandlers(request.getClass());
 		if(handlers!=null){
 			//iterate through all handlers until we get one with a result

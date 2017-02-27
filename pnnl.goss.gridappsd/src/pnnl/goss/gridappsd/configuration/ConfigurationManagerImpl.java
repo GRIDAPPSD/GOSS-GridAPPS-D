@@ -16,7 +16,9 @@ import com.google.gson.Gson;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.Response;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -44,8 +46,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	@ServiceDependency
 	private volatile StatusReporter statusReporter;
 	
-	//@ServiceDependency 
-	//private volatile DataManager dataManager;
+	@ServiceDependency 
+	private volatile DataManager dataManager;
 	
 	@Start
 	public void start(){
@@ -80,8 +82,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		RequestSimulation requestSimulation = gson.fromJson(request.toString(), RequestSimulation.class);
 		log.debug(requestSimulation.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
-		//dataManager.getModelData(requestSimulation.getPower_system_config());
-		
+		Response resp = dataManager.processDataRequest(requestSimulation.getPower_system_config());
+//		resp.f
 		//Update simulation status after every step, for example:
 		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation files created");
 		

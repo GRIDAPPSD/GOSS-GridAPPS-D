@@ -126,6 +126,14 @@ public class SimulationManagerImpl implements SimulationManager{
 					//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
 					//This call would return true/false for initialization and simulation output of time step 0.
 					client.publish(GridAppsDConstants.topic_FNCS_input, "{'command': 'isInitialized'");
+					
+					// TODO: Send fncs timestep updates forever.
+					/*
+					 * while (true){
+					 * 		do stuff
+					 * sleep();
+					 * }
+					 */
 
 					
 				}
