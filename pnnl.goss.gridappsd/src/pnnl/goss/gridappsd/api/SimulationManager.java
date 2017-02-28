@@ -1,4 +1,7 @@
-package pnnl.goss.gridappsd.data;
+package pnnl.goss.gridappsd.api;
+
+import java.io.File;
+import java.io.Serializable;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -9,8 +12,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.utils.RunCommandLine;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -18,34 +23,13 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  * @author shar064 
  */
 
-@Component
-public class DataManager {
+public interface SimulationManager {
 	
-	@ServiceDependency
-	Client client = null; 
-	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	
-	@ServiceDependency
-	ServerControl serverControl;
-	
-	@Start
-	public void start(){
-		try{
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			client.subscribe(GridAppsDConstants.topic_requestData, new DataEvent());
-			
-			
-		}
-		catch(Exception e){
-				e.printStackTrace();
-		}
-		
-	}
-
+	/**
+	 * This method is called by Process Manager to start a simulation
+	 * @param simulationId
+	 * @param simulationFile
+	 */
+	void startSimulation(int simulationId, File simulationFile);
 
 }
