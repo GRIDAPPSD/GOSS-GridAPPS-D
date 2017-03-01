@@ -1,6 +1,8 @@
 package pnnl.goss.gridappsd;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -44,15 +46,17 @@ public class TestApplication extends TestCase {
 			powerSystemConfig.Line_name = "";
 			
 			SimulationConfig simulationConfig = new SimulationConfig();
-			simulationConfig.duration = ""; //.setDuration("");
+			simulationConfig.duration = 60; //.setDuration("");
 			// TODO: Should this be an array?
 			//simulationConfig.output_object_mrid = ""; //.setOutput_object_mrid(null);
 			simulationConfig.power_flow_solver_method = ""; //.setPower_flow_solver_method("");
-			simulationConfig.simulation_name = ""; //.setSimulation_name("");
+			simulationConfig.simulation_id = ""; //.setSimulation_name("");
 			simulationConfig.simulator = ""; //.setSimulator("");
 			// TODO: Should this be an array?
 			//simulationConfig.simulator_name  ""; //.setSimulator_name(null);
-			simulationConfig.start_time = ""; //.setStart_time("");
+			
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			simulationConfig.start_time = sdf.format(new Date()); //.setStart_time("");
 			
 			RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
 			
