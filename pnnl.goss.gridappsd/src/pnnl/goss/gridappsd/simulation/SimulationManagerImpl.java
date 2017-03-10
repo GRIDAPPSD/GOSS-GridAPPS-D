@@ -51,6 +51,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	@Start
 	public void start() throws Exception{
+		System.out.println("STARTING SIMULATION MGR IMPL");
 		Credentials credentials = new UsernamePasswordCredentials(
 				GridAppsDConstants.username, GridAppsDConstants.password);
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);

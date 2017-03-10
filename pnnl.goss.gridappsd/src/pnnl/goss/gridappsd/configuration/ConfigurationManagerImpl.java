@@ -51,7 +51,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@Start
 	public void start(){
-		
+		System.out.println("STARTING CONFIGURATION MANAGER");
 		statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		
 //		log.debug("Starting "+this.getClass().getName());

@@ -1,0 +1,137 @@
+<html>
+<head>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>
+<script src="js/stomp.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+controlTopic = "/topic/goss/fusion/viz/control";
+
+errorTopic = "/topic/goss/fusion/viz/error";
+
+currentTopic = "/topic/goss/fusion/viz/current";
+currentCapaReqTopic  = currentTopic+"/capareq";
+currentInterchangeTotalTopic = currentTopic+"/inter_total";
+currentInterchangeScheduleTopic = currentTopic+"/inter_sched";
+currentActualLoadTopic = currentTopic+"/actual/load";
+currentActualSolarTopic = currentTopic+"/actual/solar";
+currentActualWindTopic = currentTopic+"/actual/wind";
+currentForecastLoadTopic = currentTopic+"/forecast/load";
+currentForecastSolarTopic = currentTopic+"/forecast/solar";
+currentForecastWindTopic = currentTopic+"/forecast/wind";
+
+//Create client
+var client = Stomp.client( "ws://127.0.0.1:61614");
+// this allows to display debug logs directly on the web page
+        client.debug = function(str) {
+            $("#debug").append(str + "\n");
+        };
+//Make connection with server
+client.connect( "system", "manager",
+  function() {
+	/*
+	//Subscribe to error topic to get any error messages
+	client.subscribe(errorTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for capacity requirement
+	client.subscribe(currentCapaReqTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for total rted
+	client.subscribe(currentInterchangeScheduleTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for total interchange
+	client.subscribe(currentInterchangeTotalTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+
+	//Subscribe to get current data for actual load
+	client.subscribe(currentActualLoadTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for actual wind
+	client.subscribe(currentActualWindTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for actual solar
+	client.subscribe(currentActualSolarTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for forecast load
+	client.subscribe(currentForecastLoadTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for forecast wind
+	client.subscribe(currentForecastWindTopic,
+		function( message ) {
+			alert( message );
+		}
+	);
+	
+	//Subscribe to get current data for forecast solar
+	client.subscribe(currentForecastSolarTopic,
+		function( message ) {
+			alert( message );
+		}
+	);*/
+    /*
+	client.subscribe('goss/fusion/viz/control',
+		function( message ) {
+			console.log("MESSAGE WAS: " + message );
+		}
+	);*/
+    
+	//Send request to get current data
+	//var request = "{type:current,"
+			//	+ "timestamp:\"2014-06-06 15:40:00\","
+			//	+ "range:5,"
+			//	+ "unit:minute}"
+	//client.send("/topic/goss/powergrid/control", {}, request);
+	
+	
+
+ }
+);
+
+
+function sendControlMessage(message) {
+
+		//client.send('/topic/goss/gridappsd/process/request/simulation', {}, message)
+		var request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee13nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee13nodecktassets_SubRegion\",\"Line_name\":\"ieee13nodecktassets\"}, "+
+		"\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"my test simulation\",\"power_flow_solver_method\":\"FBS\"}}";
+	client.send("/topic/goss/powergrid/control", {}, request);
+}
+	
+</script>
+</head>
+<body>
+
+    <div id="message" value="" />
+    <pre id="debug" />
+    <button onclick="sendControlMessage()">Launch Process</button>
+</body>
+<html>

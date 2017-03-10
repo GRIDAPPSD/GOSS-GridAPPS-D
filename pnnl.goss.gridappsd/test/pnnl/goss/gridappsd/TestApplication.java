@@ -16,6 +16,7 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.client.ClientServiceFactory;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -37,13 +38,14 @@ public class TestApplication extends TestCase {
 			//Step1: Create GOSS Client
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP, credentials);
-			
+			//client = clientFactory.create(PROTOCOL.STOMP, credentials);
+			client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
+
 			//Create Request Simulation object
 			PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-			powerSystemConfig.GeographicalRegion_name = "";
-			powerSystemConfig.SubGeographicalRegion_name = "";
-			powerSystemConfig.Line_name = "";
+			powerSystemConfig.GeographicalRegion_name = "ieee8500_Region";
+			powerSystemConfig.SubGeographicalRegion_name = "ieee8500_SubRegion";
+			powerSystemConfig.Line_name = "ieee8500";
 			
 			SimulationConfig simulationConfig = new SimulationConfig();
 			simulationConfig.duration = 60; //.setDuration("");
@@ -62,8 +64,9 @@ public class TestApplication extends TestCase {
 			
 			Gson  gson = new Gson();
 			String request = gson.toJson(requestSimulation); 
-			
-			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, null).toString();
+			request = "{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee13nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee13nodecktassets_SubRegion\",\"Line_name\":\"ieee13nodecktassets\"}, "+
+					    "\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"my test simulation\",\"power_flow_solver_method\":\"FBS\"}}";
+			String simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, RESPONSE_FORMAT.JSON).toString();
 			assertNotNull(simulationId);
 			log.debug("REceived simulation id  = "+simulationId);
 			

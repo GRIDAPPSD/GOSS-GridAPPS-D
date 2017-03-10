@@ -14,6 +14,36 @@ public class SimulationConfig  implements Serializable {
 	public static String simulator;
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public static String start_time;
+	public static String getPower_flow_solver_method() {
+		return power_flow_solver_method;
+	}
+	public static void setPower_flow_solver_method(String power_flow_solver_method) {
+		SimulationConfig.power_flow_solver_method = power_flow_solver_method;
+	}
+	public static long getDuration() {
+		return duration;
+	}
+	public static void setDuration(long duration) {
+		SimulationConfig.duration = duration;
+	}
+	public static String getSimulation_id() {
+		return simulation_id;
+	}
+	public static void setSimulation_id(String simulation_id) {
+		SimulationConfig.simulation_id = simulation_id;
+	}
+	public static String getSimulator() {
+		return simulator;
+	}
+	public static void setSimulator(String simulator) {
+		SimulationConfig.simulator = simulator;
+	}
+	public static String getStart_time() {
+		return start_time;
+	}
+	public static void setStart_time(String start_time) {
+		SimulationConfig.start_time = start_time;
+	}
 
 	
 	//TODO change this to more detailed object about output??? maybe not needed
@@ -32,4 +62,7 @@ public class SimulationConfig  implements Serializable {
 //				+ ", output_object_mrid = " + output_object_mrid
 //				+ ", simulator_name = " + simulator_name + "]";
 //	}
+	
+	
+	
 }
