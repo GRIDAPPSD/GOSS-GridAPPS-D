@@ -38,8 +38,7 @@ public class TestApplication extends TestCase {
 			//Step1: Create GOSS Client
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
-			//client = clientFactory.create(PROTOCOL.STOMP, credentials);
-			client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
+			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 
 			//Create Request Simulation object
 			PowerSystemConfig powerSystemConfig = new PowerSystemConfig();

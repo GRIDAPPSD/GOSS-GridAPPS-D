@@ -39,7 +39,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	private volatile DataManager dataManager;
 	 
     private Logger log = LoggerFactory.getLogger(getClass());
-    private final String datasourceName = "powergrid-adms";
+    private final String datasourceName = "gridappsd";
 	
 	public static void main(String[] args) {
 		PowerSystemConfig config = new PowerSystemConfig();

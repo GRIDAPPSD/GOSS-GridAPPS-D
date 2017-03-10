@@ -76,7 +76,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 * @return
 	 */
 	@Override
-	public synchronized File getSimulationFile(int simulationId, Serializable request){
+	public synchronized File getSimulationFile(int simulationId, Serializable request) throws Exception{
 		
 		Gson gson = new Gson();
 		RequestSimulation requestSimulation = gson.fromJson(request.toString(), RequestSimulation.class);

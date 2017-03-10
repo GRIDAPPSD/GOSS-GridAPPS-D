@@ -22,7 +22,8 @@ public interface ConfigurationManager {
 	 * @param simulationId
 	 * @param configRequest
 	 * @return
+	 * @throws Exception 
 	 */
-	File getSimulationFile(int simulationId, Serializable request);
+	File getSimulationFile(int simulationId, Serializable request) throws Exception;
 	
 }

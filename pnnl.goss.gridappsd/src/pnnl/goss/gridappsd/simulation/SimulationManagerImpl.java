@@ -76,7 +76,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	 */
 	@Override
 	public void startSimulation(int simulationId, File simulationFile){
-		try{
+		
 			
 			
 			Thread thread = new Thread(new Runnable() {
@@ -85,6 +85,8 @@ public class SimulationManagerImpl implements SimulationManager{
 				public void run() {
 					
 					int currentTime = 0; //incrementing integer 0 ,1, 2.. representing seconds
+					
+					try{
 					
 					//Start FNCS
 					RunCommandLine.runCommand(commandFNCS);
@@ -112,15 +114,15 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						@Override
 						public void onMessage(Serializable response) {
-							
-							//TODO: check response from fncs_goss_bridge
-							statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response");
-							System.out.print(response);
-							
-							//Send message to fncs_goss_bridge to get output of next time step
-							String message = "{'command': 'nextTimeStep', 'currentTime': "+currentTime+"}";
-							client.publish(GridAppsDConstants.topic_FNCS_input, message);
-							
+							try{
+								//TODO: check response from fncs_goss_bridge
+								statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
+								System.out.print(response);
+								
+								
+							}catch (Exception e){
+								e.printStackTrace();
+							}
 						}
 					});
 					
@@ -132,23 +134,36 @@ public class SimulationManagerImpl implements SimulationManager{
 					/*
 					 * while (true){
 					 * 		do stuff
+					 * //Send message to fncs_goss_bridge to get output of next time step
+								String message = "{'command': 'nextTimeStep', 'currentTime': "+currentTime+"}";
+								client.publish(GridAppsDConstants.topic_FNCS_input, message);
 					 * sleep();
 					 * }
 					 */
 
 					
+					}
+					catch(Exception e){
+							e.printStackTrace();
+							try {
+								statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation error: "+e.getMessage());
+							} catch (Exception e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+					}
 				}
 			});
 			
 			thread.start();
 			
-			
-		}
-		catch(Exception e){
-				e.printStackTrace();
-		}
+		
+		
+		
 		
 	}
 
+	
+	
 
 }

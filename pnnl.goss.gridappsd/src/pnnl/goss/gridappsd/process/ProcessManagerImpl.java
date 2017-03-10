@@ -37,9 +37,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-//	@ServiceDependency
-//	private volatile ConfigurationManager configurationManager;
-//	
+	@ServiceDependency
+	private volatile ConfigurationManager configurationManager;
+	
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
 	
@@ -50,51 +50,62 @@ public class ProcessManagerImpl implements ProcessManager {
 	public void start(){
 		try{
 			System.out.println("STARTING PROCESS MANAGER");
-//			log.debug("Starting "+this.getClass().getName());
-//			
-//			Credentials credentials = new UsernamePasswordCredentials(
-//					GridAppsDConstants.username, GridAppsDConstants.password);
-//			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-//			
-//			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
-//			client.subscribe(GridAppsDConstants.topic_requestSimulation, new GossResponseEvent() {
-//				
-//				@Override
-//				public void onMessage(Serializable message) {
-//					System.out.println("PROCESS MANAGER GOT MESSAGE");
-//					DataResponse event = (DataResponse)message;
-//					
-//					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
-//					//TODO: create registry mapping between request topics and request handlers.
-//					switch(event.getDestination().replace("/queue/", "")){
-//						case GridAppsDConstants.topic_requestSimulation : {
-//							log.debug("Received simulation request: "+ event.getData());
-//							
-//							// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
-//							
-//							//generate simulation id and reply to event's reply destination.
-//							int simulationId = generateSimulationId();
-//							client.publish(event.getReplyDestination(), simulationId);
-//							
-//							//make request to configuration Manager to get power grid model file locations and names
-//							log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
-//							File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
-//						
-//							log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
-//							
-//							//start simulation
-//							log.debug("Starting simulation for id "+ simulationId);
-//							simulationManager.startSimulation(simulationId, simulationFile);
-//							log.debug("Starting simulation for id "+ simulationId);
-//							
-////							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
-//						}
-//						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
-//						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
-//					}
-//					
-//				}
-//			});
+			log.debug("Starting "+this.getClass().getName());
+			
+			Credentials credentials = new UsernamePasswordCredentials(
+					GridAppsDConstants.username, GridAppsDConstants.password);
+			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			
+			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
+			client.subscribe(GridAppsDConstants.topic_requestSimulation, new GossResponseEvent() {
+				
+				@Override
+				public void onMessage(Serializable message) {
+					
+					System.out.println("PROCESS MANAGER GOT MESSAGE");
+					DataResponse event = (DataResponse)message;
+					
+					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
+					//TODO: create registry mapping between request topics and request handlers.
+					switch(event.getDestination().replace("/queue/", "")){
+						case GridAppsDConstants.topic_requestSimulation : {
+							log.debug("Received simulation request: "+ event.getData());
+							
+							// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+							
+							//generate simulation id and reply to event's reply destination.
+							int simulationId = generateSimulationId();
+							try{
+								client.publish(event.getReplyDestination(), simulationId);
+							
+								//make request to configuration Manager to get power grid model file locations and names
+								log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
+								File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
+							
+								log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
+								
+								//start simulation
+								log.debug("Starting simulation for id "+ simulationId);
+								simulationManager.startSimulation(simulationId, simulationFile);
+								log.debug("Starting simulation for id "+ simulationId);
+								
+	//							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+							}catch (Exception e){
+								e.printStackTrace();
+								try {
+									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Process Initialization error: "+e.getMessage());
+								} catch (Exception e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+							}
+						}
+						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+					}
+					
+				}
+			});
 		}
 		catch(Exception e){
 				e.printStackTrace();
