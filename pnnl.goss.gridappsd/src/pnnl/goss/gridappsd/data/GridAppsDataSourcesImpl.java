@@ -22,7 +22,7 @@ import pnnl.goss.core.server.DataSourceRegistry;
 
 @Component
 public class GridAppsDataSourcesImpl implements GridAppsDataSources{
-	private static final String CONFIG_PID = "pnnl.goss.sql.datasource.powergrids.adms";
+	private static final String CONFIG_PID = "pnnl.goss.sql.datasource.gridappsd";
 //	public static final String DS_NAME = "goss.powergrids";
 	private static final Logger log = LoggerFactory.getLogger(GridAppsDataSourcesImpl.class);
 //	private DataSource datasource;

@@ -2,8 +2,11 @@ package pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Dictionary;
+import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
@@ -20,6 +23,7 @@ import pnnl.goss.core.Response;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -36,7 +40,8 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
 public class ConfigurationManagerImpl implements ConfigurationManager{
-	
+	private static final String CONFIG_PID = "pnnl.goss.gridappsd";
+
 	private static Logger log = LoggerFactory.getLogger(ConfigurationManagerImpl.class);
 	Client client = null; 
 	
@@ -48,6 +53,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@ServiceDependency 
 	private volatile DataManager dataManager;
+	
+	private Dictionary<String, ?> configurationProperties;
 	
 	@Start
 	public void start(){
@@ -76,19 +83,31 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 * @return
 	 */
 	@Override
-	public synchronized File getSimulationFile(int simulationId, Serializable request) throws Exception{
+	public synchronized File getSimulationFile(int simulationId, PowerSystemConfig powerSystemConfig) throws Exception{
 		
-		Gson gson = new Gson();
-		RequestSimulation requestSimulation = gson.fromJson(request.toString(), RequestSimulation.class);
-		log.debug(requestSimulation.toString());
+		log.debug(powerSystemConfig.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
-		Response resp = dataManager.processDataRequest(requestSimulation.getPower_system_config());
+		Response resp = dataManager.processDataRequest(powerSystemConfig, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
 //		resp.f
 		//Update simulation status after every step, for example:
 		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation files created");
 		
 		return new File("test");
 		
+	}
+	
+	@ConfigurationDependency(pid=CONFIG_PID)
+	public synchronized void updated(Dictionary<String, ?> config)  {
+		this.configurationProperties = config;
+	}
+	
+	public String getConfigurationProperty(String key){
+		if(this.configurationProperties!=null){
+			Object value = this.configurationProperties.get(key);
+			if(value!=null)
+				return value.toString();
+		}
+		return null;
 	}
 	
 }

@@ -46,7 +46,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		config.GeographicalRegion_name = "ieee8500_Region";
 		config.Line_name = "ieee8500";
 		config.SubGeographicalRegion_name = "ieee8500_SubRegion";
-		new GridLabDDataHandler().handle(config);
+		try {
+			new GridLabDDataHandler().handle(config, 12345, "d:\\tmp\\gridlabd-tmp\\");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	
@@ -63,7 +68,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	
 	@Override
-	public Response handle(Serializable request) {
+	public Response handle(Serializable request, int simulationId, String tempDataPath) throws Exception {
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
@@ -96,7 +101,17 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//call sql to cimrdf
 				//TODO get temp directory
-				File rdfFile = new File("/tmp/rdfOut"+new Date().getTime()+".rdf");
+				if(!tempDataPath.endsWith(File.separator)){
+					tempDataPath = tempDataPath+File.separator;
+				}
+				tempDataPath = tempDataPath+simulationId+File.separator;
+				File tempDataPathDir = new File(tempDataPath);
+				if(!tempDataPathDir.exists()){
+					tempDataPathDir.mkdirs();
+				}
+				
+				
+				File rdfFile = new File(tempDataPath+"rdfOut"+new Date().getTime()+".rdf");
 				rdfOut = new FileWriter(rdfFile);
 				rdfWriter = new BufferedWriter(rdfOut);
 				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
@@ -109,7 +124,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
 				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
-						"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee13"};  //13 args
+						rdfFile.getAbsolutePath(), "ieee13"};  //13 args
 				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 				rdfToGLM.process(args);
 				
@@ -118,16 +133,18 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//return glm file path  (base? or busxy?)
 				
-				
+				return new DataResponse(tempDataPath);
 				
 				
 				
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				throw new Exception("SQL error while generating GLM configuration",e);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				throw new Exception("IO error while generating GLM configuration",e);
 			}finally {
 				try {
 					if(rdfWriter!=null) rdfWriter.close();
@@ -139,12 +156,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 			}
 		} else {
-			log.warn("No jdbc pool avialable for "+datasourceName);
+			throw new Exception("No jdbc pool avialable for "+datasourceName);
 		}
 		
 		
-		String responsePath = "";
-		return new DataResponse(responsePath);
 	}
 
 

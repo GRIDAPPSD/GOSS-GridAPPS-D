@@ -15,5 +15,5 @@ public interface DataManager {
 	
 	void registerHandler(GridAppsDataHandler handler, Class<?> requestClass);
 	
-	Response processDataRequest(Serializable request);
+	Response processDataRequest(Serializable request, int simulationId, String tempDataPath) throws Exception;
 }

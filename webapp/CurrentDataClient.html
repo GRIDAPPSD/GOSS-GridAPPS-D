@@ -12,6 +12,9 @@ var client = Stomp.client( "ws://127.0.0.1:61614");
         //client.debug = function(str) {
         //    $("#debug").append(str + "\n");
         //};
+		client.error = function(str) {
+            $("#debug").append(str + "\n");
+        };
 //Make connection with server
 client.connect( "system", "manager",
   function() {

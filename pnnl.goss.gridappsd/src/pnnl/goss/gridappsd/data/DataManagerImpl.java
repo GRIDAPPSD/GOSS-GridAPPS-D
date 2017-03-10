@@ -79,15 +79,15 @@ public class DataManagerImpl implements DataManager {
 
 
 	@Override
-	public Response processDataRequest(Serializable request) {
+	public Response processDataRequest(Serializable request, int simulationId, String tempDataPath) throws Exception {
 		List<GridAppsDataHandler> handlers = getHandlers(request.getClass());
 		if(handlers!=null){
 			//iterate through all handlers until we get one with a result
 			for(GridAppsDataHandler handler: handlers){
 				//datahandler.handle
-				Response r = handler.handle(request);
+				Response r = handler.handle(request, simulationId, tempDataPath);
 				if(r!=null){
-					return r;
+					return r; 
 				}
 				//Return result from handler
 			}

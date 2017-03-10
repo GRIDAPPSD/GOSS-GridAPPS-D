@@ -12,6 +12,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -21,6 +23,7 @@ import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.ProcessManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -72,6 +75,13 @@ public class ProcessManagerImpl implements ProcessManager {
 							log.debug("Received simulation request: "+ event.getData());
 							
 							// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+							Gson  gson = new Gson();
+							
+							RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+							System.out.println("PARSED CONFIG "+config);
+							if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
+								//TODO return error
+							}
 							
 							//generate simulation id and reply to event's reply destination.
 							int simulationId = generateSimulationId();
@@ -80,13 +90,13 @@ public class ProcessManagerImpl implements ProcessManager {
 							
 								//make request to configuration Manager to get power grid model file locations and names
 								log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
-								File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
+								File simulationFile = configurationManager.getSimulationFile(simulationId, config.getPower_system_config());
 							
 								log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
 								
 								//start simulation
 								log.debug("Starting simulation for id "+ simulationId);
-								simulationManager.startSimulation(simulationId, simulationFile);
+								simulationManager.startSimulation(simulationId, simulationFile, config.getSimulation_config());
 								log.debug("Starting simulation for id "+ simulationId);
 								
 	//							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
