@@ -51,9 +51,9 @@ public class SimulationManagerImpl implements SimulationManager{
 	private volatile ConfigurationManager configurationManager;
 	
 	//TODO: Get these paths from pnnl.goss.gridappsd.cfg file
-	String commandFNCS = "fncs_broker 2";
-	String commandGridLABD = "gridlabd";
-	String commandFNCS_GOSS_Bridge = "fncs_goss_bridge.py";
+//	String commandFNCS = "fncs_broker 2";
+//	String commandGridLABD = "gridlabd";
+//	String commandFNCS_GOSS_Bridge = "fncs_goss_bridge.py";
 	
 	
 	@Start
@@ -96,21 +96,21 @@ public class SimulationManagerImpl implements SimulationManager{
 					try{
 					
 						//Start FNCS
-						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+commandFNCS);
+						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 						
 						//Start GridLAB-D
-						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+commandGridLABD+" "+simulationFile);
+						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						
 						//Start GOSS-FNCS Bridge
-						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+commandFNCS_GOSS_Bridge);
+						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
