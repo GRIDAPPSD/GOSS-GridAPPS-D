@@ -97,6 +97,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					
 						//Start FNCS
 						//TODO, verify no errors on this
+						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
@@ -104,6 +105,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 						
 						//Start GridLAB-D
+						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
@@ -111,6 +113,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						
 						//Start GOSS-FNCS Bridge
+						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
