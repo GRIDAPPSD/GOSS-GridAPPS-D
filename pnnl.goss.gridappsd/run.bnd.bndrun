@@ -29,8 +29,8 @@
 	org.apache.felix.gogo.runtime;version='[0.12.1,0.12.2)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.10.1)',\
 	org.apache.geronimo.specs.geronimo-jta_1.1_spec;version='[1.1.1,1.1.2)',\
-	org.apache.httpcomponents.httpclient;version='[4.2.3,4.2.4)',\
-	org.apache.httpcomponents.httpcore;version='[4.2.3,4.2.4)',\
+	org.apache.httpcomponents.httpclient;version=4.5.0,\
+	org.apache.httpcomponents.httpcore;version=4.4.4,\
 	org.apache.servicemix.bundles.commons-dbcp;version='[1.4.0,1.4.1)',\
 	org.apache.shiro.core;version='[1.2.3,1.2.4)',\
 	org.fusesource.hawtbuf.hawtbuf;version='[1.11.0,1.11.1)',\
@@ -57,7 +57,25 @@
 	com.springsource.javax.jms,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
 	org.eclipse.jetty.aggregate.jetty-all-server;version='[7.6,7.7)',\
-	pnnl.goss.gridappsd.gridappsd;version=latest
+	pnnl.goss.gridappsd.gridappsd.api;version=latest,\
+	pnnl.goss.gridappsd.gridappsd;version=latest,\
+	com.mysql.jdbc,\
+	org.apache.commons.math3,\
+	org.apache.jena.osgi,\
+	org.apache.servicemix.bundles.xerces,\
+	com.fasterxml.jackson.core.jackson-core,\
+	org.apache.servicemix.bundles.xmlresolver,\
+	com.fasterxml.jackson.core.jackson-annotations,\
+	com.fasterxml.jackson.core.jackson-databind,\
+	com.github.andrewoma.dexx.collection,\
+	com.github.jsonld-java,\
+	org.apache.commons.csv,\
+	org.apache.commons.lang3,\
+	org.apache.thrift,\
+	org.apache.commons.cli,\
+	httpcore,\
+	httpclient,\
+	xml-apis
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\

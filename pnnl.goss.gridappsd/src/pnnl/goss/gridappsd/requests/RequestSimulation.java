@@ -2,6 +2,9 @@ package pnnl.goss.gridappsd.requests;
 
 import java.io.Serializable;
 
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.SimulationConfig;
+
 public class RequestSimulation implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
@@ -9,6 +12,10 @@ public class RequestSimulation implements Serializable {
 	private PowerSystemConfig power_system_config;
 
 	private SimulationConfig simulation_config;
+	
+	public RequestSimulation(){
+		
+	}
 	
 	public RequestSimulation(PowerSystemConfig power_system_config, SimulationConfig simulation_config){
 		this.power_system_config = power_system_config;
