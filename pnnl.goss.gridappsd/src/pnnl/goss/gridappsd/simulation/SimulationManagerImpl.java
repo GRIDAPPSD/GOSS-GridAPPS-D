@@ -138,7 +138,9 @@ public class SimulationManagerImpl implements SimulationManager{
 						client.publish(GridAppsDConstants.topic_FNCS_input, "{'command': 'isInitialized'");
 						
 						// Send fncs timestep updates for the specified duration.
-						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						
+//						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 						String startTimeStr = simulationConfig.getStart_time();
 						Date startTime = sdf.parse(startTimeStr);
 						long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
