@@ -110,7 +110,7 @@ public class CIMDataSQLtoRDF {
 			ArrayList<String> notFound = new ArrayList<String>();
 		
 			//All components that belong in the same model as the line
-			String lineLookup = "SELECT distinct mc2.componentMRID, mc2.tableName"
+			String lineLookup = "SELECT distinct mc2.componentMRID, mc2.tableName, mc2.id"
 						+ "	FROM ModelComponents mc1, Line l, ModelComponents mc2"
 						+ " where mc1.componentMRID=l.mRID and l.name='"+lineName+"' and mc1.mRID=mc2.mRID order by mc2.id";
 			log.debug("Querying line components: "+lineLookup);
@@ -124,7 +124,7 @@ public class CIMDataSQLtoRDF {
 				count++;
 				String tableName = results.getString("tableName");
 				String mrid = results.getString("componentMRID");
-				System.out.println(tableName+" "+mrid);
+//				System.out.println(tableName+" "+mrid);
 				Element next = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName);
 				next.setAttributeNS(RDF_NS, RDF_PREFIX+ID_ATTRIBUTE, mrid);
 				rootElement.appendChild(next);
