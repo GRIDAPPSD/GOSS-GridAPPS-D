@@ -124,7 +124,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
 				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
-						rdfFile.getAbsolutePath(), "ieee13"};  //13 args
+						rdfFile.getAbsolutePath(), tempDataPath+"ieee13"};  //13 args
 				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 				rdfToGLM.process(args);
 				
