@@ -182,9 +182,6 @@ public class SimulationManagerImpl implements SimulationManager{
 			log.warn("Configuration property not found, defaulting to .: "+key);
 			path = ".";
 		}
-		if(!path.endsWith(File.separator)){
-			path = path+File.separator;
-		}
 		return path;
 	}
 	
