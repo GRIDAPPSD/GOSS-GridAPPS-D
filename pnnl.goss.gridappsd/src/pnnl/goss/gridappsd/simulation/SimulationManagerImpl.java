@@ -96,6 +96,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					try{
 					
 						//Start FNCS
+						//TODO, verify no errors on this
 						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
