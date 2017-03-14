@@ -26,7 +26,7 @@ client.connect( "system", "manager",
 function sendControlMessage(message) {
 
 		//client.send('/topic/goss/gridappsd/process/request/simulation', {}, message)
-		var request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500nodecktassets\"}, "+
+		var request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500\"}, "+
 		"\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"my test simulation\",\"power_flow_solver_method\":\"FBS\"}}";
 	client.send(simulationTopic, {"reply-to" :"/temp-queue/response-queue"}, request);
 	client.subscribe("/temp-queue/response-queue", function(message) {
