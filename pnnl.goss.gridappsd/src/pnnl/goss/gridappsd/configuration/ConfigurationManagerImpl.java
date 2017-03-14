@@ -19,6 +19,7 @@ import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -77,7 +78,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 * @return
 	 */
 	@Override
-	public synchronized File getSimulationFile(int simulationId, PowerSystemConfig powerSystemConfig) throws Exception{
+	public synchronized File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception{
 		
 		log.debug(powerSystemConfig.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
