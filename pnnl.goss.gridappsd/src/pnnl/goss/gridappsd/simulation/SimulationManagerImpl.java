@@ -1,6 +1,9 @@
 package pnnl.goss.gridappsd.simulation;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,7 +26,6 @@ import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -91,22 +93,38 @@ public class SimulationManagerImpl implements SimulationManager{
 				@Override
 				public void run() {
 					
-					
+					Process gridlabdProcess = null;
+					Process fncsProcess = null;
+					Process fncsBridgeProcess = null;
 					
 					try{
 					
 						//Start FNCS
 						//TODO, verify no errors on this
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
-						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
-						
+//						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
+						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
+						fncsBuilder.redirectErrorStream(true);
+						fncsProcess = fncsBuilder.start();
+						// Watch the process
+						watch(fncsProcess, "FNCS");
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 						
 						//Start GridLAB-D
 						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
-						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
+//						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
+						
+						
+						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
+						gridlabDBuilder.redirectErrorStream(true);
+						//launch from directory containing simulation files
+						gridlabDBuilder.directory(simulationFile.getParentFile());
+						gridlabdProcess = gridlabDBuilder.start();
+						// Watch the process
+						watch(gridlabdProcess, "GridLABD");
+						
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
@@ -114,7 +132,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+//						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						fncsBridgeBuilder.redirectErrorStream(true);
+						fncsBridgeProcess = fncsBridgeBuilder.start();
+						// Watch the process
+						watch(fncsBridgeProcess, "FNCS GOSS Bridge");
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
@@ -160,6 +183,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						}
 						
 						
+						
 					}
 					catch(Exception e){
 							e.printStackTrace();
@@ -169,6 +193,17 @@ public class SimulationManagerImpl implements SimulationManager{
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
+					} finally {
+						//TODO shut down fncs broker and gridlabd if still running and bridge
+						if(fncsProcess!=null){
+							fncsProcess.destroy();
+						}
+						if(gridlabdProcess!=null){
+							gridlabdProcess.destroy();
+						}
+						if(fncsBridgeProcess!=null){
+							fncsBridgeProcess.destroy();
+						}
 					}
 				}
 			});
@@ -191,5 +226,22 @@ public class SimulationManagerImpl implements SimulationManager{
 		return path;
 	}
 	
+	
+	
+	private static void watch(final Process process, String processName) {
+	    new Thread() {
+	        public void run() {
+	            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+	            String line = null; 
+	            try {
+	                while ((line = input.readLine()) != null) {
+	                    System.out.println(line);
+	                }
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+	        }
+	    }.start();
+	}
 
 }

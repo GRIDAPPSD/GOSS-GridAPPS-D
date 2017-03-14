@@ -91,7 +91,11 @@ public class ProcessManagerImpl implements ProcessManager {
 								//make request to configuration Manager to get power grid model file locations and names
 								log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
 								File simulationFile = configurationManager.getSimulationFile(simulationId, config.getPower_system_config());
-							
+								if(simulationFile==null){
+									throw new Exception("No simulation file returned for request "+config.getPower_system_config());
+								}
+								
+								
 								log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
 								
 								//start simulation
