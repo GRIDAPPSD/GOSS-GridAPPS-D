@@ -2,12 +2,15 @@ package pnnl.goss.gridappsd.data.handlers;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,8 @@ import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
+import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 
 @Component
@@ -58,7 +63,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	@Start
 	public void start(){
 		if(dataManager!=null) {
-			dataManager.registerHandler(this, PowerSystemConfig.class);
+			dataManager.registerHandler(this, RequestSimulation.class);
 			dataManager.registerHandler(this, String.class);
 		}
 		else { 
@@ -72,18 +77,18 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
-			request = gson.fromJson((String)request, PowerSystemConfig.class);
+			request = gson.fromJson((String)request, RequestSimulation.class);
 			
 		}
 		
 		
-		if(!(request instanceof PowerSystemConfig)){
+		if(!(request instanceof RequestSimulation)){
 			return null;//new DataResponse(new DataError(
 					//"Invalid request type specified!"));
 		}
 		
 		
-		PowerSystemConfig dataRequest = (PowerSystemConfig)request;
+		RequestSimulation dataRequest = (RequestSimulation)request;
 		
 		Map<String, DataSourceType> datasources = datasourceRegistry.getAvailable();
 		
@@ -115,25 +120,82 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				rdfOut = new FileWriter(rdfFile);
 				rdfWriter = new BufferedWriter(rdfOut);
 				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
-				sqlToRDF.outputModel(dataRequest.Line_name, rdfWriter, conn);
+				sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
 				rdfWriter.flush();
 				
-				
+				String simulationName = dataRequest.getSimulation_config().simulation_name;
 				//call cim to glm
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
+				
+				//generate simulation base file
 				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
-						rdfFile.getAbsolutePath(), "ieee13"};  //13 args
+						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
 				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 				rdfToGLM.process(args);
 				
 				//cleanup rdf file
 				rdfFile.delete();
 				
-				//return glm file path  (base? or busxy?)
 				
-				return new DataResponse(tempDataPath);
+				
+				//generate simulation config json file
+				String configFileName = "configfile.json";
+				String configFileValue = "{\"ROOT\": [\"nominal_voltage\",\"distribution_load\",\"positive_sequence_voltage\"],"
+						+ " \"regconfig6506321\":[\"tap_pos_A\",\"tap_pos_B\",\"tap_pos_C\",\"regulation\",\"time_delay\"]}";
+				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
+				configFileOut.write(configFileValue.getBytes());
+				configFileOut.flush();
+				configFileOut.close();
+				
+				
+				//generate simulation config startup file
+				File startupFile = new File(tempDataPath+simulationName+"_startup.glm");
+				PrintWriter startupFileWriter = new PrintWriter(startupFile);
+				//add an include reference to the base glm 
+				String baseGLM = tempDataPath+simulationName+"_base.glm";
+
+				Calendar c = Calendar.getInstance();
+				Date startTime = GridAppsDConstants.SDF_SIMULATION_REQUEST.parse(dataRequest.getSimulation_config().start_time);
+				c.setTime(startTime);
+				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
+				Date stopTime = c.getTime();
+				
+				startupFileWriter.println("#include \""+baseGLM+"\"");
+				
+				startupFileWriter.println("clock {");
+				startupFileWriter.println("     timezone PST+8PDT");
+				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
+				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
+				startupFileWriter.println("}");
+				
+				startupFileWriter.println("#set suppress_repeat_messages=1");
+				startupFileWriter.println("#set relax_naming_rules=1");
+				startupFileWriter.println("#set profiler=1");
+				startupFileWriter.println("#set double_format=%+.12lg");
+				startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
+				startupFileWriter.println("#set minimum_timestep=0.1");
+				
+				startupFileWriter.println("module connection;");
+				startupFileWriter.println("module powerflow {");
+				startupFileWriter.println("     line_capacitance TRUE;");
+				startupFileWriter.println("     solver_method "+dataRequest.getSimulation_config().power_flow_solver_method+";");
+				startupFileWriter.println("}");
+				
+				startupFileWriter.println("object fncs_msg {");
+				startupFileWriter.println("     name "+simulationName+";");
+				startupFileWriter.println("     message_type JSON;");
+				startupFileWriter.println("     configure configfile.json;");
+				startupFileWriter.println("     option \"transport:hostname localhost, port 5570\";");
+				startupFileWriter.println("}");
+				
+				startupFileWriter.flush();
+				startupFileWriter.close();
+				
+				
+				
+				return new DataResponse(startupFile);
 				
 				
 				
@@ -173,7 +235,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	@Override
 	public List<Class<?>> getSupportedRequestTypes() {
 		List<Class<?>> supported = new ArrayList<Class<?>>();
-		supported.add(PowerSystemConfig.class);
+		supported.add(RequestSimulation.class);
 		supported.add(String.class);
 		return supported;
 	}

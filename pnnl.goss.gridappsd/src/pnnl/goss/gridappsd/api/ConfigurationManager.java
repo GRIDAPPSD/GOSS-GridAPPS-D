@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 
 /**
  * This class implements subset of functionalities for Internal Functions
@@ -26,7 +27,7 @@ public interface ConfigurationManager {
 	 * @return
 	 * @throws Exception 
 	 */
-	File getSimulationFile(int simulationId, PowerSystemConfig powerSystemConfig) throws Exception;
+	File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception;
 	String getConfigurationProperty(String key);
 
 }

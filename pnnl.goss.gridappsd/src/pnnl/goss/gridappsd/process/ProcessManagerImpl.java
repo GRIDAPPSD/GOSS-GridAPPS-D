@@ -23,7 +23,7 @@ import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.ProcessManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
-import pnnl.goss.gridappsd.requests.RequestSimulation;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -90,8 +90,12 @@ public class ProcessManagerImpl implements ProcessManager {
 							
 								//make request to configuration Manager to get power grid model file locations and names
 								log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
-								File simulationFile = configurationManager.getSimulationFile(simulationId, config.getPower_system_config());
-							
+								File simulationFile = configurationManager.getSimulationFile(simulationId, config);
+								if(simulationFile==null){
+									throw new Exception("No simulation file returned for request "+config);
+								}
+								
+								
 								log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
 								
 								//start simulation
@@ -135,7 +139,7 @@ public class ProcessManagerImpl implements ProcessManager {
 		 * Get the latest simulation id from database and return +1 
 		 * Store the new id in database
 		 */
-		return new Random().nextInt();
+		return Math.abs(new Random().nextInt());
 	}
 	
 }
