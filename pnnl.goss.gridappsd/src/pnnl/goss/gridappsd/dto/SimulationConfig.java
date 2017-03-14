@@ -16,6 +16,11 @@ public class SimulationConfig  implements Serializable {
 	public String simulator;
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public String start_time;
+	
+	public static String[] output_object_id;
+
+	
+	
 	public String getPower_flow_solver_method() {
 		return power_flow_solver_method;
 	}
@@ -62,7 +67,14 @@ public class SimulationConfig  implements Serializable {
 	//getting rid of this for now, only 1 simulation at once
 //	public String[] simulator_name;
 
-//	@Override
+	public static String[] getOutput_object_id() {
+		return output_object_id;
+	}
+	public static void setOutput_object_id(String[] output_object_id) {
+		SimulationConfig.output_object_id = output_object_id;
+	}
+	
+	//	@Override
 	public String toString() {
 		return "ClassPojo [power_flow_solver_method = "
 				+ power_flow_solver_method + ", duration = " + duration
