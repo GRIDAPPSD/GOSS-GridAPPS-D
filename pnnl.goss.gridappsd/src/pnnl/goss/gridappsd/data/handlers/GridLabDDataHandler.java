@@ -162,10 +162,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
 				
-				startupFileWriter.println("#include \""+baseGLM+"\"");
 				
 				startupFileWriter.println("clock {");
-				startupFileWriter.println("     timezone PST+8PDT");
+				startupFileWriter.println("     timezone \"PST+8PDT\";");
 				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
@@ -190,6 +189,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     option \"transport:hostname localhost, port 5570\";");
 				startupFileWriter.println("}");
 				
+				startupFileWriter.println("#include \""+baseGLM+"\"");
+
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
