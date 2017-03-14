@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -141,7 +142,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config json file
 				String configFileName = "configfile.json";
-				String configFileValue = "{\"ROOT\": [\nominal_voltage\",\"distribution_load\",\"positive_sequence_voltage\"],"
+				String configFileValue = "{\"ROOT\": [\"nominal_voltage\",\"distribution_load\",\"positive_sequence_voltage\"],"
 						+ " \"regconfig6506321\":[\"tap_pos_A\",\"tap_pos_B\",\"tap_pos_C\",\"regulation\",\"time_delay\"]}";
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
@@ -151,7 +152,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config startup file
 				File startupFile = new File(tempDataPath+simulationName+"_startup.glm");
-				FileWriter startupFileWriter = new FileWriter(startupFile);
+				PrintWriter startupFileWriter = new PrintWriter(startupFile);
 				//add an include reference to the base glm 
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
 
@@ -161,25 +162,25 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
 				
-				startupFileWriter.write("#include "+baseGLM);
+				startupFileWriter.println("#include "+baseGLM);
 				
-				startupFileWriter.write("clock {");
-				startupFileWriter.write("     startime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
-				startupFileWriter.write("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
-				startupFileWriter.write("}");
+				startupFileWriter.println("clock {");
+				startupFileWriter.println("     startime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
+				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
+				startupFileWriter.println("}");
 				
-				startupFileWriter.write("#set suppress_repeat_messages=1");
-				startupFileWriter.write("#set relax_naming_rules=1");
-				startupFileWriter.write("#set profiler=1");
-				startupFileWriter.write("#set double_format=%+.12lg");
-				startupFileWriter.write("#set complex_format=%+.12lg%+.12lg%c");
-				startupFileWriter.write("#set minimum_timestep=0.1");
+				startupFileWriter.println("#set suppress_repeat_messages=1");
+				startupFileWriter.println("#set relax_naming_rules=1");
+				startupFileWriter.println("#set profiler=1");
+				startupFileWriter.println("#set double_format=%+.12lg");
+				startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
+				startupFileWriter.println("#set minimum_timestep=0.1");
 				
-				startupFileWriter.write("module connection;");
-				startupFileWriter.write("module powerflow {");
-				startupFileWriter.write("     line_capacitance TRUE;");
-				startupFileWriter.write("     solver_method "+dataRequest.getSimulation_config().power_flow_solver_method+";");
-				startupFileWriter.write("}");
+				startupFileWriter.println("module connection;");
+				startupFileWriter.println("module powerflow {");
+				startupFileWriter.println("     line_capacitance TRUE;");
+				startupFileWriter.println("     solver_method "+dataRequest.getSimulation_config().power_flow_solver_method+";");
+				startupFileWriter.println("}");
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
