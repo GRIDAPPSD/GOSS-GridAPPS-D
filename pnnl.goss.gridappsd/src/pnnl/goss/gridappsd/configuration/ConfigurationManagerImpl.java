@@ -19,7 +19,7 @@ import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import pnnl.goss.gridappsd.requests.RequestSimulation;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**

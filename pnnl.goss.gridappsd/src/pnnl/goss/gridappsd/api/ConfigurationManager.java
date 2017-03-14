@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.Serializable;
 
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import pnnl.goss.gridappsd.requests.RequestSimulation;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 
 /**
  * This class implements subset of functionalities for Internal Functions

@@ -19,8 +19,8 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.client.ClientServiceFactory;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
-import pnnl.goss.gridappsd.requests.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class TestApplication extends TestCase {
