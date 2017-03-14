@@ -162,10 +162,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
 				
-				startupFileWriter.println("#include "+baseGLM);
+				startupFileWriter.println("#include \""+baseGLM+"\"");
 				
 				startupFileWriter.println("clock {");
-				startupFileWriter.println("     startime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
+				startupFileWriter.println("     timezone PST+8PDT");
+				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
 				
@@ -181,8 +182,18 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     line_capacitance TRUE;");
 				startupFileWriter.println("     solver_method "+dataRequest.getSimulation_config().power_flow_solver_method+";");
 				startupFileWriter.println("}");
+				
+				startupFileWriter.println("object fncs_msg {");
+				startupFileWriter.println("     name "+simulationName+";");
+				startupFileWriter.println("     message_type JSON;");
+				startupFileWriter.println("     configure configfile.json;");
+				startupFileWriter.println("     option \"transport:hostname localhost, port 5570\";");
+				startupFileWriter.println("}");
+				
 				startupFileWriter.flush();
 				startupFileWriter.close();
+				
+				
 				
 				return new DataResponse(startupFile);
 				
