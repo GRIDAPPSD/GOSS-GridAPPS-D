@@ -139,7 +139,7 @@ public class ProcessManagerImpl implements ProcessManager {
 		 * Get the latest simulation id from database and return +1 
 		 * Store the new id in database
 		 */
-		return new Random().nextInt();
+		return Math.abs(new Random().nextInt());
 	}
 	
 }
