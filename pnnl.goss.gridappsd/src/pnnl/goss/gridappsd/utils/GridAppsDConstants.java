@@ -1,5 +1,7 @@
 package pnnl.goss.gridappsd.utils;
 
+import java.text.SimpleDateFormat;
+
 public class GridAppsDConstants {
 	
 	//user credentials
@@ -39,6 +41,9 @@ public class GridAppsDConstants {
 	public static final String FNCS_BRIDGE_PATH = "fncs.bridge.path";
 	public static final String GRIDLABD_PATH = "gridlabd.path";
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
+	
+	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss ZZZ");
 	
 	
 }
