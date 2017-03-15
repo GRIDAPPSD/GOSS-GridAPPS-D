@@ -63,8 +63,16 @@ public class DataEvent implements GossResponseEvent {
 			requestData = message;
 		}
 		
-		Response r = dataManager.processDataRequest(requestData);
-		//TODO create client and send response on it
+		try {
+			//TODO set up simulation id and temp data path
+
+			Response r = dataManager.processDataRequest(requestData, 0, ".");
+			//TODO create client and send response on it
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 	}

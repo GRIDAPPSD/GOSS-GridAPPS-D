@@ -16,7 +16,6 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Response;
-import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import pnnl.goss.gridappsd.api.StatusReporter;
@@ -37,20 +36,18 @@ public class DataManagerImpl implements DataManager {
 	private Map<Class<?>, List<GridAppsDataHandler>> handlers = new HashMap<Class<?>, List<GridAppsDataHandler>>();
     private Logger log = LoggerFactory.getLogger(getClass());
     
-	@ServiceDependency
 	Client client = null; 
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-	@ServiceDependency
-	ServerControl serverControl;
 	
 	@ServiceDependency
 	private volatile StatusReporter statusReporter;
 	
 	@Start
 	public void start(){
+		System.out.println("STARTING DATA MANAGER");
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -82,15 +79,15 @@ public class DataManagerImpl implements DataManager {
 
 
 	@Override
-	public Response processDataRequest(Serializable request) {
+	public Response processDataRequest(Serializable request, int simulationId, String tempDataPath) throws Exception {
 		List<GridAppsDataHandler> handlers = getHandlers(request.getClass());
 		if(handlers!=null){
 			//iterate through all handlers until we get one with a result
 			for(GridAppsDataHandler handler: handlers){
 				//datahandler.handle
-				Response r = handler.handle(request);
+				Response r = handler.handle(request, simulationId, tempDataPath);
 				if(r!=null){
-					return r;
+					return r; 
 				}
 				//Return result from handler
 			}

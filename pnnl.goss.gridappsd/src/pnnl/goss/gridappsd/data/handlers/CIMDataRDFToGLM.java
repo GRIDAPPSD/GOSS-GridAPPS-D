@@ -1540,7 +1540,7 @@ public class CIMDataRDFToGLM {
 		  ++i;
 		}
 
-		System.out.println (fEnc + " f=" + String.format("%6g", freq) + " v="  + String.format("%6g", vmult) + " s=" + String.format("%6g", smult));
+//		System.out.println (fEnc + " f=" + String.format("%6g", freq) + " v="  + String.format("%6g", vmult) + " s=" + String.format("%6g", smult));
 
 			Model model = ModelFactory.createOntologyModel (OntModelSpec.OWL_DL_MEM);
 		   
@@ -2436,9 +2436,9 @@ public class CIMDataRDFToGLM {
 			out.println ("// buscoords " + fBus);
 		out.close ();
 
-			for (HashMap.Entry<String,SpacingCount> pair : mapSpacings.entrySet()) {
-				System.out.printf ("%s ==> %d, %d\n", pair.getKey(), pair.getValue().getNumConductors(), pair.getValue().getNumPhases());
-			}
+//			for (HashMap.Entry<String,SpacingCount> pair : mapSpacings.entrySet()) {
+//				System.out.printf ("%s ==> %d, %d\n", pair.getKey(), pair.getValue().getNumConductors(), pair.getValue().getNumPhases());
+//			}
 		
 	}
 	

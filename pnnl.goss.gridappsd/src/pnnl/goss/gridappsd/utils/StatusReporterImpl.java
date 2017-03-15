@@ -40,9 +40,8 @@ public class StatusReporterImpl implements StatusReporter {
 	 */
 	@Start
 	public void start() throws Exception {
-		Credentials credentials = new UsernamePasswordCredentials(
-				GridAppsDConstants.username, GridAppsDConstants.password);
-		client = clientFactory.create(PROTOCOL.STOMP,credentials);
+		
+		getClient();
 	}
 	
 	@Stop
@@ -61,10 +60,20 @@ public class StatusReporterImpl implements StatusReporter {
 		log.debug(status);		
 	}
 
-	public void reportStatus(String topic, String status) {
+	public void reportStatus(String topic, String status) throws Exception{
+		if(client==null){
+			getClient();
+		}
+		
 		log.debug(String.format("%s %s", topic,  status));
 		client.publish(topic, status);
 	}
 	
 
+	
+	protected void getClient() throws Exception{
+		Credentials credentials = new UsernamePasswordCredentials(
+				GridAppsDConstants.username, GridAppsDConstants.password);
+		client = clientFactory.create(PROTOCOL.STOMP,credentials);
+	}
 }
