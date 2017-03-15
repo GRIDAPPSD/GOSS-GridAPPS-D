@@ -178,7 +178,7 @@ public class CIMDataRDFToGLM {
 	if (s.equals("timeScheduled")) return "MANUAL";  // TODO - support in GridLAB-D?
 	if (s.equals("powerFactor")) return "MANUAL";  // TODO - support in GridLAB-D?
 	if (s.equals("userDefined")) return "MANUAL"; 
-		return "time";
+		return "MANUAL";
 	}
 
 	static double SafeDouble (Resource r, Property p, double def) {
