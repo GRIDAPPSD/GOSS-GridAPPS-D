@@ -142,8 +142,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config json file
 				String configFileName = "configfile.json";
-				String configFileValue = "{\"ROOT\": [\"nominal_voltage\",\"distribution_load\",\"positive_sequence_voltage\"],"
-						+ " \"regconfig6506321\":[\"tap_pos_A\",\"tap_pos_B\",\"tap_pos_C\",\"regulation\",\"time_delay\"]}";
+				String configFileValue = "{\"cap:capbank0c\": [\"cap_nominal_voltage\",\"capacitor_C\"]}";
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
