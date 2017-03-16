@@ -17,7 +17,9 @@ public class SimulationConfig  implements Serializable {
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public String start_time;
 	
-	public static String[] output_object_id;
+	public String simulation_output;
+	//TODO
+	//{"objectname": ["prop1","prop2"],"object2name":["prop1","prop2"]}
 
 	
 	
@@ -67,11 +69,11 @@ public class SimulationConfig  implements Serializable {
 	//getting rid of this for now, only 1 simulation at once
 //	public String[] simulator_name;
 
-	public static String[] getOutput_object_id() {
-		return output_object_id;
+	public String getOutput_object_id() {
+		return simulation_output;
 	}
-	public static void setOutput_object_id(String[] output_object_id) {
-		SimulationConfig.output_object_id = output_object_id;
+	public void setOutput_object_id(String output_object_id) {
+		simulation_output = simulation_output;
 	}
 	
 	//	@Override

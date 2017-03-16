@@ -136,7 +136,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				rdfToGLM.process(args);
 				
 				//cleanup rdf file
-				rdfFile.delete();
+//				rdfFile.delete();
 				
 				
 				
