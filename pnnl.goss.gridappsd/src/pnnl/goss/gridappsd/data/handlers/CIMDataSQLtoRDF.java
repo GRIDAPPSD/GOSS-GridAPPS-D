@@ -64,8 +64,8 @@ public class CIMDataSQLtoRDF {
 			conn = DriverManager.getConnection(db, user, pw);
 			CIMDataSQLtoRDF parse = new CIMDataSQLtoRDF();
 			out = new FileOutputStream(dataLocation);
-//			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
-			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
+			parse.outputModel("Feeder1", new BufferedWriter(new OutputStreamWriter(out)), conn);
+//			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -121,10 +121,11 @@ public class CIMDataSQLtoRDF {
 			int count = 0;
 			//For each result
 			while(results.next()){
+				
 				count++;
 				String tableName = results.getString("tableName");
 				String mrid = results.getString("componentMRID");
-//				System.out.println(tableName+" "+mrid);
+//				System.out.println(tableName+" "+mrid+"  "+count);
 				Element next = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName);
 				next.setAttributeNS(RDF_NS, RDF_PREFIX+ID_ATTRIBUTE, mrid);
 				rootElement.appendChild(next);
@@ -372,8 +373,8 @@ public class CIMDataSQLtoRDF {
 		referenceMap.put("phaseSide2","SinglePhaseKind");
 		referenceMap.put("connectionKind","WindingConnection");
 		referenceMap.put("phases","PhaseCode");
-		referenceMap.put("mode","PhaseCode");
-		referenceMap.put("monitoredPhase","RegulatingControlModeKind");
+		referenceMap.put("mode","RegulatingControlModeKind");
+		referenceMap.put("monitoredPhase","PhaseCode");
 		referenceMap.put("tculControlMode","TransformerControlMode");
 //		
 //		typesWithParent.add("ConcentricNeutralCableInfo");

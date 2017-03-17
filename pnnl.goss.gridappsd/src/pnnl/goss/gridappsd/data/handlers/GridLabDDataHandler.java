@@ -130,6 +130,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				
 				//generate simulation base file
+				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
 				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
 				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
@@ -142,7 +143,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config json file
 				String configFileName = "configfile.json";
-				String configFileValue = "{\"cap:capbank0c\": [\"cap_nominal_voltage\",\"capacitor_C\"]}";
+				String configFileValue = "{\"capbank0c\": [\"switchC\"]}";
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
