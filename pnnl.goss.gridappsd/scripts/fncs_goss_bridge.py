@@ -7,7 +7,8 @@ Created on Jan 6, 2017
 import fncs
 import json
 import sys
-import stomp 
+import stomp
+import logging 
 
 input_from_goss_topic = 'goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
 output_to_goss_topic = 'goss/gridappsd/fncs/output' #this should match GridAppsDConstants.topic_FNCS_output
@@ -15,9 +16,17 @@ gossConnection= None
 isInitialized = None
 simulationId = None
 
+logger = logging.getLogger('fncs_goss_bridge')
+hdlr = logging.FileHandler('/var/log/fncs_goss_bridge.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr) 
+logger.setLevel(logging.DEBUG)
+
 class GOSSListener(object):
   def on_message(self, headers, msg):
     message = ''
+    logger.info('received message '+msg)
     print(msg)
     if msg['command'] == 'isInitialized':
         message['response'] = isInitialized
@@ -86,6 +95,8 @@ def _registerWithFncsBroker(
             fncsConfiguration['values'][x]['list'])
     fncs.initialize(configurationZpl)
     isInitialized = fncs.is_initialized()
+    logger.info('registered with fncs '+isInitialized)
+
     if not fncs.is_initialized():
         raise RuntimeError(
             'fncs.initialize(configurationZpl) failed!\n'
@@ -105,6 +116,8 @@ def _publishToFncsBus(simulationId, gossMessage):
         RuntimeError()
         ValueError()
     '''
+    logger.debug('publish to fncs bus '+simulationId+' '+gossMessage)
+
     if simulationId == None or simulationId == '' or type(simulationId) != str:
         raise ValueError(
             'simulationId must be a nonempty string.\n'
@@ -130,6 +143,7 @@ def _publishToFncsBus(simulationId, gossMessage):
             'Unexpected error occured while executing json.loads(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
     fncsInputTopic = '{0}/Input'.format(simulationId)
+    logger.debug('fncs input topic '+fncsInputTopic)
     #fncs.publish_anon(fncsInputTopic, gossMessage)
     
 def _getFncsBusMessages(simulationId):
@@ -167,6 +181,7 @@ def _doneWithTimestep(currentTime):
         RuntimeError()
         ValueError()
     '''
+    logger.debug('done with timestep '+currentTime)
     if currentTime == None or type(currentTime) != int:
         raise ValueError(
             'currentTime must be an integer.\n'
@@ -214,6 +229,7 @@ def _registerWithGOSS(username,password,gossServer='localhost',
     gossConnection.connect(username,password)
     gossConnection.set_listener('GOSSListener', GOSSListener())
     gossConnection.subscribe(input_from_goss_topic,1)
+    logger.info('registered with goss on topic '+input_from_goss_topic+' '+gossConnection.is_connected())
     
 if __name__ == "__main__":
     #TODO: send simulationId, fncsBrokerLocation, gossLocation, 
