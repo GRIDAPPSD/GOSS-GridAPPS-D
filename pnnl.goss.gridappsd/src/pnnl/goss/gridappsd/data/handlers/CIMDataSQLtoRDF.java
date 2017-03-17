@@ -43,7 +43,7 @@ public class CIMDataSQLtoRDF {
 	static HashMap<String, String> referenceMap = new HashMap<String, String>();
 //	static List<String> typesWithParent = new ArrayList<String>();
 	static List<String> booleanColumns = new ArrayList<String>();
-	
+	static HashMap<String, String> joinFields = new HashMap<String, String>();
     private Logger log = LoggerFactory.getLogger(getClass());
 
 	
@@ -64,7 +64,8 @@ public class CIMDataSQLtoRDF {
 			conn = DriverManager.getConnection(db, user, pw);
 			CIMDataSQLtoRDF parse = new CIMDataSQLtoRDF();
 			out = new FileOutputStream(dataLocation);
-			parse.outputModel("Feeder1", new BufferedWriter(new OutputStreamWriter(out)), conn);
+			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
+//			parse.outputModel("Feeder1", new BufferedWriter(new OutputStreamWriter(out)), conn);
 //			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
 			
 		} catch (SQLException e) {
@@ -143,6 +144,7 @@ public class CIMDataSQLtoRDF {
 					String fullColumn = tableName+"."+column;
 //					System.out.println(fullColumn);
 					
+					
 					String value = tableResults.getString(i);
 					if(value!=null){
 						if(fieldNameMap.containsKey(tableName+"."+column)){
@@ -177,7 +179,24 @@ public class CIMDataSQLtoRDF {
 							next.appendChild(field);
 						}
 					}
-							
+						
+					//the table is linked to a join table
+					if(joinFields.containsKey(tableName)){
+						String joinField = joinFields.get(tableName);
+						String lookupTable = tableName+"_"+joinField+"Join";
+						String joinLookup = "SELECT distinct "+joinField+" from "+lookupTable+" where "+
+								tableName+"='"+mrid+"'";
+					
+						Statement joinlookupStmt = conn.createStatement();
+						ResultSet joinresults = joinlookupStmt.executeQuery(joinLookup);
+						//For each joinresult
+						while(joinresults.next()){
+							String joinvalue = joinresults.getString(joinField);
+							Element field = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName+"."+joinField);
+							field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, "#"+joinvalue);
+							next.appendChild(field);
+						}
+					}
 				}
 			}
 			log.debug(count+" components added to output model");
@@ -402,6 +421,9 @@ public class CIMDataSQLtoRDF {
 		booleanColumns.add("ShuntCompensator.grounded");
 		booleanColumns.add("TransformerEnd.grounded");
 		booleanColumns.add("EnergyConsumer.grounded");
+	
+		joinFields.put("ShortCircuitTest","GroundedEnds");
+		joinFields.put("Asset","PowerSystemResources");
 		
 	}
 
