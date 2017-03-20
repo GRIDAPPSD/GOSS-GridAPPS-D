@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -150,6 +151,9 @@ public class SimulationManagerImpl implements SimulationManager{
 							public void onMessage(Serializable response) {
 								try{
 									//TODO: check response from fncs_goss_bridge
+									//Parse respnose
+									// if it is an isInitialized reponse, check the value and send timesteps if true, or wait and publish another check if false
+									
 									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
 									System.out.print(response);
 									
@@ -162,25 +166,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
 						//This call would return true/false for initialization and simulation output of time step 0.
+						//TODO listen for response to this
 						client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"");
 						
-						// Send fncs timestep updates for the specified duration.
 						
-//						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-						SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-						String startTimeStr = simulationConfig.getStart_time();
-						Date startTime = sdf.parse(startTimeStr);
-						long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
-						long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
-						
-						while(currentTime < endTime){
-							//send next timestep to fncs bridge
-							String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+currentTime+"}";
-							client.publish(GridAppsDConstants.topic_FNCS_input, message);
-							Thread.sleep(1000);
-							
-							currentTime += 1000;
-						}
 						
 						
 						
@@ -214,6 +203,27 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 		
 		
+	}
+	
+	
+	private void sendTimesteps(SimulationConfig simulationConfig) throws ParseException, InterruptedException{
+		// Send fncs timestep updates for the specified duration.
+		
+//		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		String startTimeStr = simulationConfig.getStart_time();
+		Date startTime = sdf.parse(startTimeStr);
+		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
+		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
+		
+		while(currentTime < endTime){
+			//send next timestep to fncs bridge
+			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+currentTime+"}";
+			client.publish(GridAppsDConstants.topic_FNCS_input, message);
+			Thread.sleep(1000);
+			
+			currentTime += 1000;
+		}
 	}
 
 	
