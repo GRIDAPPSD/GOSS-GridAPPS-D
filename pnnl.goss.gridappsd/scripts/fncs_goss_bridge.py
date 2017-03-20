@@ -11,6 +11,7 @@ import stomp
 import logging 
 
 input_from_goss_topic = '/topic/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
+input_from_goss_queue = '/queue/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
 output_to_goss_topic = '/topic/goss/gridappsd/fncs/output' #this should match GridAppsDConstants.topic_FNCS_output
 gossConnection= None
 isInitialized = None
@@ -26,8 +27,8 @@ logger.setLevel(logging.DEBUG)
 class GOSSListener(object):
   def on_message(self, headers, msg):
     message = ''
-    jsonmsg = json.loads(str(msg))
     logger.info('received message '+str(msg))
+    jsonmsg = json.loads(str(msg))
     if jsonmsg['command'] == 'isInitialized':
         logger.debug('isInitialized check: '+str(isInitialized));
         message['response'] = isInitialized
@@ -240,14 +241,14 @@ def _registerWithGOSS(username,password,gossServer='localhost',
     gossConnection.connect(username,password)
     gossConnection.set_listener('GOSSListener', GOSSListener())
     gossConnection.subscribe(input_from_goss_topic,1)
+    gossConnection.subscribe(input_from_goss_queue,1)
     logger.info('registered with goss on topic '+input_from_goss_topic+' '+str(gossConnection.is_connected()))
     
 if __name__ == "__main__":
     #TODO: send simulationId, fncsBrokerLocation, gossLocation, 
     #stompPort, username and password as commmand line arguments 
-
-    _registerWithFncsBroker('simulation1','tcp://localhost:5570')
     _registerWithGOSS('system','manager',gossServer='127.0.0.1',stompPort='61613')
+    _registerWithFncsBroker('simulation1','tcp://localhost:5570')
 
 
     
