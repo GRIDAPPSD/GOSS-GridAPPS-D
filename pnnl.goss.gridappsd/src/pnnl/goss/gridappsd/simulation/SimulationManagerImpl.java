@@ -162,7 +162,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
 						//This call would return true/false for initialization and simulation output of time step 0.
-						client.publish(GridAppsDConstants.topic_FNCS_input, "{'command': 'isInitialized'");
+						client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"");
 						
 						// Send fncs timestep updates for the specified duration.
 						
@@ -175,7 +175,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						while(currentTime < endTime){
 							//send next timestep to fncs bridge
-							String message = "{'command': 'nextTimeStep', 'currentTime': "+currentTime+"}";
+							String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+currentTime+"}";
 							client.publish(GridAppsDConstants.topic_FNCS_input, message);
 							Thread.sleep(1000);
 							
