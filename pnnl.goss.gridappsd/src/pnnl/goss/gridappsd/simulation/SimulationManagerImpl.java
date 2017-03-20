@@ -17,6 +17,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
@@ -26,6 +28,8 @@ import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -155,8 +159,8 @@ public class SimulationManagerImpl implements SimulationManager{
 							//TODO listen for response to this
 							System.out.println("CHECKING ISINITIALIZED");
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
-							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
-							System.out.println("ISINITIALIZED RESPONSE "+response);
+//							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
+//							System.out.println("ISINITIALIZED RESPONSE "+response);
 							Thread.sleep(1000);
 							
 						}
@@ -211,8 +215,20 @@ public class SimulationManagerImpl implements SimulationManager{
 				//TODO: check response from fncs_goss_bridge
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
-				System.out.println("MESSAGE RESPONSE "+response);
+				//TODO, just send output???
 				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
+				
+				Gson  gson = new Gson();
+				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
+				System.out.println("MESSAGE RESPONSE "+responseJson);
+				if("isInitialized".equals(responseJson.command)){
+					System.out.println("RESPONSE "+responseJson.getResponse());
+					if("true".equals(responseJson.getResponse())){
+						isInitialized = true;
+					}
+				} else {
+					//??
+				}
 				
 				
 				
