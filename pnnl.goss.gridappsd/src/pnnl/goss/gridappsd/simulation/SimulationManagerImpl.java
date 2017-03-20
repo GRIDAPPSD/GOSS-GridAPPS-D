@@ -222,11 +222,12 @@ public class SimulationManagerImpl implements SimulationManager{
 				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
 				System.out.println("MESSAGE RESPONSE "+responseJson);
 				if("isInitialized".equals(responseJson.command)){
-					System.out.println("RESPONSE "+responseJson.getResponse());
-					if("true".equals(responseJson.getResponse())){
+					System.out.println("RESPONSE "+responseJson.response);
+					if("True".equals(responseJson.response)){
 						isInitialized = true;
 					}
 				} else {
+					System.out.println("RESPONSE COMMAND "+responseJson.command);
 					//??
 				}
 				
