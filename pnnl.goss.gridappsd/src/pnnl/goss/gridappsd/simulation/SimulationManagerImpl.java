@@ -145,19 +145,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						
-						boolean isInitialized = false;
-						
-						
-						while(!isInitialized){
-							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
-							//This call would return true/false for initialization and simulation output of time step 0.
-							//TODO listen for response to this
-//							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
-							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
-							System.out.println("ISINITIALIZED RESPONSE "+response);
-							Thread.sleep(1000);
-							
-						}
 						
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
@@ -178,6 +165,20 @@ public class SimulationManagerImpl implements SimulationManager{
 								}
 							}
 						});
+						
+						boolean isInitialized = false;
+						while(!isInitialized){
+							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
+							//This call would return true/false for initialization and simulation output of time step 0.
+							//TODO listen for response to this
+//							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
+							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
+							System.out.println("ISINITIALIZED RESPONSE "+response);
+							Thread.sleep(1000);
+							
+						}
+						
+						
 						
 						
 						
