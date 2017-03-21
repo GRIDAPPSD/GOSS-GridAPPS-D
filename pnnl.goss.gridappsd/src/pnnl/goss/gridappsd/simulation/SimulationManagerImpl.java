@@ -139,7 +139,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 //						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
 						fncsBridgeProcess = fncsBridgeBuilder.start();
 						// Watch the process
@@ -166,8 +166,8 @@ public class SimulationManagerImpl implements SimulationManager{
 							
 						}
 
-                                                sendTimesteps(simulationConfig); 
-					        client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
+                        sendTimesteps(simulationConfig); 
+					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
 						
 					}
 					catch(Exception e){
@@ -255,13 +255,14 @@ public class SimulationManagerImpl implements SimulationManager{
 		Date startTime = sdf.parse(startTimeStr);
 		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
-		
+		int seconds = 0;
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge
-			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+currentTime+"}";
+			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(1000);
 			
+			seconds++;
 			currentTime += 1000;
 		}
 	}

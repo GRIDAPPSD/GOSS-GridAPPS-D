@@ -281,8 +281,9 @@ def _keepAlive():
 if __name__ == "__main__":
     #TODO: send simulationId, fncsBrokerLocation, gossLocation, 
     #stompPort, username and password as commmand line arguments 
+    simulationId = sys.argv[1]
     _registerWithGOSS('system','manager',gossServer='127.0.0.1',stompPort='61613')
-    _registerWithFncsBroker('simulation1','tcp://localhost:5570')
+    _registerWithFncsBroker(simulationId,'tcp://localhost:5570')
     _keepAlive()
 
     
