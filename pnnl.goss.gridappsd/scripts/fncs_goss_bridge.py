@@ -29,6 +29,7 @@ logger.setLevel(logging.DEBUG)
 class GOSSListener(object):
   def on_message(self, headers, msg):
     message = {}
+
     logger.info('received message '+str(msg))
     jsonmsg = json.loads(str(msg))
     if jsonmsg['command'] == 'isInitialized':
@@ -254,6 +255,7 @@ def _registerWithGOSS(username,password,gossServer='localhost',
     gossConnection.set_listener('GOSSListener', GOSSListener())
     gossConnection.subscribe(input_from_goss_topic,1)
     gossConnection.subscribe(input_from_goss_queue,2)
+
     logger.info('registered with goss on topic '+input_from_goss_topic+' '+str(gossConnection.is_connected()))
     
 if __name__ == "__main__":
