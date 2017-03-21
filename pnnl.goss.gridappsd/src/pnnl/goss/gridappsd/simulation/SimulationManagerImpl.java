@@ -17,6 +17,8 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
@@ -26,6 +28,8 @@ import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -98,7 +102,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					Process gridlabdProcess = null;
 					Process fncsProcess = null;
 					Process fncsBridgeProcess = null;
-					
+					boolean isInitialized = false;
 					try{
 					
 						//Start FNCS
@@ -145,48 +149,21 @@ public class SimulationManagerImpl implements SimulationManager{
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						
-						boolean isInitialized = false;
 						
+						//Subscribe to fncs-goss-bridge output topic
+						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
 						while(!isInitialized){
 							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
 							//This call would return true/false for initialization and simulation output of time step 0.
 							//TODO listen for response to this
-//							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"");
-							Serializable response = client.getResponse("{\"command\": \"isInitialized\"", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
-							System.out.println("ISINITIALIZED RESPONSE "+response);
+							System.out.println("CHECKING ISINITIALIZED");
+							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
+//							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
+//							System.out.println("ISINITIALIZED RESPONSE "+response);
 							Thread.sleep(1000);
 							
 						}
-						
-						//Subscribe to fncs-goss-bridge output topic
-						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
-							
-							@Override
-							public void onMessage(Serializable response) {
-								try{
-									//TODO: check response from fncs_goss_bridge
-									//Parse response
-									// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
-									
-									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
-									System.out.print(response);
-									
-									
-								}catch (Exception e){
-									e.printStackTrace();
-								}
-							}
-						});
-						
-						
-						
-						
-						
-						
-						
-						
-						
 						
 					}
 					catch(Exception e){
@@ -220,6 +197,47 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 	}
 	
+
+	 class GossFncsResponseEvent implements GossResponseEvent{
+		Boolean isInitialized;
+		StatusReporter statusReporter;
+		int simulationId;
+		public GossFncsResponseEvent(StatusReporter reporter, Boolean initialized, int id) {
+			statusReporter = reporter;
+			isInitialized = initialized;
+			simulationId = id;
+		}
+		 
+		 
+		@Override
+		public void onMessage(Serializable response) {
+			try{
+				//TODO: check response from fncs_goss_bridge
+				//Parse response
+				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
+				//TODO, just send output???
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
+				
+				Gson  gson = new Gson();
+				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
+				System.out.println("MESSAGE RESPONSE "+responseJson);
+				if("isInitialized".equals(responseJson.command)){
+					System.out.println("RESPONSE "+responseJson.response);
+					if("True".equals(responseJson.response)){
+						isInitialized = true;
+					}
+				} else {
+					System.out.println("RESPONSE COMMAND "+responseJson.command);
+					//??
+				}
+				
+				
+				
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+		}
+	 }
 	
 	private void sendTimesteps(SimulationConfig simulationConfig) throws ParseException, InterruptedException{
 		// Send fncs timestep updates for the specified duration.
@@ -253,7 +271,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	
 	
-	private static void watch(final Process process, String processName) {
+	private void watch(final Process process, String processName) {
 	    new Thread() {
 	        public void run() {
 	            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
