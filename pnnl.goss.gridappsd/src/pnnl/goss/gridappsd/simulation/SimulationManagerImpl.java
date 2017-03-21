@@ -102,7 +102,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					Process gridlabdProcess = null;
 					Process fncsProcess = null;
 					Process fncsBridgeProcess = null;
-					boolean isInitialized = false;
+					InitializedTracker isInitialized = new InitializedTracker();
 					try{
 					
 						//Start FNCS
@@ -153,17 +153,21 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
-						while(!isInitialized){
+						while(!isInitialized.isInited){
 							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
 							//This call would return true/false for initialization and simulation output of time step 0.
 							//TODO listen for response to this
-							System.out.println("CHECKING ISINITIALIZED");
+							System.out.println("CHECKING ISINITIALIZED "+isInitialized.isInited+" "+isInitialized);
+
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
 //							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
 //							System.out.println("ISINITIALIZED RESPONSE "+response);
 							Thread.sleep(1000);
 							
 						}
+
+                                                sendTimesteps(simulationConfig); 
+					        client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
 						
 					}
 					catch(Exception e){
@@ -196,15 +200,17 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 		
 	}
-	
+        class InitializedTracker {
+		public boolean isInited = false;
+        }	
 
 	 class GossFncsResponseEvent implements GossResponseEvent{
-		Boolean isInitialized;
+		InitializedTracker initializedTracker;
 		StatusReporter statusReporter;
 		int simulationId;
-		public GossFncsResponseEvent(StatusReporter reporter, Boolean initialized, int id) {
+		public GossFncsResponseEvent(StatusReporter reporter, InitializedTracker initialized, int id) {
 			statusReporter = reporter;
-			isInitialized = initialized;
+			initializedTracker = initialized;
 			simulationId = id;
 		}
 		 
@@ -224,7 +230,8 @@ public class SimulationManagerImpl implements SimulationManager{
 				if("isInitialized".equals(responseJson.command)){
 					System.out.println("RESPONSE "+responseJson.response);
 					if("True".equals(responseJson.response)){
-						isInitialized = true;
+                                                System.out.println("Is initialized! "+initializedTracker);
+						initializedTracker.isInited = true;
 					}
 				} else {
 					System.out.println("RESPONSE COMMAND "+responseJson.command);
@@ -281,7 +288,8 @@ public class SimulationManagerImpl implements SimulationManager{
 	                    System.out.println(line);
 	                }
 	            } catch (IOException e) {
-	                e.printStackTrace();
+	                System.err.println("Error on process "+processName);
+                        e.printStackTrace();
 	            }
 	        }
 	    }.start();
