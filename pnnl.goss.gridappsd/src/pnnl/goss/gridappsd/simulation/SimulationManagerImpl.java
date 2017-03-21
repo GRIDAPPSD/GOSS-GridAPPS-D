@@ -109,7 +109,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO, verify no errors on this
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 //						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
-						ProcessBuilder fncsBuilder = new ProcessBuilder("FNCS_LOG_LEVEL=DEBUG4 "+getPath(GridAppsDConstants.FNCS_PATH), "2");
+						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
 						fncsBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs.log"));
 						fncsProcess = fncsBuilder.start();
@@ -124,9 +124,9 @@ public class SimulationManagerImpl implements SimulationManager{
 //						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						
 						
-						ProcessBuilder gridlabDBuilder = new ProcessBuilder("FNCS_LOG_LEVEL=DEBUG4 "+getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
+						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
-						fncsBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"gridlabd.log"));
+						gridlabDBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"gridlabd.log"));
 						//launch from directory containing simulation files
 						gridlabDBuilder.directory(simulationFile.getParentFile());
 						gridlabdProcess = gridlabDBuilder.start();
@@ -141,9 +141,9 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 //						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("FNCS_LOG_LEVEL=DEBUG4 "+"python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
+						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
-						fncsBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
+						fncsBridgeBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
 						fncsBridgeProcess = fncsBridgeBuilder.start();
 						// Watch the process
 						watch(fncsBridgeProcess, "FNCS GOSS Bridge");

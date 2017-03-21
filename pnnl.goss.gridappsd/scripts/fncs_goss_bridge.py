@@ -58,6 +58,7 @@ class GOSSListener(object):
             logger.info('sending fncs output message '+message)
             gossConnection.send(output_to_goss_topic , json.dumps(message))
         elif jsonmsg['command'] == 'stop':
+            fncs.finalize()
             fncs.die()
             sys.exit()
     except Exception as e:
@@ -106,7 +107,7 @@ def _registerWithFncsBroker(
             'broker' : brokerLocation,
             'values' : {
                 simulationId : {
-                    'topic' : simulationId + '/Output',
+                    'topic' : simulationId + '/fncs_output',
                     'default' : '{}',
                     'type' : 'JSON',
                     'list' : 'false'
@@ -199,16 +200,21 @@ def _getFncsBusMessages(simulationId):
     Function exceptions:
         ValueError()
     '''
-    simulatorMessageOutput = None
-    if simulationId == None or simulationId == '' or type(simulationId) != str:
-        raise ValueError(
-            'simulationId must be a nonempty string.\n'
-            + 'simulationId = {0}'.format(simulationId))
-    messageEvents = fncs.get_events()
-    if simulationId in messageEvents:
-        simulatorMessageOutput = fncs.get_value(simulationId)
-    return simulatorMessageOutput
-
+    try:
+        simulatorMessageOutput = None
+        if simulationId == None or simulationId == '' or type(simulationId) != str:
+            raise ValueError(
+                'simulationId must be a nonempty string.\n'
+                + 'simulationId = {0}'.format(simulationId))
+        logger.debug('about to get fncs events')
+        messageEvents = fncs.get_events()
+        logger.debug('fncs events '+str(messageEvents))
+        if simulationId in messageEvents:
+            simulatorMessageOutput = fncs.get_value(simulationId)
+        logger.debug('simulatorMessageOutput '+str(simulatorMessageOutput))
+        return simulatorMessageOutput
+    except Exception as e:
+        logger.error('Error on get FncsBusMessages for '+str(simulationId)+' '+str(e))
 def _doneWithTimestep(currentTime):
     '''tell the fncs_broker to move to the next time step.
     
@@ -221,19 +227,23 @@ def _doneWithTimestep(currentTime):
         RuntimeError()
         ValueError()
     '''
-    logger.debug('In done with timestep '+str(currentTime))
-    if currentTime == None or type(currentTime) != int:
-        raise ValueError(
-            'currentTime must be an integer.\n'
-            + 'currentTime = {0}'.format(currentTime))
-    timeRequest = currentTime + 1
-    timeApproved = fncs.time_request(timeRequest)
-    if timeApproved != timeRequest:
-        raise RuntimeError(
-            'The time approved from fncs_broker is not the time requested.\n'
-            + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest, 
-            timeApproved))
-
+    try:
+        logger.debug('In done with timestep '+str(currentTime))
+        if currentTime == None or type(currentTime) != int:
+            raise ValueError(
+                'currentTime must be an integer.\n'
+                + 'currentTime = {0}'.format(currentTime))
+        timeRequest = currentTime + 1
+        logger.debug('calling time_request '+str(timeRequest))
+        timeApproved = fncs.time_request(timeRequest)
+        logger.debug('time approved '+str(timeApproved))
+        if timeApproved != timeRequest:
+            raise RuntimeError(
+                'The time approved from fncs_broker is not the time requested.\n'
+                + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest, 
+                timeApproved))
+    except Exception as e:
+        print('Error in fncs timestep '+str(e))
             
 def _registerWithGOSS(username,password,gossServer='localhost', 
                       stompPort='61613',):
