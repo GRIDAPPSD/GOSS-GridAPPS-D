@@ -14,13 +14,16 @@ import math
 import copy
 
 
-class VVC():
+__version__ = '0.1'
 
-    def __init__(self):
+
+class VVC(object):
+
+    def __init__(self, defaultConfig, regConfig, capConfig):
         # Initialize Configurations
-        self.BasicConfig = {}
-        self.RegConfig = {}
-        self.CapConfig = {}
+        self.BasicConfig = defaultConfig
+        self.RegConfig = regConfig
+        self.CapConfig = capConfig
         self.VoltSensor = {} # Initialize voltage measurement inputs in dict - 'sensor_name': [complex_volt_A, complex_volt_B, complex_volt_C]
         self.VoltReg = {} # Initialize regulator to-side voltages
         self.RegTap = {} # Initialize regulator tap positions (integer)
@@ -58,43 +61,43 @@ class VVC():
         # Read data from user config file (may be an .txt file)
         # Set Default Configuration
 
-        self.BasicConfig = {
-        'name':'CVVC', # name of this VVO control
-        'control_method' : 'ACTIVE',  # ['ACTIVE','STANDBY']
-        'capacitor_delay': 60.0,  # Default delay for capacitors
-        'regulator_delay': 60.0,  # Default delay for regulator
-        'desired_pf': 0.99, # Desired power factor for the system
-        'd_max': 0.9, # Scaling constant for capacitor switching on - typically 0.3 - 0.6
-        'd_min': 0.1, # Scaling constant for capacitor switching off - typically 0.1 - 0.4
-        'substation_link': 'HVMV_Sub',
-        'regulator_list': ['FEEDER_REG','VREG2','VREG3','VREG4'], # List of regulators, separated by commas
-        'capacitor_list': ['CapBank0','CapBank1','CapBank2','CapBank3'], # List of controllable capacitors, separated by commas
-        'voltage_measurements': ['L2955047,1','L3160107,1','L2673313,2','L2876814,2','M1047574,3','L3254238,4'],
-        # For example, 'L2955047,1' indicates sensor 'L2955047' is communicated with reg.# 1, which is 'FEEDER_REG'
-        'maximum_voltages': [7500, 7501, 7502, 7503], # Minimum allowable voltage of the system
-        'minimum_voltages': [6500, 6501, 6502, 6503],
-        'max_vdrop': [5200, 5201, 5202, 5203],
-        'high_load_deadband': [100, 100, 100, 100],
-        'desired_voltages': [7000, 7001, 7002, 7003],   # List of desired, or target voltages for the volt_var_control object to maintain.
-        'low_load_deadband': [100, 100, 100, 100]
-        }
-
-        self.RegConfig = { # in this case, four regulators
-        'band_center' : [7500, 7500, 7500, 7500], # associated with num_regs, V
-        'band_width' : [120, 120, 120, 120], # V
-        'regulation' : [0.1, 0.1, 0.1, 0.1], # pu, 10%
-        'raise_taps': [16, 16, 16, 16],
-        'lower_taps': [16, 16, 16, 16],
-        'time_delay' : [60, 60, 60, 60],
-        'control_enum': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL'],   # 'MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'
-        'control_level_enum': ['INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL']   # 'INDIVIDUAL','BANK'
-        }
-
-        self.CapConfig = {
-        'capacitor_size': [0.4, 0.3, 0.3, 0.3], # MVAr, for each phase. Here, assume balanced CapBank
-        'pt_phase': ['111', '111', '111', '111'], # Participating phases
-        'CapControl': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL']   # 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
-        }
+#         self.BasicConfig = {
+#         'name':'CVVC', # name of this VVO control
+#         'control_method' : 'ACTIVE',  # ['ACTIVE','STANDBY']
+#         'capacitor_delay': 60.0,  # Default delay for capacitors
+#         'regulator_delay': 60.0,  # Default delay for regulator
+#         'desired_pf': 0.99, # Desired power factor for the system
+#         'd_max': 0.9, # Scaling constant for capacitor switching on - typically 0.3 - 0.6
+#         'd_min': 0.1, # Scaling constant for capacitor switching off - typically 0.1 - 0.4
+#         'substation_link': 'HVMV_Sub',
+#         'regulator_list': ['FEEDER_REG','VREG2','VREG3','VREG4'], # List of regulators, separated by commas
+#         'capacitor_list': ['CapBank0','CapBank1','CapBank2','CapBank3'], # List of controllable capacitors, separated by commas
+#         'voltage_measurements': ['L2955047,1','L3160107,1','L2673313,2','L2876814,2','M1047574,3','L3254238,4'],
+#         # For example, 'L2955047,1' indicates sensor 'L2955047' is communicated with reg.# 1, which is 'FEEDER_REG'
+#         'maximum_voltages': [7500, 7501, 7502, 7503], # Minimum allowable voltage of the system
+#         'minimum_voltages': [6500, 6501, 6502, 6503],
+#         'max_vdrop': [5200, 5201, 5202, 5203],
+#         'high_load_deadband': [100, 100, 100, 100],
+#         'desired_voltages': [7000, 7001, 7002, 7003],   # List of desired, or target voltages for the volt_var_control object to maintain.
+#         'low_load_deadband': [100, 100, 100, 100]
+#         }
+# 
+#         self.RegConfig = { # in this case, four regulators
+#         'band_center' : [7500, 7500, 7500, 7500], # associated with num_regs, V
+#         'band_width' : [120, 120, 120, 120], # V
+#         'regulation' : [0.1, 0.1, 0.1, 0.1], # pu, 10%
+#         'raise_taps': [16, 16, 16, 16],
+#         'lower_taps': [16, 16, 16, 16],
+#         'time_delay' : [60, 60, 60, 60],
+#         'control_enum': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL'],   # 'MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'
+#         'control_level_enum': ['INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL']   # 'INDIVIDUAL','BANK'
+#         }
+# 
+#         self.CapConfig = {
+#         'capacitor_size': [0.4, 0.3, 0.3, 0.3], # MVAr, for each phase. Here, assume balanced CapBank
+#         'pt_phase': ['111', '111', '111', '111'], # Participating phases
+#         'CapControl': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL']   # 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
+#         }
 
 
         # count the number of regulators and capacitor banks
@@ -216,7 +219,6 @@ class VVC():
                         raise ValueError('More than 3 phases for this sensor !')
 
         # example: self.MeasPhases = [['ABC', 'ABC'], ['AC', 'AB'], ['C'], ['BC']], corresponding to the four regulators
-
 
     def VVCReg(self, t0):
         # Initialize some local variables
@@ -783,16 +785,77 @@ class VVC():
                 if self.SubLinkPwr['curr_pf'] < 0:  # Negative current value - implies capacitive loading
                     if self.BasicConfig['desired_pf'] > 0:  # Capacitve is desired, see if we can do something
                         if -self.BasicConfig['desired_pf'] > self.SubLinkPwr['curr_pf']:
+                            pass
+                        
+def comment_remover(text):
+    out = ""
+    for line in text.split("\n"):
+        line = line.partition('#')[0]
+        line = line.rstrip()
+        if line:
+            out += line + "\n"
+    return out
 
 
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    import argparse
+    import json
+    import os
+    
+    default_config_file = os.path.join(
+        os.path.dirname(__file__), "defaults.json")
+    
+    parser = argparse.ArgumentParser(
+        version=__version__)
+    # all of these arguments are required, however one is set to default to the
+    # defaults.json file in the current application directory.  
+    #
+    # docks for argparser are locate here
+    # https://docs.python.org/2.7/library/argparse.html
+    #
+    # After the call to parser.parse_args the returned object will have open
+    # file references to each of the different json config files.  I am leaveing
+    # comments in the different json files so we have to strip all of those off
+    # before we pass it to the json parser so we can get dictionary objects finally
+    # pass to the constructor of the VVC.
+    parser.add_argument('-d', '--default-config', default=default_config_file,
+                        type=file, dest='defaults')
+    parser.add_argument('-r', '--regulator-config', required=True,
+                        type=file, dest='regulators')
+    parser.add_argument('-c', '--capacitor-config', required=True,
+                        type=file, dest='capacitors')
+    
+    opts = parser.parse_args()
+    
+    # Remove the comments from the passed files.
+    defaults = comment_remover(opts.defaults.read())
+    capacitors = comment_remover(opts.capacitors.read())
+    regulators = comment_remover(opts.regulators.read())
+    
+    print('defaults')
+    print('-'*80)
+    print(defaults)
+    
+    print('capacitors')
+    print('-'*80)
+    print(capacitors)
+    
+    print('regulators')
+    print('-'*80)
+    print(regulators)
+    
+    print('-'*80)
+    print('-'*80)
+    # Create dictionary objects from the json string so the VVC class can deal with
+    # them
+    defaultdict = json.loads(defaults)
+    capacitordict = json.loads(capacitors)
+    regulatordict = json.loads(regulators)
+    
+    # Create the VVC object here
+    vvc = VVC(defaultdict, regulatordict, capacitordict)
+ 
+    # Now run the model or control example.
+    
+    
+    
