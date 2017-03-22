@@ -421,6 +421,23 @@ public class CIMDataSQLtoRDF {
 		booleanColumns.add("ShuntCompensator.grounded");
 		booleanColumns.add("TransformerEnd.grounded");
 		booleanColumns.add("EnergyConsumer.grounded");
+		booleanColumns.add("TapChangerControl.enabled");
+		booleanColumns.add("TapChangerControl.discrete");
+		booleanColumns.add("TapChangerControl.lineDropCompensation");
+		booleanColumns.add("cim:RegulatingControl.enabled.enabled");
+		booleanColumns.add("cim:RegulatingControl.enabled.discrete");
+		booleanColumns.add("cim:RegulatingControl.enabled.lineDropCompensation");
+		booleanColumns.add("RatioTapChanger.ltcFlag");
+		booleanColumns.add("RatioTapChanger.controlEnabled");
+		booleanColumns.add("TapChanger.ltcFlag");
+		booleanColumns.add("TapChanger.controlEnabled");		
+		booleanColumns.add("LoadBreakSwitch.normalOpen");
+		booleanColumns.add("Switch.normalOpen");
+		booleanColumns.add("LoadBreakSwitch.open");
+		booleanColumns.add("Switch.open");
+		booleanColumns.add("LoadBreakSwitch.retained");
+		booleanColumns.add("Switch.retained");
+		booleanColumns.add("LoadResponseCharacteristic.exponentModel");
 	
 		joinFields.put("ShortCircuitTest","GroundedEnds");
 		joinFields.put("Asset","PowerSystemResources");
