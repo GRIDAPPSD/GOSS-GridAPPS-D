@@ -120,22 +120,22 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				File rdfFile = new File(tempDataPath+"rdfOut"+new Date().getTime()+".rdf");
 				rdfOut = new FileWriter(rdfFile);
 				rdfWriter = new BufferedWriter(rdfOut);
-				//CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
-				//sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
-				//rdfWriter.flush();
+				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
+				sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
+				rdfWriter.flush();
 				
 				String simulationName = dataRequest.getSimulation_config().simulation_name;
 				//call cim to glm
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
-                RunCommandLine.runCommand("cp /tmp/ieee8500_base.glm "+tempDataPath);				
+                //RunCommandLine.runCommand("cp /tmp/ieee8500_base.glm "+tempDataPath);				
 				//generate simulation base file
 				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
 				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
 				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
-				//rdfToGLM.process(args);
+				rdfToGLM.process(args);
 				
 				//cleanup rdf file
 //				rdfFile.delete();
