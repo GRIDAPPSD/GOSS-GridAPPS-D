@@ -7,34 +7,69 @@ Created on Jan 6, 2017
 import fncs
 import json
 import sys
-import stomp 
+import time
+import stomp
+import logging 
 
-input_from_goss_topic = 'goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
-output_to_goss_topic = 'goss/gridappsd/fncs/output' #this should match GridAppsDConstants.topic_FNCS_output
+input_from_goss_topic = '/topic/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
+input_from_goss_queue = '/queue/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
+
+output_to_goss_topic = '/topic/goss/gridappsd/fncs/output' #this should match GridAppsDConstants.topic_FNCS_output
+output_to_goss_queue = '/queue/goss/gridappsd/fncs/output' #this should match GridAppsDConstants.topic_FNCS_output
 gossConnection= None
-isInitialized = None
+isInitialized = False 
 simulationId = None
+
+logger = logging.getLogger('fncs_goss_bridge')
+hdlr = logging.FileHandler('/home/gridappsd/var/log/fncs_goss_bridge.log')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr) 
+logger.setLevel(logging.DEBUG)
 
 class GOSSListener(object):
   def on_message(self, headers, msg):
-    message = ''
-    print(msg)
-    if msg['command'] == 'isInitialized':
-        message['response'] = isInitialized
-        message['output'] = _getFncsBusMessages(simulationId)
-        gossConnection.send(output_to_goss_topic , message)
-    elif msg['command'] == 'update':
-        _publishToFncsBus(simulationId, gossMessage) #does not return
-    elif msg['command'] == 'nextTimestep':
-        currentTime = msg['currentTime']
-        _doneWithTimestep(currentTime) #currentTime is incrementing integer 0 ,1, 2.... representing seconds
-        message['output'] = _getFncsBusMessages(simulationId)
-        gossConnection.send(output_to_goss_topic , message)
-    elif msg['command'] == 'stop':
-        fncs.die()
-    
+    message = {}
+    try:
+        logger.info('received message '+str(msg))
+        jsonmsg = json.loads(str(msg))
+        if jsonmsg['command'] == 'isInitialized':
+            logger.debug('isInitialized check: '+str(isInitialized));
+            message['command'] = 'isInitialized'
+            message['response'] = str(isInitialized)
+            if (simulationId != None):
+                message['output'] = _getFncsBusMessages(simulationId)
+            logger.debug('Added isInitialized output, sending message '+str(message)+' connection '+str(gossConnection))
+
+            gossConnection.send(output_to_goss_topic , json.dumps(message))
+            gossConnection.send(output_to_goss_queue , json.dumps(message))
+        elif jsonmsg['command'] == 'update':
+            message['command'] = 'update'
+            _publishToFncsBus(simulationId, gossMessage) #does not return
+        elif jsonmsg['command'] == 'nextTimeStep':
+            logger.debug('is next timestep')
+            message['command'] = 'nextTimeStep'
+            currentTime = jsonmsg['currentTime']
+            logger.info('incrementing to '+str(currentTime))
+            _doneWithTimestep(currentTime) #currentTime is incrementing integer 0 ,1, 2.... representing seconds
+            logger.info('done with timestep '+str(currentTime))
+            logger.info('simulation id '+str(simulationId))
+            message['output'] = _getFncsBusMessages(simulationId)
+            logger.info('sending fncs output message '+message)
+            gossConnection.send(output_to_goss_topic , json.dumps(message))
+        elif jsonmsg['command'] == 'stop':
+            fncs.finalize()
+            fncs.die()
+            sys.exit()
+    except Exception as e:
+        print('Error in command '+str(e))
+  def on_error(self, headers, message):
+    logger.error('Error in goss listener '+str(message))
+  def on_disconnected(self):
+    logger.error('Disconnected')
+  
 def _registerWithFncsBroker(
-        simulationId, brokerLocation='tcp://localhost:5570'):
+        simId, brokerLocation='tcp://localhost:5570'):
     '''Register with the fncs_broker and return.
     
     Function arguments:
@@ -49,43 +84,60 @@ def _registerWithFncsBroker(
         RuntimeError()
         ValueError()
     '''
-    if simulationId == None or simulationId == '' or type(simulationId) != str:
-        raise ValueError(
-            'simulationId must be a nonempty string.\n'
-            + 'simulationId = {0}'.format(simulationId))
-    if (brokerLocation == None or brokerLocation == ''
-            or type(brokerLocation) != str):
-        raise ValueError(
-            'brokerLocation must be a nonempty string.\n' 
-            + 'brokerLocation = {0}'.format(brokerLocation))
-    fncsConfiguration = {
-        'name' : 'FNCS_GOSS_Bridge_' + simulationId,
-        'time_delta' : '1s',
-        'broker' : brokerLocation,
-        'values' : {
-            simulationId : {
-                'topic' : simulationId + '/Output',
-                'default' : '{}',
-                'type' : 'JSON',
-                'list' : 'false'
+    global simulationId
+    global isInitialized
+    simulationId = simId
+    try:
+        logger.info('Registering with FNCS broker '+str(simulationId)+' and broker '+brokerLocation)
+        
+        logger.info('still connected to goss 1 '+str(gossConnection.is_connected()))
+        if simulationId == None or simulationId == '' or type(simulationId) != str:
+            raise ValueError(
+                'simulationId must be a nonempty string.\n'
+                + 'simulationId = {0}'.format(simulationId))
+    
+        if (brokerLocation == None or brokerLocation == ''
+                or type(brokerLocation) != str):
+            raise ValueError(
+                'brokerLocation must be a nonempty string.\n' 
+                + 'brokerLocation = {0}'.format(brokerLocation))
+        fncsConfiguration = {
+            'name' : 'FNCS_GOSS_Bridge_' + simulationId,
+            'time_delta' : '1s',
+            'broker' : brokerLocation,
+            'values' : {
+                simulationId : {
+                    'topic' : simulationId + '/fncs_output',
+                    'default' : '{}',
+                    'type' : 'JSON',
+                    'list' : 'false'
+                }
             }
-        }
-    }
-    configurationZpl = ('name = {0}\n'.format(fncsConfiguration['name'])
-        + 'time_delta = {0}\n'.format(fncsConfiguration['time_delta'])
-        + 'broker = {0}\nvalues'.format(fncsConfiguration['broker']))
-    for x in fncsConfiguration['values'].keys():
-        configurationZpl += '\n    {0}'.format(x)
-        configurationZpl += '\n        topic = {0}'.format(
-            fncsConfiguration['values'][x]['topic'])
-        configurationZpl += '\n        default = {0}'.format(
-            fncsConfiguration['values'][x]['default'])
-        configurationZpl += '\n        type = {0}'.format(
-            fncsConfiguration['values'][x]['type'])
-        configurationZpl += '\n        list = {0}'.format(
-            fncsConfiguration['values'][x]['list'])
-    fncs.initialize(configurationZpl)
-    isInitialized = fncs.is_initialized()
+        }  
+    
+        
+        configurationZpl = ('name = {0}\n'.format(fncsConfiguration['name'])
+            + 'time_delta = {0}\n'.format(fncsConfiguration['time_delta'])
+            + 'broker = {0}\nvalues'.format(fncsConfiguration['broker']))
+        for x in fncsConfiguration['values'].keys():
+            configurationZpl += '\n    {0}'.format(x)
+            configurationZpl += '\n        topic = {0}'.format(
+                fncsConfiguration['values'][x]['topic'])
+            configurationZpl += '\n        default = {0}'.format(
+                fncsConfiguration['values'][x]['default'])
+            configurationZpl += '\n        type = {0}'.format(
+                fncsConfiguration['values'][x]['type'])
+            configurationZpl += '\n        list = {0}'.format(
+                fncsConfiguration['values'][x]['list'])
+        fncs.initialize(configurationZpl)
+        
+        isInitialized = fncs.is_initialized()
+        logger.info('registered with fncs '+str(isInitialized))
+    
+    
+    except Exception as e:
+        print('EXCEPTION '+str(e))
+
     if not fncs.is_initialized():
         raise RuntimeError(
             'fncs.initialize(configurationZpl) failed!\n'
@@ -105,6 +157,8 @@ def _publishToFncsBus(simulationId, gossMessage):
         RuntimeError()
         ValueError()
     '''
+    logger.debug('publish to fncs bus '+simulationId+' '+gossMessage)
+
     if simulationId == None or simulationId == '' or type(simulationId) != str:
         raise ValueError(
             'simulationId must be a nonempty string.\n'
@@ -130,6 +184,7 @@ def _publishToFncsBus(simulationId, gossMessage):
             'Unexpected error occured while executing json.loads(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
     fncsInputTopic = '{0}/Input'.format(simulationId)
+    logger.debug('fncs input topic '+fncsInputTopic)
     #fncs.publish_anon(fncsInputTopic, gossMessage)
     
 def _getFncsBusMessages(simulationId):
@@ -145,16 +200,21 @@ def _getFncsBusMessages(simulationId):
     Function exceptions:
         ValueError()
     '''
-    simulatorMessageOutput = None
-    if simulationId == None or simulationId == '' or type(simulationId) != str:
-        raise ValueError(
-            'simulationId must be a nonempty string.\n'
-            + 'simulationId = {0}'.format(simulationId))
-    messageEvents = fncs.get_events()
-    if simulationId in messageEvents:
-        simulatorMessageOutput = fncs.get_value(simulationId)
-    return simulatorMessageOutput
-
+    try:
+        simulatorMessageOutput = None
+        if simulationId == None or simulationId == '' or type(simulationId) != str:
+            raise ValueError(
+                'simulationId must be a nonempty string.\n'
+                + 'simulationId = {0}'.format(simulationId))
+        logger.debug('about to get fncs events')
+        messageEvents = fncs.get_events()
+        logger.debug('fncs events '+str(messageEvents))
+        if simulationId in messageEvents:
+            simulatorMessageOutput = fncs.get_value(simulationId)
+        logger.debug('simulatorMessageOutput '+str(simulatorMessageOutput))
+        return simulatorMessageOutput
+    except Exception as e:
+        logger.error('Error on get FncsBusMessages for '+str(simulationId)+' '+str(e))
 def _doneWithTimestep(currentTime):
     '''tell the fncs_broker to move to the next time step.
     
@@ -167,18 +227,23 @@ def _doneWithTimestep(currentTime):
         RuntimeError()
         ValueError()
     '''
-    if currentTime == None or type(currentTime) != int:
-        raise ValueError(
-            'currentTime must be an integer.\n'
-            + 'currentTime = {0}'.format(currentTime))
-    timeRequest = currentTime + 1
-    timeApproved = fncs.time_request(timeRequest)
-    if timeApproved != timeRequest:
-        raise RuntimeError(
-            'The time approved from fncs_broker is not the time requested.\n'
-            + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest, 
-            timeApproved))
-
+    try:
+        logger.debug('In done with timestep '+str(currentTime))
+        if currentTime == None or type(currentTime) != int:
+            raise ValueError(
+                'currentTime must be an integer.\n'
+                + 'currentTime = {0}'.format(currentTime))
+        timeRequest = currentTime + 1
+        logger.debug('calling time_request '+str(timeRequest))
+        timeApproved = fncs.time_request(timeRequest)
+        logger.debug('time approved '+str(timeApproved))
+        if timeApproved != timeRequest:
+            raise RuntimeError(
+                'The time approved from fncs_broker is not the time requested.\n'
+                + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest, 
+                timeApproved))
+    except Exception as e:
+        print('Error in fncs timestep '+str(e))
             
 def _registerWithGOSS(username,password,gossServer='localhost', 
                       stompPort='61613',):
@@ -209,18 +274,27 @@ def _registerWithGOSS(username,password,gossServer='localhost',
         raise ValueError(
             'stompPort must be a nonempty string.\n' 
             + 'stompPort = {0}'.format(stompPort))
+    global gossConnection
     gossConnection = stomp.Connection12([(gossServer, stompPort)])
     gossConnection.start()
-    gossConnection.connect(username,password)
+    gossConnection.connect(username,password, wait=True)
     gossConnection.set_listener('GOSSListener', GOSSListener())
     gossConnection.subscribe(input_from_goss_topic,1)
+    gossConnection.subscribe(input_from_goss_queue,2)
+
+    logger.info('registered with goss on topic '+input_from_goss_topic+' '+str(gossConnection.is_connected()))
+
+def _keepAlive():
+    while 1:
+        time.sleep(0.1) 
     
 if __name__ == "__main__":
     #TODO: send simulationId, fncsBrokerLocation, gossLocation, 
     #stompPort, username and password as commmand line arguments 
-    _registerWithGOSS('system','password',gossServer='localhost',stompPort='61613')
-    _registerWithFncsBroker('simulation1','tcp://localhost:5570')
+    simulationId = sys.argv[1]
+    _registerWithGOSS('system','manager',gossServer='127.0.0.1',stompPort='61613')
+    _registerWithFncsBroker(simulationId,'tcp://localhost:5570')
+    _keepAlive()
+
     
-    
-    
-    
+     

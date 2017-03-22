@@ -9,7 +9,7 @@ public class RunCommandLine {
 	static String line = null;
 	static String error = null;
 
-	public static void runCommand(String command) {
+	public static void runCommand(String command) throws Exception {
 		try {
 
 			Runtime r = Runtime.getRuntime();
@@ -32,6 +32,7 @@ public class RunCommandLine {
 			System.out.println("Exception @RunCommandLine:runCommand");
 			System.out.println(e.toString());
 			e.printStackTrace();
+			throw e;
 		}
 	}
 

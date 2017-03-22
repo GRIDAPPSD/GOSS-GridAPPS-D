@@ -1,0 +1,72 @@
+{
+	# nameofthisVVOcontrol
+	"name": "CVVC",
+	# ["ACTIVE","STANDBY"]
+	"control_method": "ACTIVE",
+	# Defaultdelayforcapacitors
+	"capacitor_delay":60.0,
+	#Defaultdelayforregulator
+	"regulator_delay": 60.0,
+	#Desiredpowerfactorforthesystem
+	"desired_pf": 0.99,
+	#Scalingconstantforcapacitorswitchingon-typically0.3-0.6
+	"d_max": 0.9,
+	#Scalingconstantforcapacitorswitchingoff-typically0.1-0.4
+	"d_min": 0.1,
+	"substation_link": "HVMV_Sub",
+	#Listofregulators
+	"regulator_list": [
+		"FEEDER_REG",
+		"VREG2",
+		"VREG3",
+		"VREG4"
+	],
+	#Listofcontrollablecapacitors
+	"capacitor_list": [
+		"CapBank0",
+		"CapBank1",
+		"CapBank2",
+		"CapBank3"
+	],
+	# For example, 'L2955047,Minimumallowablevoltageofthesystem1' indicates sensor 'L2955047' is communicated with reg.# 1, which is 'FEEDER_REG'
+	"voltage_measurements": [
+		"L2955047,1",
+		"L3160107,1",
+		"L2673313,2",
+		"L2876814,2",
+		"M1047574,3",
+		"L3254238,4"
+	],
+	#Minimumallowablevoltageofthesystem
+	"minimum_voltages": [
+		6500,
+		6501,
+		6502,
+		6503
+	],
+	"max_vdrop": [
+		5200,
+		5201,
+		5202,
+		5203
+	],
+	"high_load_deadband": [
+		100,
+		100,
+		100,
+		100
+	],
+	# List of desired, or target voltages for the volt_var_control object to maintain.
+	"desired_voltages": [
+		7000,
+		7001,
+		7002,
+		7003
+	],
+	"low_load_deadband": [
+		100,
+		100,
+		100,
+		100
+	]
+}

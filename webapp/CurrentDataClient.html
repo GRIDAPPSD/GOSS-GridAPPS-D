@@ -1,0 +1,74 @@
+<html>
+<head>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>
+<script src="js/stomp.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+simulationTopic = "/queue/goss/gridappsd/process/request/simulation";
+
+//Create client
+var client = Stomp.client( "ws://127.0.0.1:61614");
+client.heartbeat.incoming=0;
+client.heartbeat.outgoing=0;
+// this allows to display debug logs directly on the web page
+        //client.debug = function(str) {
+        //    $("#debug").append(str + "\n");
+        //};
+		client.error = function(str) {
+            $("#debug").append("Error "+str + "\n");
+        };
+//Make connection with server
+client.connect( "system", "manager",
+  function() {
+	client.subscribe("/topic/goss/system/tick", tickerCallback);
+
+  }
+);
+
+var statusCallback = function(message){
+	//var messageStr = JSON.parse(message2.body);
+	//alert(message);
+	$("#debug").append("Received message " +message.body + "\n");
+}
+var errCallback = function(message){
+	//var messageStr = JSON.parse(message2.body);
+	alert(message);
+	$("#debug").append("Received err " +message.body + "\n");
+}
+var tickerCallback = function(message){
+	//var messageStr = JSON.parse(message2.body);
+	//alert(message);
+	console.log("Received ticker " +message.body + "\n");
+}
+
+
+
+
+function sendControlMessage(message) {
+
+		//client.send('/topic/goss/gridappsd/process/request/simulation', {}, message)
+		var request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500\"}, "+
+		"\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"ieee8500\",\"power_flow_solver_method\":\"NR\"}}";
+	client.send(simulationTopic, {"reply-to" :"/temp-queue/response-queue"}, request);
+	client.subscribe("/temp-queue/response-queue", function(message) {
+		var simulationId = JSON.parse(message.body);
+		//alert(simulationId);
+		$("#debug").append("Received Simulation ID: " +simulationId + "\n");
+		
+		client.subscribe("/topic/goss/gridappsd/simulation/status/"+simulationId, statusCallback);
+	  });
+	  
+	  //stomp.subscribe("/temp-queue/response-queue")
+//stomp.publish("/queue/work-queue", "WORK", {"reply-to" => "/temp-queue/response-queue"})
+	
+}
+	
+</script>
+</head>
+<body>
+
+    <div id="message" value="" />
+    <pre id="debug" />
+    <button onclick="sendControlMessage()">Launch Simulation</button>
+</body>
+<html>

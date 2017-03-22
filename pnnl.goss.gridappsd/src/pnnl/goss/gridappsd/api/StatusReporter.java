@@ -20,7 +20,8 @@ public interface StatusReporter {
 	 * 
 	 * @param topioc
 	 * @param status
+	 * @throws Exception 
 	 */
-	void reportStatus(String topic, String status);
+	void reportStatus(String topic, String status) throws Exception;
 	
 }

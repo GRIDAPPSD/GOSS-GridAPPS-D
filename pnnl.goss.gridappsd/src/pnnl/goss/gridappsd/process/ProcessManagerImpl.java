@@ -12,14 +12,18 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
+import pnnl.goss.gridappsd.api.ProcessManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
@@ -29,7 +33,7 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  *
  */
 @Component
-public class ProcessManagerImpl {
+public class ProcessManagerImpl implements ProcessManager {
 		
 	private static Logger log = LoggerFactory.getLogger(ProcessManagerImpl.class);
 	
@@ -48,7 +52,7 @@ public class ProcessManagerImpl {
 	@Start
 	public void start(){
 		try{
-			
+			System.out.println("STARTING PROCESS MANAGER");
 			log.debug("Starting "+this.getClass().getName());
 			
 			Credentials credentials = new UsernamePasswordCredentials(
@@ -60,6 +64,8 @@ public class ProcessManagerImpl {
 				
 				@Override
 				public void onMessage(Serializable message) {
+					
+					System.out.println("PROCESS MANAGER GOT MESSAGE");
 					DataResponse event = (DataResponse)message;
 					
 					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
@@ -69,23 +75,44 @@ public class ProcessManagerImpl {
 							log.debug("Received simulation request: "+ event.getData());
 							
 							// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+							Gson  gson = new Gson();
+							
+							RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+							System.out.println("PARSED CONFIG "+config);
+							if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
+								//TODO return error
+							}
 							
 							//generate simulation id and reply to event's reply destination.
 							int simulationId = generateSimulationId();
-							client.publish(event.getReplyDestination(), simulationId);
+							try{
+								client.publish(event.getReplyDestination(), simulationId);
 							
-							//make request to configuration Manager to get power grid model file locations and names
-							log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
-							File simulationFile = configurationManager.getSimulationFile(simulationId, event.getData());
-						
-							log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
-							
-							//start simulation
-							log.debug("Starting simulation for id "+ simulationId);
-							simulationManager.startSimulation(simulationId, simulationFile);
-							log.debug("Starting simulation for id "+ simulationId);
-							
-//							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+								//make request to configuration Manager to get power grid model file locations and names
+								log.debug("Creating simulation and power grid model files for simulation Id "+ simulationId);
+								File simulationFile = configurationManager.getSimulationFile(simulationId, config);
+								if(simulationFile==null){
+									throw new Exception("No simulation file returned for request "+config);
+								}
+								
+								
+								log.debug("Simulation and power grid model files generated for simulation Id "+ simulationId);
+								
+								//start simulation
+								log.debug("Starting simulation for id "+ simulationId);
+								simulationManager.startSimulation(simulationId, simulationFile, config.getSimulation_config());
+								log.debug("Starting simulation for id "+ simulationId);
+								
+	//							new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+							}catch (Exception e){
+								e.printStackTrace();
+								try {
+									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Process Initialization error: "+e.getMessage());
+								} catch (Exception e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+							}
 						}
 						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
@@ -112,7 +139,7 @@ public class ProcessManagerImpl {
 		 * Get the latest simulation id from database and return +1 
 		 * Store the new id in database
 		 */
-		return new Random().nextInt();
+		return Math.abs(new Random().nextInt());
 	}
 	
 }
