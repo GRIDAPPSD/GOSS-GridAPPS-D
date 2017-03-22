@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -16,14 +17,19 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -96,7 +102,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					Process gridlabdProcess = null;
 					Process fncsProcess = null;
 					Process fncsBridgeProcess = null;
-					
+					InitializedTracker isInitialized = new InitializedTracker();
 					try{
 					
 						//Start FNCS
@@ -105,6 +111,7 @@ public class SimulationManagerImpl implements SimulationManager{
 //						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
+						fncsBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs.log"));
 						fncsProcess = fncsBuilder.start();
 						// Watch the process
 						watch(fncsProcess, "FNCS");
@@ -119,6 +126,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
+						gridlabDBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"gridlabd.log"));
 						//launch from directory containing simulation files
 						gridlabDBuilder.directory(simulationFile.getParentFile());
 						gridlabdProcess = gridlabDBuilder.start();
@@ -133,8 +141,9 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 //						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
+						fncsBridgeBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
 						fncsBridgeProcess = fncsBridgeBuilder.start();
 						// Watch the process
 						watch(fncsBridgeProcess, "FNCS GOSS Bridge");
@@ -143,46 +152,25 @@ public class SimulationManagerImpl implements SimulationManager{
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						
+						
 						//Subscribe to fncs-goss-bridge output topic
-						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
-							
-							@Override
-							public void onMessage(Serializable response) {
-								try{
-									//TODO: check response from fncs_goss_bridge
-									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
-									System.out.print(response);
-									
-									
-								}catch (Exception e){
-									e.printStackTrace();
-								}
-							}
-						});
+						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
-						//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
-						//This call would return true/false for initialization and simulation output of time step 0.
-						client.publish(GridAppsDConstants.topic_FNCS_input, "{'command': 'isInitialized'");
-						
-						// Send fncs timestep updates for the specified duration.
-						
-//						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-						SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-						String startTimeStr = simulationConfig.getStart_time();
-						Date startTime = sdf.parse(startTimeStr);
-						long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
-						long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
-						
-						while(currentTime < endTime){
-							//send next timestep to fncs bridge
-							String message = "{'command': 'nextTimeStep', 'currentTime': "+currentTime+"}";
-							client.publish(GridAppsDConstants.topic_FNCS_input, message);
+						while(!isInitialized.isInited){
+							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
+							//This call would return true/false for initialization and simulation output of time step 0.
+							//TODO listen for response to this
+							System.out.println("CHECKING ISINITIALIZED "+isInitialized.isInited+" "+isInitialized);
+
+							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
+//							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
+//							System.out.println("ISINITIALIZED RESPONSE "+response);
 							Thread.sleep(1000);
 							
-							currentTime += 1000;
 						}
-						
-						
+
+                        sendTimesteps(simulationConfig); 
+					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
 						
 					}
 					catch(Exception e){
@@ -215,6 +203,72 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 		
 	}
+        class InitializedTracker {
+		public boolean isInited = false;
+        }	
+
+	 class GossFncsResponseEvent implements GossResponseEvent{
+		InitializedTracker initializedTracker;
+		StatusReporter statusReporter;
+		int simulationId;
+		public GossFncsResponseEvent(StatusReporter reporter, InitializedTracker initialized, int id) {
+			statusReporter = reporter;
+			initializedTracker = initialized;
+			simulationId = id;
+		}
+		 
+		 
+		@Override
+		public void onMessage(Serializable response) {
+			try{
+				//TODO: check response from fncs_goss_bridge
+				//Parse response
+				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
+				//TODO, just send output???
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
+				
+				Gson  gson = new Gson();
+				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
+				System.out.println("MESSAGE RESPONSE "+responseJson);
+				if("isInitialized".equals(responseJson.command)){
+					System.out.println("RESPONSE "+responseJson.response);
+					if("True".equals(responseJson.response)){
+                                                System.out.println("Is initialized! "+initializedTracker);
+						initializedTracker.isInited = true;
+					}
+				} else {
+					System.out.println("RESPONSE COMMAND "+responseJson.command);
+					//??
+				}
+				
+				
+				
+			}catch (Exception e){
+				e.printStackTrace();
+			}
+		}
+	 }
+	
+	private void sendTimesteps(SimulationConfig simulationConfig) throws ParseException, InterruptedException{
+		// Send fncs timestep updates for the specified duration.
+		
+//		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		String startTimeStr = simulationConfig.getStart_time();
+		Date startTime = sdf.parse(startTimeStr);
+		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
+		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
+		int seconds = 0;
+		while(currentTime < endTime){
+			//send next timestep to fncs bridge
+			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
+			client.publish(GridAppsDConstants.topic_FNCS_input, message);
+			Thread.sleep(1000);
+			
+			seconds++;
+			currentTime += 1000;
+		}
+	}
 
 	
 	private String getPath(String key){
@@ -228,7 +282,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	
 	
-	private static void watch(final Process process, String processName) {
+	private void watch(final Process process, String processName) {
 	    new Thread() {
 	        public void run() {
 	            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -238,7 +292,8 @@ public class SimulationManagerImpl implements SimulationManager{
 	                    System.out.println(line);
 	                }
 	            } catch (IOException e) {
-	                e.printStackTrace();
+	                System.err.println("Error on process "+processName);
+                        e.printStackTrace();
 	            }
 	        }
 	    }.start();
