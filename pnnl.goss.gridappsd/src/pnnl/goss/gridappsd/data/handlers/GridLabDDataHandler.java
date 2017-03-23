@@ -30,10 +30,14 @@ import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.GridAppsDataHandler;
+import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import pnnl.goss.gridappsd.dto.RequestSimulation;
+import pnnl.goss.gridappsd.dto.SimulationOutput;
+import pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
+import pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
 @Component
@@ -48,14 +52,25 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
     private final String datasourceName = "gridappsd";
 	
 	public static void main(String[] args) {
+		
+		
 		PowerSystemConfig config = new PowerSystemConfig();
 		config.GeographicalRegion_name = "ieee8500_Region";
 		config.Line_name = "ieee8500";
 		config.SubGeographicalRegion_name = "ieee8500_SubRegion";
+		
+		String request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500\"}, "+
+				"\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"ieee8500\",\"power_flow_solver_method\":\"NR\","
+				+ "        \"simulation_output\": {\"output_objects\":[{\"name\":\"swt_a8869_48332_sw\", \"properties\": [\"switch\"]},{\"name\":\"swt_l9407_48332_sw\",\"properties\":[\"switch\"]},{\"name\":\"cap_capbank0c\",\"properties\":[\"parent\",\"cap_nominal_voltage\"]},{\"name\":\"cap_capbank2a\",\"properties\":[\"parent\",\"cap_nominal_voltage\"]}]},"
+				+ "        \"model_creation_config\":{\"load_scaling_factor\":\".2\",\"schedule_name\":\"ieeezipload\",\"z_fraction\":\".3\",\"i_fraction\":\".3\",\"p_fraction\":\".4\"}}}";
+
+		
+		
 		try {
-			new GridLabDDataHandler().handle(config, 12345, "d:\\tmp\\gridlabd-tmp\\");
+			GridAppsDataHandler handler = new GridLabDDataHandler();
+			
+			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new SimpleStatusReporterImpl());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -74,7 +89,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	
 	@Override
-	public Response handle(Serializable request, int simulationId, String tempDataPath) throws Exception {
+	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
+		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Generating GridLABD simulation files");
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
@@ -144,12 +160,14 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config json file
 				String configFileName = "configfile.json";
-				String configFileValue = "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+//				String configFileValue = "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+				String configFileValue = generateConfigValue(dataRequest.getSimulation_config().simulation_output);
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD output config file generated");
+
 				
 				//generate simulation config startup file
 				File startupFile = new File(tempDataPath+simulationName+"_startup.glm");
@@ -202,33 +220,31 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD startup file generated");
+
 				
 				return new DataResponse(startupFile);
 				
 				
 				
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("SQL error while generating GLM configuration",e);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("IO error while generating GLM configuration",e);
 			}finally {
 				try {
 					if(rdfWriter!=null) rdfWriter.close();
 					if(rdfOut!=null) rdfOut.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
 			}
-		} else {
-			throw new Exception("No jdbc pool avialable for "+datasourceName);
-		}
+//		} else {
+//			throw new Exception("No jdbc pool avialable for "+datasourceName);
+//		}
 		
 		
 	}
@@ -236,10 +252,41 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
+		return "Generates GridLABD config files for simulation";
 	}
 
+	/**
+	 * Create configfile.json string, should look something like 
+	 *   "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+	 * @param simulationOutput
+	 * @return
+	 */
+	protected String generateConfigValue(SimulationOutput simulationOutput){
+		StringBuffer configStr = new StringBuffer();
+		boolean isFirst = true;
+		configStr.append("{");
+		for(SimulationOutputObject obj: simulationOutput.getOutputObjects()){
+			if(!isFirst){
+				configStr.append(",");
+			}
+			isFirst = false;
+			
+			configStr.append("\""+obj.getName()+"\": [");
+			boolean isFirstProp = true;
+			for(String property: obj.getProperties()){
+				if(!isFirstProp){
+					configStr.append(",");
+				}
+				isFirstProp = false;
+				configStr.append("\""+property+"\"");
+			}
+			configStr.append("]");
+		}
+		
+		configStr.append("}");
+		
+		return configStr.toString();
+	}
 
 	@Override
 	public List<Class<?>> getSupportedRequestTypes() {

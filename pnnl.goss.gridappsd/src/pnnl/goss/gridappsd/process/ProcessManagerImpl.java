@@ -52,7 +52,6 @@ public class ProcessManagerImpl implements ProcessManager {
 	@Start
 	public void start(){
 		try{
-			System.out.println("STARTING PROCESS MANAGER");
 			log.debug("Starting "+this.getClass().getName());
 			
 			Credentials credentials = new UsernamePasswordCredentials(
@@ -64,8 +63,7 @@ public class ProcessManagerImpl implements ProcessManager {
 				
 				@Override
 				public void onMessage(Serializable message) {
-					
-					System.out.println("PROCESS MANAGER GOT MESSAGE");
+					log.debug("Process manager received message ");
 					DataResponse event = (DataResponse)message;
 					
 					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
@@ -78,9 +76,9 @@ public class ProcessManagerImpl implements ProcessManager {
 							Gson  gson = new Gson();
 							
 							RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
-							System.out.println("PARSED CONFIG "+config);
+							log.info("Parsed config "+config);
 							if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
-								//TODO return error
+								throw new RuntimeException("Invalid configuration received");
 							}
 							
 							//generate simulation id and reply to event's reply destination.
@@ -109,7 +107,6 @@ public class ProcessManagerImpl implements ProcessManager {
 								try {
 									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Process Initialization error: "+e.getMessage());
 								} catch (Exception e1) {
-									// TODO Auto-generated catch block
 									e1.printStackTrace();
 								}
 							}

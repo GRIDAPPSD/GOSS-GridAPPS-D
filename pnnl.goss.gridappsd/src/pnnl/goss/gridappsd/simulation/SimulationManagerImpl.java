@@ -58,29 +58,14 @@ public class SimulationManagerImpl implements SimulationManager{
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
 	
-	//TODO: Get these paths from pnnl.goss.gridappsd.cfg file
-//	String commandFNCS = "fncs_broker 2";
-//	String commandGridLABD = "gridlabd";
-//	String commandFNCS_GOSS_Bridge = "fncs_goss_bridge.py";
-	
 	
 	@Start
 	public void start() throws Exception{
-		System.out.println("STARTING SIMULATION MGR IMPL");
+		log.info("Starting simulation manager");
+		//TODO
 		Credentials credentials = new UsernamePasswordCredentials(
 				GridAppsDConstants.username, GridAppsDConstants.password);
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);
-//		try{ 
-//			
-//			log.debug("Starting "+this.getClass().getName());
-//			
-//			Credentials credentials = new UsernamePasswordCredentials(
-//					GridAppsDConstants.username, GridAppsDConstants.password);
-//			client = clientFactory.create(PROTOCOL.STOMP,credentials);
-//		}
-//		catch(Exception e){
-//			e.printStackTrace();
-//		}
 		
 	}
 	
@@ -92,7 +77,12 @@ public class SimulationManagerImpl implements SimulationManager{
 	@Override
 	public void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig){
 		
-			
+			try {
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Starting simulation "+simulationId);
+			} catch (Exception e2) {
+				log.warn("Error while reporting status "+e2.getMessage());
+			}
+
 			
 			Thread thread = new Thread(new Runnable() {
 				
@@ -136,11 +126,9 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
-						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-//						RunCommandLine.runCommand("python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
 						fncsBridgeBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
@@ -150,39 +138,41 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
-						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						
 						
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
 						while(!isInitialized.isInited){
-							//Send 'isInitialized' call to fncs-goss-bridge to check initialization.
+							//Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
+							//TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
 							//This call would return true/false for initialization and simulation output of time step 0.
-							//TODO listen for response to this
-							System.out.println("CHECKING ISINITIALIZED "+isInitialized.isInited+" "+isInitialized);
+							log.debug("Checking fncs is initialized, currently "+isInitialized.isInited);
 
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
-//							Serializable response = client.getResponse("{\"command\": \"isInitialized\"}", GridAppsDConstants.topic_FNCS_input, RESPONSE_FORMAT.JSON);
-//							System.out.println("ISINITIALIZED RESPONSE "+response);
 							Thread.sleep(1000);
 							
 						}
 
-                        sendTimesteps(simulationConfig); 
-					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
+						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Initialized");
 						
+						//Send the timesteps by second for the amount of time specified in the simulation config
+                        sendTimesteps(simulationConfig, simulationId); 
+                        
+                        
+                        //call to stop the fncs broker
+					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
+					    statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation "+simulationId+" complete");
 					}
 					catch(Exception e){
-							e.printStackTrace();
+							log.error("Error during simulation",e);
 							try {
 								statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation error: "+e.getMessage());
 							} catch (Exception e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
+								log.error("Error while reporting error status", e);
 							}
 					} finally {
-						//TODO shut down fncs broker and gridlabd if still running and bridge
+						//shut down fncs broker and gridlabd and bridge if still running
 						if(fncsProcess!=null){
 							fncsProcess.destroy();
 						}
@@ -221,23 +211,21 @@ public class SimulationManagerImpl implements SimulationManager{
 		@Override
 		public void onMessage(Serializable response) {
 			try{
-				//TODO: check response from fncs_goss_bridge
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
-				//TODO, just send output???
 				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge response:"+response);
 				
 				Gson  gson = new Gson();
 				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
-				System.out.println("MESSAGE RESPONSE "+responseJson);
+				log.debug("FNCS output message: "+responseJson);
 				if("isInitialized".equals(responseJson.command)){
-					System.out.println("RESPONSE "+responseJson.response);
+					log.debug("FNCS Initialized response: "+responseJson);
 					if("True".equals(responseJson.response)){
-                                                System.out.println("Is initialized! "+initializedTracker);
+                        log.info("FNCS is initialized "+initializedTracker);
 						initializedTracker.isInited = true;
 					}
 				} else {
-					System.out.println("RESPONSE COMMAND "+responseJson.command);
+					//System.out.println("RESPONSE COMMAND "+responseJson.command);
 					//??
 				}
 				
@@ -249,10 +237,9 @@ public class SimulationManagerImpl implements SimulationManager{
 		}
 	 }
 	
-	private void sendTimesteps(SimulationConfig simulationConfig) throws ParseException, InterruptedException{
+	private void sendTimesteps(SimulationConfig simulationConfig, int simulationId) throws Exception{
 		// Send fncs timestep updates for the specified duration.
 		
-//		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		String startTimeStr = simulationConfig.getStart_time();
 		Date startTime = sdf.parse(startTimeStr);
@@ -261,6 +248,7 @@ public class SimulationManagerImpl implements SimulationManager{
 		int seconds = 0;
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge
+			statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Sending timestep "+seconds);
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(1000);
@@ -289,11 +277,10 @@ public class SimulationManagerImpl implements SimulationManager{
 	            String line = null; 
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                    System.out.println(line);
+	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
-	                System.err.println("Error on process "+processName);
-                        e.printStackTrace();
+	                log.error("Error on process "+processName, e);
 	            }
 	        }
 	    }.start();

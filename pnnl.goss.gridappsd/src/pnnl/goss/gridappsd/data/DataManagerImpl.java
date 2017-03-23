@@ -47,7 +47,7 @@ public class DataManagerImpl implements DataManager {
 	
 	@Start
 	public void start(){
-		System.out.println("STARTING DATA MANAGER");
+		log.info("Starting data manager");
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -85,7 +85,7 @@ public class DataManagerImpl implements DataManager {
 			//iterate through all handlers until we get one with a result
 			for(GridAppsDataHandler handler: handlers){
 				//datahandler.handle
-				Response r = handler.handle(request, simulationId, tempDataPath);
+				Response r = handler.handle(request, simulationId, tempDataPath, statusReporter);
 				if(r!=null){
 					return r; 
 				}
