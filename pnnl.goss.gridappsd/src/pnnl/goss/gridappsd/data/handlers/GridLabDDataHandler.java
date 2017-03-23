@@ -242,9 +242,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				}
 				
 			}
-//		} else {
-//			throw new Exception("No jdbc pool avialable for "+datasourceName);
-//		}
+		} else {
+			throw new Exception("No jdbc pool avialable for "+datasourceName);
+		}
 		
 		
 	}
