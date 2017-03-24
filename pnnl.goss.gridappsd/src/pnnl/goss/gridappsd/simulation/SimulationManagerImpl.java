@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -41,6 +40,7 @@ import pnnl.goss.gridappsd.utils.RunCommandLine;
 public class SimulationManagerImpl implements SimulationManager{
 	
 	private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
+	final static int MAX_INIT_ATTEMPTS = 50;
 	
 	Client client = null; 
 	
@@ -152,13 +152,15 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
-						while(!isInitialized.isInited){
+						int initAttempts = 0;
+						while(!isInitialized.isInited && initAttempts<MAX_INIT_ATTEMPTS){
 							//Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
 							//TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
 							//This call would return true/false for initialization and simulation output of time step 0.
 							log.debug("Checking fncs is initialized, currently "+isInitialized.isInited);
 
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
+							initAttempts++;
 							Thread.sleep(1000);
 							
 						}
