@@ -16,7 +16,7 @@ public class SimulationConfig  implements Serializable {
 	public String simulator;
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public String start_time;
-	//frequency to send timesteps in simulation, default is 1000
+	//frequency to send timesteps in simulation (milliseconds), default is 1000
 	public int timestep_frequency = 1000;
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
 	public SimulationOutput simulation_output = new SimulationOutput();
