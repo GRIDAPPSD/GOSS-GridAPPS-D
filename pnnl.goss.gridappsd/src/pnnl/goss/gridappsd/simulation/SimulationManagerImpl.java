@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -21,7 +20,6 @@ import com.google.gson.Gson;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
@@ -29,7 +27,6 @@ import pnnl.goss.gridappsd.api.ConfigurationManager;
 import pnnl.goss.gridappsd.api.SimulationManager;
 import pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.gridappsd.dto.FncsBridgeResponse;
-import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.gridappsd.utils.RunCommandLine;
@@ -129,12 +126,14 @@ public class SimulationManagerImpl implements SimulationManager{
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						
 						
-						File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-						//copy zipload_schedule.player file
-						try{
-							RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath());
-						}catch(Exception e){
-							log.warn("Could not copy player file to working directory");
+						if(simulationConfig!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
+							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+							//copy zipload_schedule.player file
+							try{
+								RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+							}catch(Exception e){
+								log.warn("Could not copy player file to working directory");
+							}
 						}
 						
 						//Start GOSS-FNCS Bridge

@@ -37,7 +37,6 @@ import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationOutput;
 import pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
@@ -207,14 +206,14 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
 
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_SIMULATION_REQUEST.parse(dataRequest.getSimulation_config().start_time);
+				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
 				
 				
 				startupFileWriter.println("clock {");
-				startupFileWriter.println("     timezone \"PST+8PDT\";");
+				startupFileWriter.println("     timezone \"UTC0\";");
 				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
@@ -250,8 +249,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					startupFileWriter.println("	double value;");
 					startupFileWriter.println("}");
 					startupFileWriter.println("object player {");
-					startupFileWriter.println("	name zipload_schedule;");
-					startupFileWriter.println("	file zipload_schedule.player;");
+					startupFileWriter.println("	name "+modelConfig.schedule_name+";");
+					startupFileWriter.println("	file "+dataRequest.getSimulation_config().model_creation_config+".player;");
 					startupFileWriter.println("	loop 0;");
 					startupFileWriter.println("}");
 				}
