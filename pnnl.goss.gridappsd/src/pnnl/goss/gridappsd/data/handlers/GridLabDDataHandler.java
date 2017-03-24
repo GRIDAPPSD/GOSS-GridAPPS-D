@@ -145,14 +145,44 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
+				
+				ModelCreationConfig modelConfig = dataRequest.getSimulation_config().model_creation_config;
                 //RunCommandLine.runCommand("cp /tmp/ieee8500_base.glm "+tempDataPath);				
 				//generate simulation base file
 				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
-				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
-						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
-				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
-				rdfToGLM.process(args);
+//				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", "-n=zipload_schedule", "-z=0.3", "-i=0.3", "-p=0.4",
+				//Generate GLM using zipload
+				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
+					double zFraction = modelConfig.z_fraction;
+					if(zFraction==0)
+						zFraction = .3;
+					double iFraction = modelConfig.i_fraction;
+					if(iFraction==0)
+						iFraction = .3;
+					double pFraction = modelConfig.p_fraction; 
+					if(pFraction==0)
+						pFraction = .4;
+					
+					
+					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
+										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
+										rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+					log.debug("Generating GLM file with args "+args);
+					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+					rdfToGLM.process(args);
 				
+				} else {
+					//Generate GLM, no zipload
+					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+							"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names,		
+						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+					log.debug("Generating GLM file with args "+args);
+					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+					rdfToGLM.process(args);
+				
+				}
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
