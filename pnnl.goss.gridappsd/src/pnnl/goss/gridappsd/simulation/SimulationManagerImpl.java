@@ -164,12 +164,15 @@ public class SimulationManagerImpl implements SimulationManager{
 							Thread.sleep(1000);
 							
 						}
-
-						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Initialized");
 						
-						//Send the timesteps by second for the amount of time specified in the simulation config
-                        sendTimesteps(simulationConfig, simulationId); 
-                        
+						if(initAttempts<MAX_INIT_ATTEMPTS){
+							statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Initialized");
+							
+							//Send the timesteps by second for the amount of time specified in the simulation config
+	                        sendTimesteps(simulationConfig, simulationId); 
+						} else {
+							statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Initialization Failed");
+						}
                         
                         //call to stop the fncs broker
 					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
