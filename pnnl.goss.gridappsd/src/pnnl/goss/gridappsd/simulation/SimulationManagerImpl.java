@@ -132,7 +132,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 						//copy zipload_schedule.player file
 						try{
-							RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+" "+simulationFile.getParentFile().getAbsolutePath());
+							RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath());
 						}catch(Exception e){
 							log.warn("Could not copy player file to working directory");
 						}
