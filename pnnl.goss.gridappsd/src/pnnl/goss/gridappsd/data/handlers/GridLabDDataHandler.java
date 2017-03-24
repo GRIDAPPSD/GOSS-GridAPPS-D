@@ -37,6 +37,7 @@ import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationOutput;
 import pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
@@ -242,8 +243,20 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     parent "+simulationName+";");
 				startupFileWriter.println("     property message_type;");
 				startupFileWriter.println("     file "+simulationName+".csv;");
-				startupFileWriter.println("     interval 10;");
+				startupFileWriter.println("     interval 60;");
 				startupFileWriter.println("}");
+				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
+					startupFileWriter.println("class player {");
+					startupFileWriter.println("	double value;");
+					startupFileWriter.println("}");
+					startupFileWriter.println("object player {");
+					startupFileWriter.println("	name zipload_schedule;");
+					startupFileWriter.println("	file zipload_schedule.player;");
+					startupFileWriter.println("	loop 0;");
+					startupFileWriter.println("}");
+				}
+				
+				
 
 				startupFileWriter.println("#include \""+baseGLM+"\"");
 

@@ -32,6 +32,7 @@ import pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.gridappsd.utils.RunCommandLine;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -126,6 +127,15 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
+						
+						
+						File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						//copy zipload_schedule.player file
+						try{
+							RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+" "+simulationFile.getParentFile().getAbsolutePath());
+						}catch(Exception e){
+							log.warn("Could not copy player file to working directory");
+						}
 						
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
