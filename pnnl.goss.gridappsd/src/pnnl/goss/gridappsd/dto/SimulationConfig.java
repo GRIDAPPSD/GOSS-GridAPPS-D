@@ -17,9 +17,11 @@ public class SimulationConfig  implements Serializable {
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public String start_time;
 	
-	public String simulation_output;
-	//TODO
-	//{"objectname": ["prop1","prop2"],"object2name":["prop1","prop2"]}
+	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
+	public SimulationOutput simulation_output = new SimulationOutput();
+	
+	public ModelCreationConfig model_creation_config = new ModelCreationConfig(); 
+	
 
 	
 	
@@ -69,13 +71,20 @@ public class SimulationConfig  implements Serializable {
 	//getting rid of this for now, only 1 simulation at once
 //	public String[] simulator_name;
 
-	public String getOutput_object_id() {
+	
+	
+	public SimulationOutput getSimulation_output() {
 		return simulation_output;
 	}
-	public void setOutput_object_id(String output_object_id) {
-		simulation_output = simulation_output;
+	public void setSimulation_output(SimulationOutput simulation_output) {
+		this.simulation_output = simulation_output;
 	}
-	
+	public ModelCreationConfig getModel_creation_config() {
+		return model_creation_config;
+	}
+	public void setModel_creation_config(ModelCreationConfig modelCreationConfig) {
+		this.model_creation_config = modelCreationConfig;
+	}
 	//	@Override
 	public String toString() {
 		return "ClassPojo [power_flow_solver_method = "
