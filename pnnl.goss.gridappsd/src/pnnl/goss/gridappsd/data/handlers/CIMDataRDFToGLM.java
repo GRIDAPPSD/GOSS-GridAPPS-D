@@ -35,7 +35,7 @@ public class CIMDataRDFToGLM {
 	static final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	static final String baseURI = "http://gridlabd";
 
-	  static final String combinedOwl = "Combined.owl";
+	static final String combinedOwl = "Combined.owl";
 
 	  static final Complex pos120 = new Complex (-0.5, 0.5 * Math.sqrt(3.0));
 	  static final Complex neg120 = new Complex (-0.5, -0.5 * Math.sqrt(3.0));
@@ -1027,15 +1027,15 @@ public class CIMDataRDFToGLM {
 	    }
 	    buf.append ("  band_center " + String.format("%6g", Vreg) + ";\n");
 	    buf.append ("  band_width " + String.format("%6g", Vband) + ";\n");
-	    buf.append ("  time_delay " + String.format("%6g", initDelay) + ";\n");
+	    buf.append ("  dwell_time " + String.format("%6g", initDelay) + ";\n");
 	    buf.append ("  raise_taps " + String.format("%d", Math.abs (highStep - neutralStep)) + ";\n");
 	    buf.append ("  lower_taps " + String.format("%d", Math.abs (neutralStep - lowStep)) + ";\n");
 	    buf.append ("  regulation " + String.format("%6g", dReg) + ";\n");
 	    if (Vreg > 0.0 && Vband > 0.0 && bLTC) {
 	      if (bLineDrop) {
-	        buf.append("  Control LINE_DROP_COMP;\n");
+	        buf.append("  Control MANUAL; // LINE_DROP_COMP;\n");
 	      } else {
-	        buf.append("  Control OUTPUT_VOLTAGE;\n");
+	        buf.append("  Control MANUAL; // OUTPUT_VOLTAGE;\n");
 	      }
 	    } else {
 	      buf.append("  Control MANUAL;\n");
@@ -1377,7 +1377,7 @@ public class CIMDataRDFToGLM {
 	      if (s.equals(sMatch)) break;
 	    }
 
-	    StringBuffer buf = new StringBuffer("  control " + sMode + ";\n");
+	    StringBuffer buf = new StringBuffer("  control MANUAL; // " + sMode + ";\n");
 	    if (sMode.equals("VOLT"))  {
 	      buf.append ("  voltage_set_low " + String.format("%6g", dOn) + ";\n");
 	      buf.append ("  voltage_set_high " + String.format("%6g", dOff) + ";\n");
@@ -2091,7 +2091,7 @@ public class CIMDataRDFToGLM {
 	      if (itCtl.hasNext()) {
 	        out.println (GetCapControlData (model, res, itCtl.nextResource()));
 	        double delay = SafeDouble (res, ptAVRDelay, 10.0);
-	        out.println ("  time_delay " + String.format("%6g", delay) + ";");
+	        out.println ("  dwell_time " + String.format("%6g", delay) + ";");
 	      }
 
 	      out.println("}");
@@ -2808,7 +2808,7 @@ public class CIMDataRDFToGLM {
 //	    for (HashMap.Entry<String,SpacingCount> pair : mapSpacings.entrySet()) {
 //	      System.out.printf ("%s ==> %d, %d\n", pair.getKey(), pair.getValue().getNumConductors(), pair.getValue().getNumPhases());
 //	    }
-	  }
+	}
 	
 	
 	public static void main (String args[]) throws UnsupportedEncodingException, FileNotFoundException {
