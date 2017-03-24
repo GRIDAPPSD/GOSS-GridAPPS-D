@@ -260,7 +260,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Sending timestep "+seconds);
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
-			Thread.sleep(1000);
+			Thread.sleep(simulationConfig.timestep_frequency);
 			
 			seconds++;
 			currentTime += 1000;
