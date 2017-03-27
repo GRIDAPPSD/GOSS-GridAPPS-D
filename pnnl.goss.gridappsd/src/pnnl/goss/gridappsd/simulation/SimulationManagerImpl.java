@@ -262,7 +262,7 @@ public class SimulationManagerImpl implements SimulationManager{
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge
 			statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Sending timestep "+seconds);
-			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
+			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+(currentTime/1000)+"}";//seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(simulationConfig.timestep_frequency);
 			
