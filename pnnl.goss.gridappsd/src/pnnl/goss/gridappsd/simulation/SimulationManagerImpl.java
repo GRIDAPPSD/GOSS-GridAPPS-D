@@ -260,9 +260,9 @@ public class SimulationManagerImpl implements SimulationManager{
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
 		while(currentTime < endTime){
-			//send next timestep to fncs bridge
+			//send next timestep to fncs bridge 
 			statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Sending timestep "+seconds);
-			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+(currentTime/1000)+"}";//seconds+"}";
+			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(simulationConfig.timestep_frequency);
 			
