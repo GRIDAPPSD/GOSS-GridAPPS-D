@@ -126,7 +126,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
 						
 						
-						if(simulationConfig!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
+						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 							//copy zipload_schedule.player file
 							try{

@@ -250,7 +250,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					startupFileWriter.println("}");
 					startupFileWriter.println("object player {");
 					startupFileWriter.println("	name "+modelConfig.schedule_name+";");
-					startupFileWriter.println("	file "+dataRequest.getSimulation_config().model_creation_config+".player;");
+					startupFileWriter.println("	file "+modelConfig.schedule_name+".player;");
 					startupFileWriter.println("	loop 0;");
 					startupFileWriter.println("}");
 				}
