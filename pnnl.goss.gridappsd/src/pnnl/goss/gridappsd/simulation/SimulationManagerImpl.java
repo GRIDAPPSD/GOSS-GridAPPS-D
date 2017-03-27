@@ -137,7 +137,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						}
 						
 						//Start GOSS-FNCS Bridge
-						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
 						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
 						fncsBridgeBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
