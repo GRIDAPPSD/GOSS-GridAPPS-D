@@ -18,6 +18,9 @@ public class SimulationConfig  implements Serializable {
 	public String start_time;
 	//frequency to send timesteps in simulation (milliseconds), default is 1000
 	public int timestep_frequency = 1000;
+	//frequency to send timesteps in simulation (milliseconds), default is 1000
+	public int timestep_increment = 1000;
+
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
 	public SimulationOutput simulation_output = new SimulationOutput();
 	
@@ -79,6 +82,12 @@ public class SimulationConfig  implements Serializable {
 	}
 	public int getTimestep_frequency() {
 		return timestep_frequency;
+	}
+	public int getTimestep_increment() {
+		return timestep_increment;
+	}
+	public void setTimestep_increment(int timestep_increment) {
+		this.timestep_increment = timestep_increment;
 	}
 	public void setTimestep_frequency(int timestep_frequency) {
 		this.timestep_frequency = timestep_frequency;

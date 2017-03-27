@@ -267,7 +267,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			Thread.sleep(simulationConfig.timestep_frequency);
 			
 			seconds++;
-			currentTime += 1000;
+			currentTime += simulationConfig.timestep_increment;
 		}
 	}
 
