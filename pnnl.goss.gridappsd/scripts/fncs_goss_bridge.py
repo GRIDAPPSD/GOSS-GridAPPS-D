@@ -55,8 +55,11 @@ class GOSSListener(object):
             logger.info('done with timestep '+str(currentTime))
             logger.info('simulation id '+str(simulationId))
             message['output'] = _getFncsBusMessages(simulationId)
-            logger.info('sending fncs output message '+message)
-            gossConnection.send(output_to_goss_topic , json.dumps(message))
+            responsemsg = json.dumps(message)
+            logger.info('sending fncs output message '+str(responsemsg))
+
+            gossConnection.send(output_to_goss_topic , responsemsg)
+            gossConnection.send(output_to_goss_queue , responsemsg)
         elif jsonmsg['command'] == 'stop':
             fncs.finalize()
             fncs.die()

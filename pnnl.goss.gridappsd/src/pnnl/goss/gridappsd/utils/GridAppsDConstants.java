@@ -1,6 +1,7 @@
 package pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 public class GridAppsDConstants {
 	
@@ -44,6 +45,12 @@ public class GridAppsDConstants {
 	
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	
+	static{
+		SDF_GLM_CLOCK.setTimeZone(TimeZone.getTimeZone("UTC"));
+		SDF_SIMULATION_REQUEST.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 	
 	
 }

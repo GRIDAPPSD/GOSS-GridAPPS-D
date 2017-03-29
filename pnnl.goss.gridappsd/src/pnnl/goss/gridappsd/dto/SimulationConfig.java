@@ -16,10 +16,16 @@ public class SimulationConfig  implements Serializable {
 	public String simulator;
 	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
 	public String start_time;
+	//frequency to send timesteps in simulation (milliseconds), default is 1000
+	public int timestep_frequency = 1000;
+	//frequency to send timesteps in simulation (milliseconds), default is 1000
+	public int timestep_increment = 1000;
+
+	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
+	public SimulationOutput simulation_output = new SimulationOutput();
 	
-	public String simulation_output;
-	//TODO
-	//{"objectname": ["prop1","prop2"],"object2name":["prop1","prop2"]}
+	public ModelCreationConfig model_creation_config = new ModelCreationConfig(); 
+	
 
 	
 	
@@ -69,13 +75,32 @@ public class SimulationConfig  implements Serializable {
 	//getting rid of this for now, only 1 simulation at once
 //	public String[] simulator_name;
 
-	public String getOutput_object_id() {
+	
+	
+	public SimulationOutput getSimulation_output() {
 		return simulation_output;
 	}
-	public void setOutput_object_id(String output_object_id) {
-		simulation_output = simulation_output;
+	public int getTimestep_frequency() {
+		return timestep_frequency;
 	}
-	
+	public int getTimestep_increment() {
+		return timestep_increment;
+	}
+	public void setTimestep_increment(int timestep_increment) {
+		this.timestep_increment = timestep_increment;
+	}
+	public void setTimestep_frequency(int timestep_frequency) {
+		this.timestep_frequency = timestep_frequency;
+	}
+	public void setSimulation_output(SimulationOutput simulation_output) {
+		this.simulation_output = simulation_output;
+	}
+	public ModelCreationConfig getModel_creation_config() {
+		return model_creation_config;
+	}
+	public void setModel_creation_config(ModelCreationConfig modelCreationConfig) {
+		this.model_creation_config = modelCreationConfig;
+	}
 	//	@Override
 	public String toString() {
 		return "ClassPojo [power_flow_solver_method = "
