@@ -1,0 +1,48 @@
+body {
+	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+	font-size: 62.5%;
+}
+
+.a-0-star {
+	    background-image: url("images/0-star-rating.png");
+}
+.a-1-star {
+	    background-image: url("images/1-star-rating.png");
+}
+.a-2-star {
+	    background-image: url("images/2-star-rating.png");
+}
+.a-3-star {
+	    background-image: url("images/3-star-rating.png");
+}
+.a-4-star {
+	    background-image: url("images/4-star-rating.png");
+}
+.a-5-star {
+	    background-image: url("images/5-star-rating.png");
+}
+.a-icon-star {
+	width: 80px;
+    height: 18px;
+    position: relative;
+    vertical-align: text-top;
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+
+.icon-alt {
+	position: absolute;
+    left: -9999px;
+    top: auto;
+    display: block;
+    width: 1px;
+    height: 1px;
+    line-height: 1px;
+    font-size: 1px;
+    overflow: hidden;
+}
+.divScroll 
+{
+    height:150px;
+    overflow:auto;
+} 

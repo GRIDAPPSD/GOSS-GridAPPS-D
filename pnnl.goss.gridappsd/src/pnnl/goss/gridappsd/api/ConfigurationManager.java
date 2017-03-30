@@ -3,6 +3,9 @@ package pnnl.goss.gridappsd.api;
 import java.io.File;
 import java.io.Serializable;
 
+import pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import pnnl.goss.gridappsd.dto.RequestSimulation;
+
 /**
  * This class implements subset of functionalities for Internal Functions
  * 405 Simulation Manager and 406 Power System Model Manager.
@@ -22,7 +25,9 @@ public interface ConfigurationManager {
 	 * @param simulationId
 	 * @param configRequest
 	 * @return
+	 * @throws Exception 
 	 */
-	File getSimulationFile(int simulationId, Serializable request);
-	
+	File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception;
+	String getConfigurationProperty(String key);
+
 }

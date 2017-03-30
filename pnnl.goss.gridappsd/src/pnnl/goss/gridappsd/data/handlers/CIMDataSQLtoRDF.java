@@ -43,7 +43,7 @@ public class CIMDataSQLtoRDF {
 	static HashMap<String, String> referenceMap = new HashMap<String, String>();
 //	static List<String> typesWithParent = new ArrayList<String>();
 	static List<String> booleanColumns = new ArrayList<String>();
-	
+	static HashMap<String, String> joinFields = new HashMap<String, String>();
     private Logger log = LoggerFactory.getLogger(getClass());
 
 	
@@ -64,8 +64,9 @@ public class CIMDataSQLtoRDF {
 			conn = DriverManager.getConnection(db, user, pw);
 			CIMDataSQLtoRDF parse = new CIMDataSQLtoRDF();
 			out = new FileOutputStream(dataLocation);
-//			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
-			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
+			parse.outputModel("ieee8500", new BufferedWriter(new OutputStreamWriter(out)), conn);
+//			parse.outputModel("Feeder1", new BufferedWriter(new OutputStreamWriter(out)), conn);
+//			parse.outputModel("ieee13nodeckt", new BufferedWriter(new OutputStreamWriter(out)), conn);
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -110,7 +111,7 @@ public class CIMDataSQLtoRDF {
 			ArrayList<String> notFound = new ArrayList<String>();
 		
 			//All components that belong in the same model as the line
-			String lineLookup = "SELECT distinct mc2.componentMRID, mc2.tableName"
+			String lineLookup = "SELECT distinct mc2.componentMRID, mc2.tableName, mc2.id"
 						+ "	FROM ModelComponents mc1, Line l, ModelComponents mc2"
 						+ " where mc1.componentMRID=l.mRID and l.name='"+lineName+"' and mc1.mRID=mc2.mRID order by mc2.id";
 			log.debug("Querying line components: "+lineLookup);
@@ -121,10 +122,11 @@ public class CIMDataSQLtoRDF {
 			int count = 0;
 			//For each result
 			while(results.next()){
+				
 				count++;
 				String tableName = results.getString("tableName");
 				String mrid = results.getString("componentMRID");
-				System.out.println(tableName+" "+mrid);
+//				System.out.println(tableName+" "+mrid+"  "+count);
 				Element next = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName);
 				next.setAttributeNS(RDF_NS, RDF_PREFIX+ID_ATTRIBUTE, mrid);
 				rootElement.appendChild(next);
@@ -141,6 +143,7 @@ public class CIMDataSQLtoRDF {
 					String column = metadata.getColumnName(i);
 					String fullColumn = tableName+"."+column;
 //					System.out.println(fullColumn);
+					
 					
 					String value = tableResults.getString(i);
 					if(value!=null){
@@ -176,7 +179,24 @@ public class CIMDataSQLtoRDF {
 							next.appendChild(field);
 						}
 					}
-							
+						
+					//the table is linked to a join table
+					if(joinFields.containsKey(tableName)){
+						String joinField = joinFields.get(tableName);
+						String lookupTable = tableName+"_"+joinField+"Join";
+						String joinLookup = "SELECT distinct "+joinField+" from "+lookupTable+" where "+
+								tableName+"='"+mrid+"'";
+					
+						Statement joinlookupStmt = conn.createStatement();
+						ResultSet joinresults = joinlookupStmt.executeQuery(joinLookup);
+						//For each joinresult
+						while(joinresults.next()){
+							String joinvalue = joinresults.getString(joinField);
+							Element field = doc.createElementNS(CIM_NS, CIM_PREFIX+tableName+"."+joinField);
+							field.setAttributeNS(RDF_NS, RDF_PREFIX+RESOURCE_ATTRIBUTE, "#"+joinvalue);
+							next.appendChild(field);
+						}
+					}
 				}
 			}
 			log.debug(count+" components added to output model");
@@ -372,8 +392,8 @@ public class CIMDataSQLtoRDF {
 		referenceMap.put("phaseSide2","SinglePhaseKind");
 		referenceMap.put("connectionKind","WindingConnection");
 		referenceMap.put("phases","PhaseCode");
-		referenceMap.put("mode","PhaseCode");
-		referenceMap.put("monitoredPhase","RegulatingControlModeKind");
+		referenceMap.put("mode","RegulatingControlModeKind");
+		referenceMap.put("monitoredPhase","PhaseCode");
 		referenceMap.put("tculControlMode","TransformerControlMode");
 //		
 //		typesWithParent.add("ConcentricNeutralCableInfo");
@@ -401,6 +421,26 @@ public class CIMDataSQLtoRDF {
 		booleanColumns.add("ShuntCompensator.grounded");
 		booleanColumns.add("TransformerEnd.grounded");
 		booleanColumns.add("EnergyConsumer.grounded");
+		booleanColumns.add("TapChangerControl.enabled");
+		booleanColumns.add("TapChangerControl.discrete");
+		booleanColumns.add("TapChangerControl.lineDropCompensation");
+		booleanColumns.add("cim:RegulatingControl.enabled.enabled");
+		booleanColumns.add("cim:RegulatingControl.enabled.discrete");
+		booleanColumns.add("cim:RegulatingControl.enabled.lineDropCompensation");
+		booleanColumns.add("RatioTapChanger.ltcFlag");
+		booleanColumns.add("RatioTapChanger.controlEnabled");
+		booleanColumns.add("TapChanger.ltcFlag");
+		booleanColumns.add("TapChanger.controlEnabled");		
+		booleanColumns.add("LoadBreakSwitch.normalOpen");
+		booleanColumns.add("Switch.normalOpen");
+		booleanColumns.add("LoadBreakSwitch.open");
+		booleanColumns.add("Switch.open");
+		booleanColumns.add("LoadBreakSwitch.retained");
+		booleanColumns.add("Switch.retained");
+		booleanColumns.add("LoadResponseCharacteristic.exponentModel");
+	
+		joinFields.put("ShortCircuitTest","GroundedEnds");
+		joinFields.put("Asset","PowerSystemResources");
 		
 	}
 
