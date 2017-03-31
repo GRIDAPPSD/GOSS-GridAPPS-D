@@ -1,0 +1,54 @@
+# in this case, four regulators
+{
+	"band_center": [
+		7500,
+		7500,
+		7500,
+		7500
+	],#associatedwithnum_regs,V
+	"band_width": [
+		120,
+		120,
+		120,
+		120
+	],#V
+	"regulation": [
+		0.1,
+		0.1,
+		0.1,
+		0.1
+	],#pu,10%
+	"raise_taps": [
+		16,
+		16,
+		16,
+		16
+	],
+	"lower_taps": [
+		16,
+		16,
+		16,
+		16
+	],
+	"time_delay": [
+		60,
+		60,
+		60,
+		60
+	],
+	#	"MANUAL","OUTPUT_VOLTAGE","REMOTE_NODE","LINE_DROP_COMP"
+	"control_enum": [
+		"MANUAL",
+		"MANUAL",
+		"MANUAL",
+		"MANUAL",
+		"MANUAL"
+	],
+	#"INDIVIDUAL", "BANK"
+	"control_level_enum":[
+		"INDIVIDUAL",
+		"INDIVIDUAL",
+		"INDIVIDUAL",
+		"INDIVIDUAL"
+	]
+}
