@@ -47,7 +47,7 @@ public class DataManagerImpl implements DataManager {
 	
 	@Start
 	public void start(){
-		log.info("Starting data manager");
+		log.info("Starting "+getClass());
 		try{
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
