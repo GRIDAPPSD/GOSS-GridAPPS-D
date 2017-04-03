@@ -23,6 +23,8 @@ VVO_message_dict = json.loads(VVO_message)
 
 test = VoltVarControl(VVO_static_dict, VVO_message_dict)
 test.Input()
-
+test.RegControl(1.0)
+test.CapControl(1.0)
+test.Output()
 
 

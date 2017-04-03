@@ -42,7 +42,7 @@ class VoltVarControl():
         self.reg_step_up = []  # Regulator step for upper taps, associated with num_regs, idx = num_regs
         self.reg_step_down = []  # Regulator step for lower taps, (may be same as reg_step_up), idx = num_regs
         self.RegUpdateTimes = []  # Regulator progression times (differential), relative time, idx = num_regs
-        self.PrevRegState = [] # sequential list of regulators' previous states: #['MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'], idx = num_regs
+##        self.PrevRegState = [] # sequential list of regulators' previous states: #['MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'], idx = num_regs
         self.Regulator_Change = True  # regulator change flag
         self.TUpdateStatus = True  # flag for control method switch of the voltage regulator
 
@@ -50,7 +50,7 @@ class VoltVarControl():
         self.CapList = [] # a sequential list of capacitors
         self.num_caps = 0   # Number of capacitors under our control
         self.CapUpdateTimes = [] # Capacitor progression times (differential), relative time, idx = num_cap
-        self.PrevCapState = [] # sequential list of capacitors' previous states: # ['MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'], idx = num_caps
+##        self.PrevCapState = [] # sequential list of capacitors' previous states: # ['MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'], idx = num_caps
 
         # Measurements #
         self.num_meas = []  # Number of voltage measurements to monitor, list num_meas for each reg, idx = num_regs
@@ -60,13 +60,14 @@ class VoltVarControl():
         # Timestamp
         self.TS_NEVER = 9e999  # Infinite timestamp
         self.TRegUpdate = []  # Initialize absolute tap change time for each regulator
-        self.prev_time = 0
+        self.TCapUpdate = 0.0  # Capacitor state update time, Notice: it is a double instead of a list  !!
+##        self.prev_time = 0
 
         # Other
-        self.first_cycle = True  # if it is the first cycle of simulation
-        self.prev_mode = 'ACTIVE'    # 'ACTIVE','STANDBY'
+##        self.first_cycle = True  # if it is the first cycle of simulation
+##        self.prev_mode = 'ACTIVE'    # 'ACTIVE','STANDBY'
         self.pf_signed = False  # Flag to indicate if a signed pf value should be maintained, or just a "deadband around 1"
-        self.pf_phase = 'ABC'  # Phases for power factor monitoring to occur, could be 'AB', 'BC', 'C'...
+##        self.pf_phase = 'ABC'  # Phases for power factor monitoring to occur, could be 'AB', 'BC', 'C'...
         self.react_pwr = 1e4  # Reactive power quantity at the substation
         self.curr_pf = 0.95   # Current pf at the substation
         self.simulation_name = 'sim1'  # simulation identifier
@@ -122,7 +123,7 @@ class VoltVarControl():
 ##        'phases_connected' :  ['AN', 'BN', 'CN', 'AN', 'BN', 'CN', 'AN', 'BN', 'CN', 'ABCN'],
 ##        'control': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL'],   # 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
 ##        'control_level' : ['INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'BANK'],   # 'INDIVIDUAL','BANK'
-##        'size' : [4e5, 3e5, 3e5, 3e5, 4e5, 3e5, 3e5, 3e5, 3e5, 3e5],
+##        'cap_size' : [4e5, 3e5, 3e5, 3e5, 4e5, 3e5, 3e5, 3e5, 3e5, 3e5],
 ##        'time_delay' : [480, 300, 180, 60, 480, 300, 180, 60, 30, 40]
 ##        }
 ##
@@ -173,9 +174,6 @@ class VoltVarControl():
         #######################################
         if self.VVC_static.keys() != self.VVC_message.keys():
             raise ValueError('Simulation names mismatch for VVC static configuration and dynamic message!')
-
-        if self.VVC_static['control_method'] != 'ACTIVE':
-            raise ValueError('VVC control is not ACTIVE. Simulation aborted')
 
         self.simulation_name = self.VVC_static.keys()[0]
 
@@ -267,7 +265,9 @@ class VoltVarControl():
             # The below should belong to regulator properties, but be moved to regulator_configuration properties
             self.RegConfig['phases'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['phases']
             self.RegConfig['to'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['to']
-
+            # Check validity
+            if self.RegConfig['control'][reg_index] != 'MANUAL':
+                raise ValueError('At least one regulators are not in MANUAL control. Simulation aborted')
 
 
         # Count the number of capacitors
@@ -299,6 +299,10 @@ class VoltVarControl():
 
             if self.VVC_message[self.simulation_name][self.CapList[cap_index]].has_key('capacitor_C'):
                 self.CapConfig['cap_size'][cap_index] = self.CapConfig['cap_size'][cap_index] + self.VVC_message[self.simulation_name][self.CapList[cap_index]]['capacitor_C']
+
+                        # Check validity
+            if self.CapConfig['control'][cap_index] != 'MANUAL':
+                raise ValueError('At least one capacitors are not in MANUAL control. Simulation aborted.')
 
         # sort capacitors based on size (from largest to smallest) - assumes they are banked in operation (only 1 size provided)
         temp_CapBankSize = copy.deepcopy(self.CapConfig['cap_size'])
@@ -470,26 +474,26 @@ class VoltVarControl():
         self.RegUpdateTimes = self.RegConfig['time_delay']  # Assume the time delays of regulators and capacitors are given, otherwise use default in VVC configuration
         self.CapUpdateTimes = self.CapConfig['time_delay']
 
-
-
-
         # Initialize regulators tap change times, TRegUpdate
         self.TRegUpdate = [self.TS_NEVER] * self.num_regs
 
-        # Initialize regulators' and capacitors' previous states, PrevRegState and PrevCapState
-        ##
-        self.PrevRegState = ['MANUAL'] * self.num_regs  # regulator states = 'MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'
-        self.PrevCapState = ['MANUAL'] * self.num_caps  # capacitor states = 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
+        # Initialize capacitors tap change times, TCapUpdate.  Notice: It is a double instead of a list !!
+        self.TCapUpdate = 0.0
 
-        # Initialize VVC prev_mode
-        # See if any regulator is in manual mode, if we are on right now
-        if self.VVC['control_method'] == 'ACTIVE':
-            for reg_index in range(self.num_regs):  # See if any are in manual
-                if self.RegConfig['control'][reg_index] != 'MANUAL': # We're on, but regulator not in manual.  Set up as a transition
-                    self.prev_mode = 'STANDBY'
-                    break # Only takes one
-        else: # We're in standby, so we don't care what the regulator is doing right now
-            self.prev_mode = 'STANDBY'
+##        # Initialize regulators' and capacitors' previous states, PrevRegState and PrevCapState
+##
+##        self.PrevRegState = ['MANUAL'] * self.num_regs  # regulator states = 'MANUAL', 'OUTPUT_VOLTAGE', 'REMOTE_NODE', 'LINE_DROP_COMP'
+##        self.PrevCapState = ['MANUAL'] * self.num_caps  # capacitor states = 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
+##
+##        # Initialize VVC prev_mode
+##        # See if any regulator is in manual mode, if we are on right now
+##        if self.VVC['control_method'] == 'ACTIVE':
+##            for reg_index in range(self.num_regs):  # See if any are in manual
+##                if self.RegConfig['control'][reg_index] != 'MANUAL': # We're on, but regulator not in manual.  Set up as a transition
+##                    self.prev_mode = 'STANDBY'
+##                    break # Only takes one
+##        else: # We're in standby, so we don't care what the regulator is doing right now
+##            self.prev_mode = 'STANDBY'
 
 
 
@@ -497,7 +501,7 @@ class VoltVarControl():
 
     def RegControl(self, t0):
         # Initialize some local variables
-        vmin = [0.0, 0.0, 0.0]
+        vmin = [0.0, 0.0, 0.0]   # 3-phase voltages
         VDrop = [0.0, 0.0, 0.0]
         VSet = [0.0, 0.0, 0.0]
         VRegTo = [0.0, 0.0, 0.0]
@@ -507,559 +511,586 @@ class VoltVarControl():
         LimitExceed = 0x00  # U_D - XCBA_XCBA.   0xUD -> U: flag upperbound exceed, D: flag lowerbound exceed
                             # U=1->Ph_A, U=2->Ph_B, U=4->Ph_C, the same for D
         limit_hit = False  # mainly for banked operations
-        treg_min = 0.0  # define a timestamp, Need to ask someone else what this means
+##        treg_min = 0.0  # define a timestamp, Need to ask someone else what this means
 
         self.Regulator_Change = False # Start out assuming a regulator change hasn't occurred
 
-        # Now loop through the list - if one is over t0, then it is still changing
-        for reg_index in range(self.num_regs):
-            if t0 < self.TRegUpdate[reg_index] and self.TRegUpdate[reg_index] != self.TS_NEVER:
-                self.Regulator_Change = True  # Flag a regulator change status, ready to change
-                break  # Only takes 1 true to be done
-
-        # Secondary check - see if we're "recovering" from a transition
-        if self.TUpdateStatus == True: # Old logic checked for TRegUpdate <= t0 as well - if we have TUpdateStatus true, all times should be t0 anyways
-            self.TUpdateStatus = False  # Clear the flag
-            for reg_index in range(self.num_regs):
-                self.TRegUpdate[reg_index] = self.TS_NEVER  # Let us proceed
-
-        if t0 != self.prev_time:  # New timestep
-            self.first_cycle = True  # Flag as first entrant this time step (used to reactive control)
-            self.prev_time = t0  # Update tracking variable
-        else:
-            self.first_cycle = False  # No longer the first cycle
-
-
-        if self.BasicConfig['control_method'] != self.prev_mode:  # We've altered our mode, Look at # Initialize VVC prev_mode
-            if self.BasicConfig['control_method'] == 'ACTIVE':
-                for reg_index in range(self.num_regs):
-                    self.PrevRegState[reg_index] = self.RegConfig['control_enum'][reg_index] # Store the state of the regulator
-                    self.RegConfig['control_enum'][reg_index] = 'MANUAL' # Now force it into manual mode, This may need to be output together with tap changes !!
-                for cap_index in range(self.num_caps):
-                    self.PrevCapState[cap_index] = self.CapConfig['CapControl'][cap_index] # Store the old state of the capacitor
-                    self.CapConfig['CapControl'][cap_index] = 'MANUAL'  # Put it into manual mode
-            else: # implie now self.BasicConfig['control_method'] == 'STANDBY', were 'ACTIVE' before
-                for reg_index in range(self.num_regs):
-                    self.RegConfig['control_enum'][reg_index] = self.PrevRegState[reg_index] # Put regulators back into previous mode
-                for cap_index in range(self.num_caps):
-                    self.CapConfig['CapControl'][cap_index] = self.PrevCapState[cap_index] # Put capacitors back in previous mode
-
-            for reg_index in range(self.num_regs):
-                self.TRegUpdate[reg_index] = t0  # Flag us to stay here. This will force another iteration
-
-            self.TUpdateStatus = True  # Flag the update
-            self.prev_mode = self.BasicConfig['control_method']  # Update the tracker
-        # Endif self.BasicConfig['control_method'] != self.prev_mode:
+##        # Now loop through the list - if one is over t0, then it is still changing
+##        for reg_index in range(self.num_regs):
+##            if t0 < self.TRegUpdate[reg_index] and self.TRegUpdate[reg_index] != self.TS_NEVER:
+##                self.Regulator_Change = True  # Flag a regulator change status, ready to change
+##                break  # Only takes 1 true to be done
+##
+##        # Secondary check - see if we're "recovering" from a transition
+##        if self.TUpdateStatus == True: # Old logic checked for TRegUpdate <= t0 as well - if we have TUpdateStatus true, all times should be t0 anyways
+##            self.TUpdateStatus = False  # Clear the flag
+##            for reg_index in range(self.num_regs):
+##                self.TRegUpdate[reg_index] = self.TS_NEVER  # Let us proceed
+##
+##        if t0 != self.prev_time:  # New timestep
+##            self.first_cycle = True  # Flag as first entrant this time step (used to reactive control)
+##            self.prev_time = t0  # Update tracking variable
+##        else:
+##            self.first_cycle = False  # No longer the first cycle
+##
+##
+##        if self.BasicConfig['control_method'] != self.prev_mode:  # We've altered our mode, Look at # Initialize VVC prev_mode
+##            if self.BasicConfig['control_method'] == 'ACTIVE':
+##                for reg_index in range(self.num_regs):
+##                    self.PrevRegState[reg_index] = self.RegConfig['control_enum'][reg_index] # Store the state of the regulator
+##                    self.RegConfig['control_enum'][reg_index] = 'MANUAL' # Now force it into manual mode, This may need to be output together with tap changes !!
+##                for cap_index in range(self.num_caps):
+##                    self.PrevCapState[cap_index] = self.CapConfig['CapControl'][cap_index] # Store the old state of the capacitor
+##                    self.CapConfig['CapControl'][cap_index] = 'MANUAL'  # Put it into manual mode
+##            else: # implie now self.BasicConfig['control_method'] == 'STANDBY', were 'ACTIVE' before
+##                for reg_index in range(self.num_regs):
+##                    self.RegConfig['control_enum'][reg_index] = self.PrevRegState[reg_index] # Put regulators back into previous mode
+##                for cap_index in range(self.num_caps):
+##                    self.CapConfig['CapControl'][cap_index] = self.PrevCapState[cap_index] # Put capacitors back in previous mode
+##
+##            for reg_index in range(self.num_regs):
+##                self.TRegUpdate[reg_index] = t0  # Flag us to stay here. This will force another iteration
+##
+##            self.TUpdateStatus = True  # Flag the update
+##            self.prev_mode = self.BasicConfig['control_method']  # Update the tracker
+##        # Endif self.BasicConfig['control_method'] != self.prev_mode:
 
         ###########################################
         ## From here, the core implementation begins
         ###########################################
-        if self.BasicConfig['control_method'] == 'ACTIVE':  # turned on
+        if self.VVC['control_method'] == 'ACTIVE':  # turned on
             for reg_index in range(self.num_regs):
-                if self.TRegUpdate[reg_index] <= t0 or self.TRegUpdate[reg_index] == self.TS_NEVER: # see if we're allowed to update, current time t0 exceeds RegUpdate time
-                    LimitExceed = 0x00
-                    vmin = [1e13] * 3  # initialize vmin to something big, 3-phase
-                    VDrop = [0.0] * 3  # initialize VDrop, 3-phase
-                    VSet = [self.BasicConfig['desired_voltages'][reg_index]] * 3  # default VSet to where we want, 3-phase
-                    prop_tap_changes = [0.0] * 3  # initialize tap changes, 3-phase
-
-                    # Parse through the measurement list - find the lowest voltage
-                    for meas_index in range(self.num_meas[reg_index]):
-                        temp_dict = self.VoltSensor[self.MeasList[reg_index][meas_index]]
-
-                        if self.MeasPhases[reg_index][meas_index].find('A') >= 0:  # Has Phase-A
-                            vmin[0] = min(vmin[0], abs(temp_dict['VoltA']) )  # New Min
-                        if self.MeasPhases[reg_index][meas_index].find('B') >= 0:
-                            vmin[1] = min(vmin[1], abs(temp_dict['VoltB']) )
-                        if self.MeasPhases[reg_index][meas_index].find('C') >= 0:
-                            vmin[2] = min(vmin[2], abs(temp_dict['VoltC']) )
-
-                    # May need to check if vmin[i] is still large. May lack measurements for some phases
-
-                    # Populate VRegTo (to end voltages), Here it is assumed that each regulator has all 3-phases voltages monitored
-                    temp_dict = self.VoltReg[self.BasicConfig['regulator_list'][reg_index]]
-
-                    if temp_dict.has_key('VoltA') == False or temp_dict.has_key('VoltB') == False or temp_dict.has_key('VoltC') == False:
-                        raise ValueError('Regulator: ' + self.BasicConfig['regulator_list'][reg_index] + ' is not monitored for all 3 phases !')
-
-                    VRegTo[0] = abs(temp_dict['VoltA'])
-                    VRegTo[1] = abs(temp_dict['VoltB'])
-                    VRegTo[2] = abs(temp_dict['VoltC'])
-
-
-                    # Populate VDrop and VSet for Phase-A
-                    if self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltA'): # may not need because we assume all 3-phases voltages are monitored
-                        VDrop[0] = VRegTo[0] - vmin[0] # calculate the drop
-                        VSet[0] = self.BasicConfig['desired_voltages'][reg_index] + VDrop[0]  # calculate where we want to be
-
-                        if VSet[0] > self.BasicConfig['maximum_voltages'][reg_index]:
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase A will exceed the maximum allowed voltage!")
-                            # The set point necessary to maintain the end point voltage exceeds the maximum voltage limit specified by the system.  Either
-    						# increase this maximum_voltage limit, or configure your system differently.
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] > 0:  # Tap>0, in raise range
-                                if VRegTo[0] + self.reg_step_up[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x10 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] < 0:  # must be in lower range
-                                if VRegTo[0] + self.reg_step_down[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x10 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-
-                        elif VSet[0] < self.BasicConfig['minimum_voltages'][reg_index]:
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase A will exceed the minimum allowed voltage!")
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] > 0:  # Tap>0, in raise range
-                                if VRegTo[0] - self.reg_step_up[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x01 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] < 0:  # must be in lower range
-                                if VRegTo[0] - self.reg_step_down[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x01 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-
-
-
-                    # Populate VDrop and VSet for Phase-B
-                    if self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltB'): # may not need because we assume all 3-phases voltages are monitored
-                        VDrop[1] = VRegTo[1] - vmin[1] # calculate the drop
-                        VSet[1] = self.BasicConfig['desired_voltages'][reg_index] + VDrop[1]  # calculate where we want to be
-
-                        if VSet[1] > self.BasicConfig['maximum_voltages'][reg_index]:  # exceed upperbound
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase B will exceed the maximum allowed voltage!")
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] > 0:  # Tap>0, in raise range
-                                if VRegTo[1] + self.reg_step_up[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x20 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] < 0:  # must be in lower range
-                                if VRegTo[1] + self.reg_step_down[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x20 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-
-                        elif VSet[1] < self.BasicConfig['minimum_voltages'][reg_index]:  # exceed lowerbound
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase B will exceed the minimum allowed voltage!")
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] > 0:  # Tap>0, in raise range
-                                if VRegTo[1] - self.reg_step_up[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x02 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] < 0:  # must be in lower range
-                                if VRegTo[1] - self.reg_step_down[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x02 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-
-
-
-                    # Populate VDrop and VSet for Phase-C
-                    if self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltC'): # may not need because we assume all 3-phases voltages are monitored
-                        VDrop[2] = VRegTo[2] - vmin[2] # calculate the drop
-                        VSet[2] = self.BasicConfig['desired_voltages'][reg_index] + VDrop[2]  # calculate where we want to be
-
-                        if VSet[2] > self.BasicConfig['maximum_voltages'][reg_index]:  # exceed upperbound
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase C will exceed the maximum allowed voltage!")
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] > 0:  # Tap>0, in raise range
-                                if VRegTo[2] + self.reg_step_up[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x40 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] < 0:  # must be in lower range
-                                if VRegTo[2] + self.reg_step_down[reg_index] > self.BasicConfig['maximum_voltages'][reg_index]:
-                                    LimitExceed |= 0x40 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
-
-                        elif VSet[2] < self.BasicConfig['minimum_voltages'][reg_index]:  # exceed lowerbound
-                            print("Warning: " + "for regulator " + self.BasicConfig['regulator_list'][reg_index] + \
-                                   ". The set point for phase C will exceed the minimum allowed voltage!")
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] > 0:  # Tap>0, in raise range
-                                if VRegTo[2] - self.reg_step_up[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x04 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-                            else: # self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] < 0:  # must be in lower range
-                                if VRegTo[2] - self.reg_step_down[reg_index] < self.BasicConfig['minimum_voltages'][reg_index]:
-                                    LimitExceed |= 0x04 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
-
-
-
-                    # Now determine what kind of regulator we are (right now only 'INDIVIDUAL' is implemented)
-                    if self.RegConfig['control_level_enum'][reg_index] == 'INDIVIDUAL':
-                        # handle phases
-                        for phase_index in range(3):  # loop through phases
-                            LimitExceed &= 0x7F  # Use bit 8 as a validity flag (to save a variable)
-                            if phase_index == 0 and self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltA'): # We have phase A
-     							temp_var_d = 0x01		# A base lower "Limit" checker
-    							temp_var_u = 0x10		# A base upper "Limit" checker
-    							LimitExceed |= 0x80	# Valid phase
-                            if phase_index == 1 and self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltB'): # We have phase B
-     							temp_var_d = 0x02		# B base lower "Limit" checker
-    							temp_var_u = 0x20		# B base upper "Limit" checker
-    							LimitExceed |= 0x80	# Valid phase
-                            if phase_index == 2 and self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltC'): # We have phase C
-     							temp_var_d = 0x04		# C base lower "Limit" checker
-    							temp_var_u = 0x40		# C base upper "Limit" checker
-    							LimitExceed |= 0x80	# Valid phase
-
-                            if (LimitExceed & 0x80) == 0x80: # valid phase
-                                # Make sure we aren't below the minimum or above the maximum first (***** This below here \/ \/ ********) - sub with step check! *****                        # can go down (lower limit is not hit)
-                                if ( (vmin(phase_index) > self.BasicConfig['maximum_voltages'][reg_index]) or (VRegTo[phase_index] > self.BasicConfig['maximum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_d) != temp_var_d ):
-                                    prop_tap_changes[phase_index] = -1 # Flag us for a down tap
-                                elif ( (vmin(phase_index) < self.BasicConfig['minimum_voltages'][reg_index]) or (VRegTo[phase_index] < self.BasicConfig['minimum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_u) != temp_var_u ):
-                                    prop_tap_changes[phase_index] = 1 # Flag us for a up tap
-                                else:  # normal operation
-                                    # See if we are in high load or low load conditions
-                                    if VDrop[phase_index] > self.BasicConfig['max_vdrop'][reg_index]:  # high loading
-                                        # See if we're outside our range
-                                        if ( (VSet[phase_index] + self.BasicConfig['high_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
-                                            # Above deadband, Need to Tap down.
-                                            # Check the theoretical change - make sure we won't exceed any limits
-                                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                                # Find out what a step decrease will get us theoretically
-                                                if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = -1   # try to tap us down
-                                            else:  # must be Lower (step_down) region
-                                                # Find out what a step decrease will get us theoretically
-                                                if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = -1   # try to tap us down
-
-                                        elif ( (VSet[phase_index] - self.BasicConfig['high_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
-                                            # Below deadband, Need to Tap up.
-                                            # Check the theoretical change - make sure we won't exceed any limits
-                                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                                # Find out what a step increase will get us theoretically
-                                                if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = 1   # try to tap us up
-                                            else:  # must be Lower (step_down) region
-                                                # Find out what a step increase will get us theoretically
-                                                if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = 1   # try to tap us up
-
-                                        # else:  (default, inside the deadband, so we don't care)
-                                    # Endif   # high load band
-
-
-                                    else:  # low loading
-                                        # See if we're outside our range
-                                        if ( (VSet[phase_index] + self.BasicConfig['low_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
-                                            # Above deadband, Need to Tap down.
-                                            # Check the theoretical change - make sure we won't exceed any limits
-                                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                                # Find out what a step decrease will get us theoretically
-                                                if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = -1   # try to tap us down
-                                            else:  # must be Lower (step_down) region
-                                                # Find out what a step decrease will get us theoretically
-                                                if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = -1   # try to tap us down
-
-                                        elif ( (VSet[phase_index] - self.BasicConfig['low_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
-                                            # Below deadband, Need to Tap up.
-                                            # Check the theoretical change - make sure we won't exceed any limits
-                                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                                # Find out what a step increase will get us theoretically
-                                                if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = 1   # try to tap us up
-                                            else:  # must be Lower (step_down) region
-                                                # Find out what a step increase will get us theoretically
-                                                if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
-                                                    prop_tap_changes[phase_index] = 0   # No change allowed
-                                                else:   # change allowed
-                                                    prop_tap_changes[phase_index] = 1   # try to tap us up
-
-                                        #else:  (default, inside the deadband, so we don't care)
-                                    #Endif   # low load band
-                                #Endif  # normal operation
-                            #Endif  # valid phase
-                        #Endfor  # End phase FOR
-
-
-				        #Apply the taps - loop through phases (nonexistant phases should just be 0
-				        #Default assume no change will occur
-                        self.Regulator_Change = False
-                        self.TRegUpdate[reg_index] = self.TS_NEVER
-
-                        for phase_index in range(3):  # loop through phases
-                            if prop_tap_changes[phase_index] > 0:  # want to tap up
-                                if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
-                                    self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] = self.RegConfig['raise_taps'][reg_index]
-                                else:  # must have room to tap up
-                                    self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] += 1  # increment
-                                    self.Regulator_Change = True  # Flag as change
-                                    self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
-
-                            elif prop_tap_changes[phase_index] < 0:  # want to tap down
-                                if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
-                                    self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] = -self.RegConfig['lower_taps'][reg_index]
-                                else:  # must have room to tap down
-                                    self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] -= 1  # decrement
-                                    self.Regulator_Change = True  # Flag as change
-                                    self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
-
-                            #else:  # default else, no change
-                        #Endfor   # end phase FOR
-                    #Endif    # end individual
-
-
-                    else:  #  self.RegConfig['control_level_enum'][reg_index] == 'BANKED':
-                        # Banked will take first PT_PHASE it matches.  If there's more than one, I don't want to know
-                        if self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltA'): # We have phase A
-                            phase_index = 0     # Index for A-based voltages
-                            temp_var_d = 0x01		# A base lower "Limit" checker
-                            temp_var_u = 0x10		# A base upper "Limit" checker
-
-                        elif self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltB'): # We have phase B
-                            phase_index = 1     # Index for B-based voltages
-                            temp_var_d = 0x02		# B base lower "Limit" checker
-                            temp_var_u = 0x20		# B base upper "Limit" checker
-
-                        else:  # self.VoltReg[self.BasicConfig['regulator_list'][reg_index]].has_key('VoltC'): # We have phase C
-                            phase_index = 2     # Index for C-based voltages
-                            temp_var_d = 0x04 	# C base lower "Limit" checker
-                            temp_var_u = 0x40		# C base upper "Limit" checker
-
-                        # Make sure we aren't below the minimum or above the maximum first
-                        if ( (vmin(phase_index) > self.BasicConfig['maximum_voltages'][reg_index]) or (VRegTo[phase_index] > self.BasicConfig['maximum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_d) != temp_var_d ):
-                            prop_tap_changes[0] = -1 # Flag us for a down tap
-                            prop_tap_changes[1] = -1
-                            prop_tap_changes[2] = -1
-                        elif ( (vmin(phase_index) < self.BasicConfig['minimum_voltages'][reg_index]) or (VRegTo[phase_index] < self.BasicConfig['minimum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_u) != temp_var_u ):
-                            prop_tap_changes[0] = 1 # Flag us for a up tap
-                            prop_tap_changes[1] = 1
-                            prop_tap_changes[2] = 1
-                        else:  # normal operation
-                            # See if we are in high load or low load conditions
-
-                            if VDrop[phase_index] > self.BasicConfig['max_vdrop'][reg_index]:  # high loading
-                                # See if we're outside our range
-                                if ( (VSet[phase_index] + self.BasicConfig['high_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
-                                    # Above deadband, Need to Tap down.
-                                    # Check the theoretical change - make sure we won't exceed any limits
-                                    if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                        # Find out what a step decrease will get us theoretically
-                                        if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = -1   # try to tap us down
-                                            prop_tap_changes[1] = -1
-                                            prop_tap_changes[2] = -1
-                                    else:  # must be Lower (step_down) region
-                                        # Find out what a step decrease will get us theoretically
-                                        if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = -1   # try to tap us down
-                                            prop_tap_changes[1] = -1
-                                            prop_tap_changes[2] = -1
-
-                                elif ( (VSet[phase_index] - self.BasicConfig['high_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
-                                    # Below deadband, Need to Tap up.
-                                    # Check the theoretical change - make sure we won't exceed any limits
-                                    if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                        # Find out what a step increase will get us theoretically
-                                        if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = 1   # try to tap us up
-                                            prop_tap_changes[1] = 1
-                                            prop_tap_changes[2] = 1
-                                    else:  # must be Lower (step_down) region
-                                        # Find out what a step increase will get us theoretically
-                                        if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = 1   # try to tap us up
-                                            prop_tap_changes[1] = 1
-                                            prop_tap_changes[2] = 1
-
-                                #Else:  (default, inside the deadband, so we don't care)
-
-                            else:    #  low loading
-                                # See if we're outside our range
-                                if ( (VSet[phase_index] + self.BasicConfig['low_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
-                                    # Above deadband, Need to Tap down.
-                                    # Check the theoretical change - make sure we won't exceed any limits
-                                    if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                        # Find out what a step decrease will get us theoretically
-                                        if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = -1   # try to tap us down
-                                            prop_tap_changes[1] = -1
-                                            prop_tap_changes[2] = -1
-                                    else:  # must be Lower (step_down) region
-                                        # Find out what a step decrease will get us theoretically
-                                        if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.BasicConfig['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = -1   # try to tap us down
-                                            prop_tap_changes[1] = -1
-                                            prop_tap_changes[2] = -1
-
-                                elif ( (VSet[phase_index] - self.BasicConfig['low_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
-                                    # Below deadband, Need to Tap up.
-                                    # Check the theoretical change - make sure we won't exceed any limits
-                                    if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][phase_index] > 0: # Tap up (or step_up) region
-                                        # Find out what a step increase will get us theoretically
-                                        if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = 1   # try to tap us up
-                                            prop_tap_changes[1] = 1
-                                            prop_tap_changes[2] = 1
-                                    else:  # must be Lower (step_down) region
-                                        # Find out what a step increase will get us theoretically
-                                        if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.BasicConfig['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
-                                            prop_tap_changes[0] = 0   # No change allowed
-                                            prop_tap_changes[1] = 0
-                                            prop_tap_changes[2] = 0
-                                        else:   # change allowed
-                                            prop_tap_changes[0] = 1   # try to tap us up
-                                            prop_tap_changes[1] = 1
-                                            prop_tap_changes[2] = 1
-
-                                #Else:  (default, inside the deadband, so we don't care)
-                            #Endif high or low loading band
-                        #Endif  # normal operation
-
-
-                        # Check on the assumption of differential banked (offsets can be present, just all move simultaneously)
-                        # We'll only check prop->A, since it is banked
-                        self.Regulator_Change = False
-                        self.TRegUpdate[reg_index] = self.TS_NEVER
-
-                        if prop_tap_changes[0] > 0:  # want to tap up
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if limit_hit == False:  # we can still proceed
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] += 1   # increment them all
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] += 1
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] += 1
-                                self.Regulator_Change = True   # Flag the change
-                                self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
-                            #Else   # limit hit, so "no change"
-
-
-                        elif prop_tap_changes[0] < 0:  # want to tap down
-                            # Check individually - set to rail if they are at or exceed - this may lose the offset, but I don't know how they'd ever exceed a limit anyways
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
-                                limit_hit = True   # Flag that a limit was hit
-
-                            if limit_hit == False:  # we can still proceed
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][0] -= 1   # increment them all
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][1] -= 1
-                                self.RegTap[self.BasicConfig['regulator_list'][reg_index]][2] -= 1
-                                self.Regulator_Change = True   # Flag the change
-                                self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
-                            #Else   # limit hit, so "no change"
-
-                        #Else  # either want to tap up or tap down, no change requested
-                    #Endif  INDIVIDUAL or BANKED mode
-                #Endif   allowed to update, self.TRegUpdate[reg_index] <= t0 or self.TRegUpdate[reg_index] == self.TS_NEVER
+                LimitExceed = 0x00
+                vmin = [1e13] * 3  # initialize vmin to something big, 3-phase
+                VDrop = [0.0] * 3  # initialize VDrop, 3-phase
+                VSet = [self.VVC['desired_voltages'][reg_index]] * 3  # default VSet to where we want, 3-phase
+                prop_tap_changes = [0.0] * 3  # initialize tap changes, 3-phase
+
+                # Parse through the measurement list - find the lowest voltage
+                for meas_index in range(self.num_meas[reg_index]):
+                    temp_dict = self.MeasNodes[self.MeasList[reg_index][meas_index]]
+
+                    if self.MeasPhases[reg_index][meas_index].find('A') >= 0:  # Has Phase-A
+                        vmin[0] = min(vmin[0], abs(temp_dict['voltage_A']) )  # New Min
+                    if self.MeasPhases[reg_index][meas_index].find('B') >= 0:
+                        vmin[1] = min(vmin[1], abs(temp_dict['voltage_B']) )
+                    if self.MeasPhases[reg_index][meas_index].find('C') >= 0:
+                        vmin[2] = min(vmin[2], abs(temp_dict['voltage_C']) )
+
+                # May need to check if vmin[i] is still large. May lack measurements for some phases
+
+                # Populate VRegTo (to end voltages), Here it is assumed that each regulator has all 3-phases voltages monitored
+                temp_list = self.RegToNodes[self.RegConfig['to'][reg_index]]
+
+                if len(temp_list) != 3:
+                    raise ValueError('Regulator: ' + self.VVC['regulator_list'][reg_index] + ' is not monitored for all 3 phases !')
+
+                VRegTo[0] = abs(temp_list[0])
+                VRegTo[1] = abs(temp_list[1])
+                VRegTo[2] = abs(temp_list[2])
+
+
+                # Populate VDrop and VSet for Phase-A
+                if self.RegConfig['PT_phase'][reg_index].find('A') >= 0: # may not need because we assume all 3-phases voltages are monitored
+                    VDrop[0] = VRegTo[0] - vmin[0] # calculate the drop
+                    VSet[0] = self.VVC['desired_voltages'][reg_index] + VDrop[0]  # calculate where we want to be
+
+                    if VSet[0] > self.VVC['maximum_voltages'][reg_index]:
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase A will exceed the maximum allowed voltage!")
+                        # The set point necessary to maintain the end point voltage exceeds the maximum voltage limit specified by the system.  Either
+						# increase this maximum_voltage limit, or configure your system differently.
+
+                        if self.RegTap[self.RegList[reg_index]][0] > 0:  # Tap>0, in raise range
+                            if VRegTo[0] + self.reg_step_up[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x10 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][0] < 0:  # must be in lower range
+                            if VRegTo[0] + self.reg_step_down[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x10 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+
+                    elif VSet[0] < self.VVC['minimum_voltages'][reg_index]:
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase A will exceed the minimum allowed voltage!")
+
+                        if self.RegTap[self.RegList[reg_index]][0] > 0:  # Tap>0, in raise range
+                            if VRegTo[0] - self.reg_step_up[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x01 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][0] < 0:  # must be in lower range
+                            if VRegTo[0] - self.reg_step_down[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x01 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+
+
+
+                # Populate VDrop and VSet for Phase-B
+                if self.RegConfig['PT_phase'][reg_index].find('B') >= 0: # may not need because we assume all 3-phases voltages are monitored
+                    VDrop[1] = VRegTo[1] - vmin[1] # calculate the drop
+                    VSet[1] = self.VVC['desired_voltages'][reg_index] + VDrop[1]  # calculate where we want to be
+
+                    if VSet[1] > self.VVC['maximum_voltages'][reg_index]:  # exceed upperbound
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase B will exceed the maximum allowed voltage!")
+
+                        if self.RegTap[self.RegList[reg_index]][1] > 0:  # Tap>0, in raise range
+                            if VRegTo[1] + self.reg_step_up[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x20 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][1] < 0:  # must be in lower range
+                            if VRegTo[1] + self.reg_step_down[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x20 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+
+                    elif VSet[1] < self.VVC['minimum_voltages'][reg_index]:  # exceed lowerbound
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase B will exceed the minimum allowed voltage!")
+
+                        if self.RegTap[self.RegList[reg_index]][1] > 0:  # Tap>0, in raise range
+                            if VRegTo[1] - self.reg_step_up[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x02 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][1] < 0:  # must be in lower range
+                            if VRegTo[1] - self.reg_step_down[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x02 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+
+
+
+                # Populate VDrop and VSet for Phase-C
+                if self.RegConfig['PT_phase'][reg_index].find('C') >= 0: # may not need because we assume all 3-phases voltages are monitored
+                    VDrop[2] = VRegTo[2] - vmin[2] # calculate the drop
+                    VSet[2] = self.VVC['desired_voltages'][reg_index] + VDrop[2]  # calculate where we want to be
+
+                    if VSet[2] > self.VVC['maximum_voltages'][reg_index]:  # exceed upperbound
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase C will exceed the maximum allowed voltage!")
+
+                        if self.RegTap[self.RegList[reg_index]][2] > 0:  # Tap>0, in raise range
+                            if VRegTo[2] + self.reg_step_up[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x40 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][2] < 0:  # must be in lower range
+                            if VRegTo[2] + self.reg_step_down[reg_index] > self.VVC['maximum_voltages'][reg_index]:
+                                LimitExceed |= 0x40 # one more step increase, will exceed upperbound. Tap cannot be raised even though a command is sent
+
+                    elif VSet[2] < self.VVC['minimum_voltages'][reg_index]:  # exceed lowerbound
+                        print("Warning: " + "for regulator " + self.RegList[reg_index] + \
+                               ". The set point for phase C will exceed the minimum allowed voltage!")
+
+                        if self.RegTap[self.RegList[reg_index]][2] > 0:  # Tap>0, in raise range
+                            if VRegTo[2] - self.reg_step_up[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x04 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+                        else: # self.RegTap[self.RegList[reg_index]][2] < 0:  # must be in lower range
+                            if VRegTo[2] - self.reg_step_down[reg_index] < self.VVC['minimum_voltages'][reg_index]:
+                                LimitExceed |= 0x04 # one more step decrease, will exceed Lowerbound. Tap cannot be lowered even though a command is sent
+
+
+
+                # Now determine what kind of regulator we are (right now only 'INDIVIDUAL' is implemented)
+                if self.RegConfig['control_level'][reg_index] == 'INDIVIDUAL':
+                    # handle phases
+                    for phase_index in range(3):  # loop through phases
+                        LimitExceed &= 0x7F  # Use bit 8 as a validity flag (to save a variable)
+                        if phase_index == 0 and self.RegConfig['PT_phase'][reg_index].find('A') >= 0: # We have phase A
+ 							temp_var_d = 0x01		# A base lower "Limit" checker
+							temp_var_u = 0x10		# A base upper "Limit" checker
+							LimitExceed |= 0x80	# Valid phase
+                        if phase_index == 1 and self.RegConfig['PT_phase'][reg_index].find('B') >= 0: # We have phase B
+ 							temp_var_d = 0x02		# B base lower "Limit" checker
+							temp_var_u = 0x20		# B base upper "Limit" checker
+							LimitExceed |= 0x80	# Valid phase
+                        if phase_index == 2 and self.RegConfig['PT_phase'][reg_index].find('C') >= 0: # We have phase C
+ 							temp_var_d = 0x04		# C base lower "Limit" checker
+							temp_var_u = 0x40		# C base upper "Limit" checker
+							LimitExceed |= 0x80	# Valid phase
+
+                        if (LimitExceed & 0x80) == 0x80: # valid phase
+                            # Make sure we aren't below the minimum or above the maximum first (***** This below here \/ \/ ********) - sub with step check! *****                        # can go down (lower limit is not hit)
+                            if ( (vmin[phase_index] > self.VVC['maximum_voltages'][reg_index]) or (VRegTo[phase_index] > self.VVC['maximum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_d) != temp_var_d ):
+                                prop_tap_changes[phase_index] = -1 # Flag us for a down tap
+                            elif ( (vmin[phase_index] < self.VVC['minimum_voltages'][reg_index]) or (VRegTo[phase_index] < self.VVC['minimum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_u) != temp_var_u ):
+                                prop_tap_changes[phase_index] = 1 # Flag us for a up tap
+                            else:  # normal operation
+                                # See if we are in high load or low load conditions
+                                if VDrop[phase_index] > self.VVC['max_vdrop'][reg_index]:  # high loading
+                                    # See if we're outside our range
+                                    if ( (VSet[phase_index] + self.VVC['high_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
+                                        # Above deadband, Need to Tap down.
+                                        # Check the theoretical change - make sure we won't exceed any limits
+                                        if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                            # Find out what a step decrease will get us theoretically
+                                            if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = -1   # try to tap us down
+                                        else:  # must be Lower (step_down) region
+                                            # Find out what a step decrease will get us theoretically
+                                            if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = -1   # try to tap us down
+
+                                    elif ( (VSet[phase_index] - self.VVC['high_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
+                                        # Below deadband, Need to Tap up.
+                                        # Check the theoretical change - make sure we won't exceed any limits
+                                        if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                            # Find out what a step increase will get us theoretically
+                                            if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = 1   # try to tap us up
+                                        else:  # must be Lower (step_down) region
+                                            # Find out what a step increase will get us theoretically
+                                            if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = 1   # try to tap us up
+
+                                    # else:  (default, inside the deadband, so we don't care)
+                                # Endif   # high load band
+
+
+                                else:  # low loading
+                                    # See if we're outside our range
+                                    if ( (VSet[phase_index] + self.VVC['low_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
+                                        # Above deadband, Need to Tap down.
+                                        # Check the theoretical change - make sure we won't exceed any limits
+                                        if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                            # Find out what a step decrease will get us theoretically
+                                            if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # more more step decrease (in step_up region), we will fall below min_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = -1   # try to tap us down
+                                        else:  # must be Lower (step_down) region
+                                            # Find out what a step decrease will get us theoretically
+                                            if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # more more step decrease (in step_down region), we will fall below min_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = -1   # try to tap us down
+
+                                    elif ( (VSet[phase_index] - self.VVC['low_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
+                                        # Below deadband, Need to Tap up.
+                                        # Check the theoretical change - make sure we won't exceed any limits
+                                        if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                            # Find out what a step increase will get us theoretically
+                                            if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = 1   # try to tap us up
+                                        else:  # must be Lower (step_down) region
+                                            # Find out what a step increase will get us theoretically
+                                            if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
+                                                prop_tap_changes[phase_index] = 0   # No change allowed
+                                            else:   # change allowed
+                                                prop_tap_changes[phase_index] = 1   # try to tap us up
+
+                                    #else:  (default, inside the deadband, so we don't care)
+                                #Endif   # low load band
+                            #Endif  # normal operation
+                        #Endif  # valid phase
+                    #Endfor  # End phase FOR
+
+
+			        #Apply the taps - loop through phases (nonexistant phases should just be 0
+			        #Default assume no change will occur
+                    self.Regulator_Change = False
+                    self.TRegUpdate[reg_index] = self.TS_NEVER
+
+                    for phase_index in range(3):  # loop through phases
+                        if prop_tap_changes[phase_index] > 0:  # want to tap up
+                            if self.RegTap[self.RegList[reg_index]][phase_index] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
+                                self.RegTap[self.RegList[reg_index]][phase_index] = self.RegConfig['raise_taps'][reg_index]
+                            else:  # must have room to tap up
+                                self.RegTap[self.RegList[reg_index]][phase_index] += 1  # increment
+                                self.Regulator_Change = True  # Flag as change
+                                self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
+
+                        elif prop_tap_changes[phase_index] < 0:  # want to tap down
+                            if self.RegTap[self.RegList[reg_index]][phase_index] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
+                                self.RegTap[self.RegList[reg_index]][phase_index] = -self.RegConfig['lower_taps'][reg_index]
+                            else:  # must have room to tap down
+                                self.RegTap[self.RegList[reg_index]][phase_index] -= 1  # decrement
+                                self.Regulator_Change = True  # Flag as change
+                                self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
+
+                        #else:  # default else, no change
+                    #Endfor   # end phase FOR
+                #Endif    # end individual
+
+
+                else:  #  self.RegConfig['control_level'][reg_index] == 'BANKED':
+                    # Banked will take first PT_PHASE it matches.  If there's more than one, I don't want to know
+                    if self.RegConfig['PT_phase'][reg_index].find('A') >= 0: # We have phase A
+                        phase_index = 0     # Index for A-based voltages
+                        temp_var_d = 0x01		# A base lower "Limit" checker
+                        temp_var_u = 0x10		# A base upper "Limit" checker
+
+                    elif self.RegConfig['PT_phase'][reg_index].find('B') >= 0: # We have phase B
+                        phase_index = 1     # Index for B-based voltages
+                        temp_var_d = 0x02		# B base lower "Limit" checker
+                        temp_var_u = 0x20		# B base upper "Limit" checker
+
+                    else:   # self.RegConfig['PT_phase'][reg_index].find('C') >= 0:: # We have phase C
+                        phase_index = 2     # Index for C-based voltages
+                        temp_var_d = 0x04 	# C base lower "Limit" checker
+                        temp_var_u = 0x40		# C base upper "Limit" checker
+
+                    # Make sure we aren't below the minimum or above the maximum first
+                    if ( (vmin[phase_index] > self.VVC['maximum_voltages'][reg_index]) or (VRegTo[phase_index] > self.VVC['maximum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_d) != temp_var_d ):
+                        prop_tap_changes[0] = -1 # Flag us for a down tap
+                        prop_tap_changes[1] = -1
+                        prop_tap_changes[2] = -1
+                    elif ( (vmin[phase_index] < self.VVC['minimum_voltages'][reg_index]) or (VRegTo[phase_index] < self.VVC['minimum_voltages'][reg_index]) ) and ( (LimitExceed & temp_var_u) != temp_var_u ):
+                        prop_tap_changes[0] = 1 # Flag us for a up tap
+                        prop_tap_changes[1] = 1
+                        prop_tap_changes[2] = 1
+                    else:  # normal operation
+                        # See if we are in high load or low load conditions
+
+                        if VDrop[phase_index] > self.VVC['max_vdrop'][reg_index]:  # high loading
+                            # See if we're outside our range
+                            if ( (VSet[phase_index] + self.VVC['high_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
+                                # Above deadband, Need to Tap down.
+                                # Check the theoretical change - make sure we won't exceed any limits
+                                if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                    # Find out what a step decrease will get us theoretically
+                                    if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # one more step decrease (in step_up region), we will fall below min_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = -1   # try to tap us down
+                                        prop_tap_changes[1] = -1
+                                        prop_tap_changes[2] = -1
+                                else:  # must be Lower (step_down) region
+                                    # Find out what a step decrease will get us theoretically
+                                    if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # one more step decrease (in step_down region), we will fall below min_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = -1   # try to tap us down
+                                        prop_tap_changes[1] = -1
+                                        prop_tap_changes[2] = -1
+
+                            elif ( (VSet[phase_index] - self.VVC['high_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
+                                # Below deadband, Need to Tap up.
+                                # Check the theoretical change - make sure we won't exceed any limits
+                                if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                    # Find out what a step increase will get us theoretically
+                                    if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # one more step increase (in step_up region), we will exceed max_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = 1   # try to tap us up
+                                        prop_tap_changes[1] = 1
+                                        prop_tap_changes[2] = 1
+                                else:  # must be Lower (step_down) region
+                                    # Find out what a step increase will get us theoretically
+                                    if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # one more step increase (in step_down region), we will exceed max_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = 1   # try to tap us up
+                                        prop_tap_changes[1] = 1
+                                        prop_tap_changes[2] = 1
+
+                            #Else:  (default, inside the deadband, so we don't care)
+
+                        else:    #  low loading
+                            # See if we're outside our range
+                            if ( (VSet[phase_index] + self.VVC['low_load_deadband'][reg_index]) < VRegTo[phase_index] ) and ( (LimitExceed & temp_var_d) != temp_var_d ): # Above deadband, but can go down
+                                # Above deadband, Need to Tap down.
+                                # Check the theoretical change - make sure we won't exceed any limits
+                                if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                    # Find out what a step decrease will get us theoretically
+                                    if ( VRegTo[phase_index] - self.reg_step_up[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # one more step decrease (in step_up region), we will fall below min_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = -1   # try to tap us down
+                                        prop_tap_changes[1] = -1
+                                        prop_tap_changes[2] = -1
+                                else:  # must be Lower (step_down) region
+                                    # Find out what a step decrease will get us theoretically
+                                    if ( VRegTo[phase_index] - self.reg_step_down[reg_index] ) < self.VVC['minimum_voltages'][reg_index]: # one more step decrease (in step_down region), we will fall below min_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = -1   # try to tap us down
+                                        prop_tap_changes[1] = -1
+                                        prop_tap_changes[2] = -1
+
+                            elif ( (VSet[phase_index] - self.VVC['low_load_deadband'][reg_index]) > VRegTo[phase_index] ) and ( (LimitExceed & temp_var_u) != temp_var_u ): # Below deadband, but can go up
+                                # Below deadband, Need to Tap up.
+                                # Check the theoretical change - make sure we won't exceed any limits
+                                if self.RegTap[self.RegList[reg_index]][phase_index] > 0: # Tap up (or step_up) region
+                                    # Find out what a step increase will get us theoretically
+                                    if ( VRegTo[phase_index] + self.reg_step_up[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_up region), we will exceed max_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = 1   # try to tap us up
+                                        prop_tap_changes[1] = 1
+                                        prop_tap_changes[2] = 1
+                                else:  # must be Lower (step_down) region
+                                    # Find out what a step increase will get us theoretically
+                                    if ( VRegTo[phase_index] + self.reg_step_down[reg_index] ) > self.VVC['maximum_voltages'][reg_index]: # more more step increase (in step_down region), we will exceed max_volt
+                                        prop_tap_changes[0] = 0   # No change allowed
+                                        prop_tap_changes[1] = 0
+                                        prop_tap_changes[2] = 0
+                                    else:   # change allowed
+                                        prop_tap_changes[0] = 1   # try to tap us up
+                                        prop_tap_changes[1] = 1
+                                        prop_tap_changes[2] = 1
+
+                            #Else:  (default, inside the deadband, so we don't care)
+                        #Endif high or low loading band
+                    #Endif  # normal operation
+
+
+                    # Check on the assumption of differential banked (offsets can be present, just all move simultaneously)
+                    # We'll only check prop->A, since it is banked
+                    self.Regulator_Change = False
+                    self.TRegUpdate[reg_index] = self.TS_NEVER
+
+                    if prop_tap_changes[0] > 0:  # want to tap up
+                        if self.RegTap[self.RegList[reg_index]][0] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
+                            self.RegTap[self.RegList[reg_index]][0] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if self.RegTap[self.RegList[reg_index]][1] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
+                            self.RegTap[self.RegList[reg_index]][1] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if self.RegTap[self.RegList[reg_index]][2] >= self.RegConfig['raise_taps'][reg_index]: # cannot exceed raise taps range
+                            self.RegTap[self.RegList[reg_index]][2] = self.RegConfig['raise_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if limit_hit == False:  # we can still proceed
+                            self.RegTap[self.RegList[reg_index]][0] += 1   # increment them all
+                            self.RegTap[self.RegList[reg_index]][1] += 1
+                            self.RegTap[self.RegList[reg_index]][2] += 1
+                            self.Regulator_Change = True   # Flag the change
+                            self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
+                        #Else   # limit hit, so "no change"
+
+
+                    elif prop_tap_changes[0] < 0:  # want to tap down
+                        # Check individually - set to rail if they are at or exceed - this may lose the offset, but I don't know how they'd ever exceed a limit anyways
+                        if self.RegTap[self.RegList[reg_index]][0] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
+                            self.RegTap[self.RegList[reg_index]][0] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if self.RegTap[self.RegList[reg_index]][1] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
+                            self.RegTap[self.RegList[reg_index]][1] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if self.RegTap[self.RegList[reg_index]][2] <= -self.RegConfig['lower_taps'][reg_index]: # cannot exceed lower taps range
+                            self.RegTap[self.RegList[reg_index]][2] = -self.RegConfig['lower_taps'][reg_index]  # Set at limit
+                            limit_hit = True   # Flag that a limit was hit
+
+                        if limit_hit == False:  # we can still proceed
+                            self.RegTap[self.RegList[reg_index]][0] -= 1   # increment them all
+                            self.RegTap[self.RegList[reg_index]][1] -= 1
+                            self.RegTap[self.RegList[reg_index]][2] -= 1
+                            self.Regulator_Change = True   # Flag the change
+                            self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
+                        #Else   # limit hit, so "no change"
+
+                    #Else  # either want to tap up or tap down, no change requested
+                #Endif  INDIVIDUAL or BANKED mode
             #Endfor   # End regulator traversion FOR
         #Endif    # End VVC 'ACTIVE' control,  self.BasicConfig['control_method'] == 'ACTIVE'
 
 
-        # Find the minimum update first
-        treg_min = self.TS_NEVER
-        for reg_index in range(self.num_regs):
-            if self.TRegUpdate[reg_index] < treg_min:
-                treg_min = self.TRegUpdate[reg_index]
+##        # Find the minimum update first
+##        treg_min = self.TS_NEVER
+##        for reg_index in range(self.num_regs):
+##            if self.TRegUpdate[reg_index] < treg_min:
+##                treg_min = self.TRegUpdate[reg_index]
 
 
 
     def CapControl(self, t0):
         # Initialize some local variables
         change_requested = False
-        allow_change = False
+##        allow_change = False
         temp_size = 0.0
-        curr_pf_temp = 0.0
-        react_pwr_temp = 0.0
-        des_react_pwr_temp = 0.0
+##        curr_pf_temp = 0.0
+##        react_pwr_temp = 0.0
+##        des_react_pwr_temp = 0.0
         link_power_vals = 0.0 + 0.0j
-        pf_add_capacitor = False
+##        pf_add_capacitor = False
         pf_check = False
+        bank_status = 'OPEN'
 
         # Grab power values and all of those related calculations
-        if self.BasicConfig['control_method'] == 'ACTIVE' and self.Regulator_Change == False:  # no regulator changes in progress and we're active
+        if self.VVC['control_method'] == 'ACTIVE' and self.Regulator_Change == False:  # no regulator changes in progress and we're active
             link_power_vals = 0.0 + 0.0j  # zero the power
 
-            # Pull phases as necessary
-            if self.SubLinkPwr['pf_phase'].find('A') >=0:
-                link_power_vals += self.SubLinkPwr[self.BasicConfig['substation_link']][0]  # assume all three phases are monitored
-            if self.SubLinkPwr['pf_phase'].find('B') >=0:
-                link_power_vals += self.SubLinkPwr[self.BasicConfig['substation_link']][1]
-            if self.SubLinkPwr['pf_phase'].find('C') >=0:
-                link_power_vals += self.SubLinkPwr[self.BasicConfig['substation_link']][2]
+            # Calculate total complex power at the link, assume all three phases are monitored
+            link_power_vals += self.SubLink[self.VVC['substation_link']][0]
+            link_power_vals += self.SubLink[self.VVC['substation_link']][1]
+            link_power_vals += self.SubLink[self.VVC['substation_link']][2]
 
             # Populate variables of interest
-            self.SubLinkPwr['react_pwr'] = link_power_vals.imag  # pull in reactive power
+            self.react_pwr = link_power_vals.imag  # pull in reactive power
 
-            if self.SubLinkPwr['pf_signed'] == True:
-                curr_pf_temp = abs(link_power_vals.real) / abs(link_power_vals)  # pull in power factor
-
-                # "sign" it properly
-                if self.SubLinkPwr['react_pwr'] < 0:  # negative VAr
-                    self.SubLinkPwr['curr_pf'] = -curr_pf_temp
-                else:   # positive or somehow zero
-                    self.SubLinkPwr['curr_pf'] = curr_pf_temp
-            else:  # pf_signed=False, just pull in the value
-                self.SubLinkPwr['curr_pf'] = abs(link_power_vals.real) / abs(link_power_vals)
+            if self.pf_signed == False:
+                self.curr_pf = abs(link_power_vals.real) / abs(link_power_vals)  # pull in power factor
 
             # Update proceeding variables
-            if (self.SubLinkPwr['solver_method'] == 'SM_NR' and self.first_cycle == True) or (self.SubLinkPwr['solver_method'] == 'SM_FBS' and self.first_cycle == False):
-                allow_change = True  # Intermediate assignment since FBS likes to mess up power calculations on the first cycle
-            else:
-                allow_change = False
+            if self.pf_signed == False:
+                if self.curr_pf < self.VVC['desired_pf']:
+                    pf_check = True   # Outside the range, make a change
+                else:
+                    pf_check = False  # Inside the deadband, don't care
 
-##            if self.SubLinkPwr['pf_signed'] == True:  # Consider "signing" on the power factor
-##                # Figure out the reactive part "desired" for current load
-##                des_react_pwr_temp = abs( link_power_vals.real * math.sqrt( 1/(self.BasicConfig['desired_pf'] * self.BasicConfig['desired_pf'])-1 ) )
-##
-##                # Formulate variables so signs matter now
-##                if self.SubLinkPwr['curr_pf'] < 0:  # Negative current value - implies capacitive loading
-##                    if self.BasicConfig['desired_pf'] > 0:  # Capacitve is desired, see if we can do something
-##                        if -self.BasicConfig['desired_pf'] > self.SubLinkPwr['curr_pf']:
+            if pf_check == True:
+                change_requested = False  # start out assuming no change
+
+                # Parse through the capacitor list - see where they sit in the categories - break after one switching operation
+                for cap_index in range(self.num_caps):
+                    # Find the phases being watched, check their switch
+                    if self.CapConfig['pt_phase'][cap_index].find('A') >= 0:
+                        bank_status = self.CapState[self.CapList[cap_index]]['switchA']
+                    elif self.CapConfig['pt_phase'][cap_index].find('B') >= 0:
+                        bank_status = self.CapState[self.CapList[cap_index]]['switchB']
+                    else:  # must be C
+                        bank_status = self.CapState[self.CapList[cap_index]]['switchC']
+
+                    if self.pf_signed == False:  # Don't consider the sign, just consider it a range
+                        # Now perform logic based on where it is
+                        if bank_status == 'CLOSED':   # we are on
+                            temp_size = self.CapConfig['cap_size'][cap_index] * self.VVC['d_min']
+
+                            if self.react_pwr < temp_size:
+                                for switch_key in self.CapState[self.CapList[cap_index]].keys():
+                                    self.CapState[self.CapList[cap_index]][switch_key] = 'OPEN'     # Turn all off
+                                change_requested = True
+                                break  # No more loop, only one control per loop
+
+                        else:   # Must be false, so we're off
+                            temp_size = self.CapConfig['cap_size'][cap_index] * self.VVC['d_max']
+
+                            if self.react_pwr > temp_size:
+                                for switch_key in self.CapState[self.CapList[cap_index]].keys():
+                                    self.CapState[self.CapList[cap_index]][switch_key] = 'CLOSED'     # Turn all on
+                                change_requested = True
+                                break  # No more loop, only one control per loop
+
+                    # Endif pf_signed
+                # End for cap_index
+
+                if change_requested == True:   # Something changed
+                    self.TCapUpdate = t0 + self.CapUpdateTimes[cap_index]  # Figure out where we want to go
+            # Endif pf_check
+
+
+    def Output(self):
+        pass
+
+        ## Output
+        # self.R
 
 
 
