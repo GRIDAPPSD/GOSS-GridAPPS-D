@@ -17,13 +17,13 @@ import json
 
 class VoltVarControl():
 
-    def __init__(self, VVO_static_dict, VVO_message_dict):
+    def __init__(self, VVO_static_dict):
 
 
         ## Initialize variables ##
         # Static Configuration and Dynamic Message
         self.VVC_static = VVO_static_dict
-        self.VVC_message = VVO_message_dict
+
 
         # Dict #
         self.VVC = {}
@@ -73,8 +73,9 @@ class VoltVarControl():
         self.simulation_name = 'sim1'  # simulation identifier
 
 
-    def Input(self):
+    def Input(self, VVO_message_dict):
 
+        self.VVC_message = VVO_message_dict
         ####################################
         ## Default Configuration Dict ##
         ####################################
@@ -422,8 +423,10 @@ class VoltVarControl():
         # convert "string" complex number into complex type
         for MeasKeys1 in self.MeasNodes.keys():
             for MeasKeys2 in self.MeasNodes[MeasKeys1].keys():
-                self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2].replace(' ','') )
+                if isinstance(self.MeasNodes[MeasKeys1][MeasKeys2], str):
+                    self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2].replace(' ','') )
 
+        print self.MeasNodes
         # Record the connection phases of each measurement sensor in sequential order as BasicConfig['voltage_measurements']
         self.MeasPhases = copy.deepcopy(self.MeasList)  # initialize phases connection list to Measurement sensor names list because both are in the same structure
         # Very Important !!  Don't use list_a = list_b to copy list !! Once this is used, if list_a changes, list_b will also change
