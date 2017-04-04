@@ -4,7 +4,6 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 '''
-import fncs
 from vvo import VoltVarControl
 import json
 import sys
@@ -16,10 +15,12 @@ import os
 
 __version__ = "0.0.1"
 
-logger_name = os.path.basename(__file__)
-logger_location = os.path.join("/home/gridappsd/var/log/", logger_name, ".log")
-if os.path.exists(logger_location):
-    os.makedirs(logger_location)
+logger_name = os.path.basename(__file__)[:-3]
+user_home = os.path.expanduser("~")
+logger_location = os.path.join(user_home, "var/log/" + logger_name + ".log")
+
+if not os.path.exists(logger_location):
+    os.makedirs(os.path.dirname(logger_location))
 
 input_from_goss_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
 input_from_goss_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
@@ -30,10 +31,11 @@ gossConnection = None
 isInitialized = False
 simulationId = None
 
-logger = logging.getLogger(logger_name)
 hdlr = logging.FileHandler(logger_location)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 hdlr.setFormatter(formatter)
+
+logger = logging.getLogger(logger_name)
 logger.addHandler(hdlr)
 logger.setLevel(logging.DEBUG)
 
@@ -331,12 +333,13 @@ if __name__ == "__main__":
                          help="The password to authenticate with the message bus.")
     parser.add_argument("-a", "--address", default="127.0.0.1",
                         help="tcp address of the mesage bus.")
-    parser.add_argument("-p", "--port", default=61613, type=int,
+    parser.add_argument("--port", default=61613, type=int,
                         help="the stomp port on the message bus.")
     parser.add_argument("-t0", default=2, type=int,
                         help="T0 start value for the application.")
     opts = parser.parse_args()
 
+    logger.debug("Waiting for input.")
     static_config = json.loads(opts.infile.read())
 
     # Start the main application class.  Note we are passsing the function
