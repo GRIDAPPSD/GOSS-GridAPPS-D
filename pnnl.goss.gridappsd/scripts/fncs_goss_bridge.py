@@ -45,7 +45,7 @@ class GOSSListener(object):
             gossConnection.send(output_to_goss_queue , json.dumps(message))
         elif jsonmsg['command'] == 'update':
             message['command'] = 'update'
-            _publishToFncsBus(simulationId, message['message']) #does not return
+            _publishToFncsBus(simulationId, jsonmsg['message']) #does not return
         elif jsonmsg['command'] == 'nextTimeStep':
             logger.debug('is next timestep')
             message['command'] = 'nextTimeStep'
