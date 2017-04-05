@@ -30,10 +30,14 @@ import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.GridAppsDataHandler;
+import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import pnnl.goss.gridappsd.dto.RequestSimulation;
+import pnnl.goss.gridappsd.dto.SimulationOutput;
+import pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
+import pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
 @Component
@@ -48,14 +52,25 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
     private final String datasourceName = "gridappsd";
 	
 	public static void main(String[] args) {
+		
+		
 		PowerSystemConfig config = new PowerSystemConfig();
 		config.GeographicalRegion_name = "ieee8500_Region";
 		config.Line_name = "ieee8500";
 		config.SubGeographicalRegion_name = "ieee8500_SubRegion";
+		
+		String request = 	"{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500\"}, "+
+				"\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"ieee8500\",\"power_flow_solver_method\":\"NR\","
+				+ "        \"simulation_output\": {\"output_objects\":[{\"name\":\"swt_a8869_48332_sw\", \"properties\": [\"switch\"]},{\"name\":\"swt_l9407_48332_sw\",\"properties\":[\"switch\"]},{\"name\":\"cap_capbank0c\",\"properties\":[\"parent\",\"cap_nominal_voltage\"]},{\"name\":\"cap_capbank2a\",\"properties\":[\"parent\",\"cap_nominal_voltage\"]}]},"
+				+ "        \"model_creation_config\":{\"load_scaling_factor\":\".2\",\"schedule_name\":\"ieeezipload\",\"z_fraction\":\".3\",\"i_fraction\":\".3\",\"p_fraction\":\".4\"}}}";
+
+		
+		
 		try {
-			new GridLabDDataHandler().handle(config, 12345, "d:\\tmp\\gridlabd-tmp\\");
+			GridAppsDataHandler handler = new GridLabDDataHandler();
+			
+			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new SimpleStatusReporterImpl());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -74,7 +89,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	
 	@Override
-	public Response handle(Serializable request, int simulationId, String tempDataPath) throws Exception {
+	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
+		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Generating GridLABD simulation files");
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
@@ -120,23 +136,53 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				File rdfFile = new File(tempDataPath+"rdfOut"+new Date().getTime()+".rdf");
 				rdfOut = new FileWriter(rdfFile);
 				rdfWriter = new BufferedWriter(rdfOut);
-				//CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
-				//sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
-				//rdfWriter.flush();
+				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
+				sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
+				rdfWriter.flush();
 				
 				String simulationName = dataRequest.getSimulation_config().simulation_name;
 				//call cim to glm
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
 //							"C:\\Users\\tara\\Documents\\CIM\\Powergrid-Models\\CIM\\testoutput.xml", "ieee8500"}; //8500 args
 				
-                RunCommandLine.runCommand("cp /tmp/ieee8500_base.glm "+tempDataPath);				
+				
+				ModelCreationConfig modelConfig = dataRequest.getSimulation_config().model_creation_config;
+                //RunCommandLine.runCommand("cp /tmp/ieee8500_base.glm "+tempDataPath);				
 				//generate simulation base file
 				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
-				String[] args = {"-l=1", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", 
-						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
-				CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
-				//rdfToGLM.process(args);
+//				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", "-n=zipload_schedule", "-z=0.3", "-i=0.3", "-p=0.4",
+				//Generate GLM using zipload
+				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
+					double zFraction = modelConfig.z_fraction;
+					if(zFraction==0)
+						zFraction = .3;
+					double iFraction = modelConfig.i_fraction;
+					if(iFraction==0)
+						iFraction = .3;
+					double pFraction = modelConfig.p_fraction; 
+					if(pFraction==0)
+						pFraction = .4;
+					
+					
+					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
+										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
+										rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+					log.debug("Generating GLM file with args "+args);
+					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+					rdfToGLM.process(args);
 				
+				} else {
+					//Generate GLM, no zipload
+					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+							"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names,		
+						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+					log.debug("Generating GLM file with args "+args);
+					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+					rdfToGLM.process(args);
+				
+				}
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
@@ -144,12 +190,14 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				//generate simulation config json file
 				String configFileName = "configfile.json";
-				String configFileValue = "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+//				String configFileValue = "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+				String configFileValue = generateConfigValue(dataRequest.getSimulation_config().simulation_output);
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD output config file generated");
+
 				
 				//generate simulation config startup file
 				File startupFile = new File(tempDataPath+simulationName+"_startup.glm");
@@ -158,14 +206,14 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
 
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_SIMULATION_REQUEST.parse(dataRequest.getSimulation_config().start_time);
+				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
 				
 				
 				startupFileWriter.println("clock {");
-				startupFileWriter.println("     timezone \"PST+8PDT\";");
+				startupFileWriter.println("     timezone \"UTC0\";");
 				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
@@ -194,34 +242,44 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     parent "+simulationName+";");
 				startupFileWriter.println("     property message_type;");
 				startupFileWriter.println("     file "+simulationName+".csv;");
-				startupFileWriter.println("     interval 10;");
+				startupFileWriter.println("     interval 60;");
 				startupFileWriter.println("}");
+				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
+					startupFileWriter.println("class player {");
+					startupFileWriter.println("	double value;");
+					startupFileWriter.println("}");
+					startupFileWriter.println("object player {");
+					startupFileWriter.println("	name "+modelConfig.schedule_name+";");
+					startupFileWriter.println("	file "+modelConfig.schedule_name+".player;");
+					startupFileWriter.println("	loop 0;");
+					startupFileWriter.println("}");
+				}
+				
+				
 
 				startupFileWriter.println("#include \""+baseGLM+"\"");
 
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD startup file generated");
+
 				
 				return new DataResponse(startupFile);
 				
 				
 				
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("SQL error while generating GLM configuration",e);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("IO error while generating GLM configuration",e);
 			}finally {
 				try {
 					if(rdfWriter!=null) rdfWriter.close();
 					if(rdfOut!=null) rdfOut.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -236,10 +294,41 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
+		return "Generates GridLABD config files for simulation";
 	}
 
+	/**
+	 * Create configfile.json string, should look something like 
+	 *   "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+	 * @param simulationOutput
+	 * @return
+	 */
+	protected String generateConfigValue(SimulationOutput simulationOutput){
+		StringBuffer configStr = new StringBuffer();
+		boolean isFirst = true;
+		configStr.append("{");
+		for(SimulationOutputObject obj: simulationOutput.getOutputObjects()){
+			if(!isFirst){
+				configStr.append(",");
+			}
+			isFirst = false;
+			
+			configStr.append("\""+obj.getName()+"\": [");
+			boolean isFirstProp = true;
+			for(String property: obj.getProperties()){
+				if(!isFirstProp){
+					configStr.append(",");
+				}
+				isFirstProp = false;
+				configStr.append("\""+property+"\"");
+			}
+			configStr.append("]");
+		}
+		
+		configStr.append("}");
+		
+		return configStr.toString();
+	}
 
 	@Override
 	public List<Class<?>> getSupportedRequestTypes() {

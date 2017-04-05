@@ -31,7 +31,7 @@ class GOSSListener(object):
   def on_message(self, headers, msg):
     message = {}
     try:
-        logger.info('received message '+str(msg))
+        logger.debug('received message '+str(msg))
         jsonmsg = json.loads(str(msg))
         if jsonmsg['command'] == 'isInitialized':
             logger.debug('isInitialized check: '+str(isInitialized));
@@ -50,19 +50,21 @@ class GOSSListener(object):
             logger.debug('is next timestep')
             message['command'] = 'nextTimeStep'
             currentTime = jsonmsg['currentTime']
-            logger.info('incrementing to '+str(currentTime))
+            logger.debug('incrementing to '+str(currentTime))
             _doneWithTimestep(currentTime) #currentTime is incrementing integer 0 ,1, 2.... representing seconds
-            logger.info('done with timestep '+str(currentTime))
-            logger.info('simulation id '+str(simulationId))
+            logger.debug('done with timestep '+str(currentTime))
+            logger.debug('simulation id '+str(simulationId))
             message['output'] = _getFncsBusMessages(simulationId)
-            logger.info('sending fncs output message '+message)
-            gossConnection.send(output_to_goss_topic , json.dumps(message))
+            responsemsg = json.dumps(message)
+            logger.debug('sending fncs output message '+str(responsemsg))
+
+            gossConnection.send(output_to_goss_topic , responsemsg)
+            gossConnection.send(output_to_goss_queue , responsemsg)
         elif jsonmsg['command'] == 'stop':
-            fncs.finalize()
             fncs.die()
             sys.exit()
     except Exception as e:
-        print('Error in command '+str(e))
+        logger.error('Error in command '+str(e))
   def on_error(self, headers, message):
     logger.error('Error in goss listener '+str(message))
   def on_disconnected(self):
@@ -90,7 +92,7 @@ def _registerWithFncsBroker(
     try:
         logger.info('Registering with FNCS broker '+str(simulationId)+' and broker '+brokerLocation)
         
-        logger.info('still connected to goss 1 '+str(gossConnection.is_connected()))
+        logger.debug('still connected to goss 1 '+str(gossConnection.is_connected()))
         if simulationId == None or simulationId == '' or type(simulationId) != str:
             raise ValueError(
                 'simulationId must be a nonempty string.\n'
@@ -132,11 +134,11 @@ def _registerWithFncsBroker(
         fncs.initialize(configurationZpl)
         
         isInitialized = fncs.is_initialized()
-        logger.info('registered with fncs '+str(isInitialized))
+        logger.info('Registered with fncs '+str(isInitialized))
     
     
     except Exception as e:
-        print('EXCEPTION '+str(e))
+        logger.error('Error while registering with fncs broker '+str(e))
 
     if not fncs.is_initialized():
         raise RuntimeError(
@@ -243,7 +245,7 @@ def _doneWithTimestep(currentTime):
                 + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest, 
                 timeApproved))
     except Exception as e:
-        print('Error in fncs timestep '+str(e))
+        logger.error('Error in fncs timestep '+str(e))
             
 def _registerWithGOSS(username,password,gossServer='localhost', 
                       stompPort='61613',):
@@ -282,7 +284,7 @@ def _registerWithGOSS(username,password,gossServer='localhost',
     gossConnection.subscribe(input_from_goss_topic,1)
     gossConnection.subscribe(input_from_goss_queue,2)
 
-    logger.info('registered with goss on topic '+input_from_goss_topic+' '+str(gossConnection.is_connected()))
+    logger.info('Registered with GOSS on topic '+input_from_goss_topic+' '+str(gossConnection.is_connected()))
 
 def _keepAlive():
     while 1:
