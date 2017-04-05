@@ -90,8 +90,11 @@ public class SimulationManagerImpl implements SimulationManager{
 					Process gridlabdProcess = null;
 					Process fncsProcess = null;
 					Process fncsBridgeProcess = null;
+					Process vvoAppProcess = null;
 					InitializedTracker isInitialized = new InitializedTracker();
 					try{
+						
+						File defaultLogDir = simulationFile.getParentFile();
 					
 						//Start FNCS
 						//TODO, verify no errors on this
@@ -99,7 +102,7 @@ public class SimulationManagerImpl implements SimulationManager{
 //						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
-						fncsBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs.log"));
+						fncsBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs.log"));
 						fncsProcess = fncsBuilder.start();
 						// Watch the process
 						watch(fncsProcess, "FNCS");
@@ -114,7 +117,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
-						gridlabDBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"gridlabd.log"));
+						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"gridlabd.log"));
 						//launch from directory containing simulation files
 						gridlabDBuilder.directory(simulationFile.getParentFile());
 						gridlabdProcess = gridlabDBuilder.start();
@@ -136,11 +139,28 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 						}
 						
+						
+						//Start VVO Application
+						//TODO filname really should be constant
+						String vvoInputFile = simulationFile.getAbsolutePath()+File.separator+"vvo_inputs.json";
+						log.info("Calling "+"python "+getPath(GridAppsDConstants.VVO_APP_PATH)+" "+simulationId+" "+vvoInputFile);
+						ProcessBuilder vvoAppBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.VVO_APP_PATH), ""+simulationId, vvoInputFile);
+						vvoAppBuilder.redirectErrorStream(true);
+						vvoAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"vvo_app.log"));
+						vvoAppProcess = vvoAppBuilder.start();
+						// Watch the process
+						watch(vvoAppProcess, "VVO Application");
+						
+						//TODO: check if bridge is started correctly and send publish simulation status accordingly
+						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
+
+						
+						
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
 						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 						fncsBridgeBuilder.redirectErrorStream(true);
-						fncsBridgeBuilder.redirectOutput(new File(getPath(GridAppsDConstants.GRIDAPPSD_TEMP_PATH)+File.separator+"fncs_goss_bridge.log"));
+						fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
 						fncsBridgeProcess = fncsBridgeBuilder.start();
 						// Watch the process
 						watch(fncsBridgeProcess, "FNCS GOSS Bridge");

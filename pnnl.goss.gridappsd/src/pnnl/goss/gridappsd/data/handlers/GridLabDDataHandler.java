@@ -31,6 +31,7 @@ import pnnl.goss.core.server.DataSourceType;
 import pnnl.goss.gridappsd.api.DataManager;
 import pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.gridappsd.dto.ApplicationObject;
 import pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -186,6 +187,18 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				//cleanup rdf file
 //				rdfFile.delete();
 				
+				//generate vvo application file if the simulation contains an application config with the name vvo
+				String vvoAppFile = "vvo_inputs.json";
+				ApplicationObject[] appConfigs = dataRequest.getApplication_config().applications;
+				for(ApplicationObject appConfig: appConfigs){
+					if("vvo".equals(appConfig.getName())){
+						String config = appConfig.getConfig_string();
+						FileOutputStream fout = new FileOutputStream(tempDataPath+vvoAppFile);
+						fout.write(config.getBytes());
+						fout.flush();
+						fout.close();
+					}
+				}
 				
 				
 				//generate simulation config json file
