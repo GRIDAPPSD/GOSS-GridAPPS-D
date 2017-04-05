@@ -22,14 +22,19 @@ logger_location = os.path.join(user_home, "var/log/" + logger_name + ".log")
 if not os.path.exists(logger_location):
     os.makedirs(os.path.dirname(logger_location))
 
-input_from_goss_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
-input_from_goss_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
 
-output_to_goss_topic = '/topic/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
-output_to_goss_queue = '/queue/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_topic = '/topic/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_queue = '/queue/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
 gossConnection = None
 isInitialized = False
+# Number 
 simulationId = None
+
+# This is currently what gridlabd will use for its object name.
+# TODO change to use concat of sim id and sim name.
+simulation_name = None
 
 hdlr = logging.FileHandler(logger_location)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
@@ -78,92 +83,95 @@ def appOutput(outputDict):
     :param outputDict:
     :return:
     """
-    pass
+    payload = dict(command='update', message={}) #, simulation_id=simulationId)
 
+    payload['message'][simulation_name] = outputDict
+
+    gossConnection.send(write_topic , json.dumps(payload))
 
 def _keepAlive():
     while 1:
         time.sleep(0.1)
 
 
-def _registerWithFncsBroker(
-        simId, brokerLocation='tcp://localhost:5570'):
-    '''Register with the fncs_broker and return.
+# def _registerWithFncsBroker(
+#         simId, brokerLocation='tcp://localhost:5570'):
+#     '''Register with the fncs_broker and return.
 
-    Function arguments:
-        simulationId -- Type: string. Description: The simulation id.
-            It must not be an empty string. Default: None.
-        brokerLocation -- Type: string. Description: The ip location and port
-            for the fncs_broker. It must not be an empty string.
-            Default: 'tcp://localhost:5570'.
-    Function returns:
-        None.
-    Function exceptions:
-        RuntimeError()
-        ValueError()
-    '''
-    global simulationId
-    global isInitialized
-    simulationId = simId
-    try:
-        logger.info('Registering with FNCS broker ' + str(
-            simulationId) + ' and broker ' + brokerLocation)
+#     Function arguments:
+#         simulationId -- Type: string. Description: The simulation id.
+#             It must not be an empty string. Default: None.
+#         brokerLocation -- Type: string. Description: The ip location and port
+#             for the fncs_broker. It must not be an empty string.
+#             Default: 'tcp://localhost:5570'.
+#     Function returns:
+#         None.
+#     Function exceptions:
+#         RuntimeError()
+#         ValueError()
+#     '''
+#     global simulationId
+#     global isInitialized
+#     simulationId = simId
+#     try:
+#         logger.info('Registering with FNCS broker ' + str(
+#             simulationId) + ' and broker ' + brokerLocation)
 
-        logger.debug(
-            'still connected to goss 1 ' + str(gossConnection.is_connected()))
-        if simulationId == None or simulationId == '' or type(
-                simulationId) != str:
-            raise ValueError(
-                'simulationId must be a nonempty string.\n'
-                + 'simulationId = {0}'.format(simulationId))
+#         logger.debug(
+#             'still connected to goss 1 ' + str(gossConnection.is_connected()))
+#         if simulationId == None or simulationId == '' or type(
+#                 simulationId) != str:
+#             raise ValueError(
+#                 'simulationId must be a nonempty string.\n'
+#                 + 'simulationId = {0}'.format(simulationId))
 
-        if (brokerLocation == None or brokerLocation == ''
-            or type(brokerLocation) != str):
-            raise ValueError(
-                'brokerLocation must be a nonempty string.\n'
-                + 'brokerLocation = {0}'.format(brokerLocation))
-        fncsConfiguration = {
-            'name': 'FNCS_GOSS_Bridge_' + simulationId,
-            'time_delta': '1s',
-            'broker': brokerLocation,
-            'values': {
-                simulationId: {
-                    'topic': simulationId + '/fncs_output',
-                    'default': '{}',
-                    'type': 'JSON',
-                    'list': 'false'
-                }
-            }
-        }
+#         if (brokerLocation == None or brokerLocation == ''
+#             or type(brokerLocation) != str):
+#             raise ValueError(
+#                 'brokerLocation must be a nonempty string.\n'
+#                 + 'brokerLocation = {0}'.format(brokerLocation))
+#         fncsConfiguration = {
+#             'name': 'FNCS_GOSS_Bridge_' + simulationId,
+#             'time_delta': '1s',
+#             'broker': brokerLocation,
+#             'values': {
+#                 simulationId: {
+#                     'topic': simulationId + '/fncs_output',
+#                     'default': '{}',
+#                     'type': 'JSON',
+#                     'list': 'false'
+#                 }
+#             }
+#         }
 
-        configurationZpl = ('name = {0}\n'.format(fncsConfiguration['name'])
-                            + 'time_delta = {0}\n'.format(
-            fncsConfiguration['time_delta'])
-                            + 'broker = {0}\nvalues'.format(
-            fncsConfiguration['broker']))
-        for x in fncsConfiguration['values'].keys():
-            configurationZpl += '\n    {0}'.format(x)
-            configurationZpl += '\n        topic = {0}'.format(
-                fncsConfiguration['values'][x]['topic'])
-            configurationZpl += '\n        default = {0}'.format(
-                fncsConfiguration['values'][x]['default'])
-            configurationZpl += '\n        type = {0}'.format(
-                fncsConfiguration['values'][x]['type'])
-            configurationZpl += '\n        list = {0}'.format(
-                fncsConfiguration['values'][x]['list'])
-        fncs.initialize(configurationZpl)
+#         configurationZpl = ('name = {0}\n'.format(fncsConfiguration['name'])
+#                             + 'time_delta = {0}\n'.format(
+#             fncsConfiguration['time_delta'])
+#                             + 'broker = {0}\nvalues'.format(
+#             fncsConfiguration['broker']))
+#         for x in fncsConfiguration['values'].keys():
+#             configurationZpl += '\n    {0}'.format(x)
+#             configurationZpl += '\n        topic = {0}'.format(
+#                 fncsConfiguration['values'][x]['topic'])
+#             configurationZpl += '\n        default = {0}'.format(
+#                 fncsConfiguration['values'][x]['default'])
+#             configurationZpl += '\n        type = {0}'.format(
+#                 fncsConfiguration['values'][x]['type'])
+#             configurationZpl += '\n        list = {0}'.format(
+#                 fncsConfiguration['values'][x]['list'])
+#         fncs.initialize(configurationZpl)
 
-        isInitialized = fncs.is_initialized()
-        logger.info('Registered with fncs ' + str(isInitialized))
+#         isInitialized = fncs.is_initialized()
+#         logger.info('Registered with fncs ' + str(isInitialized))
 
 
-    except Exception as e:
-        logger.error('Error while registering with fncs broker ' + str(e))
+#     except Exception as e:
+#         logger.error('Error while registering with fncs broker ' + str(e))
 
-    if not fncs.is_initialized():
-        raise RuntimeError(
-            'fncs.initialize(configurationZpl) failed!\n'
-            + 'configurationZpl = {0}'.format(configurationZpl))
+#     if not fncs.is_initialized():
+#         raise RuntimeError(
+#             'fncs.initialize(configurationZpl) failed!\n'
+#             + 'configurationZpl = {0}'.format(configurationZpl))
 
 
 def _publishToFncsBus(simulationId, gossMessage):
@@ -339,8 +347,12 @@ if __name__ == "__main__":
                         help="T0 start value for the application.")
     opts = parser.parse_args()
 
-    logger.debug("Waiting for input.")
+    logger.debug("Waiting for ")
     static_config = json.loads(opts.infile.read())
+
+    # TODO validate that we are getting the correct things here.
+    keys = static_config['static_inputs'].keys()
+    simulation_name = keys[0] #static_config['static_inputs'][]
 
     # Start the main application class.  Note we are passsing the function
     # appOutput which will be called when output from the application is
@@ -351,7 +363,8 @@ if __name__ == "__main__":
     simulationId = opts.simulationId
 
     # Connect and listen to the message bus for content.
-    _registerWithGOSS(opts.user, opts.password, opts.address, opts.port)
+    # The port should be cast to string because that makes the opening socket easier.
+    _registerWithGOSS(opts.user, opts.password, opts.address, str(opts.port))
 
     # Sleep until notified of new data.
     _keepAlive()

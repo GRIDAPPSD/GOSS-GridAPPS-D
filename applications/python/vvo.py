@@ -17,11 +17,12 @@ import json
 
 class VoltVarControl():
 
-    def __init__(self, VVO_static_dict):
+    def __init__(self, VVO_static_dict, outputfn):
 
         ## Initialize variables ##
         # Static Configuration and Dynamic Message
         self.VVC_static = VVO_static_dict
+        self.outputfn = outputfn
 
         # Dict #
         self.VVC = {}
@@ -1088,7 +1089,8 @@ class VoltVarControl():
 
 
     def Output(self):
-        pass
+        import random
+        self.outputfn(dict("randomnum", random.randint(5, 500)))
 
         ## Output
         # self.R
