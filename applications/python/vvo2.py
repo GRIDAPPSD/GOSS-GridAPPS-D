@@ -17,7 +17,7 @@ import json
 
 class VoltVarControl():
 
-    def __init__(self, VVO_static_dict, VVO_message_dict, outputfn):
+    def __init__(self, VVO_static_dict, outputfn):
 
         ##########################
         ## Initialize variables ##
@@ -25,7 +25,6 @@ class VoltVarControl():
 
         # Static Configuration and Dynamic Message
         self.VVC_static = VVO_static_dict
-        self.VVC_message = VVO_message_dict
         self.outputfn = outputfn
 
 
@@ -78,6 +77,15 @@ class VoltVarControl():
         self.curr_pf = 0.95   # Current pf at the substation
         self.simulation_name = 'sim1'  # simulation identifier
         self.changed_cap = ''  # Name of the capacitor that has changed its state in current time step
+
+
+
+
+
+
+    def Input(self, VVO_message_dict):
+
+        self.VVC_message = VVO_message_dict
 
 
         ###############################################
@@ -366,13 +374,6 @@ class VoltVarControl():
 
         # Update capacitor list
         self.CapList = self.VVC['capacitor_list']
-
-
-
-
-    def Input(self, VVO_message_dict):
-
-        self.VVC_message = VVO_message_dict
 
         #######################################
         ## Initialize Dynamic dicts ##
@@ -1057,7 +1058,8 @@ class VoltVarControl():
 
                 if change_requested == True:   # Something changed
                     self.TCapUpdate = t0 + self.CapUpdateTimes[cap_index]  # Figure out where we want to go
-            # Endif pf_check
+
+            # Endif pf_check and self.TCapUpdate <= t0
 
 
     def Output(self):
