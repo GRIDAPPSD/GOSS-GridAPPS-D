@@ -142,7 +142,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Start VVO Application
 						//TODO filname really should be constant
-						String vvoInputFile = simulationFile.getAbsolutePath()+File.separator+"vvo_inputs.json";
+						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.VVO_APP_PATH)+" "+simulationId+" "+vvoInputFile);
 						ProcessBuilder vvoAppBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.VVO_APP_PATH), ""+simulationId, vvoInputFile);
 						vvoAppBuilder.redirectErrorStream(true);
