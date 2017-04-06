@@ -40,6 +40,7 @@ public class GridAppsDConstants {
 	
 	public static final String FNCS_PATH = "fncs.path";
 	public static final String FNCS_BRIDGE_PATH = "fncs.bridge.path";
+	public static final String VVO_APP_PATH = "vvo.app.path";
 	public static final String GRIDLABD_PATH = "gridlabd.path";
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	
