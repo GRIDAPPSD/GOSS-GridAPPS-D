@@ -316,12 +316,12 @@ def _registerWithGOSS(username, password, gossServer='localhost',
     gossConnection = stomp.Connection12([(gossServer, stompPort)])
     gossConnection.start()
     gossConnection.connect(username, password, wait=True)
-    gossConnection.set_listener('GOSSListener', GOSSListener())
-    gossConnection.subscribe(input_from_goss_topic, 1)
-    gossConnection.subscribe(input_from_goss_queue, 2)
+    gossConnection.set_listener('GOSSListener', GOSSListener(opts.t0))
+    gossConnection.subscribe(read_topic, 1)
+    gossConnection.subscribe(read_topic, 2)
 
-    logger.info(
-        'Registered with GOSS on topic ' + input_from_goss_topic + ' ' + str(
+    print(
+        'Registered with GOSS on topic ' + read_topic + ' ' + str(
             gossConnection.is_connected()))
 
 
