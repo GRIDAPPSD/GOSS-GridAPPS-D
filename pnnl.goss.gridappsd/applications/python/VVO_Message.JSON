@@ -1,0 +1,244 @@
+{
+	"ieee8500" : {
+		"rcon_FEEDER_REG": {
+			"connect_type": "WYE_WYE",
+			"control": "MANUAL",
+			"control_level": "INDIVIDUAL",
+			"PT_phase": "ABC",
+			"band_center": 7590,
+			"band_width": 120,
+			"time_delay": 15,
+			"raise_taps": 16,
+			"lower_taps": 16,
+			"regulation": 0.1
+		},
+		"rcon_VREG2": {
+			"connect_type": "1",
+			"control": "MANUAL",
+			"control_level": "INDIVIDUAL",
+			"PT_phase": "ABC",
+			"band_center": 7500,
+			"band_width": 15,
+			"time_delay": 120,
+			"raise_taps": 16,
+			"lower_taps": 16,
+			"regulation": 0.1
+		},
+		"rcon_VREG3": {
+			"connect_type": "1",
+			"control": "MANUAL",
+			"control_level": "INDIVIDUAL",
+			"PT_phase": "ABC",
+			"band_center": 7500,
+			"band_width": 120,
+			"time_delay": 75,
+			"raise_taps": 16,
+			"lower_taps": 16,
+			"regulation": 0.1
+		},
+		"rcon_VREG4": {
+			"connect_type": "1",
+			"control": "MANUAL",
+			"control_level": "INDIVIDUAL",
+			"PT_phase": "ABC",
+			"band_center": 7500,
+			"band_width": 120,
+			"time_delay": 90,
+			"raise_taps": 16,
+			"lower_taps": 16,
+			"regulation": 0.1
+		},
+		"reg_FEEDER_REG": {
+			"configuration": "rcon_FEEDER_REG", 
+			"phases": "ABC", 
+			"to": "nd__hvmv_sub_lsb", 
+			"tap_A": 15, 
+			"tap_B": 15, 
+			"tap_C": 15
+		},
+		"reg_VREG2": {
+			"configuration": "rcon_VREG2",
+			"phases": "ABC",
+			"to": "nd_190-8593",
+			"tap_A": 15,
+			"tap_B": 15,
+			"tap_C": 15
+		},
+		"reg_VREG3": {
+			"configuration": "rcon_VREG3",
+			"phases": "ABC", 
+			"to": "nd_190-8581", 
+			"tap_A": 8, 
+			"tap_B": 8, 
+			"tap_C": 8
+		},
+		"reg_VREG4": {
+			"configuration": "rcon_VREG4",
+			"phases": "ABC", 
+			"to": "nd_190-7361", 
+			"tap_A": 15, 
+			"tap_B": 15, 
+			"tap_C": 15
+		},
+		"cap_capbank0a": {
+			"phases": "AN", 
+			"pt_phase": "A", 
+			"phases_connected":"AN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_A": 400000, 
+			"time_delay": 100, 
+			"switchA": "OPEN"
+		},
+		"cap_capbank0b": {
+			"phases": "BN", 
+			"pt_phase": "B", 
+			"phases_connected":"BN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_B": 400000, 
+			"time_delay": 101, 
+			"switchB": "OPEN"
+		},
+		"cap_capbank0c": {
+			"phases": "CN", 
+			"pt_phase": "C", 
+			"phases_connected":"CN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_C": 400000, 
+			"time_delay": 102, 
+			"switchC": "OPEN"
+		},
+		"cap_capbank1a": {
+			"phases": "AN", 
+			"pt_phase": "A", 
+			"phases_connected":"AN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_A": 300000, 
+			"time_delay": 100, 
+			"switchA": "OPEN"
+		},
+		"cap_capbank1b": {
+			"phases": "BN", 
+			"pt_phase": "B", 
+			"phases_connected":"BN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_B": 300000, 
+			"time_delay": 101, 
+			"switchB": "OPEN"
+		},
+		"cap_capbank1c": {
+			"phases": "CN", 
+			"pt_phase": "C", 
+			"phases_connected":"CN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_C": 300000, 
+			"time_delay": 102, 
+			"switchC": "OPEN"
+		},
+		"cap_capbank2a": {
+			"phases": "AN", 
+			"pt_phase": "A", 
+			"phases_connected":"AN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_A": 300000, 
+			"time_delay": 100, 
+			"switchA": "OPEN"
+		},
+		"cap_capbank2b": {
+			"phases": "BN", 
+			"pt_phase": "B", 
+			"phases_connected":"BN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_B": 300000, 
+			"time_delay": 101, 
+			"switchB": "OPEN"
+		},
+		"cap_capbank2c": {
+			"phases": "CN", 
+			"pt_phase": "C", 
+			"phases_connected":"CN", 
+			"control": "MANUAL", 
+			"control_level": "INDIVIDUAL", 
+			"capacitor_C": 300000, 
+			"time_delay": 102, 
+			"switchC": "OPEN"
+		},
+		"cap_capbank3": {
+			"phases": "ABCN", 
+			"pt_phase": "ABC", 
+			"phases_connected":"ABCN", 
+			"control": "MANUAL", 
+			"control_level": "BANK", 
+			"capacitor_A": 300000, 
+			"capacitor_B": 300000, 
+			"capacitor_C": 300000, 
+			"time_delay": 0, 
+			"switchA": "OPEN", 
+			"switchB": "OPEN", 
+			"switchC": "OPEN"
+		}, 
+		"xf_hvmv_sub": { 
+			"phases": "ABC", 
+			"power_in_A": "10000 + 10000j", 
+			"power_in_B": "10000 + 10000j", 
+			"power_in_C": "10000 + 10000j"
+		},
+		"nd_l2955047": {
+			"voltage_A": "7000.91 + 0.9j", 
+			"voltage_B": "7031.07 + 0.0j", 
+			"voltage_C": "7011.013 + 0.1j"
+		},
+		"nd_l2673313": {
+			"voltage_A": "7010.92 + 0.9j", 
+			"voltage_B": "7031.07 + 0.0j", 
+			"voltage_C": "7041.018 + 0.1j" 
+		},
+		"nd_l3160107": {
+			"voltage_A": "7020.93 + 0.9j", 
+			"voltage_B": "7021.09 + 0.0j", 
+			"voltage_C": "7021.014 + 0.1j" 
+		},
+		"nd_l2876814": {
+			"voltage_A": "7000.94 + 0.9j", 
+			"voltage_B": "7001.01 + 0.0j", 
+			"voltage_C": "7011.013 + 0.1j" 
+		},
+		"nd_l3254238": {
+			"voltage_A": "7011.05 + 0.0j", 
+			"voltage_B": "7011.01 + 0.1j", 
+			"voltage_C": "7011.012 + 0.1j" 
+		},
+		"nd_m1047574": {
+			"voltage_A": "7021.01 + 0.1j", 
+			"voltage_B": "7021.09 + 0.0j", 
+			"voltage_C": "7021.091 + 0.0j" 
+		},           
+		"nd__hvmv_sub_lsb": {
+			"voltage_A": "7000.91 + 0.9j", 
+			"voltage_B": "7031.07 + 0.0j", 
+			"voltage_C": "7011.015 + 0.1j" 
+		},
+		"nd_190-8593": {
+			"voltage_A": "7000.91 + 0.9j", 
+			"voltage_B": "7031.07 + 0.0j", 
+			"voltage_C": "7011.015 + 0.1j" 
+		},
+		"nd_190-8581": {
+			"voltage_A": "7000.91 + 0.9j",
+			"voltage_B": "7031.07 + 0.0j",
+			"voltage_C": "7011.015 + 0.1j"
+		},
+		"nd_190-7361": {
+			"voltage_A": "7000.91 + 0.9j", 
+			"voltage_B": "7031.07 + 0.0j", 
+			"voltage_C": "7011.015 + 0.1j" 
+		}
+	}
+}
