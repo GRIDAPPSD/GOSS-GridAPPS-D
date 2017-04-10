@@ -48,6 +48,7 @@ logger.setLevel(logging.DEBUG)
 # GossListener.
 mainApp = None
 opts = None
+static_config = None
 
 
 class GOSSListener(object):
@@ -55,11 +56,19 @@ class GOSSListener(object):
         self.t0 = t0
 
     def on_message(self, headers, msg):
+        global mainApp
         message = {}
         try:
             self.t0 += 1
             logger.debug('received message ' + str(msg))
             jsonmsg = json.loads(str(msg))
+
+            # This is the start of the application processes.
+            if mainApp is None:
+                # Start the main application class.  Note we are passsing the function
+                # appOutput which will be called when output from the application is
+                # necessary.
+                mainApp = VoltVarControl(static_config, jsonmsg, appOutput)
 
             mainApp.Input(jsonmsg)
             mainApp.RegControl(self.t0)
@@ -353,14 +362,6 @@ if __name__ == "__main__":
     # TODO validate that we are getting the correct things here.
     keys = static_config['static_inputs'].keys()
     simulation_name = keys[0] #static_config['static_inputs'][]
-
-    # Start the main application class.  Note we are passsing the function
-    # appOutput which will be called when output from the application is
-    # necessary.
-    mainApp = VoltVarControl(static_config, appOutput)
-
-    # stompPort, username and password as commmand line arguments
-    simulationId = opts.simulationId
 
     # Connect and listen to the message bus for content.
     # The port should be cast to string because that makes the opening socket easier.
