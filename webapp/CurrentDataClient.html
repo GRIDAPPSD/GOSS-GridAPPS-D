@@ -6,7 +6,7 @@
 <script type="text/javascript">
 
 simulationTopic = "/queue/goss/gridappsd/process/request/simulation";
-gossHost = "127.0.0.1";
+gossHost = "172.20.128.20";
 defaultRequest =        "{\"power_system_config\":{\"GeographicalRegion_name\":\"ieee8500nodecktassets_Region\",\"SubGeographicalRegion_name\":\"ieee8500nodecktassets_SubRegion\",\"Line_name\":\"ieee8500\"},\"simulation_config\":{\"start_time\":\"03/07/2017 00:00:00\",\"duration\":\"60\",\"simulator\":\"GridLAB-D\",\"simulation_name\":\"ieee8500\",\"power_flow_solver_method\":\"NR\", \"simulation_output\": {\"output_objects\":[{\"name\":\"swt_a8869_48332_sw\", \"properties\": [\"status\"]},{\"name\":\"swt_l9407_48332_sw\",\"properties\":[\"status\"]}]},        \"model_creation_config\":{\"load_scaling_factor\":\".2\",\"schedule_name\":\"zipload_schedule\",\"z_fraction\":\".3\",\"i_fraction\":\".3\",\"p_fraction\":\".4\"}}}";
 
 
@@ -49,7 +49,15 @@ var tickerCallback = function(message){
 
 function sendControlMessage(message) {
 
-	var request = $("textarea#configField").val();
+	var request = JSON.stringify(JSON.parse($("textarea#configField").val()));
+	// try{
+	// 	var jsonData = JSON.parse(request);
+	// }
+	// catch{
+	// 	console.error('Invalid json data in text area');
+	// 	return;
+	// }
+
     client.send(simulationTopic, {"reply-to" :"/temp-queue/response-queue"}, request);
 	client.subscribe("/temp-queue/response-queue", function(message) {
 	    var simulationId = JSON.parse(message.body);
@@ -66,9 +74,12 @@ function sendControlMessage(message) {
     Simulation Host <label id="hostLabel" name="hostLabel"></label>      
 	 Connected <label id="connectedLabel" name="connectedLabel"></label>
 	 <br/>
-	<textarea  rows=12 cols=75 id="configField" name="configField" > </textarea>
+	 <label>Upload New Config</label><input id="configFile" type="file" name="configFile" /><br />
+	<textarea  rows=30 cols=150 id="configField" name="configField" > </textarea>
 	<br/>
     <button onclick="sendControlMessage()">Launch Simulation</button>
+    
+    
 	
 	<div id="message" value="" />
     <pre id="debug" />
@@ -80,6 +91,30 @@ $("#configField").val(defaultRequest);
 $("#hostLabel").text(gossHost);
 $("#connectedLabel").text(client.connected);
 
+	function readFile(input) {
+        console.log('readFile');
+        if ( input.files && input.files[0] ) {
+        	console.log('we have input files')
+            var FR= new FileReader();
 
+            FR.onload = function(e) {
+            	console.log('On Loading text')
+            	console.log(e.target.result)
+                 //$('#img').attr( "src", e.target.result );
+                 $('#configField').val( e.target.result );
+            };
+            FR.readAsText(input.files[0])
+            // Reads as base64 iencoded blob
+            //FR.readAsDataURL(input.files[0])
+        }
+    }
+
+
+
+
+	$("#configFile").change(function(){
+        console.log('change detected');
+        readFile( this );
+    });
 
 </script>

@@ -10,6 +10,8 @@ public class RequestSimulation implements Serializable {
 
 	private SimulationConfig simulation_config;
 	
+	private ApplicationConfig application_config;
+	
 	public RequestSimulation(){
 		
 	}
@@ -33,6 +35,15 @@ public class RequestSimulation implements Serializable {
 
 	public void setSimulation_config(SimulationConfig simulation_config) {
 		this.simulation_config = simulation_config;
+	}
+
+	public ApplicationConfig getApplication_config() {
+		if(application_config==null) return new ApplicationConfig();
+		return application_config;
+	}
+
+	public void setApplication_config(ApplicationConfig application_config) {
+		this.application_config = application_config;
 	}
 
 	@Override
