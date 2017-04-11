@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Random;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.jena.ontology.OntModelSpec;
@@ -1025,6 +1026,14 @@ public class CIMDataRDFToGLM {
 		} else {
 			buf.append ("  connect_type WYE_WYE;\n");
 		}
+		
+		Random rand = new Random();
+		int base_delay = 15;
+		int  n = rand.nextInt(25) + 10;
+		//TODO discuss this!!!!!
+		buf.append ("  time_delay " + String.format("%d", (base_delay+n)) + ";\n");
+
+		
 		buf.append ("  band_center " + String.format("%6g", Vreg) + ";\n");
 		buf.append ("  band_width " + String.format("%6g", Vband) + ";\n");
 		buf.append ("  dwell_time " + String.format("%6g", initDelay) + ";\n");
