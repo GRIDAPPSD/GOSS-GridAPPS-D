@@ -4,13 +4,14 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 '''
-from vvo import VoltVarControl
+#from vvo import VoltVarControl
 import json
 import sys
 import time
 import shutil
 import stomp
 import logging
+import traceback
 import os
 
 __version__ = "0.0.1"
@@ -50,6 +51,7 @@ mainApp = None
 opts = None
 static_config = None
 
+from vvo import VoltVarControl
 
 class GOSSListener(object):
     def __init__(self, t0):
@@ -62,20 +64,28 @@ class GOSSListener(object):
             self.t0 += 1
             logger.debug('received message ' + str(msg))
             jsonmsg = json.loads(str(msg))
+            output = json.loads(jsonmsg['output'])
+            # Ignore null output data. (Assumes initializing)
+            if output is None:
+              return
 
+            print("the output is: {}".format(output))
             # This is the start of the application processes.
             if mainApp is None:
                 # Start the main application class.  Note we are passsing the function
                 # appOutput which will be called when output from the application is
                 # necessary.
-                mainApp = VoltVarControl(static_config, jsonmsg, appOutput)
+                mainApp = VoltVarControl(static_config, output, appOutput)
 
-            mainApp.Input(jsonmsg)
+            mainApp.Input(output)
             mainApp.RegControl(self.t0)
             mainApp.CapControl(self.t0)
             mainApp.Output()
 
         except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            logger.error(type(e))
+            logger.error(e.args)
             logger.error('Error in command ' + str(e))
 
     def on_error(self, headers, message):
@@ -93,9 +103,10 @@ def appOutput(outputDict):
     :return:
     """
     payload = dict(command='update', message={}) #, simulation_id=simulationId)
-
-    payload['message'][simulation_name] = outputDict
-
+    # Assumes now that simulation name is the top level of the outputDict
+    # in vvo.py
+    payload['message'] = outputDict
+    logger.debug("Sending payload from vvo {}".format(payload))
     gossConnection.send(write_topic , json.dumps(payload))
 
 def _keepAlive():
@@ -358,10 +369,11 @@ if __name__ == "__main__":
 
     logger.debug("Waiting for ")
     static_config = json.loads(opts.infile.read())
-
+    logger.debug("Received static config "+str(static_config))
     # TODO validate that we are getting the correct things here.
     keys = static_config['static_inputs'].keys()
     simulation_name = keys[0] #static_config['static_inputs'][]
+    static_config = static_config['static_inputs']
 
     # Connect and listen to the message bus for content.
     # The port should be cast to string because that makes the opening socket easier.

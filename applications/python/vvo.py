@@ -13,7 +13,7 @@ import cmath
 import math
 import copy
 import json
-
+import logging
 
 class VoltVarControl():
 
@@ -79,6 +79,7 @@ class VoltVarControl():
         self.simulation_name = 'sim1'  # simulation identifier
         self.changed_cap = ''  # Name of the capacitor that has changed its state in current time step
 
+        self.log = logging.getLogger('vvo')
 
         ###############################################
         ## Default Dicts (Configuration and Dynamic) ##
@@ -185,6 +186,9 @@ class VoltVarControl():
         #######################################
 
         if self.VVC_static.keys() != self.VVC_message.keys():
+            print("Mismatching static and dynamic configuration keys")
+            print("static are: {}".format(self.VVC_static.keys()))
+            print("dynamic are: {}".format(self.VVC_message.keys()))
             raise ValueError('Simulation names mismatch for VVC static configuration and dynamic message!')
 
         self.simulation_name = self.VVC_static.keys()[0]
@@ -265,7 +269,7 @@ class VoltVarControl():
         # Extract and update regulator configuration
         for reg_index in range(self.num_regs):
             self.RegConfig['connect_type'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['connect_type']
-            self.RegConfig['control'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['control']
+            self.RegConfig['control'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['Control']  # Note the message is using uppercase Control
             self.RegConfig['control_level'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['control_level']
             self.RegConfig['PT_phase'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['PT_phase']
             self.RegConfig['band_center'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['band_center']
@@ -373,6 +377,13 @@ class VoltVarControl():
     def Input(self, VVO_message_dict):
 
         self.VVC_message = VVO_message_dict
+
+        # Verify that the input dict has the same keys as our initial static inputs.
+        if self.VVC_static.keys() != self.VVC_message.keys():
+            print("Mismatching static and dynamic configuration keys")
+            print("static are: {}".format(self.VVC_static.keys()))
+            print("dynamic are: {}".format(self.VVC_message.keys()))
+            raise ValueError('Simulation names mismatch for VVC static configuration and dynamic message!')
 
 
 
