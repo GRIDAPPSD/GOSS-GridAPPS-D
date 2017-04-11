@@ -407,9 +407,9 @@ class VoltVarControl():
             self.RegToNodes[self.RegConfig['to'][reg_index]] = [0] * 3     # 3-phase voltages
         # Update regulator to-side voltages
         for reg_index in range(self.num_regs):   # regulator to-side must have 3-phase voltages
-            self.RegToNodes[self.RegConfig['to'][reg_index]][0] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_A'].replace(' ','') )
-            self.RegToNodes[self.RegConfig['to'][reg_index]][1] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_B'].replace(' ','') )
-            self.RegToNodes[self.RegConfig['to'][reg_index]][2] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_C'].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][0] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_A'][:-1].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][1] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_B'][:-1].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][2] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_C'][:-1].replace(' ','') )
 
 
         # Initialize capacitor state dict
@@ -430,9 +430,9 @@ class VoltVarControl():
         # Initialize SubLink dict
         self.SubLink[self.VVC['substation_link']] = [0] * 3  # 3-phase power
         # Update substation_link power measurement
-        self.SubLink[self.VVC['substation_link']][0] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_A'].replace(' ','') )
-        self.SubLink[self.VVC['substation_link']][1] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_B'].replace(' ','') )
-        self.SubLink[self.VVC['substation_link']][2] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_C'].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][0] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_A'][:-2].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][1] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_B'][:-2].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][2] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_C'][:-2].replace(' ','') )
 
 
         # Extract measurement data
@@ -459,7 +459,7 @@ class VoltVarControl():
         for MeasKeys1 in self.MeasNodes.keys():
             for MeasKeys2 in self.MeasNodes[MeasKeys1].keys():
                 if isinstance(self.MeasNodes[MeasKeys1][MeasKeys2], str):
-                    self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2].replace(' ','') )
+                    self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2][:-1].replace(' ','') )
 
         # print self.MeasNodes
         # Record the connection phases of each measurement sensor in sequential order as BasicConfig['voltage_measurements']
@@ -586,7 +586,7 @@ class VoltVarControl():
                             print("Warning: " + "for regulator " + self.RegList[reg_index] + \
                                    ". The set point for phase A will exceed the maximum allowed voltage!")
                             # The set point necessary to maintain the end point voltage exceeds the maximum voltage limit specified by the system.  Either
-                            # increase this maximum_voltage limit, or configure your system differently.
+    						# increase this maximum_voltage limit, or configure your system differently.
 
                             if self.RegTap[self.RegList[reg_index]][0] > 0:  # Tap>0, in raise range
                                 if VRegTo[0] + self.reg_step_up[reg_index] > self.VVC['maximum_voltages'][reg_index]:
@@ -672,17 +672,17 @@ class VoltVarControl():
                         for phase_index in range(3):  # loop through phases
                             LimitExceed &= 0x7F  # Use bit 8 as a validity flag (to save a variable)
                             if phase_index == 0 and self.RegConfig['PT_phase'][reg_index].find('A') >= 0: # We have phase A
-                                temp_var_d = 0x01		# A base lower "Limit" checker
-                                temp_var_u = 0x10		# A base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x01		# A base lower "Limit" checker
+    							temp_var_u = 0x10		# A base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
                             if phase_index == 1 and self.RegConfig['PT_phase'][reg_index].find('B') >= 0: # We have phase B
-                                temp_var_d = 0x02		# B base lower "Limit" checker
-                                temp_var_u = 0x20		# B base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x02		# B base lower "Limit" checker
+    							temp_var_u = 0x20		# B base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
                             if phase_index == 2 and self.RegConfig['PT_phase'][reg_index].find('C') >= 0: # We have phase C
-                                temp_var_d = 0x04		# C base lower "Limit" checker
-                                temp_var_u = 0x40		# C base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x04		# C base lower "Limit" checker
+    							temp_var_u = 0x40		# C base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
 
                             if (LimitExceed & 0x80) == 0x80: # valid phase
                                 # Make sure we aren't below the minimum or above the maximum first (***** This below here \/ \/ ********) - sub with step check! *****                        # can go down (lower limit is not hit)
@@ -771,8 +771,8 @@ class VoltVarControl():
                         #Endfor  # End phase FOR
 
 
-                        #Apply the taps - loop through phases (nonexistant phases should just be 0
-                        #Default assume no change will occur
+    			        #Apply the taps - loop through phases (nonexistant phases should just be 0
+    			        #Default assume no change will occur
                         self.Regulator_Change = False
                         self.TRegUpdate[reg_index] = self.TS_NEVER
 
