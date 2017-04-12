@@ -6,6 +6,7 @@ Created on Jan 6, 2017
 '''
 #from vvo import VoltVarControl
 import json
+import yaml
 import sys
 import time
 import shutil
@@ -63,8 +64,8 @@ class GOSSListener(object):
         try:
             self.t0 += 1
             logger.debug('received message ' + str(msg))
-            jsonmsg = json.loads(str(msg))
-            output = json.loads(jsonmsg['output'])
+            jsonmsg = yaml.safe_load(str(msg))
+            output = yaml.safe_load(jsonmsg['output'])
             # Ignore null output data. (Assumes initializing)
             if output is None:
               return
@@ -223,7 +224,7 @@ def _publishToFncsBus(simulationId, gossMessage):
             'Cannot publish message as there is no connection'
             + ' to the FNCS message bus.')
     try:
-        testGossMessageFormat = json.loads(gossMessage)
+        testGossMessageFormat = yaml.safe_load(gossMessage)
         if type(testGossMessageFormat) != dict:
             raise ValueError(
                 'gossMessage is not a json formatted string.'
@@ -232,7 +233,7 @@ def _publishToFncsBus(simulationId, gossMessage):
         raise ValueError(ve)
     except:
         raise RuntimeError(
-            'Unexpected error occured while executing json.loads(gossMessage'
+            'Unexpected error occured while executing yaml.safe_load(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
     fncsInputTopic = '{0}/Input'.format(simulationId)
     logger.debug('fncs input topic ' + fncsInputTopic)
@@ -368,7 +369,7 @@ if __name__ == "__main__":
     opts = parser.parse_args()
 
     logger.debug("Waiting for ")
-    static_config = json.loads(opts.infile.read())
+    static_config = yaml.safe_load(opts.infile.read())
     logger.debug("Received static config "+str(static_config))
     # TODO validate that we are getting the correct things here.
     keys = static_config['static_inputs'].keys()

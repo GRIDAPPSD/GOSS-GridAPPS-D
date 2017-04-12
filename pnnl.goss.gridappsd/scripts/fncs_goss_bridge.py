@@ -6,6 +6,7 @@ Created on Jan 6, 2017
 '''
 import fncs
 import json
+import yaml
 import sys
 import time
 import stomp
@@ -32,7 +33,7 @@ class GOSSListener(object):
     message = {}
     try:
         logger.debug('received message '+str(msg))
-        jsonmsg = json.loads(str(msg))
+        jsonmsg = yaml.safe_load(str(msg))
         if jsonmsg['command'] == 'isInitialized':
             logger.debug('isInitialized check: '+str(isInitialized));
             message['command'] = 'isInitialized'
@@ -174,7 +175,7 @@ def _publishToFncsBus(simulationId, gossMessage):
             'Cannot publish message as there is no connection'
             + ' to the FNCS message bus.')
     try:
-        testGossMessageFormat = json.loads(gossMessage)
+        testGossMessageFormat = yaml.safe_load(gossMessage)
         if type(testGossMessageFormat) != dict:
             raise ValueError(
                 'gossMessage is not a json formatted string.'
@@ -183,7 +184,7 @@ def _publishToFncsBus(simulationId, gossMessage):
         raise ValueError(ve)
     except:
         raise RuntimeError(
-            'Unexpected error occured while executing json.loads(gossMessage'
+            'Unexpected error occured while executing yaml.safe_load(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
     fncsInputTopic = '{0}/Input'.format(simulationId)
     logger.debug('fncs input topic '+fncsInputTopic)
