@@ -46,7 +46,7 @@ class GOSSListener(object):
             gossConnection.send(output_to_goss_queue , json.dumps(message))
         elif jsonmsg['command'] == 'update':
             message['command'] = 'update'
-            _publishToFncsBus(simulationId, jsonmsg['message']) #does not return
+            _publishToFncsBus(simulationId, str(jsonmsg['message'])) #does not return
         elif jsonmsg['command'] == 'nextTimeStep':
             logger.debug('is next timestep')
             message['command'] = 'nextTimeStep'
@@ -160,7 +160,7 @@ def _publishToFncsBus(simulationId, gossMessage):
         RuntimeError()
         ValueError()
     '''
-    logger.debug('publish to fncs bus '+simulationId+' '+gossMessage)
+    logger.debug('publish to fncs bus '+simulationId+' '+str(gossMessage))
 
     if simulationId == None or simulationId == '' or type(simulationId) != str:
         raise ValueError(
