@@ -117,7 +117,7 @@ class VoltVarControl():
 ##        'regulation' : [0.1, 0.1, 0.1, 0.1], # pu, 10%
 ##        'raise_taps': [16, 16, 16, 16],
 ##        'lower_taps': [16, 16, 16, 16],
-##        'time_delay' : [60, 60, 60, 60],
+##        'dwell_time' : [60, 60, 60, 60],
 ##        # The below should belong to regulator properties, but be moved to regulator_configuration properties
 ##        'phases' : ['ABC', 'ABC', 'ABC', 'ABC'],
 ##        'to' : ['nd__hvmv_sub_lsb', 'nd_190-8593', 'nd_190-8581', 'nd_190-7361']
@@ -130,7 +130,7 @@ class VoltVarControl():
 ##        'control': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL'],   # 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
 ##        'control_level' : ['INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'BANK'],   # 'INDIVIDUAL','BANK'
 ##        'cap_size' : [4e5, 3e5, 3e5, 3e5, 4e5, 3e5, 3e5, 3e5, 3e5, 3e5],
-##        'time_delay' : [480, 300, 180, 60, 480, 300, 180, 60, 30, 40]
+##        'dwell_time' : [480, 300, 180, 60, 480, 300, 180, 60, 30, 40]
 ##        }
 ##
 ##
@@ -262,7 +262,7 @@ class VoltVarControl():
         self.RegConfig['regulation'] = [0] * self.num_regs
         self.RegConfig['raise_taps']= [0] * self.num_regs
         self.RegConfig['lower_taps'] = [0] * self.num_regs
-        self.RegConfig['time_delay']= [0] * self.num_regs
+        self.RegConfig['dwell_time']= [0] * self.num_regs
         # The below should belong to regulator properties, but be moved to regulator_configuration properties
         self.RegConfig['phases'] = [''] * self.num_regs
         self.RegConfig['to'] = [''] * self.num_regs
@@ -277,7 +277,7 @@ class VoltVarControl():
             self.RegConfig['regulation'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['regulation']
             self.RegConfig['raise_taps'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['raise_taps']
             self.RegConfig['lower_taps'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['lower_taps']
-            self.RegConfig['time_delay'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['time_delay']
+            self.RegConfig['dwell_time'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['dwell_time']
             # The below should belong to regulator properties, but be moved to regulator_configuration properties
             self.RegConfig['phases'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['phases']
             self.RegConfig['to'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['to']
@@ -296,7 +296,7 @@ class VoltVarControl():
         self.CapConfig['control']= [''] * self.num_caps
         self.CapConfig['control_level'] = [''] * self.num_caps
         self.CapConfig['cap_size'] = [0] * self.num_caps
-        self.CapConfig['time_delay'] = [0] * self.num_caps
+        self.CapConfig['dwell_time'] = [0] * self.num_caps
 
         # Extract and update capcacitor configuration
         for cap_index in range(self.num_caps):
@@ -305,7 +305,7 @@ class VoltVarControl():
             self.CapConfig['phases_connected'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['phases_connected']
             self.CapConfig['control'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['control']
             self.CapConfig['control_level'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['control_level']
-            self.CapConfig['time_delay'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['time_delay']
+            self.CapConfig['dwell_time'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['dwell_time']
 
             if self.VVC_message[self.simulation_name][self.CapList[cap_index]].has_key('capacitor_A'):
                 self.CapConfig['cap_size'][cap_index] = self.CapConfig['cap_size'][cap_index] + self.VVC_message[self.simulation_name][self.CapList[cap_index]]['capacitor_A']
@@ -364,9 +364,9 @@ class VoltVarControl():
             self.CapConfig['cap_size'][temp_pos] = self.CapConfig['cap_size'][i1]
             self.CapConfig['cap_size'][i1] = temp_value
 
-            temp_value = self.CapConfig['time_delay'][temp_pos]
-            self.CapConfig['time_delay'][temp_pos] = self.CapConfig['time_delay'][i1]
-            self.CapConfig['time_delay'][i1] = temp_value
+            temp_value = self.CapConfig['dwell_time'][temp_pos]
+            self.CapConfig['dwell_time'][temp_pos] = self.CapConfig['dwell_time'][i1]
+            self.CapConfig['dwell_time'][i1] = temp_value
 
         # Update capacitor list
         self.CapList = self.VVC['capacitor_list']
@@ -509,8 +509,8 @@ class VoltVarControl():
             self.reg_step_down[reg_index] = self.RegConfig['band_center'][reg_index] * self.RegConfig['regulation'][reg_index] /self.RegConfig['lower_taps'][reg_index] # V/tap
 
         # Set voltage regulators and capacitor banks response (progression) time
-        self.RegUpdateTimes = self.RegConfig['time_delay']  # Assume the time delays of regulators and capacitors are given, otherwise use default in VVC configuration
-        self.CapUpdateTimes = self.CapConfig['time_delay']
+        self.RegUpdateTimes = self.RegConfig['dwell_time']  # Assume the time delays of regulators and capacitors are given, otherwise use default in VVC configuration
+        self.CapUpdateTimes = self.CapConfig['dwell_time']
 
         # Initialize regulators tap change times, TRegUpdate
         self.TRegUpdate = [self.TS_NEVER] * self.num_regs
