@@ -186,7 +186,7 @@ def _publishToFncsBus(simulationId, gossMessage):
         raise RuntimeError(
             'Unexpected error occured while executing yaml.safe_load(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
-    fncsInputTopic = '{0}/Input'.format(simulationId)
+    fncsInputTopic = '{0}/fncs_input'.format(simulationId)
     logger.debug('fncs input topic '+fncsInputTopic)
     #fncs.publish_anon(fncsInputTopic, gossMessage)
     
