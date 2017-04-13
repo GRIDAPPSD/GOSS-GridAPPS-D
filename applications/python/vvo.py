@@ -1092,7 +1092,7 @@ class VoltVarControl():
 
         self.OutputDict[self.simulation_name].update(temp_RegTapDict)
 
-        temp_TRegUpdateDict['T_RegUpdate'] = dict(zip(self.RegList, self.TRegUpdate))
+        #temp_TRegUpdateDict['T_RegUpdate'] = dict(zip(self.RegList, self.TRegUpdate))
 
         self.OutputDict[self.simulation_name].update(temp_TRegUpdateDict)
 
@@ -1100,7 +1100,7 @@ class VoltVarControl():
         if self.changed_cap != '':
             temp_CapSwitchDict[self.changed_cap] = self.CapState[self.changed_cap]
             self.OutputDict[self.simulation_name].update(temp_CapSwitchDict)
-            temp_TCapUpdateDict['T_CapUpdate'] = {self.changed_cap: self.TCapUpdate}
+            #temp_TCapUpdateDict['T_CapUpdate'] = {self.changed_cap: self.TCapUpdate}
             self.OutputDict[self.simulation_name].update(temp_TCapUpdateDict)
 
         self.outputfn(self.OutputDict.copy())
