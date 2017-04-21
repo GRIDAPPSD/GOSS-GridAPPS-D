@@ -234,8 +234,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");
 				startupFileWriter.println("#set profiler=1");
-				startupFileWriter.println("#set double_format=%+.12lg");
-				startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
+				//startupFileWriter.println("#set double_format=%+.12lg");
+				//startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
 				startupFileWriter.println("#set minimum_timestep=0.1");
 				
 				startupFileWriter.println("module connection;");
