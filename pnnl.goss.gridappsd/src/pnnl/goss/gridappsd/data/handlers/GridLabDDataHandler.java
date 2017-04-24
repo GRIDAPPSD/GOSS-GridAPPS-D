@@ -156,13 +156,13 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					double zFraction = modelConfig.z_fraction;
 					if(zFraction==0)
-						zFraction = .3;
+						zFraction = 0;
 					double iFraction = modelConfig.i_fraction;
 					if(iFraction==0)
-						iFraction = .3;
+						iFraction = 1;
 					double pFraction = modelConfig.p_fraction; 
 					if(pFraction==0)
-						pFraction = .4;
+						pFraction = 0;
 					
 					
 					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,

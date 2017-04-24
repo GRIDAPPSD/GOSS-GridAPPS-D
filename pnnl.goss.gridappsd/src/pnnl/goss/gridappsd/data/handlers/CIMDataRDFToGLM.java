@@ -1026,9 +1026,6 @@ public class CIMDataRDFToGLM {
 		} else {
 			buf.append ("  connect_type WYE_WYE;\n");
 		}
-		
-
-		
 		buf.append ("  band_center " + String.format("%6g", Vreg) + ";\n");
 		buf.append ("  band_width " + String.format("%6g", Vband) + ";\n");
 		buf.append ("  dwell_time " + String.format("%6g", initDelay) + ";\n");
@@ -1761,9 +1758,9 @@ public class CIMDataRDFToGLM {
 				char opt = args[i].charAt(1);
 				String optVal = args[i].substring(3);
 				if (opt == 't') {
-			if (optVal.charAt(0) == 'n') {
-		bWantSec = false;
-			}
+						if (optVal.charAt(0) == 'n') {
+								bWantSec = false;
+						}
 				} else if (opt=='e') {
 					if (optVal.charAt(0) == 'u') {
 						fEnc = "UTF8";
@@ -1820,6 +1817,8 @@ public class CIMDataRDFToGLM {
 		PrintWriter outBus = new PrintWriter (fBus);
 
 		model.read(new InputStreamReader(in, fEnc), baseURI, "RDF/XML");
+
+		System.out.println ("***** XML has been read *****");
 				
 		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> ";
 		Query query;
