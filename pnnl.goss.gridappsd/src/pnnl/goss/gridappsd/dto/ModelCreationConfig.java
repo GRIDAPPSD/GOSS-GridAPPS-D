@@ -11,7 +11,7 @@ public class ModelCreationConfig {
 	public char unique_names = 'y';  //allowed values y|n   are unique names used?  maps to -q
 	public String schedule_name = ""; // root filename for scheduled ZIP loads (defaults to none)    maps to -n
 	public double z_fraction = 0;  // allowed values {0....1}  constant Z portion (defaults to 0 for CIM-defined,  maps to -z
-	public double i_fraction = 1;  // allowed values {0....1}  constant I portion (defaults to 0 for CIM-defined,  maps to -i
+	public double i_fraction = 0;  // allowed values {0....1}  constant I portion (defaults to 0 for CIM-defined,  maps to -i
 	public double p_fraction = 0;  // allowed values {0....1}  constant P portion (defaults to 0 for CIM-defined,  maps to -p
 	
 	
