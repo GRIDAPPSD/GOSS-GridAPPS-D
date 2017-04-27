@@ -41,6 +41,8 @@ class VoltVarControl():
 
         self.OutputDict = {}
 
+        self.RegTap_ChangeFlag = {}
+
         # Regulator #
         self.RegList = []  # a sequential list of regulators
         self.RegConfigList = []  # a sequential list of regulator configuration
@@ -186,9 +188,6 @@ class VoltVarControl():
         #######################################
 
         if self.VVC_static.keys() != self.VVC_message.keys():
-            print("Mismatching static and dynamic configuration keys")
-            print("static are: {}".format(self.VVC_static.keys()))
-            print("dynamic are: {}".format(self.VVC_message.keys()))
             raise ValueError('Simulation names mismatch for VVC static configuration and dynamic message!')
 
         self.simulation_name = self.VVC_static.keys()[0]
@@ -378,13 +377,6 @@ class VoltVarControl():
 
         self.VVC_message = VVO_message_dict
 
-        # Verify that the input dict has the same keys as our initial static inputs.
-        if self.VVC_static.keys() != self.VVC_message.keys():
-            print("Mismatching static and dynamic configuration keys")
-            print("static are: {}".format(self.VVC_static.keys()))
-            print("dynamic are: {}".format(self.VVC_message.keys()))
-            raise ValueError('Simulation names mismatch for VVC static configuration and dynamic message!')
-
 
 
         #######################################
@@ -537,6 +529,10 @@ class VoltVarControl():
 ##        treg_min = 0.0  # define a timestamp, Need to ask someone else what this means
 
         self.Regulator_Change = False # Start out assuming a regulator change hasn't occurred
+
+        # Initialize regulator tap change flag dict
+        for reg_index in range(self.num_regs):
+            self.RegTap_ChangeFlag[self.RegList[reg_index]] = False
 
         ###########################################
         ## From here, the core implementation begins
@@ -783,6 +779,7 @@ class VoltVarControl():
                                 else:  # must have room to tap up
                                     self.RegTap[self.RegList[reg_index]][phase_index] += 1  # increment
                                     self.Regulator_Change = True  # Flag as change
+                                    self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                     self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
 
                             elif prop_tap_changes[phase_index] < 0:  # want to tap down
@@ -791,6 +788,7 @@ class VoltVarControl():
                                 else:  # must have room to tap down
                                     self.RegTap[self.RegList[reg_index]][phase_index] -= 1  # decrement
                                     self.Regulator_Change = True  # Flag as change
+                                    self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                     self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
 
                             #else:  # default else, no change
@@ -957,6 +955,7 @@ class VoltVarControl():
                                 self.RegTap[self.RegList[reg_index]][1] += 1
                                 self.RegTap[self.RegList[reg_index]][2] += 1
                                 self.Regulator_Change = True   # Flag the change
+                                self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                 self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
                             #Else   # limit hit, so "no change"
 
@@ -980,6 +979,7 @@ class VoltVarControl():
                                 self.RegTap[self.RegList[reg_index]][1] -= 1
                                 self.RegTap[self.RegList[reg_index]][2] -= 1
                                 self.Regulator_Change = True   # Flag the change
+                                self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                 self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
                             #Else   # limit hit, so "no change"
 
@@ -1080,27 +1080,20 @@ class VoltVarControl():
         self.OutputDict[self.simulation_name] = {}
 
         temp_RegTapDict = {}
-        temp_TRegUpdateDict = {}
         temp_CapSwitchDict = {}
-        temp_TCapUpdateDict = {}
 
         # Update regulator related outputs
         temp_RegTapKeys = ['tap_A', 'tap_B', 'tap_C']
 
         for reg_index in range(self.num_regs):
-            temp_RegTapDict[self.RegList[reg_index]] = dict(zip(temp_RegTapKeys, self.RegTap[self.RegList[reg_index]]))
+            if self.RegTap_ChangeFlag[self.RegList[reg_index]] == True:
+               temp_RegTapDict[self.RegList[reg_index]] = dict(zip(temp_RegTapKeys, self.RegTap[self.RegList[reg_index]]))
 
         self.OutputDict[self.simulation_name].update(temp_RegTapDict)
-
-        #temp_TRegUpdateDict['T_RegUpdate'] = dict(zip(self.RegList, self.TRegUpdate))
-
-        self.OutputDict[self.simulation_name].update(temp_TRegUpdateDict)
 
         # Update capacitor related outputs
         if self.changed_cap != '':
             temp_CapSwitchDict[self.changed_cap] = self.CapState[self.changed_cap]
             self.OutputDict[self.simulation_name].update(temp_CapSwitchDict)
-            #temp_TCapUpdateDict['T_CapUpdate'] = {self.changed_cap: self.TCapUpdate}
-            self.OutputDict[self.simulation_name].update(temp_TCapUpdateDict)
 
         self.outputfn(self.OutputDict.copy())
