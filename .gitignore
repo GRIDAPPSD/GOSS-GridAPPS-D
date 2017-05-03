@@ -5,3 +5,5 @@ log/
 .metadata/
 .recommenders/
 applications/.idea
+*.pyc
+docs/build
