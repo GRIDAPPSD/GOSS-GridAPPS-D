@@ -13,12 +13,14 @@ GridAPPS-D's Documentation
    :maxdepth: 2
 
    overview/index
-   Definition of Terms
-   overview/license
-
-
-
-
+   installing_gridappsd/index
+   using_gridappsd/index
+   system_configuration/index
+   developer_resources/index
+   hosted_applications/index
+   api_docs/index
+   
+   
 Indices and tables
 ==================
 
