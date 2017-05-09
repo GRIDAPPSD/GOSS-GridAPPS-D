@@ -156,13 +156,13 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					double zFraction = modelConfig.z_fraction;
 					if(zFraction==0)
-						zFraction = .3;
+						zFraction = 0;
 					double iFraction = modelConfig.i_fraction;
 					if(iFraction==0)
-						iFraction = .3;
+						iFraction = 1;
 					double pFraction = modelConfig.p_fraction; 
 					if(pFraction==0)
-						pFraction = .4;
+						pFraction = 0;
 					
 					
 					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
@@ -234,8 +234,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");
 				startupFileWriter.println("#set profiler=1");
-				startupFileWriter.println("#set double_format=%+.12lg");
-				startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
+				//startupFileWriter.println("#set double_format=%+.12lg");
+				//startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
 				startupFileWriter.println("#set minimum_timestep=0.1");
 				
 				startupFileWriter.println("module connection;");
@@ -256,6 +256,13 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     property message_type;");
 				startupFileWriter.println("     file "+simulationName+".csv;");
 				startupFileWriter.println("     interval 60;");
+				startupFileWriter.println("}");
+				startupFileWriter.println("object multi_recorder {");
+				startupFileWriter.println("          parent "+simulationName+";");
+				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,nd__hvmv_sub_lsb:voltage_A,nd__hvmv_sub_lsb:voltage_B,nd__hvmv_sub_lsb:voltage_C;");
+				startupFileWriter.println("         file "+simulationName+"_debug_states.csv;");
+				startupFileWriter.println("         interval 1;");
+				startupFileWriter.println("         limit 120;");
 				startupFileWriter.println("}");
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					startupFileWriter.println("class player {");

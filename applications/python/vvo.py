@@ -13,7 +13,7 @@ import cmath
 import math
 import copy
 import json
-
+import logging
 
 class VoltVarControl():
 
@@ -40,6 +40,8 @@ class VoltVarControl():
         self.SubLink = {}
 
         self.OutputDict = {}
+
+        self.RegTap_ChangeFlag = {}
 
         # Regulator #
         self.RegList = []  # a sequential list of regulators
@@ -79,6 +81,7 @@ class VoltVarControl():
         self.simulation_name = 'sim1'  # simulation identifier
         self.changed_cap = ''  # Name of the capacitor that has changed its state in current time step
 
+        self.log = logging.getLogger('vvo')
 
         ###############################################
         ## Default Dicts (Configuration and Dynamic) ##
@@ -116,7 +119,7 @@ class VoltVarControl():
 ##        'regulation' : [0.1, 0.1, 0.1, 0.1], # pu, 10%
 ##        'raise_taps': [16, 16, 16, 16],
 ##        'lower_taps': [16, 16, 16, 16],
-##        'time_delay' : [60, 60, 60, 60],
+##        'dwell_time' : [60, 60, 60, 60],
 ##        # The below should belong to regulator properties, but be moved to regulator_configuration properties
 ##        'phases' : ['ABC', 'ABC', 'ABC', 'ABC'],
 ##        'to' : ['nd__hvmv_sub_lsb', 'nd_190-8593', 'nd_190-8581', 'nd_190-7361']
@@ -129,7 +132,7 @@ class VoltVarControl():
 ##        'control': ['MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL', 'MANUAL'],   # 'MANUAL', 'VAR', 'VOLT', 'VARVOLT', 'CURRENT'
 ##        'control_level' : ['INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'INDIVIDUAL', 'BANK'],   # 'INDIVIDUAL','BANK'
 ##        'cap_size' : [4e5, 3e5, 3e5, 3e5, 4e5, 3e5, 3e5, 3e5, 3e5, 3e5],
-##        'time_delay' : [480, 300, 180, 60, 480, 300, 180, 60, 30, 40]
+##        'dwell_time' : [480, 300, 180, 60, 480, 300, 180, 60, 30, 40]
 ##        }
 ##
 ##
@@ -258,14 +261,14 @@ class VoltVarControl():
         self.RegConfig['regulation'] = [0] * self.num_regs
         self.RegConfig['raise_taps']= [0] * self.num_regs
         self.RegConfig['lower_taps'] = [0] * self.num_regs
-        self.RegConfig['time_delay']= [0] * self.num_regs
+        self.RegConfig['dwell_time']= [0] * self.num_regs
         # The below should belong to regulator properties, but be moved to regulator_configuration properties
         self.RegConfig['phases'] = [''] * self.num_regs
         self.RegConfig['to'] = [''] * self.num_regs
         # Extract and update regulator configuration
         for reg_index in range(self.num_regs):
             self.RegConfig['connect_type'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['connect_type']
-            self.RegConfig['control'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['control']
+            self.RegConfig['control'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['Control']  # Note the message is using uppercase Control
             self.RegConfig['control_level'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['control_level']
             self.RegConfig['PT_phase'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['PT_phase']
             self.RegConfig['band_center'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['band_center']
@@ -273,7 +276,7 @@ class VoltVarControl():
             self.RegConfig['regulation'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['regulation']
             self.RegConfig['raise_taps'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['raise_taps']
             self.RegConfig['lower_taps'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['lower_taps']
-            self.RegConfig['time_delay'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['time_delay']
+            self.RegConfig['dwell_time'][reg_index] = self.VVC_message[self.simulation_name][self.RegConfigList[reg_index]]['dwell_time']
             # The below should belong to regulator properties, but be moved to regulator_configuration properties
             self.RegConfig['phases'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['phases']
             self.RegConfig['to'][reg_index] = self.VVC_message[self.simulation_name][self.RegList[reg_index]]['to']
@@ -292,7 +295,7 @@ class VoltVarControl():
         self.CapConfig['control']= [''] * self.num_caps
         self.CapConfig['control_level'] = [''] * self.num_caps
         self.CapConfig['cap_size'] = [0] * self.num_caps
-        self.CapConfig['time_delay'] = [0] * self.num_caps
+        self.CapConfig['dwell_time'] = [0] * self.num_caps
 
         # Extract and update capcacitor configuration
         for cap_index in range(self.num_caps):
@@ -301,7 +304,7 @@ class VoltVarControl():
             self.CapConfig['phases_connected'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['phases_connected']
             self.CapConfig['control'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['control']
             self.CapConfig['control_level'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['control_level']
-            self.CapConfig['time_delay'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['time_delay']
+            self.CapConfig['dwell_time'][cap_index] = self.VVC_message[self.simulation_name][self.CapList[cap_index]]['dwell_time']
 
             if self.VVC_message[self.simulation_name][self.CapList[cap_index]].has_key('capacitor_A'):
                 self.CapConfig['cap_size'][cap_index] = self.CapConfig['cap_size'][cap_index] + self.VVC_message[self.simulation_name][self.CapList[cap_index]]['capacitor_A']
@@ -360,9 +363,9 @@ class VoltVarControl():
             self.CapConfig['cap_size'][temp_pos] = self.CapConfig['cap_size'][i1]
             self.CapConfig['cap_size'][i1] = temp_value
 
-            temp_value = self.CapConfig['time_delay'][temp_pos]
-            self.CapConfig['time_delay'][temp_pos] = self.CapConfig['time_delay'][i1]
-            self.CapConfig['time_delay'][i1] = temp_value
+            temp_value = self.CapConfig['dwell_time'][temp_pos]
+            self.CapConfig['dwell_time'][temp_pos] = self.CapConfig['dwell_time'][i1]
+            self.CapConfig['dwell_time'][i1] = temp_value
 
         # Update capacitor list
         self.CapList = self.VVC['capacitor_list']
@@ -396,9 +399,9 @@ class VoltVarControl():
             self.RegToNodes[self.RegConfig['to'][reg_index]] = [0] * 3     # 3-phase voltages
         # Update regulator to-side voltages
         for reg_index in range(self.num_regs):   # regulator to-side must have 3-phase voltages
-            self.RegToNodes[self.RegConfig['to'][reg_index]][0] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_A'].replace(' ','') )
-            self.RegToNodes[self.RegConfig['to'][reg_index]][1] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_B'].replace(' ','') )
-            self.RegToNodes[self.RegConfig['to'][reg_index]][2] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_C'].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][0] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_A'][:-1].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][1] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_B'][:-1].replace(' ','') )
+            self.RegToNodes[self.RegConfig['to'][reg_index]][2] = complex( self.VVC_message[self.simulation_name][self.RegConfig['to'][reg_index]]['voltage_C'][:-1].replace(' ','') )
 
 
         # Initialize capacitor state dict
@@ -419,9 +422,9 @@ class VoltVarControl():
         # Initialize SubLink dict
         self.SubLink[self.VVC['substation_link']] = [0] * 3  # 3-phase power
         # Update substation_link power measurement
-        self.SubLink[self.VVC['substation_link']][0] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_A'].replace(' ','') )
-        self.SubLink[self.VVC['substation_link']][1] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_B'].replace(' ','') )
-        self.SubLink[self.VVC['substation_link']][2] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_C'].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][0] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_A'][:-2].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][1] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_B'][:-2].replace(' ','') )
+        self.SubLink[self.VVC['substation_link']][2] = complex( self.VVC_message[self.simulation_name][self.VVC['substation_link']]['power_in_C'][:-2].replace(' ','') )
 
 
         # Extract measurement data
@@ -448,7 +451,7 @@ class VoltVarControl():
         for MeasKeys1 in self.MeasNodes.keys():
             for MeasKeys2 in self.MeasNodes[MeasKeys1].keys():
                 if isinstance(self.MeasNodes[MeasKeys1][MeasKeys2], str):
-                    self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2].replace(' ','') )
+                    self.MeasNodes[MeasKeys1][MeasKeys2] = complex( self.MeasNodes[MeasKeys1][MeasKeys2][:-1].replace(' ','') )
 
         # print self.MeasNodes
         # Record the connection phases of each measurement sensor in sequential order as BasicConfig['voltage_measurements']
@@ -498,8 +501,8 @@ class VoltVarControl():
             self.reg_step_down[reg_index] = self.RegConfig['band_center'][reg_index] * self.RegConfig['regulation'][reg_index] /self.RegConfig['lower_taps'][reg_index] # V/tap
 
         # Set voltage regulators and capacitor banks response (progression) time
-        self.RegUpdateTimes = self.RegConfig['time_delay']  # Assume the time delays of regulators and capacitors are given, otherwise use default in VVC configuration
-        self.CapUpdateTimes = self.CapConfig['time_delay']
+        self.RegUpdateTimes = self.RegConfig['dwell_time']  # Assume the time delays of regulators and capacitors are given, otherwise use default in VVC configuration
+        self.CapUpdateTimes = self.CapConfig['dwell_time']
 
         # Initialize regulators tap change times, TRegUpdate
         self.TRegUpdate = [self.TS_NEVER] * self.num_regs
@@ -526,6 +529,10 @@ class VoltVarControl():
 ##        treg_min = 0.0  # define a timestamp, Need to ask someone else what this means
 
         self.Regulator_Change = False # Start out assuming a regulator change hasn't occurred
+
+        # Initialize regulator tap change flag dict
+        for reg_index in range(self.num_regs):
+            self.RegTap_ChangeFlag[self.RegList[reg_index]] = False
 
         ###########################################
         ## From here, the core implementation begins
@@ -575,7 +582,7 @@ class VoltVarControl():
                             print("Warning: " + "for regulator " + self.RegList[reg_index] + \
                                    ". The set point for phase A will exceed the maximum allowed voltage!")
                             # The set point necessary to maintain the end point voltage exceeds the maximum voltage limit specified by the system.  Either
-                            # increase this maximum_voltage limit, or configure your system differently.
+    						# increase this maximum_voltage limit, or configure your system differently.
 
                             if self.RegTap[self.RegList[reg_index]][0] > 0:  # Tap>0, in raise range
                                 if VRegTo[0] + self.reg_step_up[reg_index] > self.VVC['maximum_voltages'][reg_index]:
@@ -661,17 +668,17 @@ class VoltVarControl():
                         for phase_index in range(3):  # loop through phases
                             LimitExceed &= 0x7F  # Use bit 8 as a validity flag (to save a variable)
                             if phase_index == 0 and self.RegConfig['PT_phase'][reg_index].find('A') >= 0: # We have phase A
-                                temp_var_d = 0x01		# A base lower "Limit" checker
-                                temp_var_u = 0x10		# A base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x01		# A base lower "Limit" checker
+    							temp_var_u = 0x10		# A base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
                             if phase_index == 1 and self.RegConfig['PT_phase'][reg_index].find('B') >= 0: # We have phase B
-                                temp_var_d = 0x02		# B base lower "Limit" checker
-                                temp_var_u = 0x20		# B base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x02		# B base lower "Limit" checker
+    							temp_var_u = 0x20		# B base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
                             if phase_index == 2 and self.RegConfig['PT_phase'][reg_index].find('C') >= 0: # We have phase C
-                                temp_var_d = 0x04		# C base lower "Limit" checker
-                                temp_var_u = 0x40		# C base upper "Limit" checker
-                                LimitExceed |= 0x80	# Valid phase
+     							temp_var_d = 0x04		# C base lower "Limit" checker
+    							temp_var_u = 0x40		# C base upper "Limit" checker
+    							LimitExceed |= 0x80	# Valid phase
 
                             if (LimitExceed & 0x80) == 0x80: # valid phase
                                 # Make sure we aren't below the minimum or above the maximum first (***** This below here \/ \/ ********) - sub with step check! *****                        # can go down (lower limit is not hit)
@@ -760,8 +767,8 @@ class VoltVarControl():
                         #Endfor  # End phase FOR
 
 
-                        #Apply the taps - loop through phases (nonexistant phases should just be 0
-                        #Default assume no change will occur
+    			        #Apply the taps - loop through phases (nonexistant phases should just be 0
+    			        #Default assume no change will occur
                         self.Regulator_Change = False
                         self.TRegUpdate[reg_index] = self.TS_NEVER
 
@@ -772,6 +779,7 @@ class VoltVarControl():
                                 else:  # must have room to tap up
                                     self.RegTap[self.RegList[reg_index]][phase_index] += 1  # increment
                                     self.Regulator_Change = True  # Flag as change
+                                    self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                     self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
 
                             elif prop_tap_changes[phase_index] < 0:  # want to tap down
@@ -780,6 +788,7 @@ class VoltVarControl():
                                 else:  # must have room to tap down
                                     self.RegTap[self.RegList[reg_index]][phase_index] -= 1  # decrement
                                     self.Regulator_Change = True  # Flag as change
+                                    self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                     self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]  # set return time
 
                             #else:  # default else, no change
@@ -946,6 +955,7 @@ class VoltVarControl():
                                 self.RegTap[self.RegList[reg_index]][1] += 1
                                 self.RegTap[self.RegList[reg_index]][2] += 1
                                 self.Regulator_Change = True   # Flag the change
+                                self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                 self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
                             #Else   # limit hit, so "no change"
 
@@ -969,6 +979,7 @@ class VoltVarControl():
                                 self.RegTap[self.RegList[reg_index]][1] -= 1
                                 self.RegTap[self.RegList[reg_index]][2] -= 1
                                 self.Regulator_Change = True   # Flag the change
+                                self.RegTap_ChangeFlag[self.RegList[reg_index]] = True  # Flag as change if at least one phase tap changes
                                 self.TRegUpdate[reg_index] = t0 + self.RegUpdateTimes[reg_index]   # set return time
                             #Else   # limit hit, so "no change"
 
@@ -1069,27 +1080,20 @@ class VoltVarControl():
         self.OutputDict[self.simulation_name] = {}
 
         temp_RegTapDict = {}
-        temp_TRegUpdateDict = {}
         temp_CapSwitchDict = {}
-        temp_TCapUpdateDict = {}
 
         # Update regulator related outputs
         temp_RegTapKeys = ['tap_A', 'tap_B', 'tap_C']
 
         for reg_index in range(self.num_regs):
-            temp_RegTapDict[self.RegList[reg_index]] = dict(zip(temp_RegTapKeys, self.RegTap[self.RegList[reg_index]]))
+            if self.RegTap_ChangeFlag[self.RegList[reg_index]] == True:
+               temp_RegTapDict[self.RegList[reg_index]] = dict(zip(temp_RegTapKeys, self.RegTap[self.RegList[reg_index]]))
 
         self.OutputDict[self.simulation_name].update(temp_RegTapDict)
-
-        temp_TRegUpdateDict['T_RegUpdate'] = dict(zip(self.RegList, self.TRegUpdate))
-
-        self.OutputDict[self.simulation_name].update(temp_TRegUpdateDict)
 
         # Update capacitor related outputs
         if self.changed_cap != '':
             temp_CapSwitchDict[self.changed_cap] = self.CapState[self.changed_cap]
             self.OutputDict[self.simulation_name].update(temp_CapSwitchDict)
-            temp_TCapUpdateDict['T_CapUpdate'] = {self.changed_cap: self.TCapUpdate}
-            self.OutputDict[self.simulation_name].update(temp_TCapUpdateDict)
 
         self.outputfn(self.OutputDict.copy())
