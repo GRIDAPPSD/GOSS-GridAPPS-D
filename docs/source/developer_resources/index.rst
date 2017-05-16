@@ -33,9 +33,11 @@ Eclipse IDE Setup
 Execution Workflow
 ------------------
 
+
 Messaging 
 ---------
 **TODO** messaging between components and applications with topics, message format.
+
 
 CIM Documentation
 -----------------
