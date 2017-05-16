@@ -10,7 +10,7 @@ Developing Applications using GridAPPS-D
        
 Eclipse IDE Setup
 -----------------
-.. include:: Eclipse Setup.rst
+.. include:: Eclipse\ Setup.rst
 
 Execution Workflow
 ------------------
