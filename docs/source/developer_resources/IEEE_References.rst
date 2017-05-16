@@ -9,6 +9,12 @@ All of these are available on IEEEXplore
 
 -  The 13-bus test feeder for CIM query investigations [5]
 
+-  GridLAB-D [6]
+
+-  GOSS [7]
+
+-  FNCS [8]
+
 References
 ----------
 
@@ -30,3 +36,19 @@ Society Winter Meeting. Conference Proceedings (Cat. No.01CH37194)*,
 [5] W. H. Kersting, "Radial distribution test feeders," in *2001 IEEE
 Power Engineering Society Winter Meeting. Conference Proceedings (Cat.
 No.01CH37194)*, 2001, pp. 908-912 vol.2.
+
+[6] D.  P.  Chassin, J.  C.  Fuller, and N.  Djilali, "GridLAB-D: An 
+agent-based simulation framework for smart grids," in *Journal of Applied 
+Mathematics*, vol.  2014, no.  492320, pp.  1-12, 2014.
+  
+[7] I.  Gorton et al., "GridOPTICS(TM) A Novel Software Framework for 
+Integrating Power Grid Data Storage, Management and Analysis," in *System 
+Sciences (HICSS), 2013 46th Hawaii International Conference on*, 2013, pp.  
+2167-2176.  
+  
+[8] S.  Ciraci, J.  Daily, J.  Fuller, A.  Fisher, L.  Marinovici, and K.  
+Agarwal, "FNCS: a framework for power system and communication networks 
+co-simulation," in *Proceedings of the Symposium on Theory of Modeling & 
+Simulation - DEVS Integrative*, Tampa, Florida, 2014, pp.  1-8.  
+
+
