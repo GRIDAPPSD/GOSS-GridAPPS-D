@@ -1,3 +1,10 @@
+.. _cdpsm_rc1:
+
+.. toctree::
+   :maxdepth: 2
+
+
+
 This document summarizes the use of a reduced-order CIM [1]_ to support
 feeder modeling for the volt-var application in Release Cycle 1 (RC1).
 The full CIM includes over 1100 tables in SQL, each one corresponding to
@@ -12,7 +19,7 @@ most recent distribution CIM interoperability test, which was held in
 compatibility with the most recent CIM base standard.
 
 Class Diagrams for the Profile
-==============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Figure 1 through Figure 11 present the UML class diagrams generated from
 Enterprise Architect [2]_. These diagrams provide an essential roadmap
@@ -242,7 +249,7 @@ transmission system heritage. Attributes for sensor characteristics
 would also have to be added in future versions of GridAPPS-D.
 
 Typical Queries
-===============
+^^^^^^^^^^^^^^^
 
 These queries focus on requirements of the first volt-var application.
 
@@ -348,7 +355,7 @@ These queries focus on requirements of the first volt-var application.
    b. Given switch, toggle its open/close status.
 
 Object Diagrams for Queries
-===========================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This section contains UML object diagrams for the purpose of
 illustrating how to perform typical queries and updates. For those
@@ -765,7 +772,7 @@ to LinearShuntCompensator, but there is no phasing support. That needs
 to be proposed as a CIM extension.
 
 Metering Relationship to Loads in the CIM
-=========================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These UML class relationships in Figure 33 through Figure 35 have not
 been planned for implementation in RC1, but in a future version of
@@ -787,7 +794,7 @@ Figure 35: EndDevices associate to meter readings, functions and
 channels.
 
 CIM Enhancements for RC2
-========================
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Possible CIM enhancements to support volt-var feeder modeling:
 
@@ -815,7 +822,7 @@ Possible CIM enhancements to support volt-var feeder modeling:
 9. Clarify side1 and side2 for switch phase modeling (Figure 4)
 
 CIM Profile in CIMTool
-======================
+^^^^^^^^^^^^^^^^^^^^^^
 
 CIMTool was used to develop and test the profile for RC1, because it:
 
@@ -877,7 +884,7 @@ Figure 36: Profiling TapChangerControl in CIMTool; the inherited
 RegulatingCondEq is not included.
 
 Creating Data Definition Language (DDL) for MySQL
-=================================================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As shown at the top of Figure 36, CIMTool builds *RC1.sql* to create
 tables in a relational database, but the syntax doesn’t match that

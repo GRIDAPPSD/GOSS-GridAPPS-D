@@ -1,8 +1,5 @@
-OSPRREYS Release Cycle 1: Goals and Work Breakdown
-==================================================
-
-Objective and Scope
--------------------
+As Reduced for Release Cycle 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Our objective is to demonstrate useful functionality, which is
 standards-compliant, by the end of March 2017. A simple heuristic VVO
@@ -50,9 +47,6 @@ combination of:
 These decisions, and many others affecting Release 2 and Release 3, can
 be deferred until we gain experience developing Release 1.
 
-Component Breakdown
--------------------
-
 Figure 1 shows the software components planned for Release 1. Most of
 these correspond to internal functions from the Functional Requirements,
 with some relatively minor re-factoring. The Power System Model Manager
@@ -69,12 +63,12 @@ except:
 
 -  A separate task has been added for some project-level items.
 
-|image0|
+|rc1_tasks_image0|
 
 Figure 1: Component Diagram for OSPRREYS Release 1
 
-Work Breakdown
---------------
+Initial Work Breakdown for Release Cycle 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Release 1 work breaks down into seven tasks, listed below. Three
 **critical items must be completed first**; these are highlighted in
@@ -162,4 +156,4 @@ using an agile process (Kanban).
    b. Create native GridLAB-D file for initial loading into the
       simulator
 
-.. |image0| image:: RC1_Tasks/media/uml_DomainObjects.png
+.. |rc1_tasks_image0| image:: RC1_Tasks/media/uml_DomainObjects.png

@@ -1,5 +1,5 @@
-GridAPPS-D UML Domain Diagrams
-==============================
+As Derived from the Functional Specification 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This document presents a selection of GridAPPS-D domain (class) diagrams
 to supplement the *OSPRREYS Functional Specification* document. The
@@ -16,9 +16,9 @@ Manager will be composed of one (and only one) of each internal manager
 numbered 401 – 412. These internal managers work together to accomplish
 various GridAPPS-D functions.
 
-|image0|
+|uml_image0|
 
-Figure : Composition of the GridAPPS-D Platform Manager
+Figure 1: Composition of the GridAPPS-D Platform Manager
 
 Within each class block, some top-level attributes are listed with (-)
 signs in the middle division, and some top-level methods are listed with
@@ -48,9 +48,9 @@ for registration and hosting, in a process detailed later. For now, we
 assume the application(s) have been installed and will focus first on
 running VVO.
 
-|image1|
+|uml_image1|
 
-Figure : Executing an application
+Figure 2: Executing an application
 
 All user interaction with GridAPPS-D occurs through a command interface,
 numbered 202 when the user writes commands to GridAPPS-D, and numbered
@@ -114,9 +114,9 @@ reporting to the user, EF7, via the command interface. Note that the
 base data, in 201, is not modified through this process. Instead, the
 base data is treated as input to GridAPPS-D.
 
-|image2|
+|uml_image2|
 
-Figure : Internal model management
+Figure 3: Internal model management
 
 Figure 4 shows the internal Platform Manager flow when running
 application tests. Compared to the case of normal usage in Figure 2,
@@ -141,9 +141,9 @@ optional, and should have been requested as part of the 206 Test Config
 Setup or 204 Model Config Setup (this is not spelled out in the
 functional specification).
 
-|image3|
+|uml_image3|
 
-Figure : Testing an application or the platform
+Figure 4: Testing an application or the platform
 
 Figure 5 shows some of the internal 413 Platform Manager detail when a
 user, EF7, runs an application in debugging mode. Compared to Figure 2,
@@ -159,9 +159,9 @@ Results, with 109 System Logs, for output to the user via the command
 interface. Depending on the implementation of GridAPPS-D, interactive
 debugging may also be supported, but is not shown in Figure 5.
 
-|image4|
+|uml_image4|
 
-Figure : Debugging an application
+Figure 5: Debugging an application
 
 Figure 6 shows the process of registering or updating an application to
 use with GridAPPS-D. The developer, in the role of EF13, must provide
@@ -184,13 +184,13 @@ components. In Figure 6, the 410 Application Hosting Manager can pass
 311 to 404, 407 and 412 as needed. Although not shown earlier, SAC is
 actually incorporated into all GridAPPS-D processes this way.
 
-|image5|
+|uml_image5|
 
-Figure : Hosting an application
+Figure 6: Hosting an application
 
-.. |image0| image:: UML_Diagrams/media/uml_Platform.png
-.. |image1| image:: UML_Diagrams/media/uml_VVO.png
-.. |image2| image:: UML_Diagrams/media/uml_ModelManagement.png
-.. |image3| image:: UML_Diagrams/media/uml_Testing.png
-.. |image4| image:: UML_Diagrams/media/uml_Debugging.png
-.. |image5| image:: UML_Diagrams/media/uml_Hosting.png
+.. |uml_image0| image:: UML_Diagrams/media/uml_Platform.png
+.. |uml_image1| image:: UML_Diagrams/media/uml_VVO.png
+.. |uml_image2| image:: UML_Diagrams/media/uml_ModelManagement.png
+.. |uml_image3| image:: UML_Diagrams/media/uml_Testing.png
+.. |uml_image4| image:: UML_Diagrams/media/uml_Debugging.png
+.. |uml_image5| image:: UML_Diagrams/media/uml_Hosting.png
