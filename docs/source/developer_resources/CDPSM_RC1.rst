@@ -3,9 +3,7 @@
 .. toctree::
    :maxdepth: 2
 
-
-
-This document summarizes the use of a reduced-order CIM [1]_ to support
+This section summarizes the use of a reduced-order CIM [1]_ to support
 feeder modeling for the volt-var application in Release Cycle 1 (RC1).
 The full CIM includes over 1100 tables in SQL, each one corresponding to
 a UML class, enumeration or datatype. In RC1, we’re using approximately

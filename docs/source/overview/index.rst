@@ -12,8 +12,7 @@ Overview
 :ref:`Definition of Terms<definitions>`
 ---------------------------------------
 
-:ref:`References<references>`
-------------------------------
+.. include:: references.inc
 
 :ref:`Version History<version_history>`
 ---------------------------------------

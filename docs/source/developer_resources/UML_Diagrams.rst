@@ -1,7 +1,7 @@
 As Derived from the Functional Specification 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This document presents a selection of GridAPPS-D domain (class) diagrams
+This section presents a selection of GridAPPS-D domain (class) diagrams
 to supplement the *OSPRREYS Functional Specification* document. The
 purpose is to enhance understanding of the functional specification, by
 providing graphical walkthroughs of some important use cases. The reader
