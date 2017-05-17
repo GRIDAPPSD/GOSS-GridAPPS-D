@@ -28,10 +28,10 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 		"timestep_increment": "1000",
 		"simulation_name": "ieee8500",
 		"power_flow_solver_method": "NR",
-	
-	::
 
-		*simulation_output: the objects and fields to be returned by the simulation*
+*simulation_output: the objects and fields to be returned by the simulation*	
+::
+		
 			"simulation_output": {
 				"output_objects": [{
 					"name": "rcon_FEEDER_REG",
@@ -51,7 +51,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 
 		
 		*model creation config: the paramaters used to generate the input file for the simulation*
-	::
+::
 	
 		"model_creation_config": {
 			"load_scaling_factor": "1",
@@ -63,7 +63,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 	},
 	
 	*application config: inputs to any other applications that should run as part of the simluation, in this case the voltvar application*
-	::
+::
 	
 	"application_config": {
 		"applications": [{
