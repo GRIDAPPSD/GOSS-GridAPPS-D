@@ -7,6 +7,7 @@ Process status will be sent on goss/gridappsd/simulation/status/<Simulation_ID>
 {
 
 	*power_system_config: the CIM model to be used in the simulation*
+	
 	::"power_system_config": {
 		"GeographicalRegion_name": "ieee8500nodecktassets_Region",
 		"SubGeographicalRegion_name": "ieee8500nodecktassets_SubRegion",
