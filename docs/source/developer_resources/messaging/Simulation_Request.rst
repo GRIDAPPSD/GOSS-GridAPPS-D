@@ -17,7 +17,8 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 	},
 
 	*simulation_config: the paramaters used by the simulation*
-.. code:: "simulation_config": {
+.. code:: 
+	"simulation_config": {
 		"start_time": "2009-07-21 00:00:00",
 		"duration": "120",
 		"simulator": "GridLAB-D",
@@ -42,7 +43,8 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 				"regulation"]
 			},
 			.....]
-		},::
+		},
+		::
 		
 		*model creation config: the paramaters used to generate the input file for the simulation*
 		"model_creation_config": {
