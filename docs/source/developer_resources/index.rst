@@ -19,12 +19,7 @@ Execution Workflow
 Messaging 
 ---------
 .. include:: messaging/Simulation_Request.rst
-
 .. include:: messaging/FNCSBridge_Input.rst
-.. include:: messaging/FNCSBridge_Output.rst
-
-**TODO** messaging between components and applications with topics, message format.
-
 
 CIM Documentation
 -----------------
