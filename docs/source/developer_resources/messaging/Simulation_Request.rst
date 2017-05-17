@@ -44,7 +44,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 			},
 			.....]
 		},
-::
+	::
 		
 		*model creation config: the paramaters used to generate the input file for the simulation*
 		"model_creation_config": {
