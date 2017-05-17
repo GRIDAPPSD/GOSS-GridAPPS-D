@@ -18,32 +18,32 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 
 	*simulation_config: the paramaters used by the simulation*
 	::
-	"simulation_config": {
-		"start_time": "2009-07-21 00:00:00",
-		"duration": "120",
-		"simulator": "GridLAB-D",
-		"timestep_frequency": "1000",
-		"timestep_increment": "1000",
-		"simulation_name": "ieee8500",
-		"power_flow_solver_method": "NR",
-		
-		*simulation_output: the objects and fields to be returned by the simulation*
-		"simulation_output": {
-			"output_objects": [{
-				"name": "rcon_FEEDER_REG",
-				"properties": ["connect_type",
-				"Control",
-				"control_level",
-				"PT_phase",
-				"band_center",
-				"band_width",
-				"dwell_time",
-				"raise_taps",
-				"lower_taps",
-				"regulation"]
+		"simulation_config": {
+			"start_time": "2009-07-21 00:00:00",
+			"duration": "120",
+			"simulator": "GridLAB-D",
+			"timestep_frequency": "1000",
+			"timestep_increment": "1000",
+			"simulation_name": "ieee8500",
+			"power_flow_solver_method": "NR",
+
+			*simulation_output: the objects and fields to be returned by the simulation*
+			"simulation_output": {
+				"output_objects": [{
+					"name": "rcon_FEEDER_REG",
+					"properties": ["connect_type",
+					"Control",
+					"control_level",
+					"PT_phase",
+					"band_center",
+					"band_width",
+					"dwell_time",
+					"raise_taps",
+					"lower_taps",
+					"regulation"]
+				},
+				.....]
 			},
-			.....]
-		},
 	::
 		
 		*model creation config: the paramaters used to generate the input file for the simulation*
