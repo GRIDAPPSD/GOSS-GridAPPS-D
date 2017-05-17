@@ -5,10 +5,11 @@ Process manager listens to topic **goss/gridappsd/process/request/simulation** a
 Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
 
 
+::
 
-{
+	{
 
-	*power_system_config: the CIM model to be used in the simulation*
+*power_system_config: the CIM model to be used in the simulation*
 ::
 	
 	"power_system_config": {
@@ -17,7 +18,8 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 		"Line_name": "ieee8500"
 	},
 
-	*simulation_config: the paramaters used by the simulation*
+
+*simulation_config: the paramaters used by the simulation*
 ::
 	
 	"simulation_config": {
@@ -50,7 +52,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 			},
 
 		
-		*model creation config: the paramaters used to generate the input file for the simulation*
+*model creation config: the paramaters used to generate the input file for the simulation*
 ::
 	
 		"model_creation_config": {
@@ -62,7 +64,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 		}
 	},
 	
-	*application config: inputs to any other applications that should run as part of the simluation, in this case the voltvar application*
+*application config: inputs to any other applications that should run as part of the simluation, in this case the voltvar application*
 ::
 	
 	"application_config": {
