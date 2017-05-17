@@ -25,7 +25,7 @@ Process status will be sent on goss/gridappsd/simulation/status/<Simulation_ID>
 		"power_flow_solver_method": "NR",
 		
 		*simulation_output: the objects and fields to be returned by the simulation*
-	::	"simulation_output": {
+		"simulation_output": {
 			"output_objects": [{
 				"name": "rcon_FEEDER_REG",
 				"properties": ["connect_type",
@@ -41,7 +41,7 @@ Process status will be sent on goss/gridappsd/simulation/status/<Simulation_ID>
 			},
 			.....]
 		},
-	::	
+		
 		*model creation config: the paramaters used to generate the input file for the simulation*
 		"model_creation_config": {
 			"load_scaling_factor": "1",
