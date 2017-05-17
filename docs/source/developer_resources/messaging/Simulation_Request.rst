@@ -9,6 +9,7 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 {
 
 	*power_system_config: the CIM model to be used in the simulation*
+::
 	
 	"power_system_config": {
 		"GeographicalRegion_name": "ieee8500nodecktassets_Region",
@@ -17,18 +18,20 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 	},
 
 	*simulation_config: the paramaters used by the simulation*
-	::
+::
 	
-		"simulation_config": {
-			"start_time": "2009-07-21 00:00:00",
-			"duration": "120",
-			"simulator": "GridLAB-D",
-			"timestep_frequency": "1000",
-			"timestep_increment": "1000",
-			"simulation_name": "ieee8500",
-			"power_flow_solver_method": "NR",
+	"simulation_config": {
+		"start_time": "2009-07-21 00:00:00",
+		"duration": "120",
+		"simulator": "GridLAB-D",
+		"timestep_frequency": "1000",
+		"timestep_increment": "1000",
+		"simulation_name": "ieee8500",
+		"power_flow_solver_method": "NR",
+	
+	::
 
-			*simulation_output: the objects and fields to be returned by the simulation*
+		*simulation_output: the objects and fields to be returned by the simulation*
 			"simulation_output": {
 				"output_objects": [{
 					"name": "rcon_FEEDER_REG",
@@ -45,9 +48,11 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 				},
 				.....]
 			},
-	::
+
 		
 		*model creation config: the paramaters used to generate the input file for the simulation*
+	::
+	
 		"model_creation_config": {
 			"load_scaling_factor": "1",
 			"schedule_name": "ieeezipload",
@@ -58,6 +63,8 @@ Process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID
 	},
 	
 	*application config: inputs to any other applications that should run as part of the simluation, in this case the voltvar application*
+	::
+	
 	"application_config": {
 		"applications": [{
 			"name": "vvo",
