@@ -1,1 +1,27 @@
+FNCS Bridge Input
+-----------------
 
+FNCS Bridge listens to topic **goss/gridappsd/fncs/input**  
+
+
+::
+
+	{"command": "isInitialized"}
+
+
+
+::
+
+	{"command": "nextTimeStep", "currentTime":<seconds from start of simulation>}
+  
+  
+  
+::
+
+	{"command": "update"}
+  
+  
+  
+::
+
+	{"command": "stop"}
