@@ -6,12 +6,12 @@ Configuration Manager - The configuration manager parses the request and builds 
 
 Data Manager - The data manager accesses the CIM database to build the model files used by the simulator.
 
-Simulation Manager
+Simulation Manager - The simulation manager launches the simulator and other required applications such as the FNCS bridge, FNCS, and the VoltVar application.  It is in charge of managing the timing of the simulation and reporting output from the simulation out to the simulation status topic.
 
-FNCS Bridge
+FNCS Bridge - Serves as input and output from the simulator to the rest of GridAPPS-D, receives initialization, timestep, update, and finalize requests from the simulation manager and other applications, such as voltvar.  It also publishes output from the simulator on a pre-defined topic for the simulation manager and other applications to subscribe to.
 
-Simulator
+Simulator - In this case GridLAB-D serves as the simulator.
 
-VoltVar Application
+VoltVar Application - 
 
-Vizualization
+Vizualization - The vizualization
