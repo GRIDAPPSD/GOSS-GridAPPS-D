@@ -51,6 +51,8 @@ CDPSM_to_GLM.SpacingCount
 
    helper class to keep track of the conductor counts for WireSpacingInfo instances
 
+   Number of Conductors is the number of phases (1..3) plus neutrals (0..1)
+
 Constructors
 ------------
 SpacingCount
@@ -61,6 +63,9 @@ SpacingCount
 
    construct with number of conductors and phases
 
+   :param nconds: number of phases plus neutrals (1..4)
+   :param nphases: number of phase conductors (1..3)
+
 Methods
 -------
 getNumConductors
@@ -69,7 +74,7 @@ getNumConductors
 .. java:method:: public int getNumConductors()
    :outertype: CDPSM_to_GLM.SpacingCount
 
-   accessor to number of conductors (number of phases plus neutrals)
+   :return: accessor to number of conductors
 
 getNumPhases
 ^^^^^^^^^^^^
@@ -77,5 +82,5 @@ getNumPhases
 .. java:method:: public int getNumPhases()
    :outertype: CDPSM_to_GLM.SpacingCount
 
-   accessor to number of phases
+   :return: accessor to number of phases
 

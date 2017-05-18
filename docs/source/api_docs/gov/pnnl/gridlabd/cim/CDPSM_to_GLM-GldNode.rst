@@ -49,7 +49,11 @@ CDPSM_to_GLM.GldNode
 .. java:type:: static class GldNode
    :outertype: CDPSM_to_GLM
 
-   Helper class to accumulate nodes and loads all EnergyConsumer data will be attached to node objects, then written as load objects this preserves the input ConnectivityNode names TODO - another option is to leave all nodes un-loaded, and attach all loads to parent nodes, closer to what OpenDSS does
+   Helper class to accumulate nodes and loads.
+
+   All EnergyConsumer data will be attached to node objects, then written as load objects. This preserves the input ConnectivityNode names
+
+   TODO - another option is to leave all nodes un-loaded, and attach all loads to parent nodes, closer to what OpenDSS does
 
 Fields
 ------
@@ -83,13 +87,15 @@ name
 .. java:field:: public final String name
    :outertype: CDPSM_to_GLM.GldNode
 
+   root name of the node (or load), will have `nd_` prepended
+
 nomvln
 ^^^^^^
 
 .. java:field:: public double nomvln
    :outertype: CDPSM_to_GLM.GldNode
 
-   this is always line-to-neutral
+   this nominal voltage is always line-to-neutral
 
 pa_i
 ^^^^
@@ -97,11 +103,15 @@ pa_i
 .. java:field:: public double pa_i
    :outertype: CDPSM_to_GLM.GldNode
 
+   real power on phase A or s1, constant current portion
+
 pa_p
 ^^^^
 
 .. java:field:: public double pa_p
    :outertype: CDPSM_to_GLM.GldNode
+
+   real power on phase A or s1, constant power portion
 
 pa_z
 ^^^^
@@ -109,13 +119,7 @@ pa_z
 .. java:field:: public double pa_z
    :outertype: CDPSM_to_GLM.GldNode
 
-   for zip load parameters like pa_z
-
-   first character denotes real power (p) or reactive power (q)
-
-   second character denotes the phase (a, b, c, s1==a, s2==b)
-
-   fourth character denotes constant impedance (z), constant current (i) or constant power (p) share
+   real power on phase A or s1, constant impedance portion
 
 pb_i
 ^^^^
@@ -123,11 +127,15 @@ pb_i
 .. java:field:: public double pb_i
    :outertype: CDPSM_to_GLM.GldNode
 
+   real power on phase B or s2, constant current portion
+
 pb_p
 ^^^^
 
 .. java:field:: public double pb_p
    :outertype: CDPSM_to_GLM.GldNode
+
+   real power on phase B or s2, constant power portion
 
 pb_z
 ^^^^
@@ -135,11 +143,15 @@ pb_z
 .. java:field:: public double pb_z
    :outertype: CDPSM_to_GLM.GldNode
 
+   real power on phase B or s2, constant impedance portion
+
 pc_i
 ^^^^
 
 .. java:field:: public double pc_i
    :outertype: CDPSM_to_GLM.GldNode
+
+   real power on phase C, constant current portion
 
 pc_p
 ^^^^
@@ -147,11 +159,15 @@ pc_p
 .. java:field:: public double pc_p
    :outertype: CDPSM_to_GLM.GldNode
 
+   real power on phase C, constant power portion
+
 pc_z
 ^^^^
 
 .. java:field:: public double pc_z
    :outertype: CDPSM_to_GLM.GldNode
+
+   real power on phase C, constant impedance portion
 
 phases
 ^^^^^^
@@ -167,11 +183,15 @@ qa_i
 .. java:field:: public double qa_i
    :outertype: CDPSM_to_GLM.GldNode
 
+   reactive power on phase A or s1, constant current portion
+
 qa_p
 ^^^^
 
 .. java:field:: public double qa_p
    :outertype: CDPSM_to_GLM.GldNode
+
+   reactive power on phase A or s1, constant power portion
 
 qa_z
 ^^^^
@@ -179,11 +199,15 @@ qa_z
 .. java:field:: public double qa_z
    :outertype: CDPSM_to_GLM.GldNode
 
+   reactive power on phase A or s1, constant impedance portion
+
 qb_i
 ^^^^
 
 .. java:field:: public double qb_i
    :outertype: CDPSM_to_GLM.GldNode
+
+   reactive power on phase B or s2, constant current portion
 
 qb_p
 ^^^^
@@ -191,11 +215,15 @@ qb_p
 .. java:field:: public double qb_p
    :outertype: CDPSM_to_GLM.GldNode
 
+   reactive power on phase B or s2, constant power portion
+
 qb_z
 ^^^^
 
 .. java:field:: public double qb_z
    :outertype: CDPSM_to_GLM.GldNode
+
+   reactive power on phase B or s2, constant impedance portion
 
 qc_i
 ^^^^
@@ -203,17 +231,23 @@ qc_i
 .. java:field:: public double qc_i
    :outertype: CDPSM_to_GLM.GldNode
 
+   reactive power on phase C, constant current portion
+
 qc_p
 ^^^^
 
 .. java:field:: public double qc_p
    :outertype: CDPSM_to_GLM.GldNode
 
+   reactive power on phase C, constant power portion
+
 qc_z
 ^^^^
 
 .. java:field:: public double qc_z
    :outertype: CDPSM_to_GLM.GldNode
+
+   reactive power on phase C, constant impedance portion
 
 Constructors
 ------------
@@ -223,7 +257,9 @@ GldNode
 .. java:constructor:: public GldNode(String name)
    :outertype: CDPSM_to_GLM.GldNode
 
-   defaults to zero load and zero phases present
+   constructor defaults to zero load and zero phases present
+
+   :param name: CIM name of the bus
 
 Methods
 -------
@@ -233,7 +269,10 @@ AddPhases
 .. java:method:: public boolean AddPhases(String phs)
    :outertype: CDPSM_to_GLM.GldNode
 
-   accumulates phases present, always returns true
+   accumulates phases present
+
+   :param phs: phases to add, may contain ABCDSs
+   :return: always true
 
 ApplyZIP
 ^^^^^^^^
@@ -243,13 +282,17 @@ ApplyZIP
 
    reapportion loads according to constant power (Z/sum), constant current (I/sum) and constant power (P/sum)
 
+   :param Z: portion of constant-impedance load
+   :param I: portion of constant-current load
+   :param P: portion of constant-power load
+
 GetPhases
 ^^^^^^^^^
 
 .. java:method:: public String GetPhases()
    :outertype: CDPSM_to_GLM.GldNode
 
-   returns phasing string for GridLAB-D with appropriate D, S or N suffix
+   :return: phasing string for GridLAB-D with appropriate D, S or N suffix
 
 HasLoad
 ^^^^^^^
@@ -257,7 +300,7 @@ HasLoad
 .. java:method:: public boolean HasLoad()
    :outertype: CDPSM_to_GLM.GldNode
 
-   true if a non-zero real or reactive load on any phase
+   :return: true if a non-zero real or reactive load on any phase
 
 RescaleLoad
 ^^^^^^^^^^^
@@ -266,4 +309,6 @@ RescaleLoad
    :outertype: CDPSM_to_GLM.GldNode
 
    scales the load by a factor that probably came from the command line's -l option
+
+   :param scale: multiplying factor on all of the load components
 
