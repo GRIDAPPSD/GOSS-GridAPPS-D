@@ -6,9 +6,7 @@ Process manager listens to topic **goss/gridappsd/process/request/simulation** a
 Ongoing process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
 
 
-::
-
-	{
+{
 
 *power_system_config: the CIM model to be used in the simulation*
 ::
