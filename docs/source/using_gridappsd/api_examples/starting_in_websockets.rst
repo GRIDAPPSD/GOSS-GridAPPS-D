@@ -7,7 +7,7 @@ Websockets/Javascript
   <script src="js/stomp.js" type="text/javascript"></script>
   configString = "...........  See developer resources"
   simulationTopic = "/queue/goss/gridappsd/process/request/simulation";
-  gossHost = "172.20.128.20";
+  gossHost = "gridappsdhost";
   //Create client
   var client = Stomp.client( "ws://"+gossHost+":61614");
   client.heartbeat.incoming=0;
@@ -20,7 +20,7 @@ Websockets/Javascript
      $("#debug").append("Output "+message.body + "\n");
   }
   //Make connection with server
-  client.connect( "system", "manager", connect_callback, connect_error_callback);
+  client.connect( "username", "pw", connect_callback, connect_error_callback);
 
   var request = JSON.stringify(JSON.parse(configField));
   client.send(simulationTopic, {"reply-to" :"/temp-queue/response-queue"}, request);
