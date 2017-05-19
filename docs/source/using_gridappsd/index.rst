@@ -7,17 +7,21 @@ Using GridAPPS-D
 Overview
 --------
 
-**TODO** explainb release cycle 1  demo use case, vdata model , vvo app, viz... .
+.. include:: rc1_overview.rst
 
 Run Configuration
 -----------------
 
-**TODO** explain config keys using simple file and link to RC1 demo config file.
+.. include:: run_configuration.rst
 
 Starting Simulation Using API
 -----------------------------
 
-**TODO** Java, Python, Websocket
+.. include:: api_examples/starting_in_java.rst
+.. include:: api_examples/starting_in_websockets.rst
+.. include:: api_examples/starting_in_python.rst
 
 Starting Simulation Using Viz Application
 -----------------------------------------
+
+.. include:: starting_in_viz.rst
