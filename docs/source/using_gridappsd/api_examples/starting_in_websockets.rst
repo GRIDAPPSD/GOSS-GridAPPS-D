@@ -1,2 +1,34 @@
 Websockets/Javascript
-----------------------
+***********************
+
+::
+
+  <script src='js/jquery-2.1.4.min.js'></script>
+  <script src="js/stomp.js" type="text/javascript"></script>
+  configString = "...........  See developer resources"
+  simulationTopic = "/queue/goss/gridappsd/process/request/simulation";
+  gossHost = "172.20.128.20";
+  //Create client
+  var client = Stomp.client( "ws://"+gossHost+":61614");
+  client.heartbeat.incoming=0;
+  client.heartbeat.outgoing=0;
+  
+  var connect_error_callback = function(error) {
+     $("#debug").append("Error "+error + "\n");	   
+  };	
+  var outputCallback = function(message){
+     $("#debug").append("Output "+message.body + "\n");
+  }
+  //Make connection with server
+  client.connect( "system", "manager", connect_callback, connect_error_callback);
+
+  var request = JSON.stringify(JSON.parse(configField));
+  client.send(simulationTopic, {"reply-to" :"/temp-queue/response-queue"}, request);
+	client.subscribe("/temp-queue/response-queue", function(message) {
+	    var simulationId = JSON.parse(message.body);
+	    $("#debug").append("Received Simulation ID: " +simulationId + "\n");
+	    client.subscribe("/topic/goss/gridappsd/simulation/status/"+simulationId, statusCallback);
+	});
+  client.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
+    
+    
