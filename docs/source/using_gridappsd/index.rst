@@ -17,6 +17,8 @@ Run Configuration
 Starting Simulation Using API
 -----------------------------
 
+GridAPPS-D communicates over a publish subscribe architecture implemented in ActiveMQ.  A number of communication protocols are supported, including Openwire, STOMP, and websockets.  Many programming languages support communication over these protocols, below are three examples.
+
 .. include:: api_examples/starting_in_java.rst
 .. include:: api_examples/starting_in_websockets.rst
 .. include:: api_examples/starting_in_python.rst
