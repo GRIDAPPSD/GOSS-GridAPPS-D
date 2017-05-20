@@ -1,5 +1,5 @@
-Websockets/Javascript
-***********************
+**Websockets/Javascript**
+
 In order to call the simulation API from javascript you will need to install `stomp.js <http://jmesnil.net/stomp-websocket/doc/>`_   
 In order to start the simulation through the websocket API you will need to send the configuration to the gridappsd simulation topic in the format descibed on `the Simulation Request page #simulation-request_`   
 
