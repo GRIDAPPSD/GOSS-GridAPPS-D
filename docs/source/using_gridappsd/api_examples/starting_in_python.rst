@@ -1,5 +1,5 @@
 **Python**
-The python API requires that you install the stomp.py package, you can do this using pip with the command *pip intall stomp.py*  For additional documentation see https://github.com/jasonrbriggs/stomp.py/wiki/Simple-Example
+The python API requires that you install the stomp.py package, you can do this using pip with the command *pip install stomp.py*  For additional documentation see https://github.com/jasonrbriggs/stomp.py/wiki/Simple-Example   You will need to create a stomp connection, listen to the output topic, and then send a message to start the simulation.
 
 
 ::
