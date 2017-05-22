@@ -1,4 +1,6 @@
 **Python**
+The python API requires that you install the stomp.py package, you can do this using pip with the command *pip intall stomp.py*  For additional documentation see https://github.com/jasonrbriggs/stomp.py/wiki/Simple-Example
+
 
 ::
 
