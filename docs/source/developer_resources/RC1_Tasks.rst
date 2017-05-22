@@ -3,7 +3,7 @@ As Reduced for Release Cycle 1
 
 Our objective is to demonstrate useful functionality, which is
 standards-compliant, by the end of March 2017. A simple heuristic VVO
-application will be running in OSPRREYS. In terms of the Functional
+application will be running in GridAPPS-D. In terms of the Functional
 Requirements, we will be implementing:
 
 -  102/202 Command Interface
@@ -28,7 +28,7 @@ This represents five out of twelve Internal Functions from the
 Functional Requirements, in partial form. The deadline leaves four
 months for detailed design and implementation, plus two months for
 documentation and testing. Therefore, we have chosen a minimal set of
-functions that can show end-to-end use of OSPRREYS at the first
+functions that can show end-to-end use of GridAPPS-D at the first
 milestone.
 
 In developing the work breakdown structure (WBS), we noted that
@@ -65,7 +65,7 @@ except:
 
 |rc1_tasks_image0|
 
-Figure 1: Component Diagram for OSPRREYS Release 1
+Figure 1: Component Diagram for GridAPPS-D Release 1
 
 Initial Work Breakdown for Release Cycle 1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -100,7 +100,7 @@ using an agile process (Kanban).
    c. Develop a heuristic volt-var application (VVO) in the bound
       language
 
-   d. Integrate VVO into OSPRREYS
+   d. Integrate VVO into GridAPPS-D
 
 3) Messaging and Data Manager
 
@@ -112,7 +112,7 @@ using an agile process (Kanban).
 
    d. Receives power system control actions
 
-   e. Handle communication between OSPRREYS managers
+   e. Handle communication between GridAPPS-D managers
 
    f. Log messages to file
 
