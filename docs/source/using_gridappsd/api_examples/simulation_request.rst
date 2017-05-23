@@ -1,9 +1,7 @@
-Simulation Request
------------------
 
-Process manager listens to topic **goss/gridappsd/process/request/simulation** and returns a simluationId.  
+In order to start a simulation, you must send a simulation request to the process manager. The Process manager listens to topic **goss/gridappsd/process/request/simulation** and returns a simluationId.  The simulation request should look like the example below.  
 
-Ongoing process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
+Once started, the ongoing process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
 
 
 {
