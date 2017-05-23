@@ -7,3 +7,4 @@ log/
 applications/.idea
 *.pyc
 docs/build
+*cache/
