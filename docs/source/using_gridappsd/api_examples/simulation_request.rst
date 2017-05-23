@@ -1,7 +1,7 @@
 
-In order to start a simulation, you must send a simulation request to the process manager. The Process manager listens to topic **goss/gridappsd/process/request/simulation** and returns a simluationId.  The simulation request should look like the example below.  
+In order to start a simulation, you must send a simulation request to the process manager. The Process manager listens to topic **goss/gridappsd/process/request/simulation** and returns a simluationId.  The simulation request should look like the example below. It should incluse a power system config section, which specifies which model to run.  A simulation config, which includes parameters for the simulation, such as the simulator or power flow solver method.  Within the power system config is the power system output, this specifies which objects and properties should be returned by the simulation, these should match the objects in the chosen model.  
 
-Once started, the ongoing process status will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
+Once started, the ongoing process status messages will be sent on **goss/gridappsd/simulation/status/<Simulation_ID>**
 
 
 {
