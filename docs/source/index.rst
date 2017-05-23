@@ -19,6 +19,7 @@ GridAPPS-D's Documentation
    developer_resources/index
    hosted_applications/index
    api_docs/index
+   api_docs/packages
    
    
 Indices and tables

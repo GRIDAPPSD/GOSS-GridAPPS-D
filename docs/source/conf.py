@@ -19,6 +19,8 @@
 #
 import os
 import sys
+import subprocess
+
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../applications'))
 
@@ -195,3 +197,35 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+# Custom event handlers for Volttron #
+def setup(app):
+    """
+    Registers callback method on sphinx events. callback method used to
+    dynamically generate api-docs rst files which are then converted to html
+    by readthedocs
+    :param app:
+    """
+    app.connect('builder-inited', generate_apidoc)
+#    app.connect('build-finished', clean_apirst)
+
+
+def generate_apidoc(app):
+    print('BUILIDING JAVADOCS '+ __file__)
+    print('CWD: '+os.getcwd())
+    path_to_src = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../pnnl.goss.gridappsd/src'))
+    path_to_output = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../source'))
+    print(path_to_src)
+    cmd = [
+        'javasphinx-apidoc', 
+        path_to_src,
+        '-o',
+        'source/api_docs',
+        '-c',
+        'cache'
+    ]
+    subprocess.call(cmd)
+
+# def clean_apirst(app, exception):
+
+#     shutil.rmtree(apidocs_base_dir)
