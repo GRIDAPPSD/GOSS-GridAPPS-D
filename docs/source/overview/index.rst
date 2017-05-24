@@ -6,8 +6,8 @@ Overview
 
 **TODO** overview in 1-2 paragraphs (background)
 
-:ref:`Architecture<architecture>`
-----------------------------------
+.. include:: architecture.rst
+       
        
 :ref:`Definition of Terms<definitions>`
 ---------------------------------------
