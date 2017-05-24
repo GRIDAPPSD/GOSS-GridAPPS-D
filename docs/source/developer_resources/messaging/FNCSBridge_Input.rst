@@ -10,12 +10,12 @@ Is Initialized Input - Checks to see if the simulator is initialized
 
 	{"command": "isInitialized"}
 
-Is Initialized Output
+Is Initialized Output - Returns simulator initializtion status (true/false) and any initialization messages. 
 ::
 
 	{"command": "isInitialized", "response":<true/false>, "output":"Any messages from FNCS regarding initialization"}
 
-Next Time Step Input - Increments the simulator to the specified timestep 
+Next Time Step Input - Increments the simulator to the specified timestep, in a typical real-time simulation it will be incremented once per second.
 ::
 
 	{"command": "nextTimeStep", "currentTime":<seconds from start of simulation>}
