@@ -1,5 +1,7 @@
-As Derived from the Functional Specification 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _uml-diagrams-label:
+
+UML from the Functional Specification 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This section presents a selection of GridAPPS-D domain (class) diagrams
 to supplement the *OSPRREYS Functional Specification* document. The
