@@ -18,8 +18,8 @@ Execution Workflow
 
 Messaging 
 ---------
-Please see link_ for more details.
-.. _../using_gridappsd/api_examples/simulation_request.rst: 
+Please see Run Configuration for more details.
+
 .. include:: messaging/FNCSBridge_Input.rst
 
 CIM Documentation
