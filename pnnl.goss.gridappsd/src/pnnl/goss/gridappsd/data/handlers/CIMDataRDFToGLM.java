@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.Random;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.jena.ontology.OntModelSpec;
@@ -1757,9 +1758,9 @@ public class CIMDataRDFToGLM {
 				char opt = args[i].charAt(1);
 				String optVal = args[i].substring(3);
 				if (opt == 't') {
-			if (optVal.charAt(0) == 'n') {
-		bWantSec = false;
-			}
+						if (optVal.charAt(0) == 'n') {
+								bWantSec = false;
+						}
 				} else if (opt=='e') {
 					if (optVal.charAt(0) == 'u') {
 						fEnc = "UTF8";
@@ -1816,6 +1817,8 @@ public class CIMDataRDFToGLM {
 		PrintWriter outBus = new PrintWriter (fBus);
 
 		model.read(new InputStreamReader(in, fEnc), baseURI, "RDF/XML");
+
+		System.out.println ("***** XML has been read *****");
 				
 		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> ";
 		Query query;
