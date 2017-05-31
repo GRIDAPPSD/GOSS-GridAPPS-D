@@ -18,7 +18,8 @@ Execution Workflow
 
 Messaging 
 ---------
-.. include:: messaging/Simulation_Request.rst
+Please see Run Configuration for more details.
+
 .. include:: messaging/FNCSBridge_Input.rst
 
 CIM Documentation

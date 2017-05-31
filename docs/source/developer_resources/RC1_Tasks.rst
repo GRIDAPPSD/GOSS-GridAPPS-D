@@ -1,5 +1,7 @@
-As Reduced for Release Cycle 1
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _rc1-diagrams-label:
+
+UML for Release Cycle 1
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Our objective is to demonstrate useful functionality, which is
 standards-compliant, by the end of March 2017. A simple heuristic VVO
