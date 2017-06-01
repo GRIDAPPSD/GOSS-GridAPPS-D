@@ -1,12 +1,14 @@
 .. developer-resources
 
 
-Developer Resources
-===================
+GridAPPS-D Development Resources
+================================
 
 
 Developing Applications using GridAPPS-D
 ----------------------------------------
+
+This section is under development. Not available for current release of the platform.
        
 Eclipse IDE Setup
 -----------------

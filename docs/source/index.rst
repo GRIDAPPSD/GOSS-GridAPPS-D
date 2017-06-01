@@ -17,6 +17,7 @@ GridAPPS-D's Documentation
    using_gridappsd/index
    system_configuration/index
    developer_resources/index
+   data_model/index
    hosted_applications/index
    api_docs/index
    api_docs/packages
