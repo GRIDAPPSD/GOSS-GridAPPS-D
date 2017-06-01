@@ -4,6 +4,8 @@
 GridAPPS-D Development Resources
 ================================
 
+This section is useful for developers for understanding or changing platform's internal workings. 
+For developing application for GridAPPS-D platform see :ref:`using` .
 
 Developing Applications using GridAPPS-D
 ----------------------------------------
@@ -20,7 +22,7 @@ Execution Workflow
 
 Messaging 
 ---------
-Please see Run Configuration for more details.
+Please see :ref:`run_config` for more details.
 
 .. include:: messaging/FNCSBridge_Input.rst
 
