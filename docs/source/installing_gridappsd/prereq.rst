@@ -1,5 +1,6 @@
 apt upgrade -y
 GridAPPS-D Dependencies   use apt install for all of these 
+
 -	vim
 -	Git
 -	Mysql-server    (I set the root pw as GADmin1234)
