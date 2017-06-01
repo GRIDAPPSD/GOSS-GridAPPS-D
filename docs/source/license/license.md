@@ -1,11 +1,11 @@
 # License
 
 <div>
-        Copyright &copy; 2017, Battelle Memorial Institute All rights reserved.
+Copyright &copy; 2017, Battelle Memorial Institute All rights reserved.
 </div>
     
 
-1. Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity lawfully obtaining a copy of this software and associated documentation files (hereinafter “the Software”) to redistribute and use the Software in source and binary forms, with or without modification. Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and may permit others to do so, subject to the following conditions:
+1. Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity lawfully obtaining a copy of this software and associated documentation files (hereinafter the Software) to redistribute and use the Software in source and binary forms, with or without modification. Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and may permit others to do so, subject to the following conditions:
 
 * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimers.
 
@@ -32,3 +32,4 @@ Reference herein to any specific commercial product, process, or service by trad
 <p style="text-align: center;">UNITED STATES DEPARTMENT OF ENERGY</p>
 
 <p style="text-align: center;">under Contract DE-AC05-76RL01830  </p>
+

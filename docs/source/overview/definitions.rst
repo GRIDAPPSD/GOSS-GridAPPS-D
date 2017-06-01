@@ -1,8 +1,7 @@
 .. _definitions:
 
-===================
 Definition of Terms
-===================
+-------------------
  
 Process Manager - The workflow begins when a simulation request is sent to the request topic monitored by the Process Manager, the process manager gathers the necessary configurations from the Configuration Manager. Then sends the configuration to the simulation manager to run the simulation.
 

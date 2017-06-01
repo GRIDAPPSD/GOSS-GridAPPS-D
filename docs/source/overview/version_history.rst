@@ -1,8 +1,8 @@
 .. _version_history:
 
-===============
+
 Version History
-===============
+---------------
 
 Version Name: Release Cycle 1 (RC1)
 
