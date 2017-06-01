@@ -66,7 +66,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'GridAPPS-D'
-copyright = '2017, The GridAPPS-D Team'
+copyright = '2017, Battelle Memorial Institute All rights reserved.'
 author = 'The GridAPPS-D Team and Community'
 
 # The version info for the project you're documenting, acts as replacement for

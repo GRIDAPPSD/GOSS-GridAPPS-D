@@ -1,12 +1,16 @@
 .. developer-resources
 
 
-Developer Resources
-===================
+GridAPPS-D Development Resources
+================================
 
+This section is useful for developers for understanding or changing platform's internal workings and for those wishing to develop their own applications for GridAPPS-D. 
+For developing application for GridAPPS-D platform see :ref:`using` .
 
 Developing Applications using GridAPPS-D
 ----------------------------------------
+
+This section is under development. Not available for current release of the platform.
        
 Eclipse IDE Setup
 -----------------
@@ -18,7 +22,7 @@ Execution Workflow
 
 Messaging 
 ---------
-Please see Run Configuration for more details.
+Please see :ref:`run_config` for more details.
 
 .. include:: messaging/FNCSBridge_Input.rst
 

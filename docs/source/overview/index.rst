@@ -22,15 +22,7 @@ this project specifically tasked with developing an open-source, standards
 based ADMS application development platform; GridAPPS-D. 
 
 .. include:: architecture.rst
-       
-       
-:ref:`Definition of Terms<definitions>`
----------------------------------------
 
-.. include:: references.inc
+.. include:: definitions.rst
 
-:ref:`Version History<version_history>`
----------------------------------------
-
-:any:`License<license>`
------------------------
+.. include:: version_history.rst
