@@ -1,6 +1,6 @@
 **Java**
 
-The request simulation can be called using the GOSS Client API. https://github.com/GridOPTICS/GOSS
+The request simulation can be called using the GOSS Client API. https://github.com/GridOPTICS/GOSS  The Client API is used to send a run configuration to the GOSS simulation request topic, once the simulation has started it listens to the FNCS output topic for the simulation data.
 
 ::
 
