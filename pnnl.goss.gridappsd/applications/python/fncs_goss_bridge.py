@@ -6,6 +6,7 @@ Created on Jan 6, 2017
 '''
 import fncs
 import json
+import yaml
 import sys
 import time
 import stomp
@@ -32,7 +33,7 @@ class GOSSListener(object):
     message = {}
     try:
         logger.debug('received message '+str(msg))
-        jsonmsg = json.loads(str(msg))
+        jsonmsg = yaml.safe_load(str(msg))
         if jsonmsg['command'] == 'isInitialized':
             logger.debug('isInitialized check: '+str(isInitialized));
             message['command'] = 'isInitialized'
@@ -45,7 +46,7 @@ class GOSSListener(object):
             gossConnection.send(output_to_goss_queue , json.dumps(message))
         elif jsonmsg['command'] == 'update':
             message['command'] = 'update'
-            _publishToFncsBus(simulationId, jsonmsg['message']) #does not return
+            _publishToFncsBus(simulationId, json.dumps(jsonmsg['message'])) #does not return
         elif jsonmsg['command'] == 'nextTimeStep':
             logger.debug('is next timestep')
             message['command'] = 'nextTimeStep'
@@ -159,7 +160,7 @@ def _publishToFncsBus(simulationId, gossMessage):
         RuntimeError()
         ValueError()
     '''
-    logger.debug('publish to fncs bus '+simulationId+' '+gossMessage)
+    logger.debug('publish to fncs bus '+simulationId+' '+str(gossMessage))
 
     if simulationId == None or simulationId == '' or type(simulationId) != str:
         raise ValueError(
@@ -174,7 +175,7 @@ def _publishToFncsBus(simulationId, gossMessage):
             'Cannot publish message as there is no connection'
             + ' to the FNCS message bus.')
     try:
-        testGossMessageFormat = json.loads(gossMessage)
+        testGossMessageFormat = yaml.safe_load(gossMessage)
         if type(testGossMessageFormat) != dict:
             raise ValueError(
                 'gossMessage is not a json formatted string.'
@@ -183,11 +184,11 @@ def _publishToFncsBus(simulationId, gossMessage):
         raise ValueError(ve)
     except:
         raise RuntimeError(
-            'Unexpected error occured while executing json.loads(gossMessage'
+            'Unexpected error occured while executing yaml.safe_load(gossMessage'
             + '{0}'.format(sys.exc_info()[0]))
-    fncsInputTopic = '{0}/Input'.format(simulationId)
+    fncsInputTopic = '{0}/fncs_input'.format(simulationId)
     logger.debug('fncs input topic '+fncsInputTopic)
-    #fncs.publish_anon(fncsInputTopic, gossMessage)
+    fncs.publish_anon(fncsInputTopic, gossMessage)
     
 def _getFncsBusMessages(simulationId):
     '''publish a message received from the GOSS bus to the FNCS bus.
