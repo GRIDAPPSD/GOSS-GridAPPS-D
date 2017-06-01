@@ -1,20 +1,21 @@
 RC1 Demonstration
 ^^^^^^^^^^^^^^^^^
+In order to run the RC1 demonstration you will need to have access to a Linux machine configured 
+according to the instructions in the Installing GridAPPS-D section.  In order to 
+run the demonstration you will need both ssh and web access to the machine.
 
-In this procedure, we log in to a Linux virtual machine (VM) in the PNNL 
+In this procedure, we connect to a Linux virtual machine (VM) in the PNNL 
 Energy Infrastructure Operations Center (EIOC) using a virtual private 
-network (VPN) connection and MobaXterm on Windows.  The ssh host for 
+network (VPN) connection.  The ssh host for 
 GridAPPS-D in the EIOC is at 172.20.128.20, and you would need user 
-credentials for both that VM and the VPN connection.  Trusted X11 
-forwarding, corresponding to the ssh -X -Y options, should be enabled in 
-MobaXterm when logging in.  After logging in, you will have a "terminal 
-tab" open to the VM in MobaXterm.  
+credentials for both that VM and the VPN connection.  
 
-The procedure will vary if not using MobaXterm or if logging into a local 
-build of GridAPPS-D, i.e.  not hosted in PNNL's EIOC.  For example, you 
-can use the ssh command from a Terminal such as *ssh -X -Y 
+The procedure could vary if logging into a local 
+build of GridAPPS-D, i.e. not hosted in PNNL's EIOC.  If logging into your own 
+build, you will need to replace the IP in the following steps with that of your system. You 
+can use the ssh command from a Terminal or any SSH client such as *ssh -X -Y 
 username@your.host.ip.address* and then supply your local password when 
-prompted.  You may also need to take extra steps in setting up a secure 
+prompted.  If you don't have direct web access, you may also need to take extra steps in setting up a secure 
 SSH tunnel for your browser to work in step 3 below; please ask your local IT 
 administrator for those details.
   
@@ -28,12 +29,12 @@ involved in starting the RC1 demo:
       d. Type *./run-goss-test.sh* You may not see any output and it doesn't exit until you press Ctrl-C.
  
 2. Start the node server for the viz application, which allows you to start the simulation and see its results.
-      a. Open a second terminal to 172.20.128.20, e.g. right-click on the MobaXterm tab and choose *duplicate*.
+      a. Open a second terminal to 172.20.128.20.
       b. Switch to the gridappsd user by typing *sudo su - gridappsd*
       c. Type *cd $HOME/gridappsd_project/sources/viz*
       d. Start the node server by typing *node server.js* You may not see any output and it doesn't exit until you press Ctrl-C.
  
-3. Start the viz demo. This requires a browser using an SSH tunnel, which MobaXterm established in the log in process.
+3. Start the viz demo. In some cases this may require a browser using an SSH tunnel.
       a. In a browser go to http://172.20.128.20:8082/ieee8500
       b. Click on the IEEE 8500 link in the top left of the webpage (see Figure 1).
       c. Click the play button in the top right of the webpage. It will take 5-10 seconds before you see the graphs being generated.
