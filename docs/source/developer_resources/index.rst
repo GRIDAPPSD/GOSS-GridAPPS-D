@@ -4,7 +4,7 @@
 GridAPPS-D Development Resources
 ================================
 
-This section is useful for developers for understanding or changing platform's internal workings. 
+This section is useful for developers for understanding or changing platform's internal workings and for those wishing to develop their own applications for GridAPPS-D. 
 For developing application for GridAPPS-D platform see :ref:`using` .
 
 Developing Applications using GridAPPS-D
