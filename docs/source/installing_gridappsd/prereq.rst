@@ -16,3 +16,15 @@ GridAPPS-D Dependencies   use apt install for all of these
  
  
  
+ 
+ -	Griddapps-project
+    o	Builds/
+    TODO not accurate
+      	test/
+        •	fncs
+        •	goss
+        •	gridlabd
+        •	visualization
+    o	sources
+
+ 
