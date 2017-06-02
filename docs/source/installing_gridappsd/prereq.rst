@@ -1,4 +1,5 @@
 apt upgrade -y
+
 GridAPPS-D Dependencies   use apt install for all of these 
 
 -	vim
@@ -19,13 +20,13 @@ GridAPPS-D Dependencies   use apt install for all of these
  
  
  -	Griddapps-project
-    o	Builds/
+    -	Builds/
     TODO not accurate
-      	test/
-        •	fncs
-        •	goss
-        •	gridlabd
-        •	visualization
-    o	sources
+      -	test/
+        -	fncs
+        -	goss
+        -	gridlabd
+        -	visualization
+    -	sources
 
  
