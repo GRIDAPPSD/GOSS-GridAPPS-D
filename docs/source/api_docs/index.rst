@@ -18,6 +18,7 @@ FNCS
 ----
 
 The Framework for Network Co-simulation (FNCS) manages the time clock and message traffic between platform simulators; its overall design is described in [CIT7]_.
+For API documentation see https://github.com/FNCS/fncs/wiki .
 
 VVO
 ---
