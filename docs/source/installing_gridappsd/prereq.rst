@@ -1,6 +1,6 @@
 apt upgrade -y
 
-GridAPPS-D Dependencies   use apt install for all of these 
+GridAPPS-D Dependencies -  Use apt install for the following dependencies 
 
 -	vim
 -	Git
@@ -16,7 +16,7 @@ GridAPPS-D Dependencies   use apt install for all of these
 -	Apache2
 -	Gradle
  
- 
+ The following structure should be set up to enable the run scripts to execute correctly.
  
  
  -	Griddapps-project
