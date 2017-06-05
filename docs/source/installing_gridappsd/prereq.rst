@@ -1,3 +1,5 @@
+It is recommended to start with a linux platform such as Ubuntu
+
 apt upgrade -y  (as root user)
 
 GridAPPS-D Dependencies -  Use apt install for the following dependencies 
