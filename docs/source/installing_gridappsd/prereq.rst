@@ -1,17 +1,20 @@
-apt upgrade -y
+apt upgrade -y  (as root user)
 
 GridAPPS-D Dependencies -  Use apt install for the following dependencies 
 
+**apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle**
+**pip install stomp.py**
+
 -	vim
 -	Git
--	Mysql-server    (I set the root pw as GADmin1234)
+-	Mysql-server    (I set the root pw as gridappsd1234)
 -	Automake
 -	Default-jdk
 -	G++
 -	Gcc
 -	Python  (v 2.x)
 -	Python-pip
-  - (Stomp.py    install using   pip intall stomp.py)
+  - (Stomp.py    install using   pip install stomp.py)
 -	Libtool
 -	Apache2
 -	Gradle
@@ -20,13 +23,7 @@ GridAPPS-D Dependencies -  Use apt install for the following dependencies
  
  
  -	Griddapps-project
-    -	Builds/
-    TODO not accurate
-      -	test/
-        -	fncs
-        -	goss
-        -	gridlabd
-        -	visualization
-    -	sources
+    -	builds/
+    -	sources/
 
  
