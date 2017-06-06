@@ -8,52 +8,52 @@
 #----------------
 apt update -y 
 
-apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle pip install stomp.py
+apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle 
 
 pip install --upgrade pip
 pip install stomp.py
 
 
-su - gridappsd
+su gridappsd -c "mkdir -p gridappsd_project"
 
-mkdir gridappsd_project
+su gridappsd -c "mkdir -p gridappsd_project/sources"
 
-mkdir gridappsd_project/sources
+su gridappsd -c "mkdir -p gridappsd_project/builds"
 
-mkdir gridappsd_project/builds
-
-export GRIDAPPSD_INSTALL=/home/gridappsd/gridappsd_project
+su gridappsd -c "export GRIDAPPSD_INSTALL=/home/gridappsd/gridappsd_project"
 
 #----------------
 # fncs setup
 #----------------
-export FNCS_INSTALL=$GRIDAPPSD_INSTALL/builds/test
+su gridappsd -c "export FNCS_INSTALL=$GRIDAPPSD_INSTALL/builds/test"
 
-cd /tmp
-wget http://download.zeromq.org/zeromq-3.2.4.tar.gz
-tar -xzf zeromq-3.2.4.tar.gz
-cd zeromq-3.2.4
-./configure --prefix=$FNCS_INSTALL 
-make
-make install
+su gridappsd -c "cd /tmp"
+su gridappsd -c "wget http://download.zeromq.org/zeromq-3.2.4.tar.gz"
+su gridappsd -c "tar -xzf zeromq-3.2.4.tar.gz"
+su gridappsd -c "cd zeromq-3.2.4"
+su gridappsd -c "./configure --prefix=$FNCS_INSTALL"
+su gridappsd -c "make"
+su gridappsd -c "make install"
 
-cd /tmp
-wget http://download.zeromq.org/czmq-3.0.0-rc1.tar.gz
-tar -xzf czmq-3.0.0-rc1.tar.gz
-cd czmq-3.0.0
-./configure –prefix=$FNCS_INSTALL –with-libzmq=$FNCS_INSTALL
-make
-make install
 
-cd $GRIDAPPSD_INSTALL/sources
-git clone https://github.com/FNCS/fncs.git
-cd fncs
-./configure –prefix=$FNCS_INSTALL –with-zmq=$FNCS_INSTALL
-make
-make install
 
-export PATH=$PATH:$FNCS_INSTALL/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$FNCS_INSTALL/lib
+su gridappsd -c "cd /tmp"
+su gridappsd -c "wget http://download.zeromq.org/czmq-3.0.0-rc1.tar.gz"
+su gridappsd -c "tar -xzf czmq-3.0.0-rc1.tar.gz"
+su gridappsd -c "cd czmq-3.0.0"
+su gridappsd -c "./configure –prefix=$FNCS_INSTALL –with-libzmq=$FNCS_INSTALL"
+su gridappsd -c "make"
+su gridappsd -c "make install"
+
+su gridappsd -c "cd $GRIDAPPSD_INSTALL/sources"
+su gridappsd -c "git clone https://github.com/FNCS/fncs.git"
+su gridappsd -c "cd fncs"
+su gridappsd -c "./configure –prefix=$FNCS_INSTALL –with-zmq=$FNCS_INSTALL"
+su gridappsd -c "make"
+su gridappsd -c "make install"
+
+su gridappsd -c "export PATH=$PATH:$FNCS_INSTALL/bin"
+su gridappsd -c "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$FNCS_INSTALL/lib"
 
 #----------------
 # gridlab-d setup
