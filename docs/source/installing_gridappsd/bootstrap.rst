@@ -1,1 +1,6 @@
-A bootstrap method will be made available in the future.
+
+apt install -y git
+git clone https://github.com/GRIDAPPSD/Bootstrap.git
+cd Bootstrap
+chmod a+x *.sh
+./bootstrap.sh
