@@ -5,6 +5,12 @@ Installing GridAPPS-D
 =====================
 
 
+Bootstrap
+---------
+
+.. include:: bootstrap.rst
+
+
 Pre-Requisite
 -------------
 
@@ -27,10 +33,6 @@ Download
 
 .. include:: download.rst
 
-Bootstrap
----------
-
-.. include:: bootstrap.rst
 
 Activate Environment
 --------------------
