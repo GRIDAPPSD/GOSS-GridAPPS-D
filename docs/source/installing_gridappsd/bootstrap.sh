@@ -10,7 +10,9 @@ apt update -y
 
 apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle pip install stomp.py
 
+pip install --upgrade pip
 pip install stomp.py
+
 
 su - gridappsd
 
@@ -43,7 +45,7 @@ cd czmq-3.0.0
 make
 make install
 
-cd $GRIDAPPSD_INSTALL
+cd $GRIDAPPSD_INSTALL/sources
 git clone https://github.com/FNCS/fncs.git
 cd fncs
 ./configure –prefix=$FNCS_INSTALL –with-zmq=$FNCS_INSTALL
@@ -56,7 +58,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$FNCS_INSTALL/lib
 #----------------
 # gridlab-d setup
 #----------------
-cd $GRIDAPPSD_INSTALL
+cd $GRIDAPPSD_INSTALL/sources
 git clone https://github.com/gridlab-d/gridlab-d.git -b release/RC4.0 --single-branch
 cd gridlab-d/third_party
 tar -xzf xerces-c-3.1.1.tar.gz
@@ -74,8 +76,8 @@ install
 #----------------
 # goss gridapps-d setup
 #----------------
-cd $GRIDAPPSD_INSTALL
+cd $GRIDAPPSD_INSTALL/sources
 
 git clone https://github.com/GRIDAPPSD/GOSS-GridAPPS-D.git
 cd GOSS-GridAPPS-D
-
+./build-goss-test.sh
