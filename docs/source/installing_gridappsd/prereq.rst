@@ -1,4 +1,4 @@
-It is recommended to start with a linux platform such as Ubuntu
+If the bootstrap doesn't work, or you wish to install manually you will need the following prerequisites.
 
 apt upgrade -y  (as root user)
 
