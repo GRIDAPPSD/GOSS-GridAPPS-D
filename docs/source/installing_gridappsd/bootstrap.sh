@@ -25,7 +25,7 @@ export GRIDAPPSD_INSTALL=/home/gridappsd/gridappsd_project
 #----------------
 # fncs setup
 #----------------
-export FNCS_INSTALL=$GRIDAPPSD_INSTALL/.....
+export FNCS_INSTALL=$GRIDAPPSD_INSTALL/builds/test
 
 cd /tmp
 wget http://download.zeromq.org/zeromq-3.2.4.tar.gz
