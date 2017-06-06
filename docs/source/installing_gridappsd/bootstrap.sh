@@ -1,6 +1,6 @@
 #prereq should have a user called gridappsd that everthing is expected to run under
 
-#bootstrap - launch this script as root
+#bootstrap - launch this script as root   
 
 
 #----------------
