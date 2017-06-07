@@ -2,7 +2,7 @@ It is recommended to start with a linux platform such as Ubuntu and a 'gridappsd
 
 ::
 	
-    apt install -y git
+    apt install -y git   (you may need to run apt update first)
     git clone https://github.com/GRIDAPPSD/Bootstrap.git
     cd Bootstrap
     chmod a+x *.sh
