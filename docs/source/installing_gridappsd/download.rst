@@ -11,6 +11,7 @@ cd GOSS-GridAPPS-D
 mkdir -p $GRIDAPPSD_INSTALL/builds/test/log
 
 
+
 git clone https://github.com/GRIDAPPSD/viz.git
 
 cd viz 
