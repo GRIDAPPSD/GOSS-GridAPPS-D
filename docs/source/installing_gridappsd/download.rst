@@ -1,4 +1,6 @@
 
+You will need to clone the GOSS-GridAPPS-D and viz repositories and build each
+
 git clone https://github.com/GRIDAPPSD/GOSS-GridAPPS-D.git
 
 cd GOSS-GridAPPS-D
