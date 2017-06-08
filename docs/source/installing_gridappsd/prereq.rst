@@ -4,8 +4,8 @@ apt upgrade -y  (as root user)
 
 GridAPPS-D Dependencies -  Use apt install for the following dependencies 
 
-*apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool anode pache2 gradle nodejs-legacy npm*
-*pip install stomp.py*
+*apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle nodejs-legacy npm*
+
 
 -	vim
 -	Git
@@ -20,6 +20,20 @@ GridAPPS-D Dependencies -  Use apt install for the following dependencies
 -	Libtool
 -	Apache2
 -	Gradle
+ 
+Then apply the following pip installs
+*pip install --upgrade pip*
+
+*pip install stomp.py*
+
+- pip install --upgrade pip
+- pip install stomp.py
+
+As well as the following npm packages
+- npm install -g express
+- npm install -g ejs
+- npm install -g typescript
+- npm install -g typings
  
  The following structure should be set up to enable the run scripts to execute correctly.
  
