@@ -16,12 +16,12 @@ GridAPPS-D Dependencies -  Use apt install for the following dependencies
 -	Gcc
 -	Python  (v 2.x)
 -	Python-pip
-  - (Stomp.py    install using   pip install stomp.py)
 -	Libtool
 -	Apache2
 -	Gradle
  
 Then apply the following pip installs
+
 *pip install --upgrade pip*
 
 *pip install stomp.py*
@@ -30,6 +30,7 @@ Then apply the following pip installs
 - pip install stomp.py
 
 As well as the following npm packages
+
 - npm install -g express
 - npm install -g ejs
 - npm install -g typescript
