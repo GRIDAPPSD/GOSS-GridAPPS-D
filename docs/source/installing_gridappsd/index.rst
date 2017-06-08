@@ -4,6 +4,7 @@
 Installing GridAPPS-D
 =====================
 
+This document is work in progress.
 
 Bootstrap
 ---------
