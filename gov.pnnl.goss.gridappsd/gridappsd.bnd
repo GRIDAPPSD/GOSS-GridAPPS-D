@@ -1,0 +1,10 @@
+Bundle-Version: 0.0.1.${tstamp}
+
+Private-Package: \
+	gov.pnnl.goss.gridappsd.configuration,\
+	pnnl.goss.gridappsd.data.handlers,\
+	pnnl.goss.gridappsd.data,\
+	pnnl.goss.gridappsd.process,\
+	gov.pnnl.goss.gridappsd.requests,\
+	pnnl.goss.gridappsd.simulation,\
+	pnnl.goss.gridappsd.utils
