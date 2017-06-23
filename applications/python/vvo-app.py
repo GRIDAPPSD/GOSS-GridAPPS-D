@@ -1,3 +1,42 @@
+#-------------------------------------------------------------------------------
+# Copyright © 2017, Battelle Memorial Institute All rights reserved.
+# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
+# lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
+# Software) to redistribute and use the Software in source and binary forms, with or without modification. 
+# Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+# the Software, and may permit others to do so, subject to the following conditions:
+# Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+# following disclaimers.
+# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+# the following disclaimer in the documentation and/or other materials provided with the distribution.
+# Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+# form whatsoever without the express written consent of Battelle.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
+# BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+# General disclaimer for use with OSS licenses
+# 
+# This material was prepared as an account of work sponsored by an agency of the United States Government. 
+# Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
+# of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
+# materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
+# the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+# disclosed, or represents that its use would not infringe privately owned rights.
+# 
+# Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
+# or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
+# States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+# herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+# 
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+# UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
+#-------------------------------------------------------------------------------
 '''
 Created on Jan 6, 2017
 
@@ -113,195 +152,6 @@ def appOutput(outputDict):
 def _keepAlive():
     while 1:
         time.sleep(0.1)
-
-
-# def _registerWithFncsBroker(
-#         simId, brokerLocation='tcp://localhost:5570'):
-#     '''Register with the fncs_broker and return.
-
-#     Function arguments:
-#         simulationId -- Type: string. Description: The simulation id.
-#             It must not be an empty string. Default: None.
-#         brokerLocation -- Type: string. Description: The ip location and port
-#             for the fncs_broker. It must not be an empty string.
-#             Default: 'tcp://localhost:5570'.
-#     Function returns:
-#         None.
-#     Function exceptions:
-#         RuntimeError()
-#         ValueError()
-#     '''
-#     global simulationId
-#     global isInitialized
-#     simulationId = simId
-#     try:
-#         logger.info('Registering with FNCS broker ' + str(
-#             simulationId) + ' and broker ' + brokerLocation)
-
-#         logger.debug(
-#             'still connected to goss 1 ' + str(gossConnection.is_connected()))
-#         if simulationId == None or simulationId == '' or type(
-#                 simulationId) != str:
-#             raise ValueError(
-#                 'simulationId must be a nonempty string.\n'
-#                 + 'simulationId = {0}'.format(simulationId))
-
-#         if (brokerLocation == None or brokerLocation == ''
-#             or type(brokerLocation) != str):
-#             raise ValueError(
-#                 'brokerLocation must be a nonempty string.\n'
-#                 + 'brokerLocation = {0}'.format(brokerLocation))
-#         fncsConfiguration = {
-#             'name': 'FNCS_GOSS_Bridge_' + simulationId,
-#             'time_delta': '1s',
-#             'broker': brokerLocation,
-#             'values': {
-#                 simulationId: {
-#                     'topic': simulationId + '/fncs_output',
-#                     'default': '{}',
-#                     'type': 'JSON',
-#                     'list': 'false'
-#                 }
-#             }
-#         }
-
-#         configurationZpl = ('name = {0}\n'.format(fncsConfiguration['name'])
-#                             + 'time_delta = {0}\n'.format(
-#             fncsConfiguration['time_delta'])
-#                             + 'broker = {0}\nvalues'.format(
-#             fncsConfiguration['broker']))
-#         for x in fncsConfiguration['values'].keys():
-#             configurationZpl += '\n    {0}'.format(x)
-#             configurationZpl += '\n        topic = {0}'.format(
-#                 fncsConfiguration['values'][x]['topic'])
-#             configurationZpl += '\n        default = {0}'.format(
-#                 fncsConfiguration['values'][x]['default'])
-#             configurationZpl += '\n        type = {0}'.format(
-#                 fncsConfiguration['values'][x]['type'])
-#             configurationZpl += '\n        list = {0}'.format(
-#                 fncsConfiguration['values'][x]['list'])
-#         fncs.initialize(configurationZpl)
-
-#         isInitialized = fncs.is_initialized()
-#         logger.info('Registered with fncs ' + str(isInitialized))
-
-
-#     except Exception as e:
-#         logger.error('Error while registering with fncs broker ' + str(e))
-
-#     if not fncs.is_initialized():
-#         raise RuntimeError(
-#             'fncs.initialize(configurationZpl) failed!\n'
-#             + 'configurationZpl = {0}'.format(configurationZpl))
-
-
-def _publishToFncsBus(simulationId, gossMessage):
-    '''publish a message received from the GOSS bus to the FNCS bus.
-
-    Function arguments:
-        simulationId -- Type: string. Description: The simulation id.
-            It must not be an empty string. Default: None.
-        gossMessage -- Type: string. Description: The message from the GOSS bus
-            as a json string. It must not be an empty string. Default: None.
-    Function returns:
-        None.
-    Function exceptions:
-        RuntimeError()
-        ValueError()
-    '''
-    logger.debug('publish to fncs bus ' + simulationId + ' ' + gossMessage)
-
-    if simulationId == None or simulationId == '' or type(simulationId) != str:
-        raise ValueError(
-            'simulationId must be a nonempty string.\n'
-            + 'simulationId = {0}'.format(simulationId))
-    if gossMessage == None or gossMessage == '' or type(gossMessage) != str:
-        raise ValueError(
-            'gossMessage must be a nonempty string.\n'
-            + 'gossMessage = {0}'.format(gossMessage))
-    if not fncs.is_initialized():
-        raise RuntimeError(
-            'Cannot publish message as there is no connection'
-            + ' to the FNCS message bus.')
-    try:
-        testGossMessageFormat = yaml.safe_load(gossMessage)
-        if type(testGossMessageFormat) != dict:
-            raise ValueError(
-                'gossMessage is not a json formatted string.'
-                + '\ngossMessage = {0}'.format(gossMessage))
-    except ValueError as ve:
-        raise ValueError(ve)
-    except:
-        raise RuntimeError(
-            'Unexpected error occured while executing yaml.safe_load(gossMessage'
-            + '{0}'.format(sys.exc_info()[0]))
-    fncsInputTopic = '{0}/Input'.format(simulationId)
-    logger.debug('fncs input topic ' + fncsInputTopic)
-    # fncs.publish_anon(fncsInputTopic, gossMessage)
-
-
-def _getFncsBusMessages(simulationId):
-    '''publish a message received from the GOSS bus to the FNCS bus.
-
-    Function arguments:
-        simulationId -- Type: string. Description: The simulation id.
-            It must not be an empty string. Default: None.
-    Function returns:
-        fncsOutput -- Type: string. Description: The json structured output
-            from the simulation. If no output was sent from the simulation then
-            it returns None.
-    Function exceptions:
-        ValueError()
-    '''
-    try:
-        simulatorMessageOutput = None
-        if simulationId == None or simulationId == '' or type(
-                simulationId) != str:
-            raise ValueError(
-                'simulationId must be a nonempty string.\n'
-                + 'simulationId = {0}'.format(simulationId))
-        logger.debug('about to get fncs events')
-        messageEvents = fncs.get_events()
-        logger.debug('fncs events ' + str(messageEvents))
-        if simulationId in messageEvents:
-            simulatorMessageOutput = fncs.get_value(simulationId)
-        logger.debug('simulatorMessageOutput ' + str(simulatorMessageOutput))
-        return simulatorMessageOutput
-    except Exception as e:
-        logger.error(
-            'Error on get FncsBusMessages for ' + str(simulationId) + ' ' + str(
-                e))
-
-
-def _doneWithTimestep(currentTime):
-    '''tell the fncs_broker to move to the next time step.
-
-    Function arguments:
-        currentTime -- Type: integer. Description: the current time in seconds.
-            It must not be none.
-    Function returns:
-        None.
-    Function exceptions:
-        RuntimeError()
-        ValueError()
-    '''
-    try:
-        logger.debug('In done with timestep ' + str(currentTime))
-        if currentTime == None or type(currentTime) != int:
-            raise ValueError(
-                'currentTime must be an integer.\n'
-                + 'currentTime = {0}'.format(currentTime))
-        timeRequest = currentTime + 1
-        logger.debug('calling time_request ' + str(timeRequest))
-        timeApproved = fncs.time_request(timeRequest)
-        logger.debug('time approved ' + str(timeApproved))
-        if timeApproved != timeRequest:
-            raise RuntimeError(
-                'The time approved from fncs_broker is not the time requested.\n'
-                + 'timeRequest = {0}.\ntimeApproved = {1}'.format(timeRequest,
-                                                                  timeApproved))
-    except Exception as e:
-        logger.error('Error in fncs timestep ' + str(e))
 
 
 def _registerWithGOSS(username, password, gossServer='localhost',
