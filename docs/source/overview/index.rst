@@ -28,3 +28,5 @@ based ADMS application development platform; GridAPPS-D.
 .. include:: references.inc
 
 .. include:: version_history.rst
+
+.. include:: contactus.rst
