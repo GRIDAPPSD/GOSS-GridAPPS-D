@@ -1,4 +1,4 @@
-cd pnnl.goss.gridappsd/
+cd gov.pnnl.goss.gridappsd/
 gradle export
 #copy built jar to dist directory
 cp generated/distributions/executable/run.bnd.jar ~/gridappsd_project/builds/lib/

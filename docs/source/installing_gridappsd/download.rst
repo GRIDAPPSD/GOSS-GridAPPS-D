@@ -10,4 +10,5 @@ You will need to clone the GOSS-GridAPPS-D and viz repositories and build each
     - git clone https://github.com/GRIDAPPSD/viz.git
     - cd viz 
     - npm install
+    - webpack
 
