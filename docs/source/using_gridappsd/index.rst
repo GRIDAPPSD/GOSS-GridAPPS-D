@@ -27,3 +27,8 @@ Starting Simulation Using Viz Application
 -----------------------------------------
 
 .. include:: starting_in_viz.rst
+
+Logging messages and process status
+-----------------------------------
+
+.. include:: logging_status.rst
