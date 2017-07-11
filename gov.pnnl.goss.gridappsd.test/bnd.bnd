@@ -1,0 +1,38 @@
+#
+#  OSGi TEST BUNDLE 
+#
+
+Bundle-Version:1.0.0.${tstamp}
+Bundle-Description: \
+ 	This bundle is an OSGi test bundle that tests the enRoute Blog Manager API. Projects\
+ 	that provide this API should configure their bnd.bnd file to run this test so that\
+ 	the providers can test their conformance. This bundle requires DSTest to run so this\
+ 	bundle should be included. \
+	\
+	${warning;Please update this Bundle-Description in gov.pnnl.goss.gridappsd.test/bnd.bnd}
+
+
+Private-Package:  \
+	gov.pnnl.goss.gridappsd.test
+
+Test-Cases: ${test-cases}
+
+
+-includeresource: {readme.md}
+
+-buildpath: \
+	osgi.enroute.base.api;version=1.0,\
+	osgi.enroute.junit.wrapper;version=4.12,\
+	org.mockito.mockito-all
+
+-runrequires: \
+	osgi.identity;filter:='(osgi.identity=gov.pnnl.goss.gridappsd.test)'
+
+-runbundles: \
+	gov.pnnl.goss.gridappsd.test;version=snapshot,\
+	org.apache.felix.log;version='[1.0.1,1.0.2)',\
+	org.apache.servicemix.bundles.junit;version='[4.12.0,4.12.1)',\
+	org.mockito.mockito-core;version='[1.10.19,1.10.20)',\
+	org.objenesis;version='[2.2.0,2.2.1)'
+-runfw: org.apache.felix.framework;version='[5.2.0,5.2.0]'
+-runee: JavaSE-1.8
