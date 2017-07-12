@@ -31,9 +31,9 @@ import pnnl.goss.core.server.ServerControl;
  */
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestConfigurationManager {
+public class ConfigurationManagerTest {
 
-	private static Logger log = LoggerFactory.getLogger(TestConfigurationManager.class);
+	private static Logger log = LoggerFactory.getLogger(ConfigurationManagerTest.class);
    // private final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
     
 	private TestConfiguration testConfig;
