@@ -3,6 +3,7 @@ gradle export
 #copy built jar to dist directory
 cp generated/distributions/executable/run.bnd.jar ~/gridappsd_project/builds/lib/
 
+mkdir -p ~/gridappsd_project/builds/scripts/
 cp applications/python/fncs_goss_bridge.py ~/gridappsd_project/builds/scripts/
 cp applications/etc/zipload_schedule.player ~/gridappsd_project/builds/scripts/
 

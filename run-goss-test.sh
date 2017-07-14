@@ -21,4 +21,4 @@ kill $BGPID
 echo "Stopping node server, process $NJSPID"
 kill $NJSPID
 
-exit(0)
+exit
