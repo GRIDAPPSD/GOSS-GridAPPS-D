@@ -8,7 +8,7 @@ NJSPID=`echo $!`
 
 cd $GRIDAPPSD_PROJECT/builds/lib/
 
-java -Dbigdata.propertyFile=$GRIDAPPSD_PROJECT/builds/lib/conf/rwstore.properties -jar blazegraph.jar >> $GRIDAPPSD_PROJECT/builds/log/blazegraph.log 2>&1 &
+java -Dbigdata.propertyFile=$GRIDAPPSD_PROJECT/builds/conf/rwstore.properties -jar blazegraph.jar >> $GRIDAPPSD_PROJECT/builds/log/blazegraph.log 2>&1 &
 BGPID=`echo $!`
 
 

@@ -10,4 +10,4 @@ cp applications/etc/zipload_schedule.player ~/gridappsd_project/builds/scripts/
 cp ~/gridappsd_project/sources/fncs/python/fncs.py ~/gridappsd_project/builds/scripts/
 cp -R ~/gridappsd_project/sources/GOSS-GridAPPS-D/applications ~/gridappsd_project/builds/
 #copy conf to dist directory
-#cp -R conf ~/gridappsd_project/builds/lib/
+#cp -R conf ~/gridappsd_project/builds/
