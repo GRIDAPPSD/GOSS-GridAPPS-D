@@ -55,8 +55,5 @@ public class ApplicationObject {
 	}
 	public void setConfig_string(String config_string) {
 		this.config_string = config_string;
-	}
-	
-	
-	
+	}	
 }

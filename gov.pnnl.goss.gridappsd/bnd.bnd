@@ -11,7 +11,6 @@
 	pnnl.goss.core.goss-core-server-web,\
 	pnnl.goss.core.goss-core-server-registry,\
 	org.apache.httpcomponents.httpclient,\
-	junit.osgi,\
 	com.springsource.javax.jms,\
 	slf4j.api,\
 	slf4j.simple,\
@@ -26,11 +25,16 @@
 	org.apache.servicemix.bundles.xmlresolver;version=1.2,\
 	com.mysql.jdbc,\
 	xml-apis,\
-	org.apache.commons.lang3
+	org.apache.commons.lang3,\
+	osgi.enroute.junit.wrapper,\
+	osgi.enroute.hamcrest.wrapper,\
+	osgi.enroute.base.api,\
+	org.mockito.mockito-all,\
+	org.apache.servicemix.bundles.junit
 
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd
 -runee: JavaSE-1.8
 -runfw: org.apache.felix.framework;version='5.4.0'
--resolve: auto
+-runbundles: org.apache.felix.log;version='[1.0.1,1.0.2)'

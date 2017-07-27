@@ -69,7 +69,13 @@ public class StatusReporterImpl implements StatusReporter {
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+	public StatusReporterImpl() { }
 	
+	public StatusReporterImpl(ClientFactory clientFactory, Logger logger){
+		this.clientFactory = clientFactory;
+		StatusReporterImpl.log = logger;
+	}
+		
 	/**
 	 * Lifecycle method that connects a Client to the message bus.
 	 * 
