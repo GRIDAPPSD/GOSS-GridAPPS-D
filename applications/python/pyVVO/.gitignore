@@ -1,0 +1,8 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
