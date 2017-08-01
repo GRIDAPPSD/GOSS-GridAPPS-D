@@ -1,6 +1,9 @@
 '''
 Module to write setpoint commands to a GridLAB-D model (.glm)
 
+NOTE: This module is in 'prototype' mode. As such, it certainly isn't
+optimally efficient.
+
 Created on Jul 27, 2017
 
 @author: thay838
@@ -71,19 +74,23 @@ class writeCommands:
             reg = self.extractObject(it)
             
             # Extract name and configuration properties and assign to dict
-            d = writeCommands.extractProperties(reg, ['name', 'configuration'])
-            regDict[d['name']] = d
+            d = writeCommands.extractProperties(reg['obj'],
+                                                ['name', 'configuration'])
+            regDict[d['name']['obj']] = d
             
         # Find the configurations for the requested regulators and put in list.
+        # NOTE: confList and regList MUST be one to one.
         confList = []
+        regList = []
         for r in regulators:
             # If we didn't find it, raise an exception
             if r not in regDict:
                 raise ObjNotFoundError(obj=r, model=self.pathModelIn)
             
-            # Extract the name of the configuration
-            confList.append(regDict[r]['configuration'])
-            
+            # Extract the name of the configuration, put in configuration list
+            confList.append(regDict[r]['configuration']['obj'])
+            # Put the regulator in the list
+            regList.append(r)
             
         # Next, find all regulator configurations
         regConfIterator = re.finditer(writeCommands.REGCONF_REGEX, 
@@ -94,13 +101,34 @@ class writeCommands:
             regConf = self.extractObject(it)
             
             # Extract the name
-            d = writeCommands.extractProperties(regConf, ['name'])
+            d = writeCommands.extractProperties(regConf['obj'], ['name'])
             
             # If the regulator is in our configuration list, alter taps.
-            if d['name'] in confList:
-                # TODO START HERE
-                pass
-             
+            if d['name']['obj'] in confList:
+                # Get the name of the regulator to command
+                regInd = confList.index(d['name']['obj'])
+                regName = regList[regInd]
+                
+                # Loop through the commands and modify the taps
+                for phase, position in regulators[regName].items():
+                    # Find the tap to change
+                    tapStr = writeCommands.TAP + phase
+                    tap = writeCommands.extractProperties(regConf['obj'], 
+                                                          [tapStr])
+                    
+                    # Modify the regulator configuration by replacing the 
+                    # previous tap position with the new commanded position
+                    posStart = tap[tapStr]['start']
+                    posEnd = tap[tapStr]['end']
+                    regConf['obj'] = regConf['obj'][0:posStart] + str(position) \
+                                 + regConf['obj'][posEnd:]
+                
+                # Regulator configuration has been updated, now update model
+                confStart = regConf['start']
+                confEnd = regConf['end']
+                self.strModel = self.strModel[0:confStart] + regConf['obj'] \
+                                + self.strModel[confEnd:]
+                
     def extractObject(self, regMatch):
         '''Function to a GridLAB-D object from the larger model as a string.
         
@@ -111,22 +139,30 @@ class writeCommands:
             an object.
             
         TODO: Make this robust enough to handle nested objects
+        
+        OUTPUT:
+        dict with three fields: 'start,' 'end,' and 'obj'
+            start indicates the starting index of the object in the full model
+            end indicates the ending index of the object in the full model
+            
         '''
         # ASSUMPTION: no nested objects in regulator configurations.
         startInd =  regMatch.span()[0]
         endInd = startInd
         
         for c in self.strModel[startInd:]:
-            # break loop if c is a closing curly brace
+            # Increment the index
+            endInd += 1
+            
+            # Break loop if c is a closing curly brace. Since the index is
+            # incremented first, we ensure the closing bracket is included.
             if c == '}':
                 break
             
-            # increment the index
-            endInd += 1
-            
         # We now know the range of this object. Extract it.
-        obj = self.strModel[startInd:endInd]
-        return obj
+        objStr = self.strModel[startInd:endInd]
+        out = {'start':startInd, 'end':endInd, 'obj':objStr}
+        return out
     
     @staticmethod
     def extractProperties(objString, props):
@@ -156,7 +192,8 @@ class writeCommands:
             
             # Get property value and assign to output dictionary
             propStr = prop.group().strip()
-            outDict[p] = propStr
+            outDict[p] = {'obj': propStr, 'start': prop.span()[0],
+                          'end': prop.span()[1]} 
             
         return outDict
     
@@ -206,3 +243,4 @@ inPath = 'C:/Users/thay838/Desktop/R3-12.47-2.glm'
 strModel = readModel(inPath)         
 obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R3-12.47-2-copy.glm')
 obj.commandRegulators(regulators={'R3-12-47-2_reg_1': {'A':1, 'B':2, 'C':3}})
+obj.writeModel()
