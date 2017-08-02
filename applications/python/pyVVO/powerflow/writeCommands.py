@@ -26,15 +26,9 @@ class writeCommands:
         regulating equipment (OLTC, caps, etc.)
     '''
     # Define some constants for GridLAB-D model parsing.
-    REGOBJ_REGEX = r'\bobject\b\s\bregulator\b'
-    REGCONF_REGEX = r'\bobject\b\s\bregulator_configuration\b'
-    TAP = 'tap_pos_'
-    PHASES = ['A', 'B', 'C']
-    REGTAPS = ['tap_pos_' + p for p in PHASES]
-    
-    # Regular expression to match -99 through 99. We don't know how many taps
-    # a regulator will have, but three digits simply wouldn't be reasonable.
-    TAP_EXP = '-?0*([1-8][0-9]|9[0-9]|[0-9])'
+    REGOBJ_REGEX = re.compile(r'\bobject\b\s\bregulator\b')
+    REGCONF_REGEX = re.compile(r'\bobject\b\s\bregulator_configuration\b')
+    CAP_REGEX = re.compile(r'\bobject\b\s\bcapacitor\b')
     
     def __init__(self, strModel, pathModelOut, pathModelIn=''):
         '''Initialize class with input/output GridLAB-D models
@@ -62,9 +56,8 @@ class writeCommands:
         
         This is performed by finding its configuration and changing 'tap_pos.'
         '''
-        
         # First, find all regulators
-        regIterator = re.finditer(writeCommands.REGOBJ_REGEX, self.strModel)
+        regIterator = writeCommands.REGOBJ_REGEX.finditer(self.strModel)
         
         # Loop through regulators to find names and configs.
         # Note that this could be more efficient, but oh well.
@@ -91,14 +84,15 @@ class writeCommands:
             confList.append(regDict[r]['configuration']['obj'])
             # Put the regulator in the list
             regList.append(r)
-            
-        # Next, find all regulator configurations
-        regConfIterator = re.finditer(writeCommands.REGCONF_REGEX, 
-                                      self.strModel)
         
-        for it in regConfIterator:
+        # Next, loop through and command regulator configurations. Since we'll
+        # be modifying the model as we go, we shouldn't use the 'finditer' 
+        # method.
+        regConfMatch = writeCommands.REGCONF_REGEX.search(self.strModel)
+        
+        while regConfMatch is not None:
             # Extract the object
-            regConf = self.extractObject(it)
+            regConf = self.extractObject(regConfMatch)
             
             # Extract the name
             d = writeCommands.extractProperties(regConf['obj'], ['name'])
@@ -109,36 +103,81 @@ class writeCommands:
                 regInd = confList.index(d['name']['obj'])
                 regName = regList[regInd]
                 
-                # Loop through the commands and modify the taps
-                for phase, position in regulators[regName].items():
-                    # Find the tap to change
-                    tapStr = writeCommands.TAP + phase
-                    tap = writeCommands.extractProperties(regConf['obj'], 
-                                                          [tapStr])
+                # Modify the configuration
+                regConf['obj'] = writeCommands.modObjProps(regConf['obj'],
+                                                           regulators[regName])
                     
-                    # Modify the regulator configuration by replacing the 
-                    # previous tap position with the new commanded position
-                    posStart = tap[tapStr]['start']
-                    posEnd = tap[tapStr]['end']
-                    regConf['obj'] = regConf['obj'][0:posStart] + str(position) \
-                                 + regConf['obj'][posEnd:]
-                
                 # Regulator configuration has been updated, now update model
-                confStart = regConf['start']
-                confEnd = regConf['end']
-                self.strModel = self.strModel[0:confStart] + regConf['obj'] \
-                                + self.strModel[confEnd:]
+                self.strModel = self.strModel[0:regConf['start']] + \
+                                regConf['obj'] + self.strModel[regConf['end']:]
+            
+            # Find the next regulator configuration, using index offset
+            regEndInd = regConf['start'] + len(regConf['obj'])
+            regConfMatch = writeCommands.REGCONF_REGEX.search(self.strModel,
+                                                              regEndInd)
+        
+    def commandCapacitors(self, capacitors):
+        '''Function to change state of capacitors'''
+        # Find the first capacitor
+        capMatch = writeCommands.CAP_REGEX.search(self.strModel)
+        
+        # Loop through the capacitors
+        while capMatch is not None:
+            # Extract the object
+            cap = self.extractObject(capMatch)
+            
+            # Extract its name
+            capName = writeCommands.extractProperties(cap['obj'], ['name'])
+            n = capName['name']['obj']
+            
+            # If the capacitor is in the list to command, do so
+            if n in capacitors:
+                # Modify the capacitor object to implement commands
+                cap['obj'] = writeCommands.modObjProps(cap['obj'], 
+                                                       capacitors[n])
+                                 
+                # Splice new capacitor object into model
+                capStart = cap['start']
+                capEnd = cap['end']
+                self.strModel = self.strModel[0:capStart] + cap['obj'] + \
+                                self.strModel[capEnd:]
+                                
+            # Find the next capacitor, using index offset
+            capEndInd = cap['start'] + len(cap['obj'])
+            capMatch = writeCommands.CAP_REGEX.search(self.strModel, capEndInd)
+                                
+    @staticmethod
+    def modObjProps(objStr, propDict):
+        '''Function to modify an object's properties'''
+        
+        # Loop through the properties and modify/create them
+        for prop, value in propDict.items():
+            try:
+                propVal = writeCommands.extractProperties(objStr, [prop])
+            except PropNotInObjError:
+                # If the property doesn't exist, append it to end of object
+                
+                # Determine if linesep is necessary before appended line
+                if objStr[-2] == '\n':
+                    preSep = ''
+                else:
+                    preSep = '\n'
+                    
+                objStr = objStr[0:-1] + preSep + prop + " " + \
+                         str(value) + ";" + objStr[-1]
+            else:
+                # Replace previous property value with this one
+                objStr = objStr[0:propVal[prop]['start']] + str(value) + \
+                         objStr[propVal[prop]['end']:]
+                         
+        # Return the modified object
+        return objStr
                 
     def extractObject(self, regMatch):
         '''Function to a GridLAB-D object from the larger model as a string.
         
         regMatch is a match object returned from the re package after calling
             re.search or one member of re.finditer.
-        
-        HUGE ASSUMPTION: This will break down if there are nested objects in
-            an object.
-            
-        TODO: Make this robust enough to handle nested objects
         
         OUTPUT:
         dict with three fields: 'start,' 'end,' and 'obj'
@@ -149,14 +188,21 @@ class writeCommands:
         # ASSUMPTION: no nested objects in regulator configurations.
         startInd =  regMatch.span()[0]
         endInd = startInd
+        braceCount = 0
         
         for c in self.strModel[startInd:]:
             # Increment the index
             endInd += 1
             
+            # To avoid troubles with nested objects, keep track of braces
+            if c == '{':
+                braceCount += 1
+            elif c == '}':
+                braceCount -= 1
+                
             # Break loop if c is a closing curly brace. Since the index is
             # incremented first, we ensure the closing bracket is included.
-            if c == '}':
+            if c == '}' and braceCount == 0:
                 break
             
         # We now know the range of this object. Extract it.
@@ -188,7 +234,7 @@ class writeCommands:
             # If the property was not found, raise an exception.
             # TODO: make exception better
             if not prop:
-                raise Exception
+                raise PropNotInObjError(obj = objString, prop = p)
             
             # Get property value and assign to output dictionary
             propStr = prop.group().strip()
@@ -220,7 +266,7 @@ class ObjNotFoundError(Error):
     def __str__(self):
         return(repr(self.message))
         
-class PropertyNotInObject(Error):
+class PropNotInObjError(Error):
     '''Exception raised if an object doesn't have the property required
     
     Attributes:
@@ -229,7 +275,7 @@ class PropertyNotInObject(Error):
         model: model file being searched
         message: simple message
     '''
-    def __init__(self, obj, prop, model):
+    def __init__(self, obj, prop, model=''):
         self.obj = obj
         self.prop = prop
         self.model = model
@@ -239,8 +285,9 @@ class PropertyNotInObject(Error):
     def __str__(self):
         return(repr(self.message))
 
-inPath = 'C:/Users/thay838/Desktop/R3-12.47-2.glm'
+inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
 strModel = readModel(inPath)         
-obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R3-12.47-2-copy.glm')
-obj.commandRegulators(regulators={'R3-12-47-2_reg_1': {'A':1, 'B':2, 'C':3}})
+obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R2-12.47-2-copy.glm')
+obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'tap_pos_A':1, 'tap_pos_B':2, 'tap_pos_C':3}, 'R2-12-47-2_reg_2': {'tap_pos_A':4, 'tap_pos_B':5, 'tap_pos_C':6}})
+obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED'}})
 obj.writeModel()
