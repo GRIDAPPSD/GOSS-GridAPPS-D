@@ -35,7 +35,8 @@ As well as the following npm packages
 - npm install -g ejs
 - npm install -g typescript
 - npm install -g typings
- 
+- npm install -g webpack
+
  The following structure should be set up to enable the run scripts to execute correctly.
  
  -	Griddapps-project
