@@ -1,4 +1,4 @@
-'''
+"""
 Module to write setpoint commands to a GridLAB-D model (.glm)
 
 NOTE: This module is in 'prototype' mode. As such, it certainly isn't
@@ -8,11 +8,7 @@ Created on Jul 27, 2017
 
 @author: thay838
 
-TODO: This class is currently really I/O heavy, as it reads/writes files.
-    This could be improved by doing one read and one write, and keeping the
-    model completely in memory. This could be expensive if there are lots of 
-    'agents' performing this simultaneously
-'''
+"""
 import re
 
 def readModel(modelIn):
@@ -22,23 +18,23 @@ def readModel(modelIn):
     return s
 
 class writeCommands:
-    '''Class for reading GridLAB-D model and changing setpoints in voltage
+    """"Class for reading GridLAB-D model and changing setpoints in voltage
         regulating equipment (OLTC, caps, etc.)
-    '''
+    """
     # Define some constants for GridLAB-D model parsing.
     REGOBJ_REGEX = re.compile(r'\bobject\b\s\bregulator\b')
     REGCONF_REGEX = re.compile(r'\bobject\b\s\bregulator_configuration\b')
     CAP_REGEX = re.compile(r'\bobject\b\s\bcapacitor\b')
     
     def __init__(self, strModel, pathModelOut, pathModelIn=''):
-        '''Initialize class with input/output GridLAB-D models
+        """"Initialize class with input/output GridLAB-D models
         
         strModel should be a string representing a GridLAB-D model.
             Can be obtained by calling readModel function in this module.
             It will be modified to send new commands.
             
         pathModelOut is the path to the new output model.
-        '''
+        """
 
         # Set properties.
         self.strModel = strModel
@@ -46,16 +42,22 @@ class writeCommands:
         self.pathModelOut = pathModelOut
         
     def writeModel(self):
-        '''Simple method to write strModel to file'''
+        """"Simple method to write strModel to file"""
         
         with open(self.pathModelOut, 'w') as f:
             f.write(self.strModel)
     
     def commandRegulators(self, regulators):
-        '''Function to change tap positions on a given regulator.
+        """"Function to change tap positions on a given regulator.
         
         This is performed by finding its configuration and changing 'tap_pos.'
-        '''
+        
+        INPUT: Dictionary of dictionaries. Top level keys are regulator
+            names. Each subdict's keys are properties to change (e.g. 
+            tap_pos_A) mappped to the new desired value (e.g. 2)
+            
+        OUTPUT: The GridLAB-D model in self.strModel is modified
+        """
         # First, find all regulators
         regIterator = writeCommands.REGOBJ_REGEX.finditer(self.strModel)
         
@@ -69,7 +71,7 @@ class writeCommands:
             # Extract name and configuration properties and assign to dict
             d = writeCommands.extractProperties(reg['obj'],
                                                 ['name', 'configuration'])
-            regDict[d['name']['obj']] = d
+            regDict[d['name']['prop']] = d
             
         # Find the configurations for the requested regulators and put in list.
         # NOTE: confList and regList MUST be one to one.
@@ -81,7 +83,7 @@ class writeCommands:
                 raise ObjNotFoundError(obj=r, model=self.pathModelIn)
             
             # Extract the name of the configuration, put in configuration list
-            confList.append(regDict[r]['configuration']['obj'])
+            confList.append(regDict[r]['configuration']['prop'])
             # Put the regulator in the list
             regList.append(r)
         
@@ -98,9 +100,9 @@ class writeCommands:
             d = writeCommands.extractProperties(regConf['obj'], ['name'])
             
             # If the regulator is in our configuration list, alter taps.
-            if d['name']['obj'] in confList:
+            if d['name']['prop'] in confList:
                 # Get the name of the regulator to command
-                regInd = confList.index(d['name']['obj'])
+                regInd = confList.index(d['name']['prop'])
                 regName = regList[regInd]
                 
                 # Modify the configuration
@@ -117,7 +119,14 @@ class writeCommands:
                                                               regEndInd)
         
     def commandCapacitors(self, capacitors):
-        '''Function to change state of capacitors'''
+        """"Function to change state of capacitors.
+        
+        INPUT: Dictionary of dictionaries. Top level keys are capacitor
+            names. Each subdict's keys are properties to change (e.g. 
+            switchA) mappped to the new desired value (e.g. OPEN)
+            
+        OUTPUT: The GridLAB-D model in self.strModel is modified
+        """
         # Find the first capacitor
         capMatch = writeCommands.CAP_REGEX.search(self.strModel)
         
@@ -128,7 +137,7 @@ class writeCommands:
             
             # Extract its name
             capName = writeCommands.extractProperties(cap['obj'], ['name'])
-            n = capName['name']['obj']
+            n = capName['name']['prop']
             
             # If the capacitor is in the list to command, do so
             if n in capacitors:
@@ -148,7 +157,7 @@ class writeCommands:
                                 
     @staticmethod
     def modObjProps(objStr, propDict):
-        '''Function to modify an object's properties'''
+        """"Function to modify an object's properties"""
         
         # Loop through the properties and modify/create them
         for prop, value in propDict.items():
@@ -174,7 +183,7 @@ class writeCommands:
         return objStr
                 
     def extractObject(self, regMatch):
-        '''Function to a GridLAB-D object from the larger model as a string.
+        """"Function to a GridLAB-D object from the larger model as a string.
         
         regMatch is a match object returned from the re package after calling
             re.search or one member of re.finditer.
@@ -184,10 +193,13 @@ class writeCommands:
             start indicates the starting index of the object in the full model
             end indicates the ending index of the object in the full model
             
-        '''
-        # ASSUMPTION: no nested objects in regulator configurations.
+        """
+        
+        # Extract the starting index of the regular expression match.
         startInd =  regMatch.span()[0]
+        # Initialize the ending index (to be incremented in loop).
         endInd = startInd
+        # Initialize counter for braces (to avoid problems with nested objects)
         braceCount = 0
         
         for c in self.strModel[startInd:]:
@@ -212,7 +224,7 @@ class writeCommands:
     
     @staticmethod
     def extractProperties(objString, props):
-        '''Function to extract properties from a string of an object.
+        """"Function to extract properties from a string of an object.
         
         INPUTS:
             objString: string representing object
@@ -220,7 +232,7 @@ class writeCommands:
             
         OUTPUT: 
             dict mapping props to extracted values
-        '''
+        """
         # Initialize return
         outDict = dict()
         
@@ -238,7 +250,7 @@ class writeCommands:
             
             # Get property value and assign to output dictionary
             propStr = prop.group().strip()
-            outDict[p] = {'obj': propStr, 'start': prop.span()[0],
+            outDict[p] = {'prop': propStr, 'start': prop.span()[0],
                           'end': prop.span()[1]} 
             
         return outDict
@@ -247,17 +259,17 @@ class writeCommands:
         pass
 
 class Error(Exception):
-    '''Base class for exceptions in this module'''
+    """"Base class for exceptions in this module"""
     pass
 
 class ObjNotFoundError(Error):
-    '''Exception raised if requested object doesn't exist in model
+    """"Exception raised if requested object doesn't exist in model
     
     Attributes:
         obj: requested object
         model: model file in question
         message: simple message
-    '''
+    """
     def __init__(self, obj, model):
         self.obj = obj
         self.model = model
@@ -267,14 +279,14 @@ class ObjNotFoundError(Error):
         return(repr(self.message))
         
 class PropNotInObjError(Error):
-    '''Exception raised if an object doesn't have the property required
+    """"Exception raised if an object doesn't have the property required
     
     Attributes:
         obj: object in which a property is being looked for in
         prop: property being searched for in an object
         model: model file being searched
         message: simple message
-    '''
+    """
     def __init__(self, obj, prop, model=''):
         self.obj = obj
         self.prop = prop
@@ -286,8 +298,8 @@ class PropNotInObjError(Error):
         return(repr(self.message))
 
 inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
-strModel = readModel(inPath)         
+strModel = readModel(inPath)
 obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R2-12.47-2-copy.glm')
-obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'tap_pos_A':1, 'tap_pos_B':2, 'tap_pos_C':3}, 'R2-12-47-2_reg_2': {'tap_pos_A':4, 'tap_pos_B':5, 'tap_pos_C':6}})
-obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED'}})
+obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'tap_pos_A':1, 'tap_pos_B':2, 'tap_pos_C':3, 'Control': 'MANUAL'}, 'R2-12-47-2_reg_2': {'tap_pos_A':4, 'tap_pos_B':5, 'tap_pos_C':6, 'Control': 'MANUAL'}})
+obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}})
 obj.writeModel()
