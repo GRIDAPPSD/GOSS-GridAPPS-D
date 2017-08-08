@@ -9,6 +9,8 @@ Created on Jul 27, 2017
 @author: thay838
 
 """
+# TODO: Regulator changes need changed: Need a scheme to change both its
+# configuration and the object itself. Maybe add a layer to the dicts?
 import re
 
 def readModel(modelIn):
@@ -110,8 +112,9 @@ class writeCommands:
                                                            regulators[regName])
                     
                 # Regulator configuration has been updated, now update model
-                self.strModel = self.strModel[0:regConf['start']] + \
-                                regConf['obj'] + self.strModel[regConf['end']:]
+                self.strModel = (self.strModel[0:regConf['start']]
+                                 + regConf['obj'] 
+                                 + self.strModel[regConf['end']:])
             
             # Find the next regulator configuration, using index offset
             regEndInd = regConf['start'] + len(regConf['obj'])
@@ -148,8 +151,8 @@ class writeCommands:
                 # Splice new capacitor object into model
                 capStart = cap['start']
                 capEnd = cap['end']
-                self.strModel = self.strModel[0:capStart] + cap['obj'] + \
-                                self.strModel[capEnd:]
+                self.strModel = (self.strModel[0:capStart] + cap['obj']
+                                 + self.strModel[capEnd:])
                                 
             # Find the next capacitor, using index offset
             capEndInd = cap['start'] + len(cap['obj'])
@@ -172,12 +175,12 @@ class writeCommands:
                 else:
                     preSep = '\n'
                     
-                objStr = objStr[0:-1] + preSep + prop + " " + \
-                         str(value) + ";" + objStr[-1]
+                objStr = (objStr[0:-1] + preSep + prop + " " + str(value)
+                          + ";" + objStr[-1])
             else:
                 # Replace previous property value with this one
-                objStr = objStr[0:propVal[prop]['start']] + str(value) + \
-                         objStr[propVal[prop]['end']:]
+                objStr = (objStr[0:propVal[prop]['start']] + str(value)
+                          + objStr[propVal[prop]['end']:])
                          
         # Return the modified object
         return objStr
@@ -291,8 +294,8 @@ class PropNotInObjError(Error):
         self.obj = obj
         self.prop = prop
         self.model = model
-        self.message = "The property '" + prop + "' doesn't exist in " + \
-            "the object '" + obj + "' in the model " + model
+        self.message = ("The property '" + prop + "' doesn't exist in "
+                        + "the object '" + obj + "' in the model " + model)
             
     def __str__(self):
         return(repr(self.message))
