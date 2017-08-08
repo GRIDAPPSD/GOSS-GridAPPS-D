@@ -9,8 +9,7 @@ Created on Jul 27, 2017
 @author: thay838
 
 """
-# TODO: Regulator changes need changed: Need a scheme to change both its
-# configuration and the object itself. Maybe add a layer to the dicts?
+
 import re
 
 def readModel(modelIn):
@@ -55,39 +54,84 @@ class writeCommands:
         This is performed by finding its configuration and changing 'tap_pos.'
         
         INPUT: Dictionary of dictionaries. Top level keys are regulator
-            names. Each subdict's keys are properties to change (e.g. 
-            tap_pos_A) mappped to the new desired value (e.g. 2)
+            names. Each subdict can have up to two keys: 'regulator' and 
+            'configuration.' Within the 'regulator' or 'configuration' dicts,
+            keys are properties to change (e.g. tap_A or Control) mappped to
+            the new desired value (e.g. 2 or MANUAL)
             
+        Example regulators input:
+        regulators={'R2-12-47-2_reg_1': {
+                        'regulator': {
+                            'tap_A':1,
+                            'tap_B':2,
+                            'tap_C':3
+                        },
+                        'configuration': {
+                            'Control': 'MANUAL'
+                        }
+                    },
+                    'R2-12-47-2_reg_2': {
+                        'regulator': {
+                            'tap_A':4,
+                            'tap_B':5,
+                            'tap_C':6
+                        },
+                        'configuration': {
+                            'Control': 'MANUAL'
+                        }
+                    }
+        }
+        
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
         # First, find all regulators
-        regIterator = writeCommands.REGOBJ_REGEX.finditer(self.strModel)
+        regMatch = writeCommands.REGOBJ_REGEX.search(self.strModel)
         
         # Loop through regulators to find names and configs.
         # Note that this could be more efficient, but oh well.
         regDict = dict()
-        for it in regIterator:
+        while regMatch is not None:
             # Extract the object:
-            reg = self.extractObject(it)
+            reg = self.extractObject(regMatch)
             
             # Extract name and configuration properties and assign to dict
             d = writeCommands.extractProperties(reg['obj'],
                                                 ['name', 'configuration'])
-            regDict[d['name']['prop']] = d
+            name = d['name']['prop']
+            regDict[name] = d
+            
+            # If this regulator is in our input dictionary, alter properties
+            if (name in regulators) and ('regulator' in regulators[name]):
+                
+                # Modify the properties of the regulator
+                reg['obj'] = writeCommands.modObjProps(reg['obj'], 
+                                                       regulators[name]['regulator'])
+                
+                # Replace regulator with new modified regulator
+                self.replaceObject(reg)
+            
+            # Find the next regulator using index offset
+            regEndInd = reg['start'] + len(reg['obj'])
+            regMatch = writeCommands.REGOBJ_REGEX.search(self.strModel,
+                                                              regEndInd)
+            
+            
             
         # Find the configurations for the requested regulators and put in list.
         # NOTE: confList and regList MUST be one to one.
         confList = []
         regList = []
-        for r in regulators:
+        for regName, commandDict in regulators.items():
             # If we didn't find it, raise an exception
-            if r not in regDict:
-                raise ObjNotFoundError(obj=r, model=self.pathModelIn)
+            if regName not in regDict:
+                raise ObjNotFoundError(obj=regName, model=self.pathModelIn)
             
-            # Extract the name of the configuration, put in configuration list
-            confList.append(regDict[r]['configuration']['prop'])
-            # Put the regulator in the list
-            regList.append(r)
+            # If we're commanding the configuration, add it to the list.
+            if 'configuration' in commandDict:
+                # Extract name of the configuration, put in list
+                confList.append(regDict[regName]['configuration']['prop'])
+                # Put the regulator in the list
+                regList.append(regName)
         
         # Next, loop through and command regulator configurations. Since we'll
         # be modifying the model as we go, we shouldn't use the 'finditer' 
@@ -101,7 +145,7 @@ class writeCommands:
             # Extract the name
             d = writeCommands.extractProperties(regConf['obj'], ['name'])
             
-            # If the regulator is in our configuration list, alter taps.
+            # If the regulator is in our configuration list, alter config.
             if d['name']['prop'] in confList:
                 # Get the name of the regulator to command
                 regInd = confList.index(d['name']['prop'])
@@ -109,12 +153,10 @@ class writeCommands:
                 
                 # Modify the configuration
                 regConf['obj'] = writeCommands.modObjProps(regConf['obj'],
-                                                           regulators[regName])
+                                                           regulators[regName]['configuration'])
                     
                 # Regulator configuration has been updated, now update model
-                self.strModel = (self.strModel[0:regConf['start']]
-                                 + regConf['obj'] 
-                                 + self.strModel[regConf['end']:])
+                self.replaceObject(regConf)
             
             # Find the next regulator configuration, using index offset
             regEndInd = regConf['start'] + len(regConf['obj'])
@@ -127,6 +169,21 @@ class writeCommands:
         INPUT: Dictionary of dictionaries. Top level keys are capacitor
             names. Each subdict's keys are properties to change (e.g. 
             switchA) mappped to the new desired value (e.g. OPEN)
+        
+        Example capacitors input:
+        capacitors={'R2-12-47-2_cap_1': {
+                        'switchA':'OPEN',
+                        'switchB':'CLOSED',
+                        'control': 'MANUAL'
+                    },
+                    'R2-12-47-2_cap_4': {
+                        'switchA':'CLOSED',
+                        'switchB':'CLOSED',
+                        'switchC': 'OPEN',
+                        'control': 'MANUAL'
+                    }
+        }
+        
             
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
@@ -149,14 +206,23 @@ class writeCommands:
                                                        capacitors[n])
                                  
                 # Splice new capacitor object into model
-                capStart = cap['start']
-                capEnd = cap['end']
-                self.strModel = (self.strModel[0:capStart] + cap['obj']
-                                 + self.strModel[capEnd:])
+                self.replaceObject(cap)
                                 
             # Find the next capacitor, using index offset
             capEndInd = cap['start'] + len(cap['obj'])
             capMatch = writeCommands.CAP_REGEX.search(self.strModel, capEndInd)
+            
+    def replaceObject(self, objDict):
+        """Function to replace object in the model string with a modified
+        one.
+        
+        INPUTS: objDict: object dictionary in the format returned by 
+            writeCommands.extractObject
+            
+        OUTPUS: directly modifies self.strModel to replace object with new one
+        """
+        self.strModel = (self.strModel[0:objDict['start']] + objDict['obj']
+                         + self.strModel[objDict['end']:])
                                 
     @staticmethod
     def modObjProps(objStr, propDict):
@@ -257,9 +323,6 @@ class writeCommands:
                           'end': prop.span()[1]} 
             
         return outDict
-    
-    def commandReg(self):
-        pass
 
 class Error(Exception):
     """"Base class for exceptions in this module"""
@@ -303,6 +366,6 @@ class PropNotInObjError(Error):
 inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
 strModel = readModel(inPath)
 obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R2-12.47-2-copy.glm')
-obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'tap_pos_A':1, 'tap_pos_B':2, 'tap_pos_C':3, 'Control': 'MANUAL'}, 'R2-12-47-2_reg_2': {'tap_pos_A':4, 'tap_pos_B':5, 'tap_pos_C':6, 'Control': 'MANUAL'}})
-obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}})
+obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'regulator': {'tap_A':1, 'tap_B':2, 'tap_C':3}, 'configuration': {'Control': 'MANUAL'}}, 'R2-12-47-2_reg_2': {'regulator': {'tap_A':4, 'tap_B':5, 'tap_C':6}, 'configuration': {'Control': 'MANUAL'}}})
+obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}, 'R2-12-47-2_cap_4': {'switchA':'CLOSED', 'switchB':'CLOSED', 'switchC': 'OPEN', 'control': 'MANUAL'}})
 obj.writeModel()
