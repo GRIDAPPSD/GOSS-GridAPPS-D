@@ -4,7 +4,7 @@ apt upgrade -y  (as root user)
 
 GridAPPS-D Dependencies -  Use apt install for the following dependencies 
 
-*apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle nodejs-legacy npm*
+*apt install -y vim git automake default-jdk g++ gcc python python-pip libtool apache2 gradle nodejs-legacy npm curl
 
 
 -	vim
@@ -19,15 +19,22 @@ GridAPPS-D Dependencies -  Use apt install for the following dependencies
 -	Libtool
 -	Apache2
 -	Gradle
+-   nodejs-legacy
+-   npm
+-   curl
+
+
  
 Then apply the following pip installs
 
 *pip install --upgrade pip*
 
 *pip install stomp.py*
+*pip install pyyaml*
 
 - pip install --upgrade pip
 - pip install stomp.py
+- pip install pyyaml
 
 As well as the following npm packages
 
