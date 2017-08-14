@@ -49,13 +49,22 @@ public class GridAppsDConstants {
 	public static final String password = "manager";
 	
 	//topics
-	private static final String topic_prefix = "goss/gridappsd";
+	private static final String topic_prefix = "goss.gridappsd";
 	
 	//Process Manager topics
-	public static final String topic_request_prefix = topic_prefix+"/process/request";
-	public static final String topic_requestSimulation = topic_request_prefix+"/simulation";
-	public static final String topic_requestData = topic_request_prefix+"/data";
-	public static final String topic_requestSimulationStatus = topic_request_prefix+"/simulation/status";
+	public static final String topic_process_prefix = topic_prefix+".process";
+	
+	//Process Manager Request Topics
+	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
+	public static final String topic_requestData = topic_process_prefix+".request.data";
+	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	//Process Manager Log Messages Topic 
+	public static final String topic_log_prefix = topic_process_prefix+".log";
+	public static final String topic_log_simulation = topic_log_prefix+".simulation";
+	public static final String topic_log_service = topic_log_prefix+".service";
+	public static final String topic_log_test = topic_log_prefix+".test";
+	public static final String topic_log_app = topic_log_prefix+".app";
 	
 	//Configuration Manager topics
 	public static final String topic_configuration = topic_prefix+"/configuration";
