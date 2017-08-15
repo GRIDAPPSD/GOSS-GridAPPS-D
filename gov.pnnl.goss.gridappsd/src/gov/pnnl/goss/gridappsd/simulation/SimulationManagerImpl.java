@@ -37,7 +37,7 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package pnnl.goss.gridappsd.simulation;
+package gov.pnnl.goss.gridappsd.simulation;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -66,8 +66,8 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.

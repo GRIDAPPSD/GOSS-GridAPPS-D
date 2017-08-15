@@ -37,7 +37,7 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package pnnl.goss.gridappsd.data.handlers;
+package gov.pnnl.goss.gridappsd.data.handlers;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;

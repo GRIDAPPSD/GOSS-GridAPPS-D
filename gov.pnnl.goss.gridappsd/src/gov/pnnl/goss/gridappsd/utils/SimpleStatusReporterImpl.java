@@ -37,58 +37,28 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package pnnl.goss.gridappsd.simulation;
+package gov.pnnl.goss.gridappsd.utils;
 
-import java.io.Serializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+public class SimpleStatusReporterImpl implements StatusReporter {
+	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
 
-/**
- * FNCSOutputEvent processes all messages coming from fncs-goss-bridge.py
- * @author shar064
- *
- */
-@Component
-public class FNCSOutputEvent implements GossResponseEvent {
 	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
 	
-	/**
-	 * message is in the JSON string format
-	 * {}
-	 */
 	@Override
-	public void onMessage(Serializable message) {
-		
-		try {
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			
-			
-			
-			//TODO: Parse message and update simulation status or communicate with bridge accordingly
-			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
-					
-		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+	public void reportStatus(String status) {
+		log.info(status);
+
 	}
-	
+
+	@Override
+	public void reportStatus(String topic, String status) throws Exception {
+		log.info(topic+":"+status);
+
+	}
 
 }

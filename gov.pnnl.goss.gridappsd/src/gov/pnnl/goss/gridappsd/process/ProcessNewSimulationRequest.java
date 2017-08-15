@@ -1,4 +1,4 @@
-package pnnl.goss.gridappsd.process;
+package gov.pnnl.goss.gridappsd.process;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import com.google.gson.Gson;
 

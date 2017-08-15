@@ -1,5 +1,6 @@
 package gov.pnnl.goss.gridappsd;
 
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import junit.framework.TestCase;
 
 import org.apache.http.auth.Credentials;
@@ -11,7 +12,6 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.client.ClientServiceFactory;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class TestLogManager extends TestCase {
 	
@@ -21,7 +21,7 @@ private static Logger log = LoggerFactory.getLogger(TestLogManager.class);
 	
 	Client client;
 	
-	public void testApplication() throws Exception {
+	public void testLogging() throws Exception {
 
 			
 			//Step1: Create GOSS Client
@@ -37,9 +37,27 @@ private static Logger log = LoggerFactory.getLogger(TestLogManager.class);
 					+ "\"timestamp\": \"8\14\17 2:22:22\"}";
 			client.publish("goss.gridappsd.process.log", message);
 			
-			
-			
-	}	
+	}
+	
+	public void testLogStore() throws Exception {
+
+		
+		//Step1: Create GOSS Client
+		Credentials credentials = new UsernamePasswordCredentials(
+				GridAppsDConstants.username, GridAppsDConstants.password);
+		client = clientFactory.create(PROTOCOL.STOMP, credentials);
+		
+		String message = "{"
+				+ "\"process_id\":\"app_123\","
+				+ "\"process_status\":\"started\","
+				+ "\"log_level\":\"debug\","
+				+ "\"log_message\":\"Testing LogManager\","
+				+ "\"timestamp\": \"8\14\17 2:22:22\"}";
+		client.publish("goss.gridappsd.process.log", message);
+		
+		
+		
+}	
 	
 
 }

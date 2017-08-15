@@ -37,133 +37,114 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package pnnl.goss.gridappsd.data;
+package gov.pnnl.goss.gridappsd.process;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.List;
-import java.util.Properties;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
+
+import java.io.Serializable;
+import java.util.Random;
 
 import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-import org.apache.felix.dm.annotation.api.Stop;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.server.DataSourceBuilder;
-import pnnl.goss.core.server.DataSourcePooledJdbc;
-import pnnl.goss.core.server.DataSourceRegistry;
+import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+/**
+ * Process Manager subscribe to all the requests coming from Applications
+ * and forward them to appropriate managers.
+ * @author shar064
+ *
+ */
 @Component
-public class GridAppsDataSourcesImpl implements GridAppsDataSources{
-	private static final String CONFIG_PID = "pnnl.goss.sql.datasource.gridappsd";
-//	public static final String DS_NAME = "goss.powergrids";
-	private static final Logger log = LoggerFactory.getLogger(GridAppsDataSourcesImpl.class);
-//	private DataSource datasource;
-//
-//	// Eventually to hold more than one connection
-//	// private Map<String, ConnectionPoolDataSource> pooledMap = new ConcurrentHashMap<>();
-//	private ConnectionPoolDataSource pooledDataSource;
-
-	@ServiceDependency
-	private DataSourceBuilder datasourceBuilder;
-
-	@ServiceDependency
-	private DataSourceRegistry datasourceRegistry;
+public class ProcessManagerImpl implements ProcessManager {
+		
+	private static Logger log = LoggerFactory.getLogger(ProcessManagerImpl.class);
 	
-	Properties datasourceProperties;
-
-	// These are the datasources that this module has registered.
-	private List<String> registeredDatasources = new ArrayList<>();
-
-	public List<String> getRegisteredDatasources(){
-		return registeredDatasources;
-	}
-
-
+	@ServiceDependency
+	private volatile ClientFactory clientFactory;
+	
+	@ServiceDependency
+	private volatile ConfigurationManager configurationManager;
+	
+	@ServiceDependency
+	private volatile SimulationManager simulationManager;
+	
+	@ServiceDependency
+	private volatile StatusReporter statusReporter;
+	
+	@ServiceDependency
+	private volatile LogManager logManager;
+	
 	@Start
 	public void start(){
-		log.debug("Starting "+this.getClass().getName());
-
-		registerDataSource();
-	}
-
-	@ConfigurationDependency(pid=CONFIG_PID)
-	public synchronized void updated(Dictionary<String, ?> config)  {
-		Properties properties = new Properties();
-		String datasourceName = (String)config.get("name");
-		if(datasourceName==null){
-			datasourceName = CONFIG_PID;
+		try{
+			log.info("Starting "+this.getClass().getName());
+			
+			Credentials credentials = new UsernamePasswordCredentials(
+					GridAppsDConstants.username, GridAppsDConstants.password);
+			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			
+			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new GossResponseEvent() {
+				
+				@Override
+				public void onMessage(Serializable message) {
+					log.debug("Process manager received message ");
+					DataResponse event = (DataResponse)message;
+					
+					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));
+					//TODO: create registry mapping between request topics and request handlers.
+					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
+						log.debug("Received simulation request: "+ event.getData());
+						//generate simulation id and reply to event's reply destination.
+						int simulationId = generateSimulationId();
+						client.publish(event.getReplyDestination(), simulationId);
+						ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
+						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
+					}
+					else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
+						logManager.log(message.toString());
+					}
+					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+					
+					
+				}
+			});
 		}
-		properties.put(DataSourceBuilder.DATASOURCE_NAME, datasourceName);
-		properties.put(DataSourceBuilder.DATASOURCE_USER, config.get("username"));
-		properties.put(DataSourceBuilder.DATASOURCE_PASSWORD, config.get("password"));
-		properties.put(DataSourceBuilder.DATASOURCE_URL, config.get("url"));
-		properties.put("driverClassName", config.get("driver"));
-		
-		datasourceProperties = properties;
-		
-		
-	}
-	
-	
-	protected void registerDataSource(){
-		try {
-			String datasourceName = datasourceProperties.getProperty(DataSourceBuilder.DATASOURCE_NAME);
-			if(datasourceBuilder!=null && registeredDatasources!=null){
-				datasourceBuilder.create(datasourceName, datasourceProperties);
-				registeredDatasources.add(datasourceName);
-			}
-
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		catch(Exception e){
+			log.error("Error in process manager",e);
 		}
 		
 	}
 	
+	/**
+	 * Generates and returns simulation id
+	 * @return simulation id
+	 */
+	static int generateSimulationId(){
+		/*
+		 * TODO: 
+		 * Get the latest simulation id from database and return +1 
+		 * Store the new id in database
+		 */
+		return Math.abs(new Random().nextInt());
+	}
 	
-	@Stop
-	public void stop(){
-		log.debug("Stopping "+this.getClass().getName());
-		for(String s: registeredDatasources){
-			datasourceRegistry.remove(s);
-		}
-		registeredDatasources.clear();
-	}
-
-	@Override
-	public Collection<String> getDataSourceKeys() {
-		return this.registeredDatasources;
-	}
 
 
-
-
-	@Override
-	public DataSourcePooledJdbc getDataSourceByKey(String datasourcekey) {
-		return (DataSourcePooledJdbc) datasourceRegistry.get(datasourcekey);
-	}
-
-
-	@Override
-	public Connection getConnectionByKey(String key) {
-		
-		Connection conn = null;
-		try {
-			conn = ((DataSourcePooledJdbc) datasourceRegistry.get(key)).getConnection();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return conn;
-	}
+	
 }

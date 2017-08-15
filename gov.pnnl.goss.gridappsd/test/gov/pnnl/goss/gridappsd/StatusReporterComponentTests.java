@@ -17,7 +17,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
-import pnnl.goss.gridappsd.utils.StatusReporterImpl;
+import gov.pnnl.goss.gridappsd.utils.StatusReporterImpl;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StatusReporterComponentTests {
