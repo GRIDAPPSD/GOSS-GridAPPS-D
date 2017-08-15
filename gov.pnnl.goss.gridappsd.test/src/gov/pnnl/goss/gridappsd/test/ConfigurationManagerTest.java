@@ -1,28 +1,21 @@
 package gov.pnnl.goss.gridappsd.test;
 
-import java.io.File;
+import static org.amdatu.testing.configurator.TestConfigurator.cleanUp;
+import static org.amdatu.testing.configurator.TestConfigurator.configure;
+import static org.amdatu.testing.configurator.TestConfigurator.createServiceDependency;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.concurrent.TimeUnit;
 
 import org.amdatu.testing.configurator.TestConfiguration;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.amdatu.testing.configurator.TestConfigurator.configure;
-import static org.amdatu.testing.configurator.TestConfigurator.cleanUp;
-import static org.amdatu.testing.configurator.TestConfigurator.createServiceDependency;
-import static org.junit.Assert.assertNotNull;
-
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.server.ServerControl;
 
