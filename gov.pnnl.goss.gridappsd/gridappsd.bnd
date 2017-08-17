@@ -2,9 +2,13 @@ Bundle-Version: 0.0.1.${tstamp}
 
 Private-Package: \
 	gov.pnnl.goss.gridappsd.configuration,\
-	pnnl.goss.gridappsd.data.handlers,\
-	pnnl.goss.gridappsd.data,\
-	pnnl.goss.gridappsd.process,\
+	gov.pnnl.goss.gridappsd.data.handlers,\
+	gov.pnnl.goss.gridappsd.data,\
+	gov.pnnl.goss.gridappsd.process,\
 	gov.pnnl.goss.gridappsd.requests,\
-	pnnl.goss.gridappsd.simulation,\
-	pnnl.goss.gridappsd.utils
+	gov.pnnl.goss.gridappsd.simulation,\
+	gov.pnnl.goss.gridappsd.utils,\
+	gov.pnnl.goss.gridappsd.log
+Export-Package: \
+	gov.pnnl.goss.gridappsd.dto,\
+	gov.pnnl.goss.gridappsd.api

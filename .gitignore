@@ -1,7 +1,9 @@
-/.gradle/
+.gradle/
+/generated/
+enroute.zip
+.metadata
 /reports/
 /generated/
-log/
 .metadata/
 .recommenders/
 applications/.idea
