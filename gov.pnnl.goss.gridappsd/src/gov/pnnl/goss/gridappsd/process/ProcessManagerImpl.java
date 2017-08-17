@@ -116,7 +116,6 @@ public class ProcessManagerImpl implements ProcessManager {
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new GossResponseEvent() {
 				
 				@Override
@@ -145,10 +144,18 @@ public class ProcessManagerImpl implements ProcessManager {
 			});
 		}
 		catch(Exception e){
+			e.printStackTrace();
 			log.error("Error in process manager",e);
 		}
 		
 	}
+	
+	
+	public void runProcess(){
+		
+	}
+	
+	
 	
 	/**
 	 * Generates and returns simulation id

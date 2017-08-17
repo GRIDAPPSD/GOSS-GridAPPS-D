@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 
 import static org.junit.Assert.*;
 
-import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,13 +15,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
-import gov.pnnl.goss.gridappsd.utils.StatusReporterImpl;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessManagerComponentTests {
@@ -52,31 +51,112 @@ public class ProcessManagerComponentTests {
 	@Captor
 	ArgumentCaptor<String> argCaptor;
 	
-	@Test
+	
 	/**
-	 *    Succeeds when client subscribe is called
+	 *    Succeeds when info log message is called at the start of the process manager implementation with the expected message
 	 */
-	public void startCalledWhen_startExecuted(){
+	@Test
+	public void infoCalledWhen_processManagerStarted(){
 		
-		// ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
+		 ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
-		ProcessManager processManager = new ProcessManagerImpl(logger, clientFactory, 
+		ProcessManagerImpl processManager = new ProcessManagerImpl(logger, clientFactory, 
 											configurationManager, simulationManager, 
 											statusReporter, logManager);
-//		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
+		processManager.start();
 		
-		statusReporter.reportStatus("Testing Status");
+		Mockito.verify(logger).info(argCaptor.capture());
+		
+		assertEquals("Starting gov.pnnl.goss.gridappsd.process.ProcessManagerImpl", argCaptor.getValue());
+				
+	}
+
+	/**
+	 *    Succeeds when client subscribe is called with the topic goss.gridappsd.process.>
+	 */
+	@Test
+	public void clientSubscribedWhen_startExecuted(){
+		
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		ProcessManagerImpl processManager = new ProcessManagerImpl(logger, clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter, logManager);
+		processManager.start();
+
+		Mockito.verify(client).subscribe(argCaptor.capture(), Mockito.any());
+		assertEquals("goss.gridappsd.process.>", argCaptor.getValue());
+				
+	}
+	
+	/**
+	 *    Succeeds when process manager logs that it received a message, for this the destination and content don't matter
+	 */
+	@Test
+	public void debugMessageReceivedWhen_startExecuted(){
+		
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ArgumentCaptor<GossResponseEvent> gossResponseEventArgCaptor = ArgumentCaptor.forClass(GossResponseEvent.class);
+
+		ProcessManagerImpl processManager = new ProcessManagerImpl(logger, clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter, logManager);
+		processManager.start();
+		client.publish("goss.gridappsd.process.start", "some message");
+
+		
+		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
+
+		DataResponse dr = new DataResponse("1234");
+		dr.setDestination("");
+		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
+		response.onMessage(dr);
+		
 		
 		Mockito.verify(logger).debug(argCaptor.capture());
+		assertEquals("Process manager received message ", argCaptor.getValue());
+				
+	}
+	
+	/**
+	 *    Succeeds when client publish is called with a long value (representing simulation id)
+	 */
+	@Test
+	public void simIdPublishedWhen_startExecuted(){
 		
-		assertEquals("Testing Status", argCaptor.getValue());
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		ProcessManagerImpl processManager = new ProcessManagerImpl(logger, clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter, logManager);
+		processManager.start();
+
+		
+		//TODO listen for client publish
+		
+//		Mockito.verify(client).subscribe(argCaptor.capture(), Mockito.any());
+//		assertEquals("goss.gridappsd.process.>", argCaptor.getValue());
 				
 	}
 	
 	
-	//when client subscribed
-	
-	//simulation id returned when start executed
 	
 	//status reported new message
 	
@@ -84,37 +164,6 @@ public class ProcessManagerComponentTests {
 	
 	//error if no simulation config is created
 	
-	//start simulation called
-	
-	@Test
-	public void whenReportStatusOnTopic_clientPublishCalled(){
-
-		// ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
-		
-		try {
-			Mockito.when(clientFactory.create(Mockito.any(), Mockito.any())).thenReturn(client);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
-		
-		try {
-			statusReporter.reportStatus("big/status", "Things are good");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		Mockito.verify(client).publish(argCaptor.capture(), argCaptor.capture());
-		
-		List<String> allValues = argCaptor.getAllValues();
-		assertEquals(2, allValues.size());
-		assertEquals("big/status", allValues.get(0));
-		assertEquals("Things are good", allValues.get(1));
-				
-	}
 	
 	
 

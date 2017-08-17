@@ -25,17 +25,17 @@ private static Logger log = LoggerFactory.getLogger(TestLogManager.class);
 
 			
 			//Step1: Create GOSS Client
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP, credentials);
-			
-			String message = "{"
-					+ "\"process_id\":\"app_123\","
-					+ "\"process_status\":\"started\","
-					+ "\"log_level\":\"debug\","
-					+ "\"log_message\":\"Testing LogManager\","
-					+ "\"timestamp\": \"8\14\17 2:22:22\"}";
-			client.publish("goss.gridappsd.process.log", message);
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
+//			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+//			
+//			String message = "{"
+//					+ "\"process_id\":\"app_123\","
+//					+ "\"process_status\":\"started\","
+//					+ "\"log_level\":\"debug\","
+//					+ "\"log_message\":\"Testing LogManager\","
+//					+ "\"timestamp\": \"8\14\17 2:22:22\"}";
+//			client.publish("goss.gridappsd.process.log", message);
 			
 	}
 	
