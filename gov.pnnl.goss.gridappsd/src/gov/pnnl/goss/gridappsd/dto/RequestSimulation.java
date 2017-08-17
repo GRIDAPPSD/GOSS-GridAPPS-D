@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -40,6 +40,8 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
+
+import com.google.gson.Gson;
 
 public class RequestSimulation implements Serializable {
 	
@@ -87,7 +89,15 @@ public class RequestSimulation implements Serializable {
 
 	@Override
 	public String toString() {
-		return "ClassPojo [power_system_config = " + power_system_config
-				+ ", simulation_config = " + simulation_config + "]";
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+//		return "ClassPojo [power_system_config = " + power_system_config
+//				+ ", simulation_config = " + simulation_config + "]";
+	}
+	
+	
+	public static RequestSimulation parse(String jsonString){
+		Gson  gson = new Gson();
+		return gson.fromJson(jsonString, RequestSimulation.class);
 	}
 }

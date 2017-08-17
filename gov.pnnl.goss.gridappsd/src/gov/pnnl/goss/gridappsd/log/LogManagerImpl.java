@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright ¬© 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ‚ÄúAS IS‚Äù AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ìAS ISî AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,29 +36,73 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package pnnl.goss.gridappsd.utils;
+ ******************************************************************************/
 
+package gov.pnnl.goss.gridappsd.log;
+
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import com.google.gson.Gson;
 
-public class SimpleStatusReporterImpl implements StatusReporter {
-	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
+/**
+ * This class implements functionalities for Internal Function 409 Log Manager.
+ * LogManager is responsible for logging messages coming from platform and other
+ * processes in log file/stream as well as data store.
+ * 
+ * @author shar064
+ *
+ */
+@Component
+public class LogManagerImpl implements LogManager {
+	
+	private static Logger log = LoggerFactory.getLogger(LogManagerImpl.class);
 
+	@Start
+	public void start() {
+		
+		log.debug("Starting "+this.getClass().getName());
+
+	}
+
+	public void log(String process_id, String username, String timestamp,
+			String log_message, String log_level, String process_status) {
+		
+		log.debug(String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, process_id,
+				process_status, username, log_level, log_message));
+
+		store(process_id, username, timestamp, log_message, log_level, process_status);
+
+	}
 	
-	
-	@Override
-	public void reportStatus(String status) {
-		log.info(status);
+	public void store(String process_id, String username, String timestamp,
+			String log_message, String log_level, String process_status) {
+		
+		//TODO: Save log in data store using DataManager
+		log.debug("log saved");
 
 	}
 
 	@Override
-	public void reportStatus(String topic, String status) throws Exception {
-		log.info(topic+":"+status);
+	public void log(String message) {
+		
+		Gson gson = new Gson();
+		LogMessage obj = gson.fromJson(message, LogMessage.class); 
+		// JSONObject obj = new JSONObject(message.toString());
+		String process_id = obj.getProcess_id();
+		String timestamp = obj.getTimestamp();
+		String log_message = obj.getLog_message();
+		String log_level = obj.getLog_level();
+		String process_status = obj.getProcess_status();
+		String username = "system";
 
+		log(process_id,username,timestamp,log_message,log_level,process_status);
+		
 	}
 
 }

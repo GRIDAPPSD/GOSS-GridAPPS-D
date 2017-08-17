@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright ¬© 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ‚ÄúAS IS‚Äù AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ìAS ISî AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,28 +36,89 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package pnnl.goss.gridappsd.data;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.utils;
 
-import java.io.Serializable;
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.apache.felix.dm.annotation.api.Stop;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import pnnl.goss.core.Request;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import pnnl.goss.core.Client;
+import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.Client.PROTOCOL;
 
-public class DataRequest extends Request {
-	String type;
-	Serializable requestContent;
-	public String getType() {
-		return type;
+/**
+ * The StatusReporterImpl class is a single point for writing data to the message bus.
+ * 
+ * During component startup the 
+ *
+ */
+@Component
+public class StatusReporterImpl implements StatusReporter {
+
+	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
+	
+	Client client = null; 
+	
+	@ServiceDependency
+	private volatile ClientFactory clientFactory;
+	
+	public StatusReporterImpl() { }
+	
+	public StatusReporterImpl(ClientFactory clientFactory, Logger logger){
+		this.clientFactory = clientFactory;
+		StatusReporterImpl.log = logger;
 	}
-	public void setType(String type) {
-		this.type = type;
-	}
-	public Serializable getRequestContent() {
-		return requestContent;
-	}
-	public void setRequestContent(Serializable requestContent) {
-		this.requestContent = requestContent;
+		
+	/**
+	 * Lifecycle method that connects a Client to the message bus.
+	 * 
+	 * An exception is thrown and the component will fail if the user name
+	 * and password for connecting to the bus is incorrect.
+	 * @throws Exception
+	 */
+	@Start
+	public void start() throws Exception {
+		
+		getClient();
 	}
 	
+	@Stop
+	public void finish(){
+		try{
+			if (client != null){
+				client.close();
+			}
+		}
+		finally{
+			client = null;
+		}		
+	}
 	
+	public void reportStatus(String status) {
+		log.debug(status);		
+	}
+
+	public void reportStatus(String topic, String status) throws Exception{
+		if(client==null){
+			getClient();
+		}
+		
+		log.debug(String.format("%s %s", topic,  status));
+		client.publish(topic, status);
+	}
+	
+
+	
+	protected void getClient() throws Exception{
+		Credentials credentials = new UsernamePasswordCredentials(
+				GridAppsDConstants.username, GridAppsDConstants.password);
+		client = clientFactory.create(PROTOCOL.STOMP,credentials);
+	}
 }

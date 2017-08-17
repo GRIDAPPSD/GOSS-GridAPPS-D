@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright Â© 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,68 +36,70 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.utils;
 
-import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
-import com.google.gson.Gson;
-
-// TODO change to be a dto rather than full implementation of getters and setters.
-public class PowerSystemConfig implements Serializable {
-	public PowerSystemConfig(){
-	}
-	public PowerSystemConfig(String GeographicalRegion_name, 
-			String SubGeographicalReqion_name, String Line_name){
-		this.GeographicalRegion_name = GeographicalRegion_name;
-		this.SubGeographicalRegion_name = SubGeographicalReqion_name;
-		this.Line_name = Line_name;
-	}
+public class GridAppsDConstants {
+	
+	//user credentials
+	public static final String username = "system";
+	public static final String password = "manager";
+	
+	//topics
+	private static final String topic_prefix = "goss.gridappsd";
+	
+	//Process Manager topics
+	public static final String topic_process_prefix = topic_prefix+".process";
+	
+	//Process Manager Request Topics
+	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
+	public static final String topic_requestData = topic_process_prefix+".request.data";
+	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	//Process Manager Log Messages Topic 
+	public static final String topic_log_prefix = topic_process_prefix+".log";
+	public static final String topic_log_simulation = topic_log_prefix+".simulation";
+	public static final String topic_log_service = topic_log_prefix+".service";
+	public static final String topic_log_test = topic_log_prefix+".test";
+	public static final String topic_log_app = topic_log_prefix+".app";
+	
+	//Configuration Manager topics
+	public static final String topic_configuration = topic_prefix+"/configuration";
+	public static final String topic_configuration_powergrid = topic_configuration+"/powergrid";
+	public static final String topic_configuration_simulation = topic_configuration+"/simulation";
+	
+	//Simulation Manager Topics
+	public static final String topic_simulation = topic_prefix+"/simulation";
+	public static final String topic_simulationOutput = topic_simulation+"/output/";
+	public static final String topic_simulationStatus = topic_simulation+"/status/";
+	
+	//Data Manager Topics
+	public static final String topic_getDataFilesLocation = topic_prefix+"/data/filesLocation";
+	public static final String topic_getDataContent = topic_prefix+"/data/content";
+	
+	//FNCS GOSS Bridge Topics
+	public static final String topic_FNCS = topic_prefix+"/fncs";
+	public static final String topic_FNCS_input = topic_FNCS+"/input";
+	public static final String topic_FNCS_output = topic_FNCS+"/output";
 	
 	
-	public String SubGeographicalRegion_name;
-
-	public String GeographicalRegion_name;
-
-	public String Line_name;
-
-	public String getSubGeographicalRegion_name() {
-		return SubGeographicalRegion_name;
-	}
-
-	public void setSubGeographicalRegion_name(String subGeographicalRegion_name) {
-		SubGeographicalRegion_name = subGeographicalRegion_name;
-	}
-
-	public String getGeographicalRegion_name() {
-		return GeographicalRegion_name;
-	}
-
-	public void setGeographicalRegion_name(String geographicalRegion_name) {
-		GeographicalRegion_name = geographicalRegion_name;
-	}
-
-	public String getLine_name() {
-		return Line_name;
-	}
-
-	public void setLine_name(String line_name) {
-		Line_name = line_name;
-	}
-
-//	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-//		return "ClassPojo [SubGeographicalRegion_name = "
-//				+ SubGeographicalRegion_name + ", GeographicalRegion_name = "
-//				+ GeographicalRegion_name + ", Line_name = " + Line_name + "]";
-	}
+	public static final String FNCS_PATH = "fncs.path";
+	public static final String FNCS_BRIDGE_PATH = "fncs.bridge.path";
+	public static final String VVO_APP_PATH = "vvo.app.path";
+	public static final String GRIDLABD_PATH = "gridlabd.path";
+	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
+	
+	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	
-	public static PowerSystemConfig parse(String jsonString){
-		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, PowerSystemConfig.class);
+	static{
+		SDF_GLM_CLOCK.setTimeZone(TimeZone.getTimeZone("UTC"));
+		SDF_SIMULATION_REQUEST.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
+	
 	
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright ¬© 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ‚ÄúAS IS‚Äù AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ìAS ISî AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,59 +36,28 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package pnnl.goss.gridappsd.simulation;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.data;
 
 import java.io.Serializable;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import pnnl.goss.core.Request;
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
-/**
- * FNCSOutputEvent processes all messages coming from fncs-goss-bridge.py
- * @author shar064
- *
- */
-@Component
-public class FNCSOutputEvent implements GossResponseEvent {
-	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	
-	/**
-	 * message is in the JSON string format
-	 * {}
-	 */
-	@Override
-	public void onMessage(Serializable message) {
-		
-		try {
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			
-			
-			
-			//TODO: Parse message and update simulation status or communicate with bridge accordingly
-			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
-					
-		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+public class DataRequest extends Request {
+	String type;
+	Serializable requestContent;
+	public String getType() {
+		return type;
+	}
+	public void setType(String type) {
+		this.type = type;
+	}
+	public Serializable getRequestContent() {
+		return requestContent;
+	}
+	public void setRequestContent(Serializable requestContent) {
+		this.requestContent = requestContent;
 	}
 	
-
+	
 }

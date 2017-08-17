@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright ¬© 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ‚ÄúAS IS‚Äù AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ìAS ISî AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,89 +36,43 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package pnnl.goss.gridappsd.simulation;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.utils;
 
-import java.io.Serializable;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+//TODO: Could be moved to GOSS core functionality
+public class RunCommandLine {
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.gridappsd.utils.RunCommandLine;
+	static String line = null;
+	static String error = null;
 
-/**
- * SimulationEvent starts a single instance of simulation
- * @author shar064
- *
- */
-@Component
-public class SimulationEvent implements GossResponseEvent {
-	
-	//TODO: Get these paths from pnnl.goss.gridappsd.cfg file
-	String commandFNCS = "./fncs_broker 2";
-	String commandGridLABD = "gridlabd";
-	String commandFNCS_GOSS_Bridge = "python ./scripts/fncs_goss_bridge.py";
-	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	
-	/**
-	 * message is in the JSON string format
-	 * {'SimulationId': 1, 'SimulationFile': '/path/name'}
-	 */
-	@Override
-	public void onMessage(Serializable message) {
-		
+	public static void runCommand(String command) throws Exception {
 		try {
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			
-			//Extract simulation id and simulation files from message
-			//TODO: Parse message to get simulationId and simulationFile
-			int simulationId = 1;
-			String simulationFile = "filename";
-			
-			//Start FNCS
-			RunCommandLine.runCommand(commandFNCS);
-			
-			//TODO: check if FNCS is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
-			
-			//Start GridLAB-D
-			RunCommandLine.runCommand(commandGridLABD+" "+simulationFile);
-			
-			//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
-			
-			//Start GOSS-FNCS Bridge
-			RunCommandLine.runCommand(commandFNCS_GOSS_Bridge);
-			
-			//TODO: check if bridge is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
-			
-			//Subscribe to GOSS FNCS Bridge output topic
-			client.subscribe(GridAppsDConstants.topic_FNCS_output, new FNCSOutputEvent());
-			
-			//Communicate with GOSS FNCS Bride to get status and output
-			client.publish(GridAppsDConstants.topic_FNCS, "isInitialized");
-		
-		
+
+			Runtime r = Runtime.getRuntime();
+			Process p = r.exec(command);
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(
+					p.getInputStream()));
+			BufferedReader br1 = new BufferedReader(new InputStreamReader(
+					p.getErrorStream()));
+
+			while ((line = br.readLine()) != null) {
+				System.out.println(line.trim());
+			}
+
+			while ((error = br1.readLine()) != null) {
+				System.out.println(error);
+			}
+
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			System.out.println("Exception @RunCommandLine:runCommand");
+			System.out.println(e.toString());
 			e.printStackTrace();
+			throw e;
 		}
-		
 	}
-	
 
 }

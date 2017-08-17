@@ -14,13 +14,18 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import gov.pnnl.goss.gridappsd.utils.StatusReporterImpl;
 
 @RunWith(MockitoJUnitRunner.class)
-public class StatusReporterComponentTests {
+public class ProcessManagerComponentTests {
 	
 	@Mock
 	Logger logger;
@@ -31,15 +36,34 @@ public class StatusReporterComponentTests {
 	@Mock
 	Client client;
 	
+	@Mock
+	ConfigurationManager configurationManager;
+	
+	@Mock
+	SimulationManager simulationManager;
+	
+	@Mock 
+	StatusReporter statusReporter;
+	
+	@Mock
+	LogManager logManager;
+	
+	
 	@Captor
 	ArgumentCaptor<String> argCaptor;
 	
 	@Test
-	public void debugCalledWhen_reportStatusExecuted(){
+	/**
+	 *    Succeeds when client subscribe is called
+	 */
+	public void startCalledWhen_startExecuted(){
 		
 		// ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
 		
-		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
+		ProcessManager processManager = new ProcessManagerImpl(logger, clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter, logManager);
+//		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
 		
 		statusReporter.reportStatus("Testing Status");
 		
@@ -48,6 +72,19 @@ public class StatusReporterComponentTests {
 		assertEquals("Testing Status", argCaptor.getValue());
 				
 	}
+	
+	
+	//when client subscribed
+	
+	//simulation id returned when start executed
+	
+	//status reported new message
+	
+	//error with bad config
+	
+	//error if no simulation config is created
+	
+	//start simulation called
 	
 	@Test
 	public void whenReportStatusOnTopic_clientPublishCalled(){

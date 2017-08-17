@@ -58,7 +58,7 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
  * This class implements subset of functionalities for Internal Functions
