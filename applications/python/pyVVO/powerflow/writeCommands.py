@@ -11,23 +11,33 @@ Created on Jul 27, 2017
 """
 
 import re
+import os
 
 def readModel(modelIn):
     '''Simple function to read file as string'''
+    # TODO: strip this function out of this file.
     with open(modelIn, 'r') as f:
         s = f.read()
     return s
 
 class writeCommands:
-    """"Class for reading GridLAB-D model and changing setpoints in voltage
-        regulating equipment (OLTC, caps, etc.)
+    """"Class for reading GridLAB-D model and changing it.
+    
+        Some capabilities: regulator taps, capacitor switches, clock change,
+            mysql connection, swing recorder
     """
     # Define some constants for GridLAB-D model parsing.
-    REGOBJ_REGEX = re.compile(r'\bobject\b\s\bregulator\b')
-    REGCONF_REGEX = re.compile(r'\bobject\b\s\bregulator_configuration\b')
-    CAP_REGEX = re.compile(r'\bobject\b\s\bcapacitor\b')
+    REGOBJ_REGEX = re.compile(r'\bobject\b(\s+)\bregulator\b')
+    REGCONF_REGEX = re.compile(r'\bobject\b(\s+)\bregulator_configuration\b')
+    CAP_REGEX = re.compile(r'\bobject\b(\s+)\bcapacitor\b')
+    CLOCK_REGEX = re.compile(r'\bclock\b(\s*)(?={)')
+    TAPE_REGEX1 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*);')
+    TAPE_REGEX2 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*)(?={)')
+    SWING_REGEX = re.compile(r'\bbustype\b(\s+)\bSWING\b')
+    OBJ_REGEX = re.compile(r'\bobject\b')
+    NODE_REGEX = re.compile(r'\bobject\b(\s+)\bnode\b')
     
-    def __init__(self, strModel, pathModelOut, pathModelIn=''):
+    def __init__(self, strModel, pathModelOut='', pathModelIn=''):
         """"Initialize class with input/output GridLAB-D models
         
         strModel should be a string representing a GridLAB-D model.
@@ -212,6 +222,197 @@ class writeCommands:
             capEndInd = cap['start'] + len(cap['obj'])
             capMatch = writeCommands.CAP_REGEX.search(self.strModel, capEndInd)
             
+    def updateClock(self, start, stop):
+        """Function to set model time.
+        
+        INPUTS:
+            start: simulation start time (starttime in GLD). Should be
+                surrounded in single quotes, and be in the format
+                'yyyy-mm-dd HH:MM:SS'
+            stop: simulation stop time (stoptime in GLD). Same format as start.
+            
+            NOTE: Timezones can be included in start and stop.
+        """
+        
+        # Find and extract the clock object
+        clockMatch = writeCommands.CLOCK_REGEX.search(self.strModel)
+        clock = self.extractObject(clockMatch)
+        
+        # Modify the times
+        clock['obj'] = writeCommands.modObjProps(clock['obj'],
+                                                 {'starttime': start,
+                                                  'stoptime': stop})
+        
+        # Splice in new clock object
+        self.replaceObject(clock)
+        
+    def removeTape(self):
+        """Method to remove tape module from model."""
+        # First, look for simple version: 'module tape;'
+        tapeMatch = writeCommands.TAPE_REGEX1.search(self.strModel)
+        
+        # If simple version is found, eliminate it
+        if tapeMatch is not None:
+            s = tapeMatch.span()[0]
+            e = tapeMatch.span()[1]
+            self.strModel = self.strModel[0:s] + self.strModel[e+1:]
+        else:
+            # Find "more full" definition of tape
+            tapeMatch = writeCommands.TAPE_REGEX2.search(self.strModel)
+            if tapeMatch is not None:
+                # Extract the object
+                tapeObj = self.extractObject(tapeMatch)
+                # Eliminate the object
+                self.strModel = (self.strModel[0:tapeObj['start']]
+                                 + self.strModel[tapeObj['end']+1:])
+                
+    def addMySQL(self, hostname='localhost', username='gridlabd',
+                 password='', schema='gridlabd', port='3306',
+                 socketname='/tmp/mysql.sock'):
+        """Method to add mysql module and database connection to model
+        
+        For now, it will simply be added to the beginning of the model.
+        
+        Note that GridLAB-D must be built with the mysql connector, the
+        connector library must be on the system path, and to run a model the
+        database server must be running.
+        
+        Two relevant GridLAB-D wiki pages:
+        http://gridlab-d.shoutwiki.com/wiki/Mysql
+        http://gridlab-d.shoutwiki.com/wiki/Database
+        
+        TODO: Add the rest of the options for the database object:
+            clientflags, options, on_init, on_sync, on_term, sync_interval,
+            tz_offset, uses_dst
+        """
+        # Construct the beginning of the necessary string
+        dbStr = (
+        "module mysql;\n"
+        "object database {{\n"
+        '   hostname "{host}";\n'
+        '   username "{usr}";\n'
+        '   password "{pwd}";\n'
+        '   schema "{schema}";\n'
+        '   port {port};\n'
+        ).format(host=hostname, usr=username, pwd=password, schema=schema,
+                   port=port)
+        # If we're on Mac or Linux, need to include the sockenamae
+        if os.name == 'posix':
+            dbStr = (dbStr + 'socketname "{sock}";\n').format(sock=socketname)
+            
+        self.strModel = dbStr + '}\n' + self.strModel
+        
+    def findSwing(self):
+        """Method to find the name of the swing bus.
+        
+        Returns name of the swing bus.
+        
+        IMPORTANT NOTE: This WILL NOT WORK if there are nested objects in the
+            swing node object.
+            
+        IMPORTANT NOTE 2: Multiple swing buses will also ruin this.
+            
+        TODO: Rather than finding the swing by traversing the model, this
+            should be pulled from the CIM.
+            
+        TODO: Handle multiple swing case
+        """
+        # Find the swing node
+        swingMatch = writeCommands.SWING_REGEX.search(self.strModel)
+        
+        # Find the closest open curly brace:
+        sInd = swingMatch.span()[0]
+        c = self.strModel[sInd]
+        while c != '{':
+            sInd -= 1
+            c = self.strModel[sInd]
+        
+        # Find the closest close curly brace:
+        eInd = swingMatch.span()[1]
+        c = self.strModel[eInd]
+        while c != '}':
+            eInd += 1
+            c = self.strModel[eInd]
+            
+        # To ensure eInd includes the curly brace, add one to it.
+        eInd += 1
+        
+        # Extract the name of the swing
+        sName = self.extractProperties(self.strModel[sInd:eInd+1], ['name'])
+        
+        # Find the true beginning of the node by finding the nearest 'object'
+        swingIter = writeCommands.OBJ_REGEX.finditer(self.strModel, 0, sInd)
+        
+        # Loop over the iterator until the last one. This feels dirty.
+        # TODO: Make this more efficient?
+        for m in swingIter:
+            pass
+        
+        # Extract the starting index of the object.
+        sInd = m.span()[0]
+        
+        return {'name': sName['name']['prop'], 'start': sInd, 'end': eInd,
+                'obj': self.strModel[sInd:eInd]}
+    
+    def recordSwing(self, interval=60, uid=0):
+        """Add recorder to model to record the power flow on the swing.
+        
+        NOTE: swing will be changed from node to meter if it's a node
+        
+        NOTE: This is for a database recorder.
+        
+        OUTPUT: name of table.
+        """
+        # Find the name and indices of the swing.
+        swing = self.findSwing()
+        
+        # If the swing object is a node, replace it with a meter.
+        nodeMatch = writeCommands.NODE_REGEX.match(swing['obj'])
+        
+        if nodeMatch is not None:
+            # Replace 'object node' with 'object meter'
+            swing['obj'] = (swing['obj'][0:nodeMatch.span()[0]] 
+                             + 'object meter' 
+                             + swing['obj'][nodeMatch.span()[1]:])
+            
+            # Splice in the new object
+            self.replaceObject(swing)
+        
+        # Define table to use.
+        table = 'swing_' + str(uid)
+        
+        # Create recorder.
+        self.addRecorder(parent=swing['name'], table=table,
+                         properties=['measured_power_A', 'measured_power_B',
+                                     'measured_power_C'],
+                         interval=interval)
+        
+        # Return the name of the table
+        return table
+        
+    def addRecorder(self, parent, table, properties, interval):
+        """Method to add database recorder to end of model
+        
+        INPUTS:
+            parent: name of object to record
+            table: database table to save outputs in
+            properties: list of properties to record. Ex: ['power_A',
+                'power_B', 'power_C']
+            interval: interval in seconds to record
+            
+        TODO: Add more properties
+        """
+        # Add formatted string to end of model.
+        self.strModel = self.strModel + ("\n"
+            "object recorder {{\n"
+            "    parent {parent};\n"
+            '    table "{table}";\n'
+            '    property {propList};\n'
+            '    interval {interval};\n'
+            '}};').format(parent=parent, table=table,
+                         propList=','.join(properties), interval=interval)
+        pass
+            
     def replaceObject(self, objDict):
         """Function to replace object in the model string with a modified
         one.
@@ -241,8 +442,16 @@ class writeCommands:
                 else:
                     preSep = '\n'
                     
+                # Determine if linesep is necessary after appended line.
+                # It would appear GridLAB-D requires closing curly brace to 
+                # be on its own line.
+                if objStr[-1] == '}':
+                    postSep = '\n'
+                else:
+                    postSep = ''
+                    
                 objStr = (objStr[0:-1] + preSep + prop + " " + str(value)
-                          + ";" + objStr[-1])
+                          + ";" + postSep + objStr[-1])
             else:
                 # Replace previous property value with this one
                 objStr = (objStr[0:propVal[prop]['start']] + str(value)
@@ -251,10 +460,10 @@ class writeCommands:
         # Return the modified object
         return objStr
                 
-    def extractObject(self, regMatch):
+    def extractObject(self, objMatch):
         """"Function to a GridLAB-D object from the larger model as a string.
         
-        regMatch is a match object returned from the re package after calling
+        objMatch is a match object returned from the re package after calling
             re.search or one member of re.finditer.
         
         OUTPUT:
@@ -265,7 +474,7 @@ class writeCommands:
         """
         
         # Extract the starting index of the regular expression match.
-        startInd =  regMatch.span()[0]
+        startInd =  objMatch.span()[0]
         # Initialize the ending index (to be incremented in loop).
         endInd = startInd
         # Initialize counter for braces (to avoid problems with nested objects)
@@ -363,9 +572,14 @@ class PropNotInObjError(Error):
     def __str__(self):
         return(repr(self.message))
 
-inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
-strModel = readModel(inPath)
-obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/R2-12.47-2-copy.glm')
-obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'regulator': {'tap_A':1, 'tap_B':2, 'tap_C':3}, 'configuration': {'Control': 'MANUAL'}}, 'R2-12-47-2_reg_2': {'regulator': {'tap_A':4, 'tap_B':5, 'tap_C':6}, 'configuration': {'Control': 'MANUAL'}}})
-obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}, 'R2-12-47-2_cap_4': {'switchA':'CLOSED', 'switchB':'CLOSED', 'switchC': 'OPEN', 'control': 'MANUAL'}})
-obj.writeModel()
+if __name__ == "__main__":
+    inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
+    strModel = readModel(inPath)
+    obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/vvo/R2-12.47-2-copy.glm')
+    obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'regulator': {'tap_A':1, 'tap_B':2, 'tap_C':3}, 'configuration': {'Control': 'MANUAL'}}, 'R2-12-47-2_reg_2': {'regulator': {'tap_A':4, 'tap_B':5, 'tap_C':6}, 'configuration': {'Control': 'MANUAL'}}})
+    obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}, 'R2-12-47-2_cap_4': {'switchA':'CLOSED', 'switchB':'CLOSED', 'switchC': 'OPEN', 'control': 'MANUAL'}})
+    obj.updateClock(start="'2015-03-01 05:15:00'", stop="'2015-03-01 05:30:00'")
+    obj.removeTape()
+    obj.addMySQL()
+    obj.recordSwing()
+    obj.writeModel()
