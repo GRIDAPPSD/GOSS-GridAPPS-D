@@ -44,6 +44,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 
 import java.io.Serializable;
 import java.util.Random;
@@ -102,7 +103,16 @@ public class ProcessManagerImpl implements ProcessManager {
 				
 				@Override
 				public void onMessage(Serializable message) {
-					log.debug("Process manager received message ");
+					
+					/*LogMessage message = new LogMessage();
+					message.setLog_level("debug");
+					message.setLog_message("Process manager received message "+ message);
+					message.setProcess_id(this.getClass().getName());
+					message.setProcess_status("running");
+					message.setStoreToDB("true");
+					message.setTimestamp(timestamp);*/
+					
+					log.debug("Process manager received message "+ message);
 					DataResponse event = (DataResponse)message;
 					
 					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));

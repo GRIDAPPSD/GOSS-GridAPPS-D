@@ -7,6 +7,7 @@ public class LogMessage {
 	String log_message;
 	String log_level;
 	String process_status;
+	Boolean storeToDB = true;
 	
 	public String getProcess_id() {
 		return process_id;
@@ -38,5 +39,12 @@ public class LogMessage {
 	public void setProcess_status(String process_status) {
 		this.process_status = process_status;
 	}
+	public Boolean getStoreToDB() {
+		return storeToDB;
+	}
+	public void setStoreToDB(Boolean storeToDB) {
+		this.storeToDB = storeToDB;
+	}
+	
 	
 }
