@@ -40,15 +40,18 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 
 /**
  * This class implements functionalities for Internal Function 409 Log Manager.
@@ -64,12 +67,12 @@ public class LogManagerImpl implements LogManager {
 	private static Logger log = LoggerFactory.getLogger(LogManagerImpl.class);
 
 	@ServiceDependency 
-	private volatile DataManager dataManager;
+	private volatile LogDataManager logDataManager;
 	
-	public public LogManagerImpl() { }
+	public LogManagerImpl() { }
 	
-	public public LogManagerImpl(DataManager dataManager) {
-		this.dataManager = dataManager;
+	public LogManagerImpl(LogDataManager logDataManager) {
+		this.logDataManager = logDataManager;
 	}
 	
 	@Start
@@ -122,7 +125,10 @@ public class LogManagerImpl implements LogManager {
 			String log_message, String log_level, String process_status) {
 		
 		//TODO: Save log in data store using DataManager
+		logDataManager.store(process_id, username, timestamp,
+				log_message, log_level, process_status);
 		log.debug("log saved");
+		
 
 	}
 
