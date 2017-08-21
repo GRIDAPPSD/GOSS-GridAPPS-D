@@ -1,0 +1,25 @@
+/* Example Test Config */
+{	
+  "test_configuration":{
+    "power_system_configuratio":"ref", /* build from this configuration ? */
+    "simulation_configuration":"ref",  /* build from this configuration ? */
+    "run_start":"date",
+    "run_end":"date",
+    "region_name":"string",
+    "subregion_name":"string",
+    "line_name":"string",
+    "logging":"true",
+    "logging_options":{
+
+    },
+    "initial_conditions":{
+
+    },
+    "default_values":{
+
+    },
+    "outputs":[   /* not sure about this now ? */
+
+    ]
+  }
+}
