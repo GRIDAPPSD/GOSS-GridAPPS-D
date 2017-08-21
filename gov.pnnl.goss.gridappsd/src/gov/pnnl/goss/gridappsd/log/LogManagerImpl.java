@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;

@@ -1,7 +1,5 @@
 package gov.pnnl.goss.gridappsd.api;
 
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-
 public interface LogDataManager {
 	
 	void store (String process_id, String username, String timestamp,
