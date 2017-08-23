@@ -46,6 +46,12 @@ public class DTOComponentTests {
 
 	@Test
 	public void powerSystemConfig_formatCheck(){
+		//Verify that parsing a bad input fails
+		PowerSystemConfig parseFail = null;
+		try {
+			parseFail = PowerSystemConfig.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
 		
 		PowerSystemConfig parsed = PowerSystemConfig.parse(POWER_SYSTEM_CONFIG);
 		assertNotNull(parsed.GeographicalRegion_name);
@@ -63,6 +69,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void applicationObject_formatCheck(){
+		//Verify that parsing a bad input fails
+		ApplicationObject parseFail = null;
+		try {
+			parseFail = ApplicationObject.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+				
 		//Verify parse from string
 		ApplicationObject parsed = ApplicationObject.parse(APPLICATION_OBJECT);
 		assertNotNull(parsed.name);
@@ -78,6 +91,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void applicationConfig_formatCheck(){
+		//Verify that parsing a bad input fails
+		ApplicationConfig parseFail = null;
+		try {
+			parseFail = ApplicationConfig.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+				
 		//Verify parse from string
 		ApplicationConfig parsed = ApplicationConfig.parse(APPLICATION_CONFIG);
 		assertEquals(1, parsed.applications.length);
@@ -96,6 +116,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void fncsBridgeResponse_formatCheck(){
+		//Verify that parsing a bad input fails
+		FncsBridgeResponse parseFail = null;
+		try {
+			parseFail = FncsBridgeResponse.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+
 		//Verify parse from string
 		FncsBridgeResponse parsed = FncsBridgeResponse.parse(FNCS_BRIDGE_RESPONSE);
 		assertNotNull(parsed.command);
@@ -111,6 +138,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void modelCreationConfig_formatCheck(){
+		//Verify that parsing a bad input fails
+		ModelCreationConfig parseFail = null;
+		try {
+			parseFail = ModelCreationConfig.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+
 		//Verify parse from string
 		ModelCreationConfig parsed = ModelCreationConfig.parse(MODEL_CREATION_CONFIG);
 		assertNotNull(parsed.load_scaling_factor);
@@ -128,6 +162,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void requestSimulation_formatCheck(){
+		//Verify that parsing a bad input fails
+		RequestSimulation parseFail = null;
+		try {
+			parseFail = RequestSimulation.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+
 		//Verify parse from string
 		RequestSimulation parsed = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
 		assertNotNull(parsed.application_config);
@@ -146,6 +187,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void simulationConfig_formatCheck(){
+		//Verify that parsing a bad input fails
+		SimulationConfig parseFail = null;
+		try {
+			parseFail = SimulationConfig.parse(REQUEST_SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+		
 		//Verify parse from string
 		SimulationConfig parsed = SimulationConfig.parse(SIMULATION_CONFIG);
 		assertNotNull(parsed.duration);
@@ -163,10 +211,19 @@ public class DTOComponentTests {
 						
 		//Assert equal serialized object and comparison string
 		assertEquals(config.toString(), SIMULATION_CONFIG);
+		
+		
 	}
 	
 	@Test
 	public void simulationOutput_formatCheck(){
+		//Verify that parsing a bad input fails
+		SimulationOutput parseFail = null;
+		try {
+			parseFail = SimulationOutput.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+
 		//Verify parse from string
 		SimulationOutput parsed = SimulationOutput.parse(SIMULATION_CONFIG_OUTPUT_FULL);
 		assertEquals(29, parsed.output_objects.size());
@@ -180,6 +237,13 @@ public class DTOComponentTests {
 	
 	@Test
 	public void simulationOutputObject_formatCheck(){
+		//Verify that parsing a bad input fails
+		SimulationOutputObject parseFail = null;
+		try {
+			parseFail = SimulationOutputObject.parse(SIMULATION_CONFIG);
+		}catch(Exception e){}
+		assertNull(parseFail);
+
 		//Verify parse from string
 		SimulationOutputObject parsed = SimulationOutputObject.parse(SIMULATION_CONFIG_OUTPUT_OBJECT_1);
 		assertNotNull(parsed.name);
@@ -193,7 +257,6 @@ public class DTOComponentTests {
 		
 	}
 	
-	//TODO also add failure for each, parsing string that is non-compliant
 	
 	
 	private SimulationConfig generateSimulationConfig(){
@@ -239,8 +302,8 @@ public class DTOComponentTests {
 		
 		//Create and Initialize with DTO object for serialization
 		SimulationOutput config = new SimulationOutput();
-		config.output_objects.add(configObj1);
-		config.output_objects.add(configObj2);
+		config.getOutputObjects().add(configObj1);
+		config.getOutputObjects().add(configObj2);
 		
 		return config;
 	}

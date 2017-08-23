@@ -74,6 +74,9 @@ public class SimulationOutputObject {
 	
 	public static SimulationOutputObject parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, SimulationOutputObject.class);
+		SimulationOutputObject obj = gson.fromJson(jsonString, SimulationOutputObject.class);
+		if(obj.name==null)
+			throw new RuntimeException("Expected attribute name not found");
+		return obj;
 	}
 }

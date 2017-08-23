@@ -46,12 +46,14 @@ import com.google.gson.Gson;
 
 public class SimulationOutput {
 
-	public List<SimulationOutputObject> output_objects = new ArrayList<SimulationOutputObject>();
+	public List<SimulationOutputObject> output_objects;
 
 	
 
 
 	public List<SimulationOutputObject> getOutputObjects() {
+		if(output_objects==null)
+			output_objects = new ArrayList<SimulationOutputObject>();
 		return output_objects;
 	}
 
@@ -67,6 +69,9 @@ public class SimulationOutput {
 	
 	public static SimulationOutput parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, SimulationOutput.class);
+		SimulationOutput obj = gson.fromJson(jsonString, SimulationOutput.class);
+		if(obj.output_objects==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
+		return obj;
 	}
 }

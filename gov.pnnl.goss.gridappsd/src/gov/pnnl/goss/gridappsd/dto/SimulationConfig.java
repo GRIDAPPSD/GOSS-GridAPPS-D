@@ -160,6 +160,9 @@ public class SimulationConfig  implements Serializable {
 	
 	public static SimulationConfig parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, SimulationConfig.class);
+		SimulationConfig obj = gson.fromJson(jsonString, SimulationConfig.class);
+		if(obj.simulation_name==null)
+			throw new RuntimeException("Expected attribute simulation_name not found");
+		return obj;
 	}
 }

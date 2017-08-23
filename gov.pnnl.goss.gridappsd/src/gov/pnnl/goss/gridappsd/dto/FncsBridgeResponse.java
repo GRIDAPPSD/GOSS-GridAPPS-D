@@ -76,6 +76,9 @@ public class FncsBridgeResponse {
 	
 	public static FncsBridgeResponse parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, FncsBridgeResponse.class);
+		FncsBridgeResponse obj = gson.fromJson(jsonString, FncsBridgeResponse.class);
+		if(obj.command==null)
+			throw new RuntimeException("Expected attribute command not found");
+		return obj;
 	}
 }

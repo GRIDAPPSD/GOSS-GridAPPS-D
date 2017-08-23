@@ -221,6 +221,43 @@ public class ProcessManagerComponentTests {
 		
 	}	
 	
+	
+	//status reported new message
+	/**
+	 *    Succeeds when the process method is called after valid simulation request is sent to the simulation topic, also verifies that request message can be parsed
+	 */
+	@Test
+	public void processStartedWhen_simulationTopicSent(){
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}		
+		ArgumentCaptor<GossResponseEvent> gossResponseEventArgCaptor = ArgumentCaptor.forClass(GossResponseEvent.class);
+
+
+		ProcessManagerImpl processManager = new ProcessManagerImpl(logger, clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter, logManager, newSimulationProcess);
+		processManager.start();
+
+		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
+
+
+		DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
+		dr.setDestination("goss.gridappsd.process.request.simulation");
+		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
+		response.onMessage(dr);
+		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
+
+
+		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(), argCaptorSerializable.capture());
+		String messageString = argCaptorSerializable.getValue().toString();
+
+		assertNotNull(RequestSimulation.parse(messageString));
+		
+	}	
+	
 //	/**
 //	 *    Succeeds when process manager reports error because of bad config (when bad config is sent)
 //	 */

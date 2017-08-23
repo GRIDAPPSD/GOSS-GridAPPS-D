@@ -68,6 +68,9 @@ public class ApplicationObject {
 	
 	public static ApplicationObject parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, ApplicationObject.class);
+		ApplicationObject obj = gson.fromJson(jsonString, ApplicationObject.class);
+		if(obj.name==null)
+			throw new RuntimeException("Expected attribute name not found");
+		return obj;
 	}
 }

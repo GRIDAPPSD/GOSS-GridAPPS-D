@@ -96,6 +96,9 @@ public class RequestSimulation implements Serializable {
 	
 	public static RequestSimulation parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, RequestSimulation.class);
+		RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
+		if(obj.power_system_config==null)
+			throw new RuntimeException("Expected attribute power_system_config not found");
+		return obj;
 	}
 }

@@ -50,7 +50,7 @@ public class ModelCreationConfig {
 	public double voltage_multiplier = 1;  //multiplier that converts voltage to V for GridLAB-D  maps to -v
 	public double power_unit_conversion = 1;  //allowed values {1000|1|0.001}, multiplier that converts p,q,s to VA for GridLAB-D  maps to -s
 	public char unique_names = 'y';  //allowed values y|n   are unique names used?  maps to -q
-	public String schedule_name = ""; // root filename for scheduled ZIP loads (defaults to none)    maps to -n
+	public String schedule_name; // root filename for scheduled ZIP loads (defaults to none)    maps to -n
 	public double z_fraction = 0;  // allowed values {0....1}  constant Z portion (defaults to 0 for CIM-defined,  maps to -z
 	public double i_fraction = 1;  // allowed values {0....1}  constant I portion (defaults to 0 for CIM-defined,  maps to -i
 	public double p_fraction = 0;  // allowed values {0....1}  constant P portion (defaults to 0 for CIM-defined,  maps to -p
@@ -134,7 +134,10 @@ public class ModelCreationConfig {
 	
 	public static ModelCreationConfig parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, ModelCreationConfig.class);
+		ModelCreationConfig obj = gson.fromJson(jsonString, ModelCreationConfig.class);
+		if(obj.schedule_name==null)
+			throw new RuntimeException("Expected attribute schedule_name not found");
+		return obj;
 	}
 	
 	

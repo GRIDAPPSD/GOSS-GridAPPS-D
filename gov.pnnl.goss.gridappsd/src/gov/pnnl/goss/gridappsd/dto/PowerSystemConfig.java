@@ -94,7 +94,10 @@ public class PowerSystemConfig implements Serializable {
 	
 	public static PowerSystemConfig parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, PowerSystemConfig.class);
+		PowerSystemConfig obj = gson.fromJson(jsonString, PowerSystemConfig.class);
+		if(obj.Line_name==null)
+			throw new RuntimeException("Expected attribute line_name not found");
+		return obj;
 	}
 	
 }

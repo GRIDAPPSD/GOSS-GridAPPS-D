@@ -42,7 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import com.google.gson.Gson;
 
 public class ApplicationConfig {
-	public ApplicationObject[] applications = {};
+	public ApplicationObject[] applications;
 
 	public ApplicationObject[] getApplications() {
 		return applications;
@@ -60,7 +60,10 @@ public class ApplicationConfig {
 	
 	public static ApplicationConfig parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.fromJson(jsonString, ApplicationConfig.class);
+		ApplicationConfig obj = gson.fromJson(jsonString, ApplicationConfig.class);
+		if(obj.applications==null)
+			throw new RuntimeException("Expected attribute applications not found");
+		return obj;
 	}
 	
 }
