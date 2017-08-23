@@ -40,7 +40,6 @@
 package pnnl.goss.gridappsd.testmanager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -57,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -83,7 +83,8 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
  */
 @Component
 public class TestManagerImpl implements TestManager {
-		
+	
+
 	public static final String topic_requestTest = GridAppsDConstants.topic_request_prefix+"/simulation";
 	
 	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
@@ -109,16 +110,13 @@ public class TestManagerImpl implements TestManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
+			TestConfigurationImpl tc = null;
+			
+			TestScriptImpl ts = null;
 			
 			//TODO: Setup Figure out location of TestScripts
 			
-			//TODO: Read TestScript
-			// Platform standard location
-			// Like Python application location
-			
-			//TODO: Read TestConfig
-			
-			requestSimulation(client);
+			requestSimulation(client, tc, ts);
 			
 			//TODO: Collect data from data manager
 				// TODO Build queries
@@ -203,41 +201,57 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	
-	public void loadTestScript(String path){
-		
-	}
-	
-	
-	public void loadTestConfig(String path){
-		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		Gson  gson = new Gson();
-//		String request = gson.toJson(requestSimulation);
+	public TestConfigurationImpl loadTestConfig(String path){
+//		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
+//		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
+		TestConfigurationImpl testConfig = null;
 		try {
 			jsonReader = new JsonReader(new FileReader(path));
-
-		jsonReader.beginObject();
-		while (jsonReader.hasNext()) {
+			jsonReader.setLenient(true);
+			testConfig = gson.fromJson(new FileReader(path),TestConfigurationImpl.class);
+			System.out.println(testConfig.toString());
 			
-			String name = jsonReader.nextName();
-			System.out.println(name);
-			if (name.equals("test_configuration")) {
-//				readApp(jsonReader);
-
-			}
-		}
-
-		jsonReader.endObject();
-		jsonReader.close();
+			System.out.println("Hi");
+				
+//			jsonReader.beginObject();
+//			while (jsonReader.hasNext()) {
+//
+//				String name = jsonReader.nextName();
+//				System.out.println(name);
+//				System.out.println(jsonReader.nextString());
+//				if (name.equals("test_configuration")) {
+//	//				readApp(jsonReader);
+//	
+//				}
+//			}
+//			jsonReader.endObject();
+			jsonReader.close();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-
+		return testConfig;
+	}
+	
+	public TestScriptImpl loadTestScript(String path){
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+		JsonReader jsonReader;
+		TestScriptImpl testScript = null;
+		try {
+			jsonReader = new JsonReader(new FileReader(path));
+			jsonReader.setLenient(true);
+			testScript = gson.fromJson(new FileReader(path),TestScriptImpl.class);
+			System.out.println(testScript.toString());
+			jsonReader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return testScript;
 	}
 
-	protected void requestSimulation(Client client) throws JMSException {
+	protected void requestSimulation(Client client,TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException {
 		//TODO: Request Simulation
 			//TODO: 1 PowerSystemConfig
 			//TODO: 2 SimulationConfig simulation_config
@@ -272,5 +286,11 @@ public class TestManagerImpl implements TestManager {
 		});
 	}
 	
-	
+	public static void main(String[] args) {
+		TestManagerImpl tm = new TestManagerImpl();
+		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
+		tm.loadTestConfig(path);
+		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
+		tm.loadTestScript(path);
+	}
 }

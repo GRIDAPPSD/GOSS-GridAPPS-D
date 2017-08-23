@@ -39,10 +39,13 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
+import pnnl.goss.gridappsd.testmanager.TestConfigurationImpl;
+import pnnl.goss.gridappsd.testmanager.TestScriptImpl;
+
 public interface TestManager {
 	
-	public void loadTestScript(String path);
+	public TestScriptImpl loadTestScript(String path);
 	
-	public void loadTestConfig(String path);
+	public TestConfigurationImpl loadTestConfig(String path);
 
 }

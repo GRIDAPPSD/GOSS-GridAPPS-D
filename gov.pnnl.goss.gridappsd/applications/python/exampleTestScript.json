@@ -1,0 +1,12 @@
+ {
+  "name":"VVO",
+  "test_configuration":"ref_location1233",
+  "application":"ref", 
+  "log" : {
+        "name":"string",
+        "location":"ref_location1234"
+    },
+    "events" : [
+
+    ]
+}

@@ -1,15 +1,14 @@
-/* Example Test Config */
-{	
-  "test_configuration":{
-    "power_system_configuratio":"ref", /* build from this configuration ? */
-    "simulation_configuration":"ref",  /* build from this configuration ? */
-    "run_start":"date",
-    "run_end":"date",
+{ 
+    "power_system_configuration":"ieee8500",
+    "simulation_configuration":"ieee8500", 
+    "duration":60,
+    "run_start":"2017-07-21 12:00:00",
+    "run_end":"2017-07-22 12:00:00",
     "region_name":"string",
     "subregion_name":"string",
     "line_name":"string",
     "logging":"true",
-    "logging_options":{
+    "logging_options":{ "log1":"true"
 
     },
     "initial_conditions":{
@@ -18,8 +17,7 @@
     "default_values":{
 
     },
-    "outputs":[   /* not sure about this now ? */
-
+    "outputs":[  
+		"output1"
     ]
-  }
 }
