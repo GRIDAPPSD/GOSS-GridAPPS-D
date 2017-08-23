@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -41,10 +41,12 @@ package gov.pnnl.goss.gridappsd.dto;
 
 import java.util.List;
 
+import com.google.gson.Gson;
+
 public class SimulationOutputObject {
 	
-	String name;
-	List<String> properties;
+	public String name;
+	public List<String> properties;
 	
 	
 	
@@ -64,5 +66,14 @@ public class SimulationOutputObject {
 		this.properties = properties;
 	}
 	
-
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	public static SimulationOutputObject parse(String jsonString){
+		Gson  gson = new Gson();
+		return gson.fromJson(jsonString, SimulationOutputObject.class);
+	}
 }

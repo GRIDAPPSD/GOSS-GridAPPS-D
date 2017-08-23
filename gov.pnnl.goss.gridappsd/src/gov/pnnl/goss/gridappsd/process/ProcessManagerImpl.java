@@ -90,6 +90,8 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
+	
+	ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
 
 	public ProcessManagerImpl(){}
 	public ProcessManagerImpl(Logger logger,
@@ -97,13 +99,15 @@ public class ProcessManagerImpl implements ProcessManager {
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
 			StatusReporter statusReporter,
-			LogManager logManager){
+			LogManager logManager, 
+			ProcessNewSimulationRequest newSimulationProcess){
 		ProcessManagerImpl.log = logger;
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
 		this.statusReporter = statusReporter;
 		this.logManager = logManager;
+		this.newSimulationProcess = newSimulationProcess;
 	}
 
 	
@@ -122,7 +126,6 @@ public class ProcessManagerImpl implements ProcessManager {
 				public void onMessage(Serializable message) {
 					log.debug("Process manager received message ");
 					DataResponse event = (DataResponse)message;
-					
 					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
@@ -130,7 +133,6 @@ public class ProcessManagerImpl implements ProcessManager {
 						//generate simulation id and reply to event's reply destination.
 						int simulationId = generateSimulationId();
 						client.publish(event.getReplyDestination(), simulationId);
-						ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
 						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
 					}
 					else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){

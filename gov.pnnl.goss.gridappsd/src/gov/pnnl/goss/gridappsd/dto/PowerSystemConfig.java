@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -85,13 +85,10 @@ public class PowerSystemConfig implements Serializable {
 		Line_name = line_name;
 	}
 
-//	@Override
+	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
-//		return "ClassPojo [SubGeographicalRegion_name = "
-//				+ SubGeographicalRegion_name + ", GeographicalRegion_name = "
-//				+ GeographicalRegion_name + ", Line_name = " + Line_name + "]";
 	}
 	
 	

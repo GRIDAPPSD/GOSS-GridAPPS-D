@@ -29,9 +29,8 @@ public class ProcessNewSimulationRequest {
 			// TODO: validate simulation request json and create
 			// PowerSystemConfig and SimulationConfig dto objects to work with
 			// internally.
-			Gson gson = new Gson();
 
-			RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+			RequestSimulation config = RequestSimulation.parse(message.toString());
 			log.info("Parsed config " + config);
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {

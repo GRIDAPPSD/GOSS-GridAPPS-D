@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -47,11 +47,11 @@ public class RequestSimulation implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
-	private PowerSystemConfig power_system_config;
+	public PowerSystemConfig power_system_config;
 
-	private SimulationConfig simulation_config;
+	public SimulationConfig simulation_config;
 	
-	private ApplicationConfig application_config;
+	public ApplicationConfig application_config;
 	
 	public RequestSimulation(){
 		
@@ -91,8 +91,6 @@ public class RequestSimulation implements Serializable {
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
-//		return "ClassPojo [power_system_config = " + power_system_config
-//				+ ", simulation_config = " + simulation_config + "]";
 	}
 	
 	
