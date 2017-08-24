@@ -62,6 +62,8 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 
+
+
 /**
  * Process Manager subscribe to all the requests coming from Applications
  * and forward them to appropriate managers.
@@ -88,6 +90,27 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile LogManager logManager;
 	
+	ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
+
+	public ProcessManagerImpl(){}
+	public ProcessManagerImpl(Logger logger,
+			ClientFactory clientFactory, 
+			ConfigurationManager configurationManager,
+			SimulationManager simulationManager,
+			StatusReporter statusReporter,
+			LogManager logManager, 
+			ProcessNewSimulationRequest newSimulationProcess){
+		ProcessManagerImpl.log = logger;
+		this.clientFactory = clientFactory;
+		this.configurationManager = configurationManager;
+		this.simulationManager = simulationManager;
+		this.statusReporter = statusReporter;
+		this.logManager = logManager;
+		this.newSimulationProcess = newSimulationProcess;
+	}
+
+	
+	
 	@Start
 	public void start(){
 		try{
@@ -96,7 +119,6 @@ public class ProcessManagerImpl implements ProcessManager {
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new GossResponseEvent() {
 				
 				@Override
@@ -112,7 +134,6 @@ public class ProcessManagerImpl implements ProcessManager {
 					
 					log.debug("Process manager received message "+ message);
 					DataResponse event = (DataResponse)message;
-					
 					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
@@ -120,7 +141,6 @@ public class ProcessManagerImpl implements ProcessManager {
 						//generate simulation id and reply to event's reply destination.
 						int simulationId = generateSimulationId();
 						client.publish(event.getReplyDestination(), simulationId);
-						ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
 						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
 					}
 					else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
@@ -134,10 +154,18 @@ public class ProcessManagerImpl implements ProcessManager {
 			});
 		}
 		catch(Exception e){
+			e.printStackTrace();
 			log.error("Error in process manager",e);
 		}
 		
 	}
+	
+	
+	public void runProcess(){
+		
+	}
+	
+	
 	
 	/**
 	 * Generates and returns simulation id
