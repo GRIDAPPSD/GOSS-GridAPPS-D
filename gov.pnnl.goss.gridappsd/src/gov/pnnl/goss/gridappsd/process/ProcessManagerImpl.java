@@ -39,12 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ProcessManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
-
 import java.io.Serializable;
 import java.util.Random;
 
@@ -56,12 +50,17 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 
 
@@ -124,7 +123,16 @@ public class ProcessManagerImpl implements ProcessManager {
 				
 				@Override
 				public void onMessage(Serializable message) {
-					log.debug("Process manager received message ");
+					
+					/*LogMessage message = new LogMessage();
+					message.setLog_level("debug");
+					message.setLog_message("Process manager received message "+ message);
+					message.setProcess_id(this.getClass().getName());
+					message.setProcess_status("running");
+					message.setStoreToDB("true");
+					message.setTimestamp(timestamp);*/
+					
+					log.debug("Process manager received message "+ message);
 					DataResponse event = (DataResponse)message;
 					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));
 					//TODO: create registry mapping between request topics and request handlers.

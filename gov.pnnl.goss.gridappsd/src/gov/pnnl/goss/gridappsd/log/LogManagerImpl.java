@@ -40,15 +40,17 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 
 /**
  * This class implements functionalities for Internal Function 409 Log Manager.
@@ -63,28 +65,19 @@ public class LogManagerImpl implements LogManager {
 	
 	private static Logger log = LoggerFactory.getLogger(LogManagerImpl.class);
 
+	@ServiceDependency 
+	private volatile LogDataManager logDataManager;
+	
+	public LogManagerImpl() { }
+	
+	public LogManagerImpl(LogDataManager logDataManager) {
+		this.logDataManager = logDataManager;
+	}
+	
 	@Start
 	public void start() {
 		
 		log.debug("Starting "+this.getClass().getName());
-
-	}
-
-	public void log(String process_id, String username, String timestamp,
-			String log_message, String log_level, String process_status) {
-		
-		log.debug(String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, process_id,
-				process_status, username, log_level, log_message));
-
-		store(process_id, username, timestamp, log_message, log_level, process_status);
-
-	}
-	
-	public void store(String process_id, String username, String timestamp,
-			String log_message, String log_level, String process_status) {
-		
-		//TODO: Save log in data store using DataManager
-		log.debug("log saved");
 
 	}
 
@@ -93,16 +86,49 @@ public class LogManagerImpl implements LogManager {
 		
 		Gson gson = new Gson();
 		LogMessage obj = gson.fromJson(message, LogMessage.class); 
-		// JSONObject obj = new JSONObject(message.toString());
 		String process_id = obj.getProcess_id();
 		String timestamp = obj.getTimestamp();
 		String log_message = obj.getLog_message();
 		String log_level = obj.getLog_level();
 		String process_status = obj.getProcess_status();
+		Boolean storeToDB = obj.getStoreToDB();
 		String username = "system";
-
-		log(process_id,username,timestamp,log_message,log_level,process_status);
 		
+		log.debug(String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, process_id,
+				process_status, username, log_level, log_message));	
+		
+		if(storeToDB)
+			store(process_id, username, timestamp, log_message, log_level, process_status);
+	}
+	
+	@Override
+	public void log(LogMessage message) {
+		
+		String process_id = message.getProcess_id();
+		String timestamp = message.getTimestamp();
+		String log_message = message.getLog_message();
+		String log_level = message.getLog_level();
+		String process_status = message.getProcess_status();
+		Boolean storeToDB = message.getStoreToDB();
+		String username = "system";
+		
+		log.debug(String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, process_id,
+				process_status, username, log_level, log_message));	
+
+		if(storeToDB)
+			store(process_id,username,timestamp,log_message,log_level,process_status);
+		
+	}
+	
+	private void store(String process_id, String username, String timestamp,
+			String log_message, String log_level, String process_status) {
+		
+		//TODO: Save log in data store using DataManager
+		logDataManager.store(process_id, username, timestamp,
+				log_message, log_level, process_status);
+		log.debug("log saved");
+		
+
 	}
 
 }
