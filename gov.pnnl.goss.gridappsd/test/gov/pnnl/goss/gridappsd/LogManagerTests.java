@@ -52,8 +52,8 @@ public class LogManagerTests {
 		//TODO: User test user for this instead of system
 		assertEquals("system", allValues.get(1));
 		assertEquals(message.getTimestamp(), allValues.get(2));
-		assertEquals(message.getLog_level(), allValues.get(3));
-		assertEquals(message.getLog_message(), allValues.get(4));
+		assertEquals(message.getLog_level(), allValues.get(4));
+		assertEquals(message.getLog_message(), allValues.get(3));
 		assertEquals(message.getProcess_status(), allValues.get(5));
 	
 	}
@@ -83,11 +83,10 @@ public class LogManagerTests {
 		//TODO: User test user for this instead of system
 		assertEquals("system", allValues.get(1));
 		assertEquals("8\14\17 2:22:22", allValues.get(2));
-		assertEquals("debug", allValues.get(3));
-		assertEquals("Testing LogManager", allValues.get(4));
+		assertEquals("Testing LogManager", allValues.get(3));
+		assertEquals("debug", allValues.get(4));
 		assertEquals("started", allValues.get(5));
-		
-		
+
 	}
 	
 	
