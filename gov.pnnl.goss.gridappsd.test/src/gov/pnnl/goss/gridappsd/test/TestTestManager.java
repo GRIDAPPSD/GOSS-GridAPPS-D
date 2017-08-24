@@ -27,7 +27,7 @@ public class TestTestManager {
 	
 	private final BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
 	private static Logger log = LoggerFactory.getLogger(TestTestManager.class);
-	private TestConfiguration tm;
+//	private TestConfiguration tm;
 	
 	private static final String OPENWIRE_CLIENT_CONNECTION = "tcp://localhost:6000";
 	private static final String STOMP_CLIENT_CONNECTION = "stomp://localhost:6000";

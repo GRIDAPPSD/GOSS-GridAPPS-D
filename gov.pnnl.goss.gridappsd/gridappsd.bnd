@@ -7,7 +7,8 @@ Private-Package: \
 	pnnl.goss.gridappsd.process,\
 	gov.pnnl.goss.gridappsd.requests,\
 	pnnl.goss.gridappsd.simulation,\
-	pnnl.goss.gridappsd.utils
+	pnnl.goss.gridappsd.utils,\
+	pnnl.goss.gridappsd.testmanager
 Export-Package: \
 	gov.pnnl.goss.gridappsd.dto,\
 	gov.pnnl.goss.gridappsd.api
