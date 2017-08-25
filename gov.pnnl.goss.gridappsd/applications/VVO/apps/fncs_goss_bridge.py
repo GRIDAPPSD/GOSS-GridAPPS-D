@@ -96,13 +96,10 @@ class GOSSListener(object):
             fncs.die()
   
   
-def _registerWithFncsBroker(
-        simId, brokerLocation='tcp://localhost:5570'):
+def _registerWithFncsBroker(brokerLocation='tcp://localhost:5570'):
     '''Register with the fncs_broker and return.
     
     Function arguments:
-        simulationId -- Type: string. Description: The simulation id. 
-            It must not be an empty string. Default: None.
         brokerLocation -- Type: string. Description: The ip location and port
             for the fncs_broker. It must not be an empty string.
             Default: 'tcp://localhost:5570'.
@@ -112,9 +109,7 @@ def _registerWithFncsBroker(
         RuntimeError()
         ValueError()
     '''
-    global simulationId
     global isInitialized
-    simulationId = simId
     try:
         message_str = 'Registering with FNCS broker '+str(simulationId)+' and broker '+brokerLocation
         _sendSimulationStatus('started', message_str, 'info')
@@ -299,11 +294,13 @@ def _doneWithTimestep(currentTime):
         _sendSimulationStatus('error', message_str, 'error')
         
             
-def _registerWithGOSS(username,password,gossServer='localhost', 
+def _registerWithGOSS(simId,username,password,gossServer='localhost', 
                       stompPort='61613',):
     '''Register with the GOSS server broker and return.
     
     Function arguments:
+        simId -- Type: string. Description: The simulation id.
+            It must not be an empty string. Default: None.
         gossServer -- Type: string. Description: The ip location
         for the GOSS server. It must not be an empty string.
             Default: 'localhost'.
@@ -318,6 +315,8 @@ def _registerWithGOSS(username,password,gossServer='localhost',
     Function exceptions:
         RuntimeError()
     '''
+    global simulationId
+    simulationId = simId
     if (gossServer == None or gossServer == ''
             or type(gossServer) != str):
         raise ValueError(
@@ -371,7 +370,8 @@ def _sendSimulationStatus(status, message, log_level):
             "log_level" : log_level,
             "simulation_id" : str(simulationId)
         }
-        status_str = json.dumps(status_message) 
+        status_str = json.dumps(status_message)
+        print(status_str)
         gossConnection.send(simulation_status_topic, status_str)
         
 
@@ -381,8 +381,8 @@ def _keepAlive():
          
 def _main(simulationId):
     
-    _registerWithGOSS('system','manager',gossServer='127.0.0.1',stompPort='61613')
-    _registerWithFncsBroker(simulationId,'tcp://localhost:5570')
+    _registerWithGOSS(simulationId,'system','manager',gossServer='127.0.0.1',stompPort='61613')
+    _registerWithFncsBroker('tcp://localhost:5570')
     _keepAlive()
         
 if __name__ == "__main__":

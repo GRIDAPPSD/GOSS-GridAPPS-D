@@ -15,25 +15,62 @@ def my_fixture():
     print "setup"
     goss_messages = [
         '{'\
-            + '"command" : "isInitialized"'\
-        '}',
+        + '"command" : "isInitialized"'\
+        + '}',
         '{'\
-            + '"command" : "update",'\
-            + '"message" : {'\
-                + '"object" : {'\
-                    + '"attribute" : "value"'\
-                + '}'\
-            + '}'\
-        '}',
+        + '"command" : "update",'\
+        + '"message" : {'\
+        + '"object" : {'\
+        + '"attribute" : "value"'\
+        + '}'\
+        + '}'\
+        + '}',
         '{'\
-            + '"command" : "nextTimeStep",'\
-            + '"currentTime" : 12'\
-        '}',
+        + '"command" : "nextTimeStep",'\
+        + '"currentTime" : 12'\
+        + '}',
         '{'\
-            + '"command" : "stop"'\
-        '}'
+        + '"command" : "stop"'\
+        + '}'
     ]
-    yield goss_messages
+    goss_log_messages = [
+    '{'\
+    + '"status": "started", '\
+    + '"timestamp": "2017-08-25 10:33:06", '\
+    + '"simulation_id": "123", '\
+    + '"log_level": "info", '\
+    + '"log_message": "Registered with GOSS on topic /topic/goss/gridappsd/fncs/input True"'\
+    + '}',
+    '{'\
+    + '"status": "started", '\
+    + '"timestamp": "2017-08-25 10:33:06", '\
+    + '"simulation_id": "123", '\
+    + '"log_level": "info", '\
+    + '"log_message": "Registering with FNCS broker 123 and broker tcp://localhost:5570"'\
+    + '}',
+    '{'\
+    + '"status": "started", '\
+    + '"timestamp": "2017-08-25 10:33:06", '\
+    + '"simulation_id": "123", '\
+    + '"log_level": "info", '\
+    + '"log_message": "still connected to goss 1 True"'\
+    + '}',
+    '{'\
+    + '"status": "running", '\
+    + '"timestamp": "2017-08-25 10:33:06", '\
+    + '"simulation_id": "123", '\
+    + '"log_level": "info", '\
+    + '"log_message": "Registered with fncs True"'\
+    + '}',
+    '{'\
+    + '"status": "running", '\
+    + '"timestamp": "2017-08-25 10:33:06", '\
+    + '"simulation_id": "123", '\
+    + '"log_level": "debug", '\
+    + '"log_message": "received message {\"command\" : \"isInitialized\"}"'\
+    + '}'
+    ]
+    yield [goss_messages,goss_log_messages]
     print "tear down"
 
 @mock.patch('apps.fncs_goss_bridge.datetime')
@@ -42,6 +79,8 @@ def my_fixture():
 @mock.patch('apps.fncs_goss_bridge.fncs')
 @mock.patch('apps.fncs_goss_bridge._keepAlive')
 def test_goss_listener(mock__keepAlive, mock_fncs, mock_gossConnection, mock_stomp, mock_datetime, my_fixture):
+    command_msg = my_fixture[0]
+    log_msg = my_fixture[1]
     #testing _registerWithGoss and _registerWithFncsBroker
     mock_fncs.is_initialized.return_value = True
     mock_stomp.Connection12.return_value = mock_gossConnection
@@ -57,7 +96,11 @@ def test_goss_listener(mock__keepAlive, mock_fncs, mock_gossConnection, mock_sto
     mock_gossConnection.set_listener.assert_called_once()
     mock_gossConnection.subscribe.assert_any_call('/topic/goss/gridappsd/fncs/input',1)
     mock_gossConnection.subscribe.assert_any_call('/queue/goss/gridappsd/fncs/input',2)
-    mock_gossConnection.send.assert_called()
+    mock_gossConnection.send.assert_any_call("goss.gridappsd.process.log.simulation", log_msg[0])
+    mock_gossConnection.send.assert_any_call("goss.gridappsd.process.log.simulation", log_msg[1])
+    mock_gossConnection.send.assert_any_call("goss.gridappsd.process.log.simulation", log_msg[2])
+    mock_gossConnection.send.assert_any_call("goss.gridappsd.process.log.simulation", log_msg[3])
+    assert 4 == mock_gossConnection.send.call_count
     assert 2 == mock_gossConnection.subscribe.call_count
     #asserts for _registerWithFncsBroker
     fncsConfiguration = 'name = FNCS_GOSS_Bridge_123\n'\
@@ -80,14 +123,13 @@ def test_goss_listener(mock__keepAlive, mock_fncs, mock_gossConnection, mock_sto
     mock_fncs.reset_mock()
     mock__keepAlive.reset_mock()
     inst = GOSSListener()
-    msg = my_fixture
     #test the isInitialized command
     arg = {
         'command' : 'isInitialized',
         'response' : 'True',
         'output' : 'hello there!'
     }
-    inst.on_message(None, msg[0])
+    inst.on_message(None, command_msg[0])
     mock_fncs.get_value.assert_called_once_with('123')
     assert 8 == mock_gossConnection.send.call_count
     mock_gossConnection.send.assert_any_call('/topic/goss/gridappsd/fncs/output', json.dumps(arg)) 
