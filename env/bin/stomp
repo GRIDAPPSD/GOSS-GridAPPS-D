@@ -1,0 +1,10 @@
+#!/home/afisher/workspace/gitRepos/GOSS-GridAPPS-D/env/bin/python
+
+import os
+import stomp
+import sys
+
+stomp_path = os.path.dirname(stomp.__file__)
+executable = sys.executable or "python"
+
+os.system('%s %s %s' % (executable, stomp_path, ' '.join(sys.argv)))
