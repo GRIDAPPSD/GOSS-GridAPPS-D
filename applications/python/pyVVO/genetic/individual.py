@@ -10,12 +10,23 @@ from powerflow import writeCommands
 import os
 import subprocess
 import pyodbc
+import math
 
 class individual:
+    # Define cap status, to be accessed by binary indices
+    CAPSTATUS = ['OPEN', 'CLOSED']
     
-    def __init__(self, uid, reg={}, cap={}):
-        """Initialize and individual by building their "chromosome" based
-        on available voltage control devices
+    def __init__(self, uid, reg=None, cap=None, regChrom=None, regDict=None, 
+                 capChrom=None, capDict=None):
+        """An individual contains information about Volt/VAR control devices
+        
+        Individuals can be initialized in two ways: 
+        1) From scratch: Provide self, uid, reg, and cap inputs. Positions
+            will be randomly generated
+            
+        2) From a chromosome: Provide self, uid, regChrom, capChrom, regDict,
+            and capDict. After crossing two individuals, a new chromosome will
+            result. Use this chromosome to update regDict and capDict
         
         INPUTS:
             reg: Dictionary describing on-load tap changers.
@@ -32,12 +43,18 @@ class individual:
                 
             uid: Unique ID of individual. Should be an int.
             
-            start: simulation start time (starttime in GLD). Should be
-                surrounded in single quotes, and be in the format
-                'yyyy-mm-dd HH:MM:SS'
-            stop: simulation stop time (stoptime in GLD). Same format as start.
+            regChrom: Regulator chromosome resulting from crossing two
+                individuals. List of ones and zeros representing tap positions. 
+                
+            regDict: Dictionary mapping to input regChrom. Regulator tap
+                positions will be updated based on the regChrom
+                
+            capChrom: Capacitor chromosome resulting from crossing two
+                individuals. List of ones and zeros representing switch status.
             
-            NOTE: Timezones can be included in start and stop.
+            capDict: Dictionary mapping to input capChrom. Capacitor switch
+                statuses will be updated based on capChrom.
+            
             
         TODO: add controllable DERs
                 
@@ -54,9 +71,24 @@ class individual:
         # The evalFitness method assigns to fitness
         self.fitness = None
         
-        # Get an instance of the random class and seed it
-        rand = random.Random()
-        rand.seed()
+        # If not given a regChrom or capChrom, generate them.
+        if regChrom is None and capChrom is None:
+            # Generate regulator chromosome:
+            self.genRegChrom(reg=reg)
+            # Generate capacitor chromosome:
+            self.genCapChrom(cap=cap)
+            # TODO: DERs
+        else:
+            # Use the given chromosomes to update the dictionaries.
+            self.genRegDict(regChrom, regDict)
+            self.genCapDict(capChrom, capDict)
+        
+    def genRegChrom(self, reg):
+        """Method to randomly generate an individual's regulator chromosome
+        
+        INPUTS:
+            reg: dict as described in __init__
+        """
         
         # Initialize chromosome for regulator and dict to store list indices.
         self.regChrom = []
@@ -70,71 +102,147 @@ class individual:
             
             # Initialize dict for tracking regulator indices in the chromosome
             self.reg[r] = dict()
+            self.reg[r]['raise_taps'] = v['raise_taps']
+            self.reg[r]['lower_taps'] = v['lower_taps']
             
             # Define the upper tap bound (tb).
             tb = v['raise_taps'] + v['lower_taps'] - 1
             
+            # Compute the needed field width to represent the upper tap bound
+            width = math.ceil(math.log(tb, 2))
+            
+            # Initialize dict for taps
+            self.reg[r]['taps'] = dict()
+            
             # Loop through the phases
             for tap in v['taps']:
                 # Initialize dict for this tap.
-                self.reg[r][tap] = dict()
+                self.reg[r]['taps'][tap] = dict()
                 
                 # Randomly select a tap.
-                tapPos = rand.randint(0, tb)
+                tapPos = random.randint(0, tb)
                 
                 # Express tap setting as binary list.
-                binList = [int(x) for x in "{0:b}".format(tapPos)]
+                # For now, hard-code 6 positions
+                binList = [int(x) for x in "{0:0{width}b}".format(tapPos,
+                                                                  width=width)]
                 
                 # Extend the regulator chromosome.
                 self.regChrom.extend(binList)
                 
                 # Increment end index.
-                e += len(binList) + 1
+                e += len(binList)
                 
                 # Translate tapPos for GridLAB-D.
-                if tapPos <= (v['lower_taps'] - 1):
-                    self.reg[r][tap]['pos'] = tapPos - v['lower_taps'] + 1
-                else:
-                    self.reg[r][tap]['pos'] = tapPos - v['raise_taps'] + 1
+                self.reg[r]['taps'][tap]['pos'] = \
+                    self.translateTaps(lowerTaps=v['lower_taps'],
+                                       raiseTaps=v['raise_taps'],
+                                       pos=tapPos)
                 
                 # Assign indices for this regulator
-                self.reg[r][tap]['ind'] = (s, e)
+                self.reg[r]['taps'][tap]['ind'] = (s, e)
                 
                 # Increment start index.
-                s += len(binList) + 1
+                s += len(binList)
+    
+    @staticmethod
+    def translateTaps(lowerTaps, raiseTaps, pos):
+        """Method to translate tap integer in range 
+        [0, lowerTaps + raiseTaps - 1] to range [-(lower_taps - 1), raise_taps]
+        """
+        # TODO: unit test
+        if pos <= (lowerTaps - 1):
+            posOut = pos - lowerTaps + 1
+        else:
+            posOut = pos - raiseTaps + 1
             
+        return posOut
+                
+    def genCapChrom(self, cap):
+        """Method to randomly generate an individual's capacitor chromosome
+        
+        INPUTS:
+            cap: dict as described in __init__
+        """
         # Initialize chromosome for capacitors and dict to store list indices.
         self.capChrom = []
         self.cap = dict()
-        # Initialize index counters.
-        s = 0;
-        e = 0;
+        # Keep track of chromosome index
+        ind = 0
         # Loop through the capacitors, randomly assign state for each phase
         # 0 --> open, 1 --> closed
         for c, p in cap.items():
-            # Increment end index based on number of phases
-            e += len(p) + 1
-            
-            # Assign indices for this capacitor
-            self.cap[c] = {'ind': (s, e), 'status': {}}
-            
-            # Increment the starting index for the next iteration
-            s += len(p) + 1
+            # Initialize dict for this capacitor
+            self.cap[c] = {}
             
             # Loop through the phases and randomly decide state
             for phase in p:
-                # Note that random() is on interval [0.0, 1.0). Thus, we'll
-                # consider [0.0, 0.5) and [0.5, 1.0) for our intervals 
-                if rand.random() < 0.5:
-                    capBinary = 0
-                    capStatus = 'OPEN'
-                else:
-                    capBinary = 1
-                    capStatus = 'CLOSED'
+                # Initialize subdict
+                self.cap[c][phase] = {}
+                
+                # Randomly determine capacitor status.
+                capBinary = round(random.random())
+                capStatus = individual.CAPSTATUS[capBinary]
                 
                 # Assign to the capacitor
                 self.capChrom.append(capBinary)
-                self.cap[c]['status'][phase] = capStatus
+                self.cap[c][phase]['status'] = capStatus
+                self.cap[c][phase]['ind'] = ind
+                
+                # Increment the chromosome counter
+                ind += 1
+                
+    def genRegDict(self, regChrom, regDict):
+        """Create and assign new regDict from regChrom
+        """
+        # Loop through the regDict and correct tap positions
+        for reg, t in regDict.items():
+            for tap, tapData in t['taps'].items():
+                # Extract the binary representation of tap position.
+                tapBin = regChrom[tapData['ind'][0]:tapData['ind'][1]]
+                # Convert the binary to an integer
+                posInt = self.bin2int(tapBin)
+                # Convert integer to tap position
+                regDict[reg]['taps'][tap]['pos'] = \
+                    self.translateTaps(lowerTaps=regDict[reg]['lower_taps'],
+                                       raiseTaps=regDict[reg]['raise_taps'],
+                                       pos=posInt)
+                    
+        # Assign the regChrom and regDict
+        self.regChrom = regChrom
+        self.reg = regDict 
+        
+    
+    def genCapDict(self, capChrom, capDict):
+        """Create and assign new capDict from capChrom
+        """
+        # Loop through the capDict and correct status
+        for cap, d in capDict.items():
+            for phase, phaseData in d.items():
+                # Read chromosome and reassign the capDict
+                capDict[cap][phase]['status'] = \
+                    individual.CAPSTATUS[capChrom[phaseData['ind']]]
+                    
+        # Assign the capChrom and capDict to the individual
+        self.capChrom = capChrom
+        self.cap = capDict
+        
+    
+    @staticmethod
+    def bin2int(binList):
+        """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
+        convert to an integer
+        """
+        # TODO: unit test
+        # initialize number and counter
+        n = 0
+        k = 0
+        for b in reversed(binList):
+            n += b * (2 ** k)
+            k += 1
+            
+        return n
+        
                 
     def dbConnect(self, driver='MySQL ODBC 5.3 Unicode Driver', usr='gridlabd',
                   host='localhost', schema='gridlabd'):
@@ -202,14 +310,17 @@ class individual:
             regDict[reg] = {'regulator': {}, 
                             'configuration': {'Control': 'MANUAL'}}
             # Assign tap positions.
-            for tap in tapDict:
-                regDict[reg]['regulator'][tap] = tapDict[tap]['pos']
+            for tap in tapDict['taps']:
+                regDict[reg]['regulator'][tap] = tapDict['taps'][tap]['pos']
                 
         # Get capacitors in dict urable by writeCommands
         capDict = dict()
         for cap, capData in self.cap.items():
-            # Put 'status' dictionary into capDict
-            capDict[cap] = capData['status']
+            # Initialize dict for this cap
+            capDict[cap] = {}
+            for phase in capData:
+                capDict[cap][phase] = capData[phase]['status']
+
             # For now, force capacitors to be in 'MANUAL' control mode.
             capDict[cap]['control'] = 'MANUAL'
             
@@ -240,7 +351,8 @@ class individual:
         # Quiet the output
         if quiet:
             cmd += ' --quiet'
-            
+        
+        # TODO: Why does GridLAB-D refuse to be quiet?
         #result = 
         subprocess.run(cmd)#, stdout=subprocess.PIPE,
                             #stderr=subprocess.PIPE)
@@ -265,20 +377,23 @@ class individual:
         self.cursor.execute(s)
         
         # Loop through the rows, compute total energy
-        row = self.cursor.fetchone()
         t = 0+0j
         cols = ['measured_power_A', 'measured_power_B', 'measured_power_C']
         
-        while row is not None:
+        for row in self.cursor:
             for col in cols:
                 # Strip off the unit included with the complex number and
                 # add it to the total
                 v = getattr(row, col)
                 t += complex(v.split()[0])
                 
-            row = self.cursor.fetchone()
-                
         self.fitness = t
+        
+    def dropTable(self, table):
+        """ Simple method to drop a table from the database.
+        """
+        # TODO: Figure out why pyodbc binding isn't working
+        self.cursor.execute('DROP TABLE {}'.format(table))
                             
 if __name__ == "__main__":
     obj = individual(reg={'R2-12-47-2_reg_1': {
