@@ -46,6 +46,10 @@ class population:
         # Add mysql model and database connection.
         # TODO: Get database inputs rather than just using the default.
         writeObj.addMySQL()
+        # Stop suppressing messages
+        writeObj.repeatMessages()
+        # Stop using the profiler
+        writeObj.toggleProfile()
         
         # Update the population's base model with the modified one.
         self.strModel = writeObj.strModel
@@ -318,44 +322,53 @@ class population:
 
 if __name__ == "__main__":
     import time
-    t0 = time.time()
-    popObj = population(numInd=100, numGen=10,
-                        modelIn='C:/Users/thay838/Desktop/R2-12.47-2.glm',
-                        reg={'R2-12-47-2_reg_1': {
-                                                'raise_taps': 16, 
-                                                'lower_taps': 16,
-                                                'taps': [
-                                                    'tap_A',
-                                                    'tap_B',
-                                                    'tap_C'
-                                                ]
-                                               },
-                          'R2-12-47-2_reg_2': {
-                                                'raise_taps': 16,
-                                                'lower_taps': 16,
-                                                'taps': [
-                                                    'tap_A',
-                                                    'tap_B',
-                                                    'tap_C'
-                                                ]
-                                               }
-                        },
-                        cap={
-                            'R2-12-47-2_cap_1': ['switchA', 'switchB', 'switchC'],
-                            'R2-12-47-2_cap_2': ['switchA', 'switchB', 'switchC'],
-                            'R2-12-47-2_cap_3': ['switchA', 'switchB', 'switchC'],
-                            'R2-12-47-2_cap_4': ['switchA', 'switchB', 'switchC']
-                        },
-                        outDir='C:/Users/thay838/Desktop/vvo'
-                        )
-    popObj.ga()
-    t1 = time.time()
-    print('Runtime: {} seconds'.format(t1-t0))
     import matplotlib.pyplot as plt
-    x = list(range(len(popObj.generationBest)))
-    plt.plot(x, popObj.generationBest)
-    plt.xlabel('Generations')
-    plt.ylabel('Best Score')
-    plt.title('Best Score for Each Generation')
-    plt.show()
-    print('hooray')
+    n = 3
+    t = []
+    for k in range(n):
+        t0 = time.time()
+        popObj = population(numInd=100, numGen=10,
+                            modelIn='C:/Users/thay838/Desktop/R2-12.47-2.glm',
+                            reg={'R2-12-47-2_reg_1': {
+                                                    'raise_taps': 16, 
+                                                    'lower_taps': 16,
+                                                    'taps': [
+                                                        'tap_A',
+                                                        'tap_B',
+                                                        'tap_C'
+                                                    ]
+                                                   },
+                              'R2-12-47-2_reg_2': {
+                                                    'raise_taps': 16,
+                                                    'lower_taps': 16,
+                                                    'taps': [
+                                                        'tap_A',
+                                                        'tap_B',
+                                                        'tap_C'
+                                                    ]
+                                                   }
+                            },
+                            cap={
+                                'R2-12-47-2_cap_1': ['switchA', 'switchB', 'switchC'],
+                                'R2-12-47-2_cap_2': ['switchA', 'switchB', 'switchC'],
+                                'R2-12-47-2_cap_3': ['switchA', 'switchB', 'switchC'],
+                                'R2-12-47-2_cap_4': ['switchA', 'switchB', 'switchC']
+                            },
+                            outDir='C:/Users/thay838/Desktop/vvo'
+                            )
+        popObj.ga()
+        t1 = time.time()
+        t.append(t1-t0)
+        x = list(range(len(popObj.generationBest)))
+        plt.plot(x, popObj.generationBest)
+        plt.xlabel('Generations')
+        plt.ylabel('Best Score')
+        plt.title('Best Score for Each Generation')
+        plt.grid(True)
+        plt.savefig('C:/Users/thay838/Desktop/vvo/run_{}.png'.format(k))
+        #plt.show()
+        print('hooray')
+        
+    # print the runtimes
+    for el in t:
+        print('Runtime: {:.2f} s'.format(el))

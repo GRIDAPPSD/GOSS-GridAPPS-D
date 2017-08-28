@@ -36,6 +36,8 @@ class writeCommands:
     SWING_REGEX = re.compile(r'\bbustype\b(\s+)\bSWING\b')
     OBJ_REGEX = re.compile(r'\bobject\b')
     NODE_REGEX = re.compile(r'\bobject\b(\s+)\bnode\b')
+    PROFILER_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bprofiler\b(\s*)=(\s*)[01]')
+    SUPPRESS_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bsuppress_repeat_messages\b(\s*)=(\s*)[01]')
     
     def __init__(self, strModel, pathModelOut='', pathModelIn=''):
         """"Initialize class with input/output GridLAB-D models
@@ -95,7 +97,7 @@ class writeCommands:
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
         # First, find all regulators
-        regMatch = writeCommands.REGOBJ_REGEX.search(self.strModel)
+        regMatch = self.REGOBJ_REGEX.search(self.strModel)
         
         # Loop through regulators to find names and configs.
         # Note that this could be more efficient, but oh well.
@@ -105,7 +107,7 @@ class writeCommands:
             reg = self.extractObject(regMatch)
             
             # Extract name and configuration properties and assign to dict
-            d = writeCommands.extractProperties(reg['obj'],
+            d = self.extractProperties(reg['obj'],
                                                 ['name', 'configuration'])
             name = d['name']['prop']
             regDict[name] = d
@@ -114,7 +116,7 @@ class writeCommands:
             if (name in regulators) and ('regulator' in regulators[name]):
                 
                 # Modify the properties of the regulator
-                reg['obj'] = writeCommands.modObjProps(reg['obj'], 
+                reg['obj'] = self.modObjProps(reg['obj'], 
                                                        regulators[name]['regulator'])
                 
                 # Replace regulator with new modified regulator
@@ -122,7 +124,7 @@ class writeCommands:
             
             # Find the next regulator using index offset
             regEndInd = reg['start'] + len(reg['obj'])
-            regMatch = writeCommands.REGOBJ_REGEX.search(self.strModel,
+            regMatch = self.REGOBJ_REGEX.search(self.strModel,
                                                               regEndInd)
             
             
@@ -146,14 +148,14 @@ class writeCommands:
         # Next, loop through and command regulator configurations. Since we'll
         # be modifying the model as we go, we shouldn't use the 'finditer' 
         # method.
-        regConfMatch = writeCommands.REGCONF_REGEX.search(self.strModel)
+        regConfMatch = self.REGCONF_REGEX.search(self.strModel)
         
         while regConfMatch is not None:
             # Extract the object
             regConf = self.extractObject(regConfMatch)
             
             # Extract the name
-            d = writeCommands.extractProperties(regConf['obj'], ['name'])
+            d = self.extractProperties(regConf['obj'], ['name'])
             
             # If the regulator is in our configuration list, alter config.
             if d['name']['prop'] in confList:
@@ -162,15 +164,15 @@ class writeCommands:
                 regName = regList[regInd]
                 
                 # Modify the configuration
-                regConf['obj'] = writeCommands.modObjProps(regConf['obj'],
-                                                           regulators[regName]['configuration'])
+                regConf['obj'] = self.modObjProps(regConf['obj'],
+                                                  regulators[regName]['configuration'])
                     
                 # Regulator configuration has been updated, now update model
                 self.replaceObject(regConf)
             
             # Find the next regulator configuration, using index offset
             regEndInd = regConf['start'] + len(regConf['obj'])
-            regConfMatch = writeCommands.REGCONF_REGEX.search(self.strModel,
+            regConfMatch = self.REGCONF_REGEX.search(self.strModel,
                                                               regEndInd)
         
     def commandCapacitors(self, capacitors):
@@ -198,7 +200,7 @@ class writeCommands:
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
         # Find the first capacitor
-        capMatch = writeCommands.CAP_REGEX.search(self.strModel)
+        capMatch = self.CAP_REGEX.search(self.strModel)
         
         # Loop through the capacitors
         while capMatch is not None:
@@ -206,13 +208,13 @@ class writeCommands:
             cap = self.extractObject(capMatch)
             
             # Extract its name
-            capName = writeCommands.extractProperties(cap['obj'], ['name'])
+            capName = self.extractProperties(cap['obj'], ['name'])
             n = capName['name']['prop']
             
             # If the capacitor is in the list to command, do so
             if n in capacitors:
                 # Modify the capacitor object to implement commands
-                cap['obj'] = writeCommands.modObjProps(cap['obj'], 
+                cap['obj'] = self.modObjProps(cap['obj'], 
                                                        capacitors[n])
                                  
                 # Splice new capacitor object into model
@@ -220,7 +222,7 @@ class writeCommands:
                                 
             # Find the next capacitor, using index offset
             capEndInd = cap['start'] + len(cap['obj'])
-            capMatch = writeCommands.CAP_REGEX.search(self.strModel, capEndInd)
+            capMatch = self.CAP_REGEX.search(self.strModel, capEndInd)
             
     def updateClock(self, start, stop):
         """Function to set model time.
@@ -235,11 +237,11 @@ class writeCommands:
         """
         
         # Find and extract the clock object
-        clockMatch = writeCommands.CLOCK_REGEX.search(self.strModel)
+        clockMatch = self.CLOCK_REGEX.search(self.strModel)
         clock = self.extractObject(clockMatch)
         
         # Modify the times
-        clock['obj'] = writeCommands.modObjProps(clock['obj'],
+        clock['obj'] = self.modObjProps(clock['obj'],
                                                  {'starttime': start,
                                                   'stoptime': stop})
         
@@ -249,7 +251,7 @@ class writeCommands:
     def removeTape(self):
         """Method to remove tape module from model."""
         # First, look for simple version: 'module tape;'
-        tapeMatch = writeCommands.TAPE_REGEX1.search(self.strModel)
+        tapeMatch = self.TAPE_REGEX1.search(self.strModel)
         
         # If simple version is found, eliminate it
         if tapeMatch is not None:
@@ -258,7 +260,7 @@ class writeCommands:
             self.strModel = self.strModel[0:s] + self.strModel[e+1:]
         else:
             # Find "more full" definition of tape
-            tapeMatch = writeCommands.TAPE_REGEX2.search(self.strModel)
+            tapeMatch = self.TAPE_REGEX2.search(self.strModel)
             if tapeMatch is not None:
                 # Extract the object
                 tapeObj = self.extractObject(tapeMatch)
@@ -302,6 +304,38 @@ class writeCommands:
             
         self.strModel = dbStr + '}\n' + self.strModel
         
+    def repeatMessages(self, val=0):
+        """Method to set 'suppress_repeat_messages'
+        
+        TODO: unit test.
+        """
+        # See if the model already has the constant
+        m = self.SUPPRESS_REGEX.search(self.strModel)
+        if m:
+            # Simply replace last character.
+            self.strModel = (self.strModel[0:(m.span()[1] - 1)] + str(val)
+                             + self.strModel[m.span()[1]:])
+        else:
+            # Add to beginning of model.
+            self.strModel = ('#set suppress_repeat_messages={}'.format(val) 
+                             + '\n') + self.strModel
+                         
+    def toggleProfile(self, val=0):
+        """Method to toggle the profiler
+        
+        TODO: unit test.
+        """
+        # See if the model has the profiler set already
+        m = self.PROFILER_REGEX.search(self.strModel)
+        if m:
+            # Simply replace the last character with val.
+            self.strModel = (self.strModel[0:(m.span()[1] - 1)] + str(val)
+                             + self.strModel[m.span()[1]:])
+        else:
+            # Add the profiler string.
+            self.strModel = ('#set profiler={}'.format(val) + '\n'
+                             + self.strModel)
+        
     def findSwing(self):
         """Method to find the name of the swing bus.
         
@@ -318,7 +352,7 @@ class writeCommands:
         TODO: Handle multiple swing case
         """
         # Find the swing node
-        swingMatch = writeCommands.SWING_REGEX.search(self.strModel)
+        swingMatch = self.SWING_REGEX.search(self.strModel)
         
         # Find the closest open curly brace:
         sInd = swingMatch.span()[0]
@@ -341,7 +375,7 @@ class writeCommands:
         sName = self.extractProperties(self.strModel[sInd:eInd+1], ['name'])
         
         # Find the true beginning of the node by finding the nearest 'object'
-        swingIter = writeCommands.OBJ_REGEX.finditer(self.strModel, 0, sInd)
+        swingIter = self.OBJ_REGEX.finditer(self.strModel, 0, sInd)
         
         # Loop over the iterator until the last one. This feels dirty.
         # TODO: Make this more efficient?
@@ -367,7 +401,7 @@ class writeCommands:
         swing = self.findSwing()
         
         # If the swing object is a node, replace it with a meter.
-        nodeMatch = writeCommands.NODE_REGEX.match(swing['obj'])
+        nodeMatch = self.NODE_REGEX.match(swing['obj'])
         
         if nodeMatch is not None:
             # Replace 'object node' with 'object meter'

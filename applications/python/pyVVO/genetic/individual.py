@@ -69,6 +69,8 @@ class individual:
         # The writeModel method assigns to 'model' and 'table.'
         self.model = None
         self.table = None
+        # When the model is run, output will be saved.
+        self.modelOutput = None
         # The dbConnect method assigns to 'cnxn' and 'cursor'
         self.cnxn = None
         self.cursor = None
@@ -357,7 +359,7 @@ class individual:
         # Return the path to the new file.
         return outPath
     
-    def runModel(self, gldPath='gridlabd', quiet=True):
+    def runModel(self, gldPath='gridlabd'):
         """Function to run GridLAB-D model and write results to file.
         
         If gridlabd is not setup to just run with 'gridlabd,' pass in
@@ -369,14 +371,9 @@ class individual:
         # TODO: Raise exception if self.model is an empty string.
         # TODO: How to handle a model that doesn't converge?
         cmd = gldPath + ' ' + self.model
-        # Quiet the output
-        if quiet:
-            cmd += ' --quiet'
-        
-        # TODO: Why does GridLAB-D refuse to be quiet?
-        #result = 
-        subprocess.run(cmd)#, stdout=subprocess.PIPE,
-                            #stderr=subprocess.PIPE)
+
+        self.modelOutput = subprocess.run(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
                             
     def evalFitness(self):
         """Function to evaluate fitness of individual.
