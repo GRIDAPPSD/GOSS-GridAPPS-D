@@ -13,8 +13,12 @@ import pyodbc
 import math
 
 class individual:
-    # Define cap status, to be accessed by binary indices
+    # Define cap status, to be accessed by binary indices.
     CAPSTATUS = ['OPEN', 'CLOSED']
+    # Define the percentage of the tap range which sigma should be for drawing
+    # tap settings. Recall the 68-95-99.7 rule for normal distributions -
+    # 1 std dev, 2 std dev, 3 std dev probabilities
+    TAPSIGMAPCT = 0.1
     
     def __init__(self, uid, reg=None, cap=None, regChrom=None, regDict=None, 
                  capChrom=None, capDict=None):
@@ -88,6 +92,11 @@ class individual:
         
         INPUTS:
             reg: dict as described in __init__
+            
+        NOTES:
+            Some heuristics are involved here. A single tap position will be
+            chosen at random, and then all tap positions will be biased to be
+            close to that position.
         """
         
         # Initialize chromosome for regulator and dict to store list indices.
@@ -114,13 +123,25 @@ class individual:
             # Initialize dict for taps
             self.reg[r]['taps'] = dict()
             
+            # Randomly choose a viable tap setting to mu for the standard dist.
+            tapMu = random.randint(0, tb)
+            
+            # Compute the tap sigma for drawing from the normal distribution.
+            tapSigma = round(self.TAPSIGMAPCT * (tb + 1))
+            
             # Loop through the phases
             for tap in v['taps']:
                 # Initialize dict for this tap.
                 self.reg[r]['taps'][tap] = dict()
                 
-                # Randomly select a tap.
-                tapPos = random.randint(0, tb)
+                # Initialize the tapPos for while loop.
+                tapPos = -1
+                
+                # The standard distribution runs from (-inf, +inf) - draw 
+                # until position is valid. Recall valid positions are [0, tb]
+                while (tapPos < 0) or (tapPos > tb):
+                    # Draw the tap position from the normal distribution.
+                    tapPos = round(random.gauss(tapMu, tapSigma))
                 
                 # Express tap setting as binary list.
                 # For now, hard-code 6 positions
@@ -362,6 +383,9 @@ class individual:
         
         For now, this will just be total energy consumed.
         
+        For now, drop table after done.
+        TODO: Don't drop table at this point. It slows things down.
+        
         TODO: Add more evaluators of fitness like voltage violations, etc.
         """
         # Connect to the database.
@@ -386,8 +410,12 @@ class individual:
                 # add it to the total
                 v = getattr(row, col)
                 t += complex(v.split()[0])
-                
-        self.fitness = t
+        
+        # Assign the fitness.        
+        self.fitness = t.__abs__()
+        
+        # Drop table.
+        self.dropTable(self.table)
         
     def dropTable(self, table):
         """ Simple method to drop a table from the database.

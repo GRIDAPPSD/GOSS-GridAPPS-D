@@ -10,6 +10,10 @@ import random
 import os
 
 class population:
+    
+    # Scores will be stored in a list of tuples in format (uid, score)
+    UIDIND = 0
+    SCOREIND = 1
 
     def __init__(self, numInd, numGen, modelIn, outDir, reg, cap, 
                  start="'2017-01-01 00:00:00'", stop="'2017-01-01 00:15:00'"):
@@ -58,8 +62,14 @@ class population:
         self.modelIn = modelIn
         self.outDir = outDir
         
-        # Track the best scores for each generation
-        self.genBest = []
+        # Track the best scores for each generation.
+        self.generationBest = []
+        
+        # Track the sum of fitness.
+        self.fitSum = None
+        
+        # Track weights of fitness for "roulette wheel" method
+        self.rouletteWeights = None
         
         # Initialize individuals and write their models.
         # TODO: make this loop parallel?
@@ -76,34 +86,32 @@ class population:
         # Track the current UID
         self.lastUID = n + 1
         
-        #
-        
     def ga(self):
-        """Main function to run the genetic algorithm
+        """Main function to run the genetic algorithm.
         """
         g = 0
         while g < self.numGen:
             # Write and run each individual's model
             for individual in self.indList:
-                # Only writeRunEval if this individual hasn't done so yet
+                # Only writeRunEval if this individual hasn't done so yet.
                 if individual.fitness is None:
                     self.writeRunEval(individual=individual)
             
-            # Sort the fitness levels in format of (uid, score)
-            self.indFitness.sort(key=lambda x: x[1].__abs__())
+            # Sort the fitness levels by score in format of (uid, score).
+            self.indFitness.sort(key=lambda x: x[self.SCOREIND])
             
-            # Track best score
-            self.genBest.append(self.indFitness[0][1].__abs__())
+            # Track best score for this generation.
+            self.generationBest.append(self.indFitness[0][self.SCOREIND])
             
-            # Increment generation counter
+            # Increment generation counter.
             g += 1
             
             # TODO: performing this check again is annoyingly inefficient
             if g < self.numGen:
-                # Select the fittest individuals and some unfit ones
+                # Select the fittest individuals and some unfit ones.
                 self.naturalSelection()
                 
-                # Replenish the population by crossing individuals
+                # Replenish the population by crossing individuals.
                 self.crossAndMutate()
                 
         
@@ -124,7 +132,7 @@ class population:
         # (uid, score)
         self.indFitness.append((individual.uid, individual.fitness))
     
-    def naturalSelection(self, top=0.2, keepProb=0.1):
+    def naturalSelection(self, top=0.2, keepProb=0.2):
         """Determines which individuals will be used to create next generation.
         
         INPUTS:
@@ -133,7 +141,6 @@ class population:
             keepProb: decimal in set [0, 1). Probability another random
                 individual is kept to regenerate the population
         """
-        
         # Determine the index of the first individual that didn't make the cut
         k = math.ceil(top * len(self.indFitness))
         
@@ -143,10 +150,8 @@ class population:
             # Randomly decide whether or not to keep an unfit individual
             if random.random() > keepProb:
                 # Extract the uid and get the individual's index
-                uid = self.indFitness[k][0]
+                uid = self.indFitness[k][self.UIDIND]
                 ind = self.uids.index(uid)
-                # Drop the individual's table from the database
-                self.indList[ind].dropTable(self.indList[ind].table)
                 # Delete this individual's model file.
                 # TODO: This should be done in some cleanup stage rather
                 # than during the optimization
@@ -161,32 +166,82 @@ class population:
             
             # Increment k
             k += 1
-                
+        
+        # Compute fitness sum for surviving individuals
+        self.fitSum = 0
+        for s in self.indFitness:
+            # Add the score, recalling indFitness is in format (uid, score)
+            self.fitSum += s[self.SCOREIND]
+            
+        # Determine "roulette wheel" weights. Loop over remaining individuals.
+        # TODO: this feels so inefficient...
+        self.rouletteWeights = []
+        prev = 0
+        for s in self.indFitness:
+            # Lower scores are better but result in lower pct, hence the '1/'.
+            # This is to be used with random.choices. Documentation states it's
+            # faster to use cumulative weights.
+            # NOTE: the weights don't have to sum to 1 or 100.
+            if len(self.rouletteWeights) > 0:
+                prev = self.rouletteWeights[-1]
+
+            self.rouletteWeights.append(prev 
+                                        + (1 / (s[self.SCOREIND]/self.fitSum)))
     
-    def crossAndMutate(self, popMutate=0.2, mutateChance=0.1):
+    def crossAndMutate(self, popMutate=0.2, crossChance=0.7, mutateChance=0.1):
         """Crosses traits from surviving individuals to regenerate population.
+        
+        INPUTS:
+            popMutate: chance of an individual to enter the mutation phase
+            crossChance: chance of an individual being created by crossover
+            mutateChance: chance an individual gene mutates
         """
         # Get the UIDs of the individuals eligible to breed
         eligibleUIDs = tuple(self.uids)
         
         while len(self.indList) < self.numInd:
-            # Pull two individuals from the list
-            indUIDs = random.sample(eligibleUIDs, 2)
-            ind1 = self.uids.index(indUIDs[0])
-            ind2 = self.uids.index(indUIDs[1])
+            if random.random() < crossChance:
+                # Since we're crossing over, we won't force a mutation.
+                forceMutate = False
+
+                # Initialize while loop. Note that random.choices() has 
+                # replacement, hence need for while loop.
+                uids = [-1, -1]
+                while uids[0] == uids[1]:
+                    # Pick two individuals based on cumulative weights.
+                    uids = random.choices(eligibleUIDs,
+                                          cum_weights=self.rouletteWeights,
+                                          k=2)
+                
+                # Extract the indices of the given indivuals.    
+                ind1 = self.uids.index(uids[0])
+                ind2 = self.uids.index(uids[1])
             
-            # Cross the regulator chromosomes
-            regChrom = self.crossChrom(chrom1=self.indList[ind1].regChrom,
-                                       chrom2=self.indList[ind2].regChrom)
-            
-            # Cross the capaictor chromosomes
-            capChrom = self.crossChrom(chrom1=self.indList[ind1].capChrom,
-                                       chrom2=self.indList[ind2].capChrom)
-            
-            # TODO: Cross DER chromosomes
+                # Cross the regulator chromosomes
+                regChrom = self.crossChrom(chrom1=self.indList[ind1].regChrom,
+                                           chrom2=self.indList[ind2].regChrom)
+                
+                # Cross the capaictor chromosomes
+                capChrom = self.crossChrom(chrom1=self.indList[ind1].capChrom,
+                                           chrom2=self.indList[ind2].capChrom)
+                
+                # TODO: Cross DER chromosomes
+            else:
+                # We're not crossing over, so force mutation.
+                forceMutate = True
+                # Draw an individual.
+                uid = random.choices(eligibleUIDs,
+                                     cum_weights=self.rouletteWeights,
+                                     k=1)
+                # Extract the individual's index.
+                ind1 = self.uids.index(uid[0])
+                # Grab the necessary chromosomes
+                regChrom = self.indList[ind1].regChrom
+                capChrom = self.indList[ind1].capChrom
+                # TODO. DER chromosome.
             
             # Possibly mutate this individual.
-            if random.random() < popMutate:
+            if forceMutate or (random.random() < popMutate):
                 # Mutate regulator chromosome:
                 regChrom = self.mutateChrom(c=regChrom,
                                             mutateChance=mutateChance)
@@ -252,7 +307,7 @@ class population:
         # Loop over crossover range
         for k in r:
             # Note that random() is on interval [0.0, 1.0). Thus, we'll
-            # consider [0.0, 0.5) and [0.5, 1.0) for our intervals 
+            # consider [0.0, 0.5) and [0.5, 1.0) for our intervals. 
             # Note that since we initialized chrom to be a copy of chrom1, 
             # there's no need for an else case.
             if random.random() < 0.5:
@@ -262,6 +317,8 @@ class population:
         return chrom
 
 if __name__ == "__main__":
+    import time
+    t0 = time.time()
     popObj = population(numInd=100, numGen=10,
                         modelIn='C:/Users/thay838/Desktop/R2-12.47-2.glm',
                         reg={'R2-12-47-2_reg_1': {
@@ -292,4 +349,13 @@ if __name__ == "__main__":
                         outDir='C:/Users/thay838/Desktop/vvo'
                         )
     popObj.ga()
+    t1 = time.time()
+    print('Runtime: {} seconds'.format(t1-t0))
+    import matplotlib.pyplot as plt
+    x = list(range(len(popObj.generationBest)))
+    plt.plot(x, popObj.generationBest)
+    plt.xlabel('Generations')
+    plt.ylabel('Best Score')
+    plt.title('Best Score for Each Generation')
+    plt.show()
     print('hooray')
