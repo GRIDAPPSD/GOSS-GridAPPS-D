@@ -39,7 +39,16 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Random;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -47,15 +56,7 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ProcessManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -73,8 +74,6 @@ import pnnl.goss.core.GossResponseEvent;
 @Component
 public class ProcessManagerImpl implements ProcessManager {
 		
-	private static Logger log = LoggerFactory.getLogger(ProcessManagerImpl.class);
-	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
@@ -93,14 +92,12 @@ public class ProcessManagerImpl implements ProcessManager {
 	ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
 
 	public ProcessManagerImpl(){}
-	public ProcessManagerImpl(Logger logger,
-			ClientFactory clientFactory, 
+	public ProcessManagerImpl(ClientFactory clientFactory, 
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
 			StatusReporter statusReporter,
 			LogManager logManager, 
 			ProcessNewSimulationRequest newSimulationProcess){
-		ProcessManagerImpl.log = logger;
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
@@ -113,8 +110,20 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@Start
 	public void start(){
+		
+		LogMessage logMessageObj = new LogMessage();
+		
 		try{
-			log.info("Starting "+this.getClass().getName());
+			
+			
+			logMessageObj.setLog_level("debug");
+			logMessageObj.setProcess_id(this.getClass().getName());
+			logMessageObj.setProcess_status("running");
+			logMessageObj.setStoreToDB(true);
+			
+			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+			logMessageObj.setLog_message("Starting "+this.getClass().getName());
+			logManager.log(logMessageObj);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -124,20 +133,14 @@ public class ProcessManagerImpl implements ProcessManager {
 				@Override
 				public void onMessage(Serializable message) {
 					
-					/*LogMessage message = new LogMessage();
-					message.setLog_level("debug");
-					message.setLog_message("Process manager received message "+ message);
-					message.setProcess_id(this.getClass().getName());
-					message.setProcess_status("running");
-					message.setStoreToDB("true");
-					message.setTimestamp(timestamp);*/
-					
-					log.debug("Process manager received message "+ message);
 					DataResponse event = (DataResponse)message;
-					statusReporter.reportStatus(String.format("Got new message in %s on topic %s", getClass().getName(), event.getDestination()));
+					
+					logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+					logManager.log(logMessageObj);
+					
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-						log.debug("Received simulation request: "+ event.getData());
 						//generate simulation id and reply to event's reply destination.
 						int simulationId = generateSimulationId();
 						client.publish(event.getReplyDestination(), simulationId);
@@ -155,7 +158,10 @@ public class ProcessManagerImpl implements ProcessManager {
 		}
 		catch(Exception e){
 			e.printStackTrace();
-			log.error("Error in process manager",e);
+			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+			logMessageObj.setLog_level("error");
+			logMessageObj.setLog_message(e.getMessage());
+			logManager.log(logMessageObj);
 		}
 		
 	}

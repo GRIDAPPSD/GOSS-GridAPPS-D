@@ -90,7 +90,7 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources{
 	Properties datasourceProperties;
 
 	// These are the datasources that this module has registered.
-	private List<String> registeredDatasources = new ArrayList<>();;
+	private List<String> registeredDatasources = new ArrayList<>();
 
 	public List<String> getRegisteredDatasources(){
 		return registeredDatasources;
@@ -126,20 +126,25 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources{
 	
 	
 	protected void registerDataSource(){
-		try {
+		
 			String datasourceName = datasourceProperties.getProperty(DataSourceBuilder.DATASOURCE_NAME);
+			if(datasourceName==null){
+				throw new RuntimeException("No datasource name provided when registering data source");
+			}
+			
 			if(datasourceBuilder!=null && registeredDatasources!=null){
-				datasourceBuilder.create(datasourceName, datasourceProperties);
+				try {
+					datasourceBuilder.create(datasourceName, datasourceProperties);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					
+					//TODO use logmanager to log error
+					e.printStackTrace();
+				}
 				registeredDatasources.add(datasourceName);
 			}
 
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		
 	}
 	
