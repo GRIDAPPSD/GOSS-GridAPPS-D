@@ -95,6 +95,8 @@ public class GridAppsDConstants {
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
+	public static final SimpleDateFormat GRIDAPPSD_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
 	
 	static{
 		SDF_GLM_CLOCK.setTimeZone(TimeZone.getTimeZone("UTC"));
