@@ -4,7 +4,7 @@ apt upgrade -y  (as root user)
 
 GridAPPS-D Dependencies -  Use apt install for the following dependencies 
 
-*apt install -y vim git automake default-jdk g++ gcc python python-pip libtool apache2 gradle nodejs-legacy npm curl*
+*apt install -y vim git mysql-server automake default-jdk g++ gcc python python-pip libtool apache2 gradle nodejs-legacy npm curl*
 
 
 -	vim
