@@ -8,6 +8,7 @@ from powerflow import writeCommands
 import math
 import random
 import os
+from multiprocessing import Pool
 
 class population:
     
@@ -95,11 +96,25 @@ class population:
         """
         g = 0
         while g < self.numGen:
-            # Write and run each individual's model
-            for individual in self.indList:
-                # Only writeRunEval if this individual hasn't done so yet.
-                if individual.fitness is None:
-                    self.writeRunEval(individual=individual)
+            # Write and run each individual's model in parallel loop
+            with Pool() as p:
+                r = p.map(self.writeRunEval, self.indList)
+                
+            # Loop over the resulting individuals to update the indList and
+            # indFitness.
+            # TODO: The replacing of individuals is likely expensive. This
+            # issue stems from the writeRunEval function modifying the 
+            # individual, but with Pool we cannot update the individual in
+            # the indList. Maaaybe with some piping or something?
+            for ind in range(len(r)):
+                # Only add fitness and update list if writeRunEval did
+                # something.
+                if r[ind] is not None:
+                    # Add fitness in form of (uid, score)
+                    self.indFitness.append((r[ind].uid, r[ind].fitness))
+                    # Update the individual in the indList
+                    self.indList[ind] = r[ind]
+                
             
             # Sort the fitness levels by score in format of (uid, score).
             self.indFitness.sort(key=lambda x: x[self.SCOREIND])
@@ -120,21 +135,31 @@ class population:
                 
         
     def writeRunEval(self, individual):
-        """Write individual's model, run the model, and evaluate fitness
+        """Write individual's model, run the model, and evaluate fitness.
+        
+        NOTE: will pass if the model has already been run, as indicated by
+        the individual having a non-None fitness value.
+        
+        This function has been tweaked to accomodate parallel processing, so 
+        isn't quite as nice and clean as it used to be.
         """
-        # Write the model
-        individual.writeModel(strModel=self.strModel, inPath=self.modelIn,
-                              outDir=self.outDir)
+        if individual.fitness is None:
+            # Write the model.
+            individual.writeModel(strModel=self.strModel, inPath=self.modelIn,
+                                  outDir=self.outDir)
+            
+            # Run the model. gridlabd.exe must be on the path.
+            individual.runModel()
+            
+            # Evaluate the individuals fitness.
+            individual.evalFitness()
+            
+            # Return the modified individual.
+            return individual
         
-        # Run the model. gridlabd.exe must be on the path
-        individual.runModel()
-        
-        # Evaluate the individuals fitness
-        individual.evalFitness()
-        
-        # Add this individual's score to the list. Note the tuple format of
-        # (uid, score)
-        self.indFitness.append((individual.uid, individual.fitness))
+        else:
+            # If we don't run, return None
+            return None
     
     def naturalSelection(self, top=0.2, keepProb=0.2):
         """Determines which individuals will be used to create next generation.
@@ -269,9 +294,6 @@ class population:
             # Increment UID
             self.lastUID += 1
             
-            # Write individual's model, run it, evaluate fitness
-            self.writeRunEval(self.indList[-1])
-            
     @staticmethod
     def mutateChrom(c, mutateChance):
         """Take a chromosome and randomly mutate it.
@@ -322,10 +344,12 @@ class population:
 
 if __name__ == "__main__":
     import time
-    import matplotlib.pyplot as plt
-    n = 3
-    t = []
+    #import matplotlib.pyplot as plt
+    n = 10
+    f = open('C:/Users/thay838/Desktop/vvo/output.txt', 'w')
     for k in range(n):
+        print('*' * 80, file=f)
+        print('Generation {}'.format(k), file=f)
         t0 = time.time()
         popObj = population(numInd=100, numGen=10,
                             modelIn='C:/Users/thay838/Desktop/R2-12.47-2.glm',
@@ -358,17 +382,41 @@ if __name__ == "__main__":
                             )
         popObj.ga()
         t1 = time.time()
-        t.append(t1-t0)
-        x = list(range(len(popObj.generationBest)))
-        plt.plot(x, popObj.generationBest)
-        plt.xlabel('Generations')
-        plt.ylabel('Best Score')
-        plt.title('Best Score for Each Generation')
-        plt.grid(True)
-        plt.savefig('C:/Users/thay838/Desktop/vvo/run_{}.png'.format(k))
+        print('Runtime: {:.0f} s'.format(t1-t0), file=f)
+        print('Scores: ', file=f)
+        for s in popObj.generationBest:
+            print('{:.4g}'.format(s), end=', ', file=f)
+            
+        print(file=f)
+        print('Best Individual:', file=f)
+        bestUID = popObj.indFitness[0][popObj.UIDIND]
+        for ix in popObj.indList:
+            if ix.uid == bestUID:
+                print('\tCapacitor settings:', file=f)
+                for capName, capDict in ix.cap.items():
+                    print('\t\t' + capName + ':', file=f)
+                    for switchName, switchDict in capDict.items():
+                        print('\t\t\t' + switchName + ': ' 
+                              + switchDict['status'], file=f)
+                print(file=f)
+                
+                print('\tRegulator settings:', file=f)
+                for regName, regDict in ix.reg.items():
+                    print('\t\t' + regName + ':', file=f)
+                    for tapName, tapDict in regDict['taps'].items():
+                        print('\t\t\t' + tapName + ': ' + str(tapDict['pos']),
+                              file=f)
+                    
+                break
+            else:
+                pass
+        print('*' * 80, file=f, flush=True)
+        #x = list(range(len(popObj.generationBest)))
+        #plt.plot(x, popObj.generationBest)
+        #plt.xlabel('Generations')
+        #plt.ylabel('Best Score')
+        #plt.title('Best Score for Each Generation')
+        #plt.grid(True)
+        #plt.savefig('C:/Users/thay838/Desktop/vvo/run_{}.png'.format(k))
+        #plt.close()
         #plt.show()
-        print('hooray')
-        
-    # print the runtimes
-    for el in t:
-        print('Runtime: {:.2f} s'.format(el))

@@ -71,9 +71,8 @@ class individual:
         self.table = None
         # When the model is run, output will be saved.
         self.modelOutput = None
-        # The dbConnect method assigns to 'cnxn' and 'cursor'
+        # The dbConnect method assigns to 'cnxn'
         self.cnxn = None
-        self.cursor = None
         # The evalFitness method assigns to fitness
         self.fitness = None
         
@@ -286,9 +285,6 @@ class individual:
         # https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-MySQL
         self.cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
         self.cnxn.setencoding(encoding='utf-8')
-        
-        # Initialize the cursor
-        self.cursor = self.cnxn.cursor()
                 
     def writeModel(self, strModel, inPath, outDir):
         """Create a GridLAB-D .glm file for the given individual.
@@ -395,13 +391,15 @@ class individual:
         s = ('SELECT measured_power_A, measured_power_B, '
              'measured_power_C FROM {}').format(self.table)
         #self.cursor.execute(s, self.table)
-        self.cursor.execute(s)
+        # Get a cursor
+        cursor = self.cnxn.cursor()
+        cursor.execute(s)
         
         # Loop through the rows, compute total energy
         t = 0+0j
         cols = ['measured_power_A', 'measured_power_B', 'measured_power_C']
         
-        for row in self.cursor:
+        for row in cursor:
             for col in cols:
                 # Strip off the unit included with the complex number and
                 # add it to the total
@@ -414,11 +412,15 @@ class individual:
         # Drop table.
         self.dropTable(self.table)
         
+        # Close the connection
+        self.cnxn.close()
+        self.cnxn = None
+        
     def dropTable(self, table):
         """ Simple method to drop a table from the database.
         """
         # TODO: Figure out why pyodbc binding isn't working
-        self.cursor.execute('DROP TABLE {}'.format(table))
+        self.cnxn.cursor().execute('DROP TABLE {}'.format(table))
                             
 if __name__ == "__main__":
     obj = individual(reg={'R2-12-47-2_reg_1': {
@@ -450,6 +452,8 @@ if __name__ == "__main__":
     strModel = writeCommands.readModel(inPath)
     obj.writeModel(strModel=strModel, inPath=inPath,
                    outDir='C:/Users/thay838/Desktop/vvo')
+    obj.runModel()
+    obj.evalFitness()
     print('hooray')
             
         
