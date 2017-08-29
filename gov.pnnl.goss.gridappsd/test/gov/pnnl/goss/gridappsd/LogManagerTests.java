@@ -89,6 +89,62 @@ public class LogManagerTests {
 
 	}
 	
+	@Test
+	public void queryCalledWhen_getLogCalledWithObject(){
+		
+		LogManager logManager = new LogManagerImpl(logDataManager);
+		
+		LogMessage message = new LogMessage();
+		message.setLog_level("debug");
+		message.setProcess_id(this.getClass().getName());
+		message.setProcess_status("running");
+		message.setTimestamp("11/11/11 11:11:11");
+		
+		logManager.get(message);
+		
+		
+		Mockito.verify(logDataManager).query(argCaptor.capture(), argCaptor.capture(),
+				argCaptor.capture(), argCaptor.capture(), argCaptor.capture());
+		
+		List<String> allValues = argCaptor.getAllValues();
+		assertEquals(5, allValues.size());
+		assertEquals(message.getProcess_id(), allValues.get(0));
+		assertEquals(message.getTimestamp(), allValues.get(1));
+		assertEquals(message.getLog_level(), allValues.get(2));
+		assertEquals(message.getProcess_status(), allValues.get(3));
+		//TODO: User test user for this instead of system
+		assertEquals("system", allValues.get(4));
+	}
+	
+	@Test
+	public void queryCalledWhen_getLogCalledWithString(){
+		
+		
+		LogManager logManager = new LogManagerImpl(logDataManager);
+		String message = "{"
+				+ "\"process_id\":\"app_123\","
+				+ "\"process_status\":\"started\","
+				+ "\"log_level\":\"debug\","
+				+ "\"timestamp\": \"8\14\17 2:22:22\"}";
+		
+		logManager.get(message);
+		
+		
+		Mockito.verify(logDataManager).query(argCaptor.capture(), argCaptor.capture(),
+				argCaptor.capture(), argCaptor.capture(), argCaptor.capture());
+		
+		List<String> allValues = argCaptor.getAllValues();
+		assertEquals(5, allValues.size());
+		assertEquals("app_123", allValues.get(0));
+		assertEquals("8\14\17 2:22:22", allValues.get(1));
+		assertEquals("debug", allValues.get(2));
+		assertEquals("started", allValues.get(3));
+		//TODO: User test user for this instead of system
+		assertEquals("system", allValues.get(4));
+				
+
+	}
+	
 	
 
 }

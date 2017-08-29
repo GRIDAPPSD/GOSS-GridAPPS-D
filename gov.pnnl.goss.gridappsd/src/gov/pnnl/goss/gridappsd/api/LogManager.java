@@ -8,4 +8,8 @@ public interface LogManager {
 	
 	void log(LogMessage message);
 	
+	void get(String message);
+	
+	void get(LogMessage message);
+	
 }
