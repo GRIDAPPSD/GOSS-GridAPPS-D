@@ -12,7 +12,7 @@ public class LogDataManagerImpl implements LogDataManager {
 	}
 
 	@Override
-	public void query(String process_id, String timestamp, String log_level, String process_status) {
+	public void query(String process_id, String timestamp, String log_level, String process_status, String username) {
 		// TODO Auto-generated method stub
 
 	}

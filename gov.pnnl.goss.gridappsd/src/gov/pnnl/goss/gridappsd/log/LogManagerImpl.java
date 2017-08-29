@@ -130,5 +130,31 @@ public class LogManagerImpl implements LogManager {
 		
 
 	}
+	
+	@Override
+	public void get(String message) {
+		
+		Gson gson = new Gson();
+		LogMessage obj = gson.fromJson(message, LogMessage.class); 
+		String process_id = obj.getProcess_id();
+		String timestamp = obj.getTimestamp();
+		String log_level = obj.getLog_level();
+		String process_status = obj.getProcess_status();
+		String username = "system";
+		logDataManager.query(process_id, timestamp, log_level, process_status, username);
+		
+	}
+
+	@Override
+	public void get(LogMessage message) {
+		
+		String process_id = message.getProcess_id();
+		String timestamp = message.getTimestamp();
+		String log_level = message.getLog_level();
+		String process_status = message.getProcess_status();
+		String username = "system";
+		logDataManager.query(process_id, timestamp, log_level, process_status, username);
+		
+	}
 
 }
