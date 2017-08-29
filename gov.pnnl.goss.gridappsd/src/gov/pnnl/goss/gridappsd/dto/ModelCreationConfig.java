@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,8 +36,10 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
+
+import com.google.gson.Gson;
 
 public class ModelCreationConfig {
 
@@ -48,7 +50,7 @@ public class ModelCreationConfig {
 	public double voltage_multiplier = 1;  //multiplier that converts voltage to V for GridLAB-D  maps to -v
 	public double power_unit_conversion = 1;  //allowed values {1000|1|0.001}, multiplier that converts p,q,s to VA for GridLAB-D  maps to -s
 	public char unique_names = 'y';  //allowed values y|n   are unique names used?  maps to -q
-	public String schedule_name = ""; // root filename for scheduled ZIP loads (defaults to none)    maps to -n
+	public String schedule_name; // root filename for scheduled ZIP loads (defaults to none)    maps to -n
 	public double z_fraction = 0;  // allowed values {0....1}  constant Z portion (defaults to 0 for CIM-defined,  maps to -z
 	public double i_fraction = 1;  // allowed values {0....1}  constant I portion (defaults to 0 for CIM-defined,  maps to -i
 	public double p_fraction = 0;  // allowed values {0....1}  constant P portion (defaults to 0 for CIM-defined,  maps to -p
@@ -124,10 +126,19 @@ public class ModelCreationConfig {
 		this.p_fraction = pFraction;
 	}
 
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 	
-	
-	
-	
+	public static ModelCreationConfig parse(String jsonString){
+		Gson  gson = new Gson();
+		ModelCreationConfig obj = gson.fromJson(jsonString, ModelCreationConfig.class);
+		if(obj.schedule_name==null)
+			throw new RuntimeException("Expected attribute schedule_name not found");
+		return obj;
+	}
 	
 	
 }
