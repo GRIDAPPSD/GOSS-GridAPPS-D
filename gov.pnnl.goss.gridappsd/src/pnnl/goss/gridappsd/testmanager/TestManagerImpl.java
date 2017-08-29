@@ -60,10 +60,12 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.dto.ApplicationConfig;
+import gov.pnnl.goss.gridappsd.api.TestConfiguration;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.api.TestScript;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -85,7 +87,7 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 public class TestManagerImpl implements TestManager {
 	
 
-	public static final String topic_requestTest = GridAppsDConstants.topic_request_prefix+"/simulation";
+	public static final String topic_requestTest = GridAppsDConstants.topic_request_prefix+"/test";
 	
 	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
 	
@@ -93,13 +95,17 @@ public class TestManagerImpl implements TestManager {
 	private volatile ClientFactory clientFactory;
 	
 	@ServiceDependency
-	private volatile ConfigurationManager configurationManager;
-	
-	@ServiceDependency
 	private volatile SimulationManager simulationManager;
 	
 	@ServiceDependency
+	private volatile ConfigurationManager configurationManager;
+	
+	@ServiceDependency
+	private volatile ProcessManager processManager;
+	
+	@ServiceDependency
 	private volatile StatusReporter statusReporter;
+
 	
 	@Start
 	public void start(){
@@ -116,7 +122,7 @@ public class TestManagerImpl implements TestManager {
 			
 			//TODO: Setup Figure out location of TestScripts
 			
-			requestSimulation(client, tc, ts);
+//			requestSimulation(client, tc, ts);
 			
 			//TODO: Collect data from data manager
 				// TODO Build queries
@@ -251,7 +257,7 @@ public class TestManagerImpl implements TestManager {
 		return testScript;
 	}
 
-	protected void requestSimulation(Client client,TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException {
+	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException {
 		//TODO: Request Simulation
 			//TODO: 1 PowerSystemConfig
 			//TODO: 2 SimulationConfig simulation_config
@@ -276,12 +282,16 @@ public class TestManagerImpl implements TestManager {
 		Gson  gson = new Gson();
 		String request = gson.toJson(requestSimulation);
 		//Step3: Send configuration to the request simulation topic
+		log.debug("Request simulation");
+		log.debug("Client is:" + client);
 		Serializable simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, RESPONSE_FORMAT.JSON);
-
+		log.debug("simulation id is: "+simulationId);
 		//Subscribe to bridge output
 		client.subscribe("goss/gridappsd/fncs/output", new GossResponseEvent() {
 		    public void onMessage(Serializable response) {
+		      log.debug("simulation output is: "+response);
 		      System.out.println("simulation output is: "+response);
+		      
 		    }
 		});
 	}
