@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,20 +36,22 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
+
+import com.google.gson.Gson;
 
 public class RequestSimulation implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
-	private PowerSystemConfig power_system_config;
+	public PowerSystemConfig power_system_config;
 
-	private SimulationConfig simulation_config;
+	public SimulationConfig simulation_config;
 	
-	private ApplicationConfig application_config;
+	public ApplicationConfig application_config;
 	
 	public RequestSimulation(){
 		
@@ -87,7 +89,16 @@ public class RequestSimulation implements Serializable {
 
 	@Override
 	public String toString() {
-		return "ClassPojo [power_system_config = " + power_system_config
-				+ ", simulation_config = " + simulation_config + "]";
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	
+	public static RequestSimulation parse(String jsonString){
+		Gson  gson = new Gson();
+		RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
+		if(obj.power_system_config==null)
+			throw new RuntimeException("Expected attribute power_system_config not found");
+		return obj;
 	}
 }
