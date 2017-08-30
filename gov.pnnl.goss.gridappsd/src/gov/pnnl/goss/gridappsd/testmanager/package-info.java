@@ -38,4 +38,4 @@
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
 @aQute.bnd.annotation.Version("1.0.0")
-package pnnl.goss.gridappsd.testmanager;
+package gov.pnnl.goss.gridappsd.testmanager;

@@ -1,4 +1,4 @@
-package pnnl.goss.gridappsd.testmanager;
+package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
 import java.util.Arrays;

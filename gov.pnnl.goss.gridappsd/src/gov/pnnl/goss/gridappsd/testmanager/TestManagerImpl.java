@@ -37,7 +37,7 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package pnnl.goss.gridappsd.testmanager;
+package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.File;
 import java.io.FileReader;
@@ -60,7 +60,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestConfiguration;
@@ -69,13 +69,14 @@ import gov.pnnl.goss.gridappsd.api.TestScript;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
-import pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 
 
 /**
@@ -87,7 +88,7 @@ import pnnl.goss.gridappsd.utils.GridAppsDConstants;
 public class TestManagerImpl implements TestManager {
 	
 
-	public static final String topic_requestTest = GridAppsDConstants.topic_request_prefix+"/test";
+	public static final String topic_requestTest = GridAppsDConstants.topic_process_prefix+".test";
 	
 	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
 	
@@ -100,17 +101,21 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
 	
-	@ServiceDependency
-	private volatile ProcessManager processManager;
+//	@ServiceDependency
+//	private volatile ProcessManager processManager;
 	
 	@ServiceDependency
 	private volatile StatusReporter statusReporter;
+	
+	@ServiceDependency
+	private volatile LogManager logManager;
 
 	
 	@Start
 	public void start(){
 		try{
 			log.debug("Starting "+this.getClass().getName());
+			
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
