@@ -184,7 +184,6 @@ def test_goss_listener(mock_sys,mock__keepAlive, mock_fncs, mock_gossConnection,
         + '"log_message": "Added isInitialized output, sending message {'\
         + '\'output\': \'hello there!\', \'command\': \'isInitialized\', '\
         + '\'response\': \'True\'} connection %s"}' % str(mock_gossConnection)
-    msg1 = '{\'output\': \'hello there!\', \'command\': \'isInitialized\', \'response\': \'True\'}'
     inst.on_message(None, command_msg[0])
     mock_fncs.get_events.assert_called_once()
     mock_fncs.get_value.assert_called_once_with('123')

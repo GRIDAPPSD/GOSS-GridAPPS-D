@@ -371,7 +371,6 @@ def _sendSimulationStatus(status, message, log_level):
             "simulation_id" : str(simulationId)
         }
         status_str = json.dumps(status_message)
-        print(status_str)
         gossConnection.send(simulation_status_topic, status_str)
         
 
