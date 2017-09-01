@@ -6,13 +6,13 @@ cd $GRIDAPPSD_PROJECT/sources/viz/
 node server.js >> $GRIDAPPSD_PROJECT/builds/log/nodeserver.log 2>&1 &
 NJSPID=`echo $!`
 
-cd $GRIDAPPSD_PROJECT/builds/lib/
+cd $GRIDAPPSD_PROJECT/builds/
 
 java -Dbigdata.propertyFile=$GRIDAPPSD_PROJECT/builds/conf/rwstore.properties -jar blazegraph.jar >> $GRIDAPPSD_PROJECT/builds/log/blazegraph.log 2>&1 &
 BGPID=`echo $!`
 
 
-java -Dfelix.cm.home=$GRIDAPPSD_PROJECT/builds/conf/ -Dfelix.system.properties=$GRIDAPPSD_PROJECT/builds/conf/config.properties -jar run.bnd.jar >> $GRIDAPPSD_PROJECT/builds/log/goss-gridappsd.log 2>&1
+java -jar run.bnd.jar >> $GRIDAPPSD_PROJECT/builds/log/goss-gridappsd.log 2>&1
 
 
 echo "Stopping blazegraph, process $BGPID"
