@@ -12,7 +12,7 @@ java -Dbigdata.propertyFile=$GRIDAPPSD_PROJECT/builds/conf/rwstore.properties -j
 BGPID=`echo $!`
 
 
-java -jar run.bnd.jar >> $GRIDAPPSD_PROJECT/builds/log/goss-gridappsd.log 2>&1
+java -jar lib/run.bnd.jar >> $GRIDAPPSD_PROJECT/builds/log/goss-gridappsd.log 2>&1
 
 
 echo "Stopping blazegraph, process $BGPID"
