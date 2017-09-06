@@ -7,18 +7,18 @@ Created on Aug 9, 2017
 """
 import random
 from powerflow import writeCommands
-import os
-import subprocess
-import pyodbc
+from util import db, gld
+# import os
 import math
 
+# Define cap status, to be accessed by binary indices.
+CAPSTATUS = ['OPEN', 'CLOSED']
+# Define the percentage of the tap range which sigma should be for drawing
+# tap settings. Recall the 68-95-99.7 rule for normal distributions -
+# 1 std dev, 2 std dev, 3 std dev probabilities
+TAPSIGMAPCT = 0.1
+    
 class individual:
-    # Define cap status, to be accessed by binary indices.
-    CAPSTATUS = ['OPEN', 'CLOSED']
-    # Define the percentage of the tap range which sigma should be for drawing
-    # tap settings. Recall the 68-95-99.7 rule for normal distributions -
-    # 1 std dev, 2 std dev, 3 std dev probabilities
-    TAPSIGMAPCT = 0.1
     
     def __init__(self, uid, reg=None, cap=None, regChrom=None, regDict=None, 
                  capChrom=None, capDict=None):
@@ -64,15 +64,17 @@ class individual:
                 
         """
         
-        # Assign the unique identifier
+        # Assign the unique identifier.
         self.uid = uid
-        # The writeModel method assigns to 'model' and 'table.'
+        # Full path to output model.
         self.model = None
-        self.table = None
+        # Name of table to record swing data.
+        self.swingTable = None
+        # Name of columns of swingTable
+        self.swingColumns = None
         # When the model is run, output will be saved.
         self.modelOutput = None
-        # The dbConnect method assigns to 'cnxn'
-        self.cnxn = None
+
         # The evalFitness method assigns to fitness
         self.fitness = None
         
@@ -128,7 +130,7 @@ class individual:
             tapMu = random.randint(0, tb)
             
             # Compute the tap sigma for drawing from the normal distribution.
-            tapSigma = round(self.TAPSIGMAPCT * (tb + 1))
+            tapSigma = round(TAPSIGMAPCT * (tb + 1))
             
             # Loop through the phases
             for tap in v['taps']:
@@ -157,7 +159,7 @@ class individual:
                 
                 # Translate tapPos for GridLAB-D.
                 self.reg[r]['taps'][tap]['pos'] = \
-                    self.translateTaps(lowerTaps=v['lower_taps'],
+                    gld.translateTaps(lowerTaps=v['lower_taps'],
                                        raiseTaps=v['raise_taps'],
                                        pos=tapPos)
                 
@@ -166,19 +168,6 @@ class individual:
                 
                 # Increment start index.
                 s += len(binList)
-    
-    @staticmethod
-    def translateTaps(lowerTaps, raiseTaps, pos):
-        """Method to translate tap integer in range 
-        [0, lowerTaps + raiseTaps - 1] to range [-(lower_taps - 1), raise_taps]
-        """
-        # TODO: unit test
-        if pos <= (lowerTaps - 1):
-            posOut = pos - lowerTaps + 1
-        else:
-            posOut = pos - raiseTaps + 1
-            
-        return posOut
                 
     def genCapChrom(self, cap):
         """Method to randomly generate an individual's capacitor chromosome
@@ -204,7 +193,7 @@ class individual:
                 
                 # Randomly determine capacitor status.
                 capBinary = round(random.random())
-                capStatus = individual.CAPSTATUS[capBinary]
+                capStatus = CAPSTATUS[capBinary]
                 
                 # Assign to the capacitor
                 self.capChrom.append(capBinary)
@@ -226,7 +215,7 @@ class individual:
                 posInt = self.bin2int(tapBin)
                 # Convert integer to tap position
                 regDict[reg]['taps'][tap]['pos'] = \
-                    self.translateTaps(lowerTaps=regDict[reg]['lower_taps'],
+                    gld.translateTaps(lowerTaps=regDict[reg]['lower_taps'],
                                        raiseTaps=regDict[reg]['raise_taps'],
                                        pos=posInt)
                     
@@ -243,7 +232,7 @@ class individual:
             for phase, phaseData in d.items():
                 # Read chromosome and reassign the capDict
                 capDict[cap][phase]['status'] = \
-                    individual.CAPSTATUS[capChrom[phaseData['ind']]]
+                    CAPSTATUS[capChrom[phaseData['ind']]]
                     
         # Assign the capChrom and capDict to the individual
         self.capChrom = capChrom
@@ -264,27 +253,6 @@ class individual:
             k += 1
             
         return n
-        
-                
-    def dbConnect(self, driver='MySQL ODBC 5.3 Unicode Driver', usr='gridlabd',
-                  host='localhost', schema='gridlabd'):
-        """Connect to database.
-        
-        System will need an odbc driver for MySQL.
-        """
-        # TODO: Accomodate Linux and maybe Mac
-        # Build the connection string.
-        c = ('Driver={{{driver}}};Login Prompt=False;UID={usr};'
-             'Data Source={host};Database={schema};CHARSET=UTF8')
-        
-        # Initialize connection
-        self.cnxn = pyodbc.connect(c.format(driver=driver, usr=usr, host=host,
-                                            schema=schema))
-        
-        # pyodbc documentation says we need to configure decoding/encoding: 
-        # https://github.com/mkleehammer/pyodbc/wiki/Connecting-to-MySQL
-        self.cnxn.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-8')
-        self.cnxn.setencoding(encoding='utf-8')
                 
     def writeModel(self, strModel, inPath, outDir):
         """Create a GridLAB-D .glm file for the given individual.
@@ -302,12 +270,9 @@ class individual:
         """
         
         # Get the filename of the original model and create output path
-        # TODO - this should be performed outside of this function, and the
-        # filename should be input
-        fFull = os.path.basename(inPath)
-        fParts = os.path.splitext(fFull) 
-        fName = fParts[0]
-        outPath = os.path.join(outDir, fName + '_' + str(self.uid) + fParts[1])
+        outPath = writeCommands.writeCommands.addFileSuffix(inPath=inPath,
+                                                            suffix=str(self.uid),
+                                                            outDir = outDir)
         
         # Track the output path for running the model later.
         self.model = outPath
@@ -318,10 +283,13 @@ class individual:
                                                pathModelOut=outPath)
         
         # Update the swing node to a meter and get it writing power to a table
-        # TODO: clear table first?
         # TODO: swing table won't be the only table.
-        self.table = writeObj.recordSwing(uid=self.uid)
+        o = writeObj.recordSwing(suffix=self.uid)
+        self.swingTable = o['table']
+        self.swingColumns = o['swingColumns']
         
+        # TODO: incorporate the two loops below into the functions that build
+        # self.reg and self.cap. This double-looping is inefficient.
         # Get regulators in dict usable by writeCommands
         regDict = dict()
         for reg, tapDict in self.reg.items():
@@ -332,7 +300,7 @@ class individual:
             for tap in tapDict['taps']:
                 regDict[reg]['regulator'][tap] = tapDict['taps'][tap]['pos']
                 
-        # Get capacitors in dict urable by writeCommands
+        # Get capacitors in dict usable by writeCommands
         capDict = dict()
         for cap, capData in self.cap.items():
             # Initialize dict for this cap
@@ -355,72 +323,38 @@ class individual:
         # Return the path to the new file.
         return outPath
     
-    def runModel(self, gldPath='gridlabd'):
-        """Function to run GridLAB-D model and write results to file.
-        
-        If gridlabd is not setup to just run with 'gridlabd,' pass in
-            the full path to the executable in gldPath
+    def runModel(self):
+        """Function to run GridLAB-D model.
         """
-        
-        # Construct command and run model. 
-        # TODO: Pipe output to file for fitness evaluation? Overloads, etc.
-        # TODO: Raise exception if self.model is an empty string.
-        # TODO: How to handle a model that doesn't converge?
-        cmd = gldPath + ' ' + self.model
-
-        self.modelOutput = subprocess.run(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        self.modelOutput = gld.runModel(self.model)
                             
-    def evalFitness(self):
+    def evalFitness(self, cursor, starttime=None, stoptime=None):
         """Function to evaluate fitness of individual.
         
         For now, this will just be total energy consumed.
         
-        For now, drop table after done.
-        TODO: Don't drop table at this point. It slows things down.
-        
         TODO: Add more evaluators of fitness like voltage violations, etc.
+        
+        INPUTS:
+            cursor: pyodbc cursor from pyodbc connection 
+            starttime: starting time to evaluate
+            stoptime: ending time to evaluate
         """
         # Connect to the database.
         # TODO: Add connection options to this function.
-        self.dbConnect()
+        # cnxn = db.connect()
         
-        # Extract all the rows
-        # TODO: elminate hard-coding of column names
-        # TODO: figure out why the pyodbc binding isn't working....
-        s = ('SELECT measured_power_A, measured_power_B, '
-             'measured_power_C FROM {}').format(self.table)
-        #self.cursor.execute(s, self.table)
-        # Get a cursor
-        cursor = self.cnxn.cursor()
-        cursor.execute(s)
+        # Sum the power of all three phases over all time.
+        f, _ = db.sumComplexPower(cursor=cursor, cols=self.swingColumns,
+                                  table=self.swingTable, starttime=starttime,
+                                  stoptime=stoptime) 
         
-        # Loop through the rows, compute total energy
-        t = 0+0j
-        cols = ['measured_power_A', 'measured_power_B', 'measured_power_C']
-        
-        for row in cursor:
-            for col in cols:
-                # Strip off the unit included with the complex number and
-                # add it to the total
-                v = getattr(row, col)
-                t += complex(v.split()[0])
-        
-        # Assign the fitness.        
-        self.fitness = t.__abs__()
+        # For now, consider the fitness to be the absolute value of the
+        # total complex power.
+        self.fitness = f.__abs__()
         
         # Drop table.
-        self.dropTable(self.table)
-        
-        # Close the connection
-        self.cnxn.close()
-        self.cnxn = None
-        
-    def dropTable(self, table):
-        """ Simple method to drop a table from the database.
-        """
-        # TODO: Figure out why pyodbc binding isn't working
-        self.cnxn.cursor().execute('DROP TABLE {}'.format(table))
+        # db.dropTable(cursor=cursor, table=self.swingTable)
                             
 if __name__ == "__main__":
     obj = individual(reg={'R2-12-47-2_reg_1': {
@@ -452,7 +386,7 @@ if __name__ == "__main__":
     strModel = writeCommands.readModel(inPath)
     obj.writeModel(strModel=strModel, inPath=inPath,
                    outDir='C:/Users/thay838/Desktop/vvo')
-    obj.runModel()
+    r = obj.runModel()
     obj.evalFitness()
     print('hooray')
             

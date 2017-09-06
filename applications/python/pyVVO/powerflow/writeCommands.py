@@ -13,6 +13,24 @@ Created on Jul 27, 2017
 import re
 import os
 
+# Define some constants for GridLAB-D model parsing.
+REGOBJ_REGEX = re.compile(r'\bobject\b(\s+)\bregulator\b')
+REGCONF_REGEX = re.compile(r'\bobject\b(\s+)\bregulator_configuration\b')
+CAP_REGEX = re.compile(r'\bobject\b(\s+)\bcapacitor\b')
+CLOCK_REGEX = re.compile(r'\bclock\b(\s*)(?={)')
+TAPE_REGEX1 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*);')
+TAPE_REGEX2 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*)(?={)')
+SWING_REGEX = re.compile(r'\bbustype\b(\s+)\bSWING\b')
+OBJ_REGEX = re.compile(r'\bobject\b')
+NODE_REGEX = re.compile(r'\bobject\b(\s+)\bnode\b')
+METER_REGEX = re.compile(r'\bobject\b(\s+)\bmeter\b')
+SUBSTATION_REGEX = re.compile(r'\bobject\b(\s+)\bsubstation\b')
+PROFILER_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bprofiler\b(\s*)=(\s*)[01]')
+SUPPRESS_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bsuppress_repeat_messages\b(\s*)=(\s*)[01]')
+POWERFLOW_REGEX = re.compile((r'\bmodule\b(\s+)\bpowerflow\b'))
+CONTROL_REGEX = re.compile(r'(?<=(c|C)ontrol(\s))(\s*)(m|M)(a|A)(n|N)(u|U)(a|A)(l|L)(\s*);(\s*)//')
+COMMENT_REGEX = re.compile(r'(\S+);')
+
 def readModel(modelIn):
     '''Simple function to read file as string'''
     # TODO: strip this function out of this file.
@@ -26,18 +44,6 @@ class writeCommands:
         Some capabilities: regulator taps, capacitor switches, clock change,
             mysql connection, swing recorder
     """
-    # Define some constants for GridLAB-D model parsing.
-    REGOBJ_REGEX = re.compile(r'\bobject\b(\s+)\bregulator\b')
-    REGCONF_REGEX = re.compile(r'\bobject\b(\s+)\bregulator_configuration\b')
-    CAP_REGEX = re.compile(r'\bobject\b(\s+)\bcapacitor\b')
-    CLOCK_REGEX = re.compile(r'\bclock\b(\s*)(?={)')
-    TAPE_REGEX1 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*);')
-    TAPE_REGEX2 = re.compile(r'\bmodule\b(\s+)\btape\b(\s*)(?={)')
-    SWING_REGEX = re.compile(r'\bbustype\b(\s+)\bSWING\b')
-    OBJ_REGEX = re.compile(r'\bobject\b')
-    NODE_REGEX = re.compile(r'\bobject\b(\s+)\bnode\b')
-    PROFILER_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bprofiler\b(\s*)=(\s*)[01]')
-    SUPPRESS_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bsuppress_repeat_messages\b(\s*)=(\s*)[01]')
     
     def __init__(self, strModel, pathModelOut='', pathModelIn=''):
         """"Initialize class with input/output GridLAB-D models
@@ -96,8 +102,8 @@ class writeCommands:
         
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
-        # First, find all regulators
-        regMatch = self.REGOBJ_REGEX.search(self.strModel)
+        # Find first regulator
+        regMatch = REGOBJ_REGEX.search(self.strModel)
         
         # Loop through regulators to find names and configs.
         # Note that this could be more efficient, but oh well.
@@ -124,8 +130,7 @@ class writeCommands:
             
             # Find the next regulator using index offset
             regEndInd = reg['start'] + len(reg['obj'])
-            regMatch = self.REGOBJ_REGEX.search(self.strModel,
-                                                              regEndInd)
+            regMatch = REGOBJ_REGEX.search(self.strModel, regEndInd)
             
             
             
@@ -148,7 +153,7 @@ class writeCommands:
         # Next, loop through and command regulator configurations. Since we'll
         # be modifying the model as we go, we shouldn't use the 'finditer' 
         # method.
-        regConfMatch = self.REGCONF_REGEX.search(self.strModel)
+        regConfMatch = REGCONF_REGEX.search(self.strModel)
         
         while regConfMatch is not None:
             # Extract the object
@@ -172,8 +177,7 @@ class writeCommands:
             
             # Find the next regulator configuration, using index offset
             regEndInd = regConf['start'] + len(regConf['obj'])
-            regConfMatch = self.REGCONF_REGEX.search(self.strModel,
-                                                              regEndInd)
+            regConfMatch = REGCONF_REGEX.search(self.strModel, regEndInd)
         
     def commandCapacitors(self, capacitors):
         """"Function to change state of capacitors.
@@ -200,7 +204,7 @@ class writeCommands:
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
         # Find the first capacitor
-        capMatch = self.CAP_REGEX.search(self.strModel)
+        capMatch = CAP_REGEX.search(self.strModel)
         
         # Loop through the capacitors
         while capMatch is not None:
@@ -222,10 +226,11 @@ class writeCommands:
                                 
             # Find the next capacitor, using index offset
             capEndInd = cap['start'] + len(cap['obj'])
-            capMatch = self.CAP_REGEX.search(self.strModel, capEndInd)
+            capMatch = CAP_REGEX.search(self.strModel, capEndInd)
             
-    def updateClock(self, start, stop):
-        """Function to set model time.
+    def updateClock(self, starttime=None, stoptime=None, timezone=None):
+        """Function to set model time. If there's no clock object, it will be
+            created.
         
         INPUTS:
             start: simulation start time (starttime in GLD). Should be
@@ -236,22 +241,101 @@ class writeCommands:
             NOTE: Timezones can be included in start and stop.
         """
         
-        # Find and extract the clock object
-        clockMatch = self.CLOCK_REGEX.search(self.strModel)
-        clock = self.extractObject(clockMatch)
+        # Look for clock object
+        clockMatch = CLOCK_REGEX.search(self.strModel)
+        if clockMatch is not None:
+            # If clock object exists, extract it.
+            clock = self.extractObject(clockMatch)
+            
+            # Fill out dictionary of included properties
+            propDict = dict()
+            if starttime:
+                propDict['starttime'] = "'{}'".format(starttime)
+                
+            if stoptime:
+                propDict['stoptime'] = "'{}'".format(stoptime)
+                
+            if timezone:
+                propDict['timezone'] = timezone
+                
+            # Modify the times
+            clock['obj'] = self.modObjProps(clock['obj'], propDict)
         
-        # Modify the times
-        clock['obj'] = self.modObjProps(clock['obj'],
-                                                 {'starttime': start,
-                                                  'stoptime': stop})
+            # Splice in new clock object.
+            self.replaceObject(clock)
+        else:
+            # If clock doesn't exist, create it.
+            clockStr = "clock {\n"
+            
+            # Add defined properties.
+            if starttime:
+                clockStr += "  starttime '{}';\n".format(starttime)
+                
+            if stoptime:
+                clockStr += "  stoptime '{}';\n".format(stoptime)
+                
+            if timezone:
+                clockStr += "  timezone {};\n".format(timezone)
+                
+            clockStr += "}\n"
+            
+            # Add clock to model
+            self.strModel = clockStr + self.strModel
+            
+    def updatePowerflow(self, solver_method='NR', line_capacitance='TRUE',
+                        lu_solver='"KLU"'):
+        """Update powerflow module or create it if it doesn't exit.
         
-        # Splice in new clock object
-        self.replaceObject(clock)
+        INPUTS: 
+            solver_method: FBS or NR. GS is deprecated. 
+            line_capacitance: TRUE or FALSE
+            lu_solver: Third party solver. KLU is fast. Download from here:
+                https://github.com/gridlab-d/tools/tree/master/solver_klu
+                To use native solver, pass None for lu_solver
+        """
+        pfMatch = POWERFLOW_REGEX.search(self.strModel)
+        if pfMatch is not None:
+            # If powerflow module definition exists, extract it.
+            pf = self.extractObject(pfMatch)
+            # Modify the properties
+            propDict = {'solver_method': solver_method,
+                        'line_capacitance': line_capacitance}
+            if lu_solver:
+                propDict['lu_solver'] = lu_solver
+                
+            pf['obj'] = self.modObjProps(pf['obj'],
+                                         {'solver_method': solver_method,
+                                          'line_capacitance': line_capacitance}
+                                         )
+            # Splice in new powerflow object
+            self.replaceObject(pf)
+            
+        else:
+            # Create module string.
+            s = (
+                "module powerflow {{\n"
+                "  solver_method {solver_method};\n"
+                "  line_capacitance {line_capacitance};\n"
+                ).format(solver_method=solver_method,
+                         line_capacitance=line_capacitance)
+                
+            if lu_solver:
+                s += '  lu_solver {};\n'.format(lu_solver)
+                
+            s += "};\n"
+                
+            # Add to model.
+            self.strModel = s + self.strModel
+            
+    def addModule(self, module):
+        """Super simple function to add simple module definition to model.
+        """
+        self.strModel = 'module {};\n'.format(module) + self.strModel
         
     def removeTape(self):
         """Method to remove tape module from model."""
         # First, look for simple version: 'module tape;'
-        tapeMatch = self.TAPE_REGEX1.search(self.strModel)
+        tapeMatch = TAPE_REGEX1.search(self.strModel)
         
         # If simple version is found, eliminate it
         if tapeMatch is not None:
@@ -260,7 +344,7 @@ class writeCommands:
             self.strModel = self.strModel[0:s] + self.strModel[e+1:]
         else:
             # Find "more full" definition of tape
-            tapeMatch = self.TAPE_REGEX2.search(self.strModel)
+            tapeMatch = TAPE_REGEX2.search(self.strModel)
             if tapeMatch is not None:
                 # Extract the object
                 tapeObj = self.extractObject(tapeMatch)
@@ -268,10 +352,10 @@ class writeCommands:
                 self.strModel = (self.strModel[0:tapeObj['start']]
                                  + self.strModel[tapeObj['end']+1:])
                 
-    def addMySQL(self, hostname='localhost', username='gridlabd',
+    def addDatabase(self, hostname='localhost', username='gridlabd',
                  password='', schema='gridlabd', port='3306',
-                 socketname='/tmp/mysql.sock'):
-        """Method to add mysql module and database connection to model
+                 socketname='/tmp/mysql.sock', tz_offset=0):
+        """Method to add mysql database connection to model
         
         For now, it will simply be added to the beginning of the model.
         
@@ -289,20 +373,82 @@ class writeCommands:
         """
         # Construct the beginning of the necessary string
         dbStr = (
-        "module mysql;\n"
-        "object database {{\n"
-        '   hostname "{host}";\n'
-        '   username "{usr}";\n'
-        '   password "{pwd}";\n'
-        '   schema "{schema}";\n'
-        '   port {port};\n'
-        ).format(host=hostname, usr=username, pwd=password, schema=schema,
-                   port=port)
+            "object database {{\n"
+            '   hostname "{host}";\n'
+            '   username "{usr}";\n'
+            '   password "{pwd}";\n'
+            '   schema "{schema}";\n'
+            '   port {port};\n'
+            '   tz_offset {tz_offset};\n'
+            ).format(host=hostname, usr=username, pwd=password, schema=schema,
+                     port=port, tz_offset=tz_offset)
         # If we're on Mac or Linux, need to include the sockenamae
         if os.name == 'posix':
             dbStr = (dbStr + 'socketname "{sock}";\n').format(sock=socketname)
             
         self.strModel = dbStr + '}\n' + self.strModel
+        
+    def addClass(self, className, properties):
+        """Method to add a custom class to the beginning of a .gld model
+        
+        INPUTS:
+            className: class definition --> object className {
+            properties: dictionary of names mapped to types. e.g. 
+                {'value': 'double'}
+        """
+        # Build the start of the string 
+        s = "class {} {{\n".format(className)
+        
+        # Loop over the dict and build up the string
+        for n, t in properties.items():
+            s += '  {} {};\n'.format(t, n)
+            
+        # Add string to model
+        self.strModel = s + '}\n' + self.strModel
+        
+    def addObject(self, objType, properties):
+        """Method to add an object to the beginning of a .gld model
+        
+        INPUTS:
+            objType: object defition --> object objType  {
+            propreties: dictionary of properties mapped to their values. e.g.
+                {'name': 'zipload_schedule'}
+        """
+        # Build the start of the string
+        s = "object {} {{\n".format(objType)
+        
+        # Loop over the dict and build up the model
+        for prop, val in properties.items():
+            s += '  {} {};\n'.format(prop, val)
+            
+        # Add string to model
+        self.strModel = s + '}\n' + self.strModel
+        
+    def addTapePlayer(self, name, parent, prop, file, loop=0):
+        """Method to add a player from the tape module to a model.
+        
+        INPUTS: see recorder in GridLAB-D Wiki. prop short for property -->
+            (Python reserverd keyword)
+        """
+        # Build string
+        s = (
+            "object tape.player {{\n"
+            "  name {name};\n"
+            "  parent {parent};\n"
+            "  property {prop};\n"
+            '  file "{file}";\n'
+            "  loop {loop};\n"
+            "}}\n"
+            ).format(name=name, parent=parent, prop=prop, file=file, loop=loop)
+        
+        # Add to model
+        self.strModel = s + self.strModel
+        
+    def addLine(self, line):
+        """Simple method to add a line to a model.
+        """
+        self.strModel = line + '\n' + self.strModel
+        
         
     def repeatMessages(self, val=0):
         """Method to set 'suppress_repeat_messages'
@@ -310,7 +456,7 @@ class writeCommands:
         TODO: unit test.
         """
         # See if the model already has the constant
-        m = self.SUPPRESS_REGEX.search(self.strModel)
+        m = SUPPRESS_REGEX.search(self.strModel)
         if m:
             # Simply replace last character.
             self.strModel = (self.strModel[0:(m.span()[1] - 1)] + str(val)
@@ -326,7 +472,7 @@ class writeCommands:
         TODO: unit test.
         """
         # See if the model has the profiler set already
-        m = self.PROFILER_REGEX.search(self.strModel)
+        m = PROFILER_REGEX.search(self.strModel)
         if m:
             # Simply replace the last character with val.
             self.strModel = (self.strModel[0:(m.span()[1] - 1)] + str(val)
@@ -352,7 +498,7 @@ class writeCommands:
         TODO: Handle multiple swing case
         """
         # Find the swing node
-        swingMatch = self.SWING_REGEX.search(self.strModel)
+        swingMatch = SWING_REGEX.search(self.strModel)
         
         # Find the closest open curly brace:
         sInd = swingMatch.span()[0]
@@ -375,7 +521,7 @@ class writeCommands:
         sName = self.extractProperties(self.strModel[sInd:eInd+1], ['name'])
         
         # Find the true beginning of the node by finding the nearest 'object'
-        swingIter = self.OBJ_REGEX.finditer(self.strModel, 0, sInd)
+        swingIter = OBJ_REGEX.finditer(self.strModel, 0, sInd)
         
         # Loop over the iterator until the last one. This feels dirty.
         # TODO: Make this more efficient?
@@ -388,20 +534,28 @@ class writeCommands:
         return {'name': sName['name']['prop'], 'start': sInd, 'end': eInd,
                 'obj': self.strModel[sInd:eInd]}
     
-    def recordSwing(self, interval=60, uid=0):
+    def recordSwing(self, interval=60, suffix=0):
         """Add recorder to model to record the power flow on the swing.
         
         NOTE: swing will be changed from node to meter if it's a node
         
         NOTE: This is for a database recorder.
         
-        OUTPUT: name of table.
+        INPUTS:
+            interval: interval (seconds) to record
+            suffix: table name will be 'swing_' + suffix
+        
+        OUTPUT: dict in form of {'table': tableName,
+                                 'swingColumns': swingColumns}
+                where swingColumns are the names of the fields in the table.
         """
         # Find the name and indices of the swing.
         swing = self.findSwing()
         
-        # If the swing object is a node, replace it with a meter.
-        nodeMatch = self.NODE_REGEX.match(swing['obj'])
+        # Find out if the swing is a node, meter, or substation object
+        nodeMatch = NODE_REGEX.match(swing['obj'])
+        meterMatch = METER_REGEX.match(swing['obj'])
+        substationMatch = SUBSTATION_REGEX.match(swing['obj'])
         
         if nodeMatch is not None:
             # Replace 'object node' with 'object meter'
@@ -411,20 +565,32 @@ class writeCommands:
             
             # Splice in the new object
             self.replaceObject(swing)
+            
+        # 
+        if (nodeMatch is not None) or (meterMatch is not None):
+            swingColumns = ['measured_power_A', 'measured_power_B',
+                               'measured_power_C']
+        elif substationMatch is not None:
+            swingColumns = ['distribution_power_A', 'distribution_power_B',
+                               'distribution_power_C']
+        else:
+            # Raise error
+            raise UnexpectedSwingType()
         
         # Define table to use.
-        table = 'swing_' + str(uid)
+        table = 'swing_' + str(suffix)
         
         # Create recorder.
-        self.addRecorder(parent=swing['name'], table=table,
-                         properties=['measured_power_A', 'measured_power_B',
-                                     'measured_power_C'],
+        self.addMySQLRecorder(parent=swing['name'], table=table,
+                         properties=swingColumns,
                          interval=interval)
         
-        # Return the name of the table
-        return table
+        # Return the name of the table and powerProperties
+        out = {'table': table, 'swingColumns': swingColumns}
+        return out
         
-    def addRecorder(self, parent, table, properties, interval):
+    def addMySQLRecorder(self, parent, table, properties, interval,
+                    header_fieldnames='name', options='PURGE'):
         """Method to add database recorder to end of model
         
         INPUTS:
@@ -433,19 +599,26 @@ class writeCommands:
             properties: list of properties to record. Ex: ['power_A',
                 'power_B', 'power_C']
             interval: interval in seconds to record
+            header_fieldnames: Specifies the header data to store in each
+                record inserted. Valid fieldnames are "name", "class",
+                "latitude", and "longitude"
+            options: PURGE|UNITS - PURGE drops and recreates table on init.
             
         TODO: Add more properties
         """
         # Add formatted string to end of model.
-        self.strModel = self.strModel + ("\n"
-            "object recorder {{\n"
-            "    parent {parent};\n"
-            '    table "{table}";\n'
-            '    property {propList};\n'
-            '    interval {interval};\n'
+        self.strModel = self.strModel + ('\n'
+            'object mysql.recorder {{\n'
+            '  parent {parent};\n'
+            '  table "{table}";\n'
+            '  property {properties};\n'
+            '  interval {interval};\n'
+            '  header_fieldnames "{header_fieldnames}";\n'
+            '  options {options};\n'
             '}};').format(parent=parent, table=table,
-                         propList=','.join(properties), interval=interval)
-        pass
+                          properties=('"' + ','.join(properties) + '"'),
+                          interval=interval,
+                          header_fieldnames=header_fieldnames, options=options)
             
     def replaceObject(self, objDict):
         """Function to replace object in the model string with a modified
@@ -560,12 +733,101 @@ class writeCommands:
             if not prop:
                 raise PropNotInObjError(obj = objString, prop = p)
             
-            # Get property value and assign to output dictionary
-            propStr = prop.group().strip()
+            # Get property value and assign to output dictionary. Note that
+            # we're stripping whitespace then quotes.
+            propStr = prop.group().strip().strip('"')
             outDict[p] = {'prop': propStr, 'start': prop.span()[0],
                           'end': prop.span()[1]} 
             
         return outDict
+    
+    @staticmethod
+    def addFileSuffix(inPath, suffix='', outDir=None):
+        """Simple function to create a filepath to a file with _suffix 
+            added and in the desired directory.
+        """
+        # Get the filename and extension of original file
+        fParts = os.path.splitext(os.path.basename(inPath)) 
+        
+        # If outDir isn't included, make file path point to directory of inPath
+        if outDir is None:
+            outDir = os.path.dirname(inPath)
+            
+        if suffix:
+            suffix = '_' + suffix
+        
+        # Define the output path by adding suffix    
+        outPath = os.path.join(outDir, fParts[0] +  suffix + fParts[1])
+        
+        # Done.
+        return outPath
+    
+    def setupModel(self, starttime=None, stoptime=None, timezone=None,
+                   vSource=69715.065, playerFile=None, tz_offset=0):
+        """Function to add the basics to get a running model. Designed with 
+        the output from Tom McDermott's CIM exporter in mind.
+        
+        NOTE: most of these functions tack lines onto the beginning of the
+            file. That's why things might feel like they're in reverse order.
+            
+        TODO: Document inputs when this is done. Database inputs are going to
+            need to be added.
+        """
+        # Add definition of source voltage
+        self.addLine(line='#define VSOURCE={}'.format(vSource))
+        
+        # Add player details.
+        if playerFile:
+            # Add a player.
+            self.addTapePlayer(name='zip_sched', parent='zipload_schedule',
+                                   prop='value', file=playerFile, loop=1000)
+            # Add hacky object (working around mysql player not being able to 
+            # expose 'value')
+            self.addObject(objType='pOut',
+                           properties={'name': 'zipload_schedule'})
+            # Add hacky class
+            self.addClass(className='pOut', properties={'value': 'double'})
+        
+        # TODO: Get database inputs rather than just using the default.
+        self.addDatabase(tz_offset=tz_offset)
+        # Add tape and mysql modules.
+        self.addModule('mysql')
+        self.addModule('tape')
+        # Update powerflow (add if it doesn't exist).
+        self.updatePowerflow()
+        # Stop suppressing messages
+        self.repeatMessages()
+        # Stop using the profiler
+        self.toggleProfile()
+        # Update the clock (add if it doesn't exist).
+        if starttime or stoptime or timezone:
+            self.updateClock(starttime=starttime, stoptime=stoptime,
+                                 timezone=timezone)
+        
+    def switchControl(self):
+        """If file has commented out control options, use them instead.
+        Example: 'Control MANUAL; // OUTPUT_VOLTAGE;' will be replaced with
+        'Control OUTPUT_VOLTAGE;'
+        """
+        # Find the first control match.
+        m = CONTROL_REGEX.search(self.strModel)
+        
+        # Loop until we've found all CONTROL_REGEX instances.
+        while m:
+            # Get the indices of the match.
+            sInd = m.span()[0]
+            eInd = m.span()[1]
+            # See if there is another control option after the comment
+            m2 = COMMENT_REGEX.search(self.strModel, eInd)
+            # If there's another control option, remove the first match to
+            # splice in the new one
+            if m2:
+                self.strModel = self.strModel[:sInd] + self.strModel[eInd:]
+                
+            # Find the next match, starting with eInd
+            # NOTE: starting with eInd may not be 100% robust, but it shouldn't
+            # ever be a problem.
+            m = CONTROL_REGEX.search(self.strModel, eInd)
 
 class Error(Exception):
     """"Base class for exceptions in this module"""
@@ -603,6 +865,16 @@ class PropNotInObjError(Error):
         self.message = ("The property '" + prop + "' doesn't exist in "
                         + "the object '" + obj + "' in the model " + model)
             
+    def __str__(self):
+        return(repr(self.message))
+    
+class UnexpectedSwingType(Error):
+    """Exception raised if the swing object isn't a node, meter, or substation.
+    """
+    def __init__(self):
+        self.message = ("The given SWING object isn't a node, meter, or "
+                        + "substation object. This wasn't anticipated.")
+        
     def __str__(self):
         return(repr(self.message))
 

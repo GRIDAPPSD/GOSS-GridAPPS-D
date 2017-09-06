@@ -4,57 +4,66 @@ Created on Aug 15, 2017
 @author: thay838
 '''
 from genetic import individual
-from powerflow import writeCommands
 import math
 import random
 import os
-from multiprocessing import Pool
+from queue import Queue
+import threading
+from util import db
+import sys
 
-class population:
+# Scores will be stored in a list of tuples in format (uid, score)
+UIDIND = 0
+SCOREIND = 1
+INDIND = 1 # qOut will hold (uid, individual)
     
-    # Scores will be stored in a list of tuples in format (uid, score)
-    UIDIND = 0
-    SCOREIND = 1
+class population:
 
-    def __init__(self, numInd, numGen, modelIn, outDir, reg, cap, 
-                 start="'2017-01-01 00:00:00'", stop="'2017-01-01 00:15:00'"):
+    def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
+                 starttime, stoptime, numThreads=os.cpu_count()):
         """Initialize a population of individuals.
         
         INPUTS:
             numInd: Number of individuals to create
             numGen: Number of generations to run
-            modelIn: Path and filename to the base GridLAB-D model to be 
+            inPath: Path and filename to the base GridLAB-D model to be 
                 modified.
+            outDir: Directory for new models to be written.
         """
         # TODO: rather than being input, reg and cap should be read from the
-        # CIM.
+        # CIM.   
+        
+        # Get database connection pool (threadsafe)
+        # self.cnxnpool = db.connectPool(pool_name='popObjPool',
+        #                           pool_size=numThreads)
+        
+        # Initialize queues and threads for running GLD models in parallel.
+        self.threads = []
+        self.qIn = Queue()
+        self.qOut = Queue()
+        
+        # Set times
+        self.starttime = starttime
+        self.stoptime = stoptime
+        
+        # Start the threads.
+        for _ in range(numThreads):
+            #t = threading.Thread(target=population.writeRunEval,
+            #           args=(self.qIn, self.qOut, self.cnxnpool))
+            t = threading.Thread(target=population.writeRunEval,
+                                 args=(self.qIn, self.qOut, self.starttime,
+                                       self.stoptime))
+            self.threads.append(t)
+            t.start()
+
+        #print('Threads started.', flush=True)
         
         # Seed random module
         random.seed()
         
-        # Read the base model as a string.
-        with open(modelIn, 'r') as f:
-            self.strModel = f.read()
+        # Set population base model
+        self.strModel = strModel
         
-        # Get a writeCommands object
-        writeObj = writeCommands.writeCommands(strModel = self.strModel)
-        
-        # Update the clock.
-        writeObj.updateClock(start=start, stop=stop)
-        # Remove the tape module if it exists.
-        # TODO: likely don't need this when model is pulled from the CIM.
-        writeObj.removeTape()
-        # Add mysql model and database connection.
-        # TODO: Get database inputs rather than just using the default.
-        writeObj.addMySQL()
-        # Stop suppressing messages
-        writeObj.repeatMessages()
-        # Stop using the profiler
-        writeObj.toggleProfile()
-        
-        # Update the population's base model with the modified one.
-        self.strModel = writeObj.strModel
-            
         # Set the number of generations and individuals.
         self.numGen = numGen
         self.numInd = numInd
@@ -64,7 +73,7 @@ class population:
         self.cap = cap
         
         # Set modelIn and outDir
-        self.modelIn = modelIn
+        self.inPath = inPath
         self.outDir = outDir
         
         # Track the best scores for each generation.
@@ -96,31 +105,57 @@ class population:
         """
         g = 0
         while g < self.numGen:
-            # Write and run each individual's model in parallel loop
-            with Pool() as p:
-                r = p.map(self.writeRunEval, self.indList)
+            #print('Starting generation {}'.format(g), flush=True)
+            
+            # Put all the individuals in the queue for processing.
+            for individual in self.indList:
+                # TODO: Making so many copies of 'strModel' feels REALLY
+                # inefficient...
+                self.qIn.put_nowait({'individual':individual,
+                                     'strModel': self.strModel,
+                                     'inPath': self.inPath,
+                                     'outDir': self.outDir})
+            
+            #print('Input queue filled with individuals. Waiting for runs...',
+            #      flush=True)
                 
+            # Wait until all models have been run and evaluated.
+            self.qIn.join()
+            
+            #print('All runs should now be complete. Starting to process output queue.',
+            #      flush=True)
+            
             # Loop over the resulting individuals to update the indList and
             # indFitness.
-            # TODO: The replacing of individuals is likely expensive. This
-            # issue stems from the writeRunEval function modifying the 
-            # individual, but with Pool we cannot update the individual in
-            # the indList. Maaaybe with some piping or something?
-            for ind in range(len(r)):
+            while not self.qOut.empty():
+                # Extract the (uid, individual) pair from the queue.
+                pair = self.qOut.get()
+                # Find the index of this individual by their UID.
+                ind = self.uids.index(pair[UIDIND])
+                
                 # Only add fitness and update list if writeRunEval did
                 # something.
-                if r[ind] is not None:
+                if pair[INDIND] is not None:
                     # Add fitness in form of (uid, score)
-                    self.indFitness.append((r[ind].uid, r[ind].fitness))
+                    self.indFitness.append((pair[INDIND].uid,
+                                            pair[INDIND].fitness))
                     # Update the individual in the indList
-                    self.indList[ind] = r[ind]
+                    self.indList[ind] = pair[INDIND]
                 
+                # Mark this queue task as complete 
+                self.qOut.task_done()
             
+            # Make sure we completed all tasks in the queue.
+            # TODO - probably don't need this?
+            self.qOut.join()
+                
+            #print('Output queue processed. Moving on to natural selection and mutation.')
+                
             # Sort the fitness levels by score in format of (uid, score).
-            self.indFitness.sort(key=lambda x: x[self.SCOREIND])
+            self.indFitness.sort(key=lambda x: x[SCOREIND])
             
             # Track best score for this generation.
-            self.generationBest.append(self.indFitness[0][self.SCOREIND])
+            self.generationBest.append(self.indFitness[0][SCOREIND])
             
             # Increment generation counter.
             g += 1
@@ -133,34 +168,107 @@ class population:
                 # Replenish the population by crossing individuals.
                 self.crossAndMutate()
                 
-        
-    def writeRunEval(self, individual):
+                #print('Natural selection and mutation complete.')
+                
+            #print('Generation {} complete.'.format(g-1))
+            
+        # Signal to threads that we're done.
+        for _ in self.threads: self.qIn.put_nowait(None)
+        for t in self.threads: t.join()
+        #print('Threads terminated.', flush=True)
+                
+    @staticmethod 
+    def writeRunEval(qIn, qOut, starttime, stoptime):
+                    #, cnxnpool):
+        #tEvent):
         """Write individual's model, run the model, and evaluate fitness.
         
-        NOTE: will pass if the model has already been run, as indicated by
-        the individual having a non-None fitness value.
+        NOTE: will take no action if an individual's model has already been
+            run.
         
-        This function has been tweaked to accomodate parallel processing, so 
-        isn't quite as nice and clean as it used to be.
+        NOTE: This function is static due to the threading involved. This feels
+            memory inefficient but should save some headache.
+            
+        NOTE: This function is specifically formatted to be run via a thread
+            object which is terminated when a 'None' object is put in the 
+            qIn.
+            
+        INPUTS:
+            qIn: dictionary with individual, strModel, inPath, outDir fields
+                from a population object.
+            qOut: queue to put the modified indivdual in. NOTE: if the
+                a given individual has already been run, None will be placed
+                instead. Queue contains pairs of (uid, individual)
         """
-        if individual.fitness is None:
-            # Write the model.
-            individual.writeModel(strModel=self.strModel, inPath=self.modelIn,
-                                  outDir=self.outDir)
-            
-            # Run the model. gridlabd.exe must be on the path.
-            individual.runModel()
-            
-            # Evaluate the individuals fitness.
-            individual.evalFitness()
-            
-            # Return the modified individual.
-            return individual
+        while True:
+            try:
+                # Extract an individual from the queue.
+                inDict = qIn.get(timeout=30)
+                
+                # Check input.
+                if inDict is None:
+                    # If None is returned, we're all done here.
+                    qIn.task_done()
+                    # TODO: we should probably close if an error occurs.
+                    #print('Thread {} terminating'.format(os.getpid()),
+                    #      flush=True)
+                    break
+                
+                # Connect to the database. For some reason, we have to get a new
+                # connection for each iteration, otherwise we'll get that nasty
+                # '1412 (HY000): Table definition has changed, please retry
+                # transaction' error. It took way too long to find this as the 
+                # problem...
+                #cnxn = cnxnpool.get_connection()
+                cnxn = db.connect()
+                cursor = cnxn.cursor()
+                if inDict['individual'].fitness is None:
+                    # If the individual has not been run and evaluated:
+                    # Write the model.
+                    inDict['individual'].writeModel(strModel=inDict['strModel'],
+                                                   inPath=inDict['inPath'],
+                                                   outDir=inDict['outDir'])
+                    #print("Individual {}'s model written.".format(inDict['individual'].uid))
+                    
+                    # Run the model. gridlabd.exe must be on the path.
+                    inDict['individual'].runModel()
+                    if inDict['individual'].modelOutput.returncode:
+                        print("FAILURE! Individual {}'s model gave non-zero returncode.".format(inDict['individual'].uid))
+                    else:
+                        #print("Individual {}'s model successfully run.".format(inDict['individual'].uid))
+                        pass
+                    
+                    # Evaluate the individuals fitness.
+                    inDict['individual'].evalFitness(cursor, starttime,
+                                                     stoptime)
+                    #print("Individual {}'s fitness successfully evaluated.".format(inDict['individual'].uid))
+                    
+                    # Put the modified individual in the output queue.
+                    qOut.put((inDict['individual'].uid, inDict['individual']))
+                    #print('Individual {} put in output queue.'.format(inDict['individual'].uid),
+                    #      flush=True)
+                else:
+                    # If the individual has already been evaluated, there's no 
+                    # work to do.
+                    qOut.put((inDict['individual'].uid, None))
+                    #print('Individual {} has already been run. Putting None in output queue'.format(inDict['individual'].uid),
+                    #      flush=True)
+                
+                # Denote task as complete.
+                qIn.task_done()
+                
+            except:
+                print('Exception occurred!', flush=True)
+                error_type, error, traceback = sys.exc_info
+                print(error_type, flush=True)
+                print(error, flush=True)
+                print(traceback, flush=True)
+            finally:
+                cursor.close()
+                cnxn.close()
+                
         
-        else:
-            # If we don't run, return None
-            return None
-    
+        
     def naturalSelection(self, top=0.2, keepProb=0.2):
         """Determines which individuals will be used to create next generation.
         
@@ -179,12 +287,12 @@ class population:
             # Randomly decide whether or not to keep an unfit individual
             if random.random() > keepProb:
                 # Extract the uid and get the individual's index
-                uid = self.indFitness[k][self.UIDIND]
+                uid = self.indFitness[k][UIDIND]
                 ind = self.uids.index(uid)
                 # Delete this individual's model file.
                 # TODO: This should be done in some cleanup stage rather
                 # than during the optimization
-                os.remove(self.indList[ind].model)
+                #os.remove(self.indList[ind].model)
                 # Delete the individuals score from the list
                 del self.indFitness[k]
                 # Delete the individual and its reference
@@ -200,7 +308,7 @@ class population:
         self.fitSum = 0
         for s in self.indFitness:
             # Add the score, recalling indFitness is in format (uid, score)
-            self.fitSum += s[self.SCOREIND]
+            self.fitSum += s[SCOREIND]
             
         # Determine "roulette wheel" weights. Loop over remaining individuals.
         # TODO: this feels so inefficient...
@@ -215,7 +323,7 @@ class population:
                 prev = self.rouletteWeights[-1]
 
             self.rouletteWeights.append(prev 
-                                        + (1 / (s[self.SCOREIND]/self.fitSum)))
+                                        + (1 / (s[SCOREIND]/self.fitSum)))
     
     def crossAndMutate(self, popMutate=0.2, crossChance=0.7, mutateChance=0.1):
         """Crosses traits from surviving individuals to regenerate population.
@@ -343,9 +451,12 @@ class population:
         return chrom
 
 if __name__ == "__main__":
+    pass
+"""
+if __name__ == "__main__":
     import time
     #import matplotlib.pyplot as plt
-    n = 10
+    n = 1
     f = open('C:/Users/thay838/Desktop/vvo/output.txt', 'w')
     for k in range(n):
         print('*' * 80, file=f)
@@ -389,7 +500,7 @@ if __name__ == "__main__":
             
         print(file=f)
         print('Best Individual:', file=f)
-        bestUID = popObj.indFitness[0][popObj.UIDIND]
+        bestUID = popObj.indFitness[0][UIDIND]
         for ix in popObj.indList:
             if ix.uid == bestUID:
                 print('\tCapacitor settings:', file=f)
@@ -420,3 +531,4 @@ if __name__ == "__main__":
         #plt.savefig('C:/Users/thay838/Desktop/vvo/run_{}.png'.format(k))
         #plt.close()
         #plt.show()
+        """
