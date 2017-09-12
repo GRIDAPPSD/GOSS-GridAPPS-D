@@ -6,7 +6,7 @@ jdk:
   - oraclejdk8
 
 before_install:
-  - sudo pip install pytest mock
+  - sudo pip install pytest mock stompy
 
 install: ./gradlew --version
 
