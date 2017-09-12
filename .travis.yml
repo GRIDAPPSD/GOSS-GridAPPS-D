@@ -10,4 +10,4 @@ before_install:
 
 install: ./gradlew --version
 
-script: run-tests.sh
+script: ./run-tests.sh
