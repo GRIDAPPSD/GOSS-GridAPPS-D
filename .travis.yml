@@ -6,6 +6,7 @@ jdk:
   - oraclejdk8
 
 before_install:
+  - sudo apt-get install build-essential python-dev openssl libssl-dev libevent-dev
   - sudo pip install pytest mock stompy
 
 install: ./gradlew --version
