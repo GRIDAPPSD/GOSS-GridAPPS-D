@@ -1,4 +1,4 @@
 #!/bin/bash
 
 pytest 
-./gradlew check./gradlew check
+./gradlew check check
