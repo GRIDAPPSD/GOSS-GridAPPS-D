@@ -5,6 +5,9 @@ language: java
 jdk:
   - oraclejdk8
 
+before_install:
+  - sudo pip install pytest mock
+
 install: ./gradlew --version
 
-script: ./gradlew check
+script: run-tests.sh
