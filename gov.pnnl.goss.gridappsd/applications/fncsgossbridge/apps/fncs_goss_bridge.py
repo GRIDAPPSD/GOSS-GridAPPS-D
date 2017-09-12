@@ -4,13 +4,23 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 '''
-import fncs
+import os
 import json
-import yaml
 import sys
 import time
-import stomp
 from datetime import datetime
+
+import stomp
+import yaml
+
+try:
+    import fncs
+except:
+    if not os.envrion.get("CI"):
+        raise ValueError("fncs.py is unavailable on the python path.")
+    else:
+        sys.stdout.write("Running tests.\n")
+
 
 input_from_goss_topic = '/topic/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
 input_from_goss_queue = '/queue/goss/gridappsd/fncs/input' #this should match GridAppsDConstants.topic_FNCS_input
