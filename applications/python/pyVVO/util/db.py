@@ -10,6 +10,10 @@ Created on Aug 29, 2017
 '''
 import mysql.connector.pooling
 from mysql.connector import errorcode
+import re
+
+# Regular expression for parsing voltages given in form +/-mag+/-degreed V
+VMAG_REGEX = re.compile('[\+-](\d+)(\.*)(\d*)')
 
 def connectPool(user='gridlabd', password='', host='localhost',
             database='gridlabd', pool_name='mypool', pool_size=1):
@@ -65,6 +69,11 @@ def connect(user='gridlabd', password='', host='localhost',
     else:
         return cnx
     
+def truncateTable(cursor, table):
+    """Method to truncate a given table.
+    """
+    cursor.execute('TRUNCATE TABLE {}'.format(table))
+    
 def _printError(err):
     """Print a connection error.
     """
@@ -109,26 +118,31 @@ def dropTable(cursor, table):
     # TODO: Figure out why pyodbc binding isn't working.
     cursor.execute('DROP TABLE {}'.format(table))
 
-'''
-WHY WON'T THIS WORK?!?!
 def dropAllTables(cnxn):
     """Drop all tables in database.
     INPUT: database connection.
+    
+    Note: my efficient dual-loop method kept giving an 'unread results' error.
     """
     # Get database name.
     db = cnxn.database
     # Get a cursor.
     cursor = cnxn.cursor()
-    delCursor = cnxn.cursor(buffered=True,dictionary=True)
     # Get the names of all tables in database.
     cursor.execute(("SELECT table_name "
                     "FROM information_schema.tables "
                     "WHERE table_schema = '{}'").format(db))
+    tables = cursor.fetchall()
+    # Loop through and drop.
+    for table in tables:
+        dropTable(cursor, table[0])
+        
+    '''
     # Loop through each table and drop it.
     row = cursor.fetchone()
     while row:
         # Drop the table.
-        y = delCursor.execute("DROP TABLE '{}'".format(row[0]))
+        y = delCursor.execute("DROP TABLE {}".format(row[0]))
         # Must fetch all before executing another query.
         x = delCursor.fetchall()
         # Advance to the next row.
@@ -136,13 +150,13 @@ def dropAllTables(cnxn):
         
     # Commit.
     delCursor.commit()
-'''
+    '''
     
 def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None):
     """Sum complex power in table.
     
     INPUTS:
-        cursor: pyodbc cursor object made from a pyodbc connection
+        cursor: cursor from database connection
         cols: names of columns to access and sum in a list
         table: table to query
         tCol: name of time column. GridLAB-D mysql defaults this to 't'
@@ -161,10 +175,7 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
     # Prepare query.
     q = "SELECT {} FROM {}".format(','.join(cols), table)
     # Add time bounds
-    if starttime and stoptime:
-        q += " WHERE {tCol}>='{starttime}' and {tCol}<='{stoptime}'".format(tCol=tCol,
-                                                                           starttime=starttime,
-                                                                           stoptime=stoptime)
+    q += timeWhere(tCol=tCol, starttime=starttime, stoptime=stoptime)
         
     # Need to do a try catch here due to weird error:
     # pyodbc.Error: ('HY000', '[HY000] [MySQL][ODBC 5.3(w) Driver][mysqld-5.7.19-log]Table definition has changed, please retry transaction (1412) (SQLExecDirectW)')
@@ -176,13 +187,14 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
         #cursor.commit()
         cursor.execute(q)
     """
+    # Execute the query.
     cursor.execute(q)
     
     # Fetch the first row.
     row = cursor.fetchone()
     
-    # Extract the units (assume all units are the same).
-    unit = row[0].split()[1]
+    # Initialize output, extract the units (assume all units are the same).
+    out = {'unit': row[0].split()[1]}
     
     # Loop over the rows and sum.
     t = 0+0j
@@ -201,6 +213,121 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
         '''
         # Advance the cursor.    
         row = cursor.fetchone()
-        
-    return t, unit
     
+    # Assign row count and sum to output and return.
+    out['rowCount'] = cursor.rowcount
+    out['sum'] = t
+    return out
+
+def sumMatrix(cursor, table, cols, tCol='t', starttime=None, stoptime=None):
+    """Method to element-wise sum given rows and columns. Note that this also
+        works for single columns or multiple columns.
+    
+    INPUTS:
+        cursor: cursor from database connection
+        cols: names of columns to access and sum in a list
+        table: table to query
+        tCol: name of time column. GridLAB-D mysql defaults this to 't'
+        starttime: date string formatted as yyyy-mm-dd HH:MM:SS.
+        stoptime: date string formatted as yyyy-mm-dd HH:MM:SS.
+    """
+    # Prepare query - start with getting 'col1' + 'col2' + 'col3'...
+    s = "{}".format(cols[0])
+    for c in cols[1:]:
+        s += " + {}".format(c)
+    
+    q = "SELECT SUM({}) FROM {}".format(s, table)
+    # Add time bounds
+    q += timeWhere(tCol=tCol, starttime=starttime, stoptime=stoptime)
+    
+    # Execute query, return
+    cursor.execute(q)
+    r = cursor.fetchone()
+    return r[0]
+    
+def timeWhere(tCol, starttime, stoptime):
+    """Helper function to get WHERE clause for time-based query. Both times 
+        are considered inclusive.
+    
+    INPUTS:
+        tCol: name of time column
+        starttime: date string formatted as yyyy-mm-dd HH:MM:SS
+        stoptime: date string formatted as yyy-mm-dd HH:MM:SS
+    """
+    if starttime and stoptime:
+        s = (" WHERE {tCol}>='{starttime}' and "
+             "{tCol}<='{stoptime}'").format(tCol=tCol, starttime=starttime,
+                                              stoptime=stoptime)
+    else:
+        s = ''
+        
+    return s
+
+def voltageViolations(cursor, table, vLow=228, vHigh=252, vCols=['voltage_12'],
+                      tCol='t', starttime=None, stoptime=None):
+    """Loop through a table of voltages and count voltage violations.
+    
+    TODO: Ideally, finding the violation count would be coded in SQL - 
+        something like 'SELECT COUNT(voltage_12) FROM table WHERE 
+        voltage_12 > 252'
+        Unfortunately, GridLAB-D records the values as strings....
+        
+    TODO: Track number of meters that create the violation.
+    """
+    # Create query
+    q = "SELECT {} FROM {}".format(','.join(vCols), table)
+    
+    # Add time bounds
+    q += timeWhere(tCol=tCol, starttime=starttime, stoptime=stoptime)
+    
+    # Execute query.
+    cursor.execute(q)
+    
+    # Track high and low violations.
+    high = 0
+    low = 0
+    
+    # Fetch the first row, loop until all have been consumed.
+    row = cursor.fetchone()
+    while row:
+        # Loop over the columns
+        for ind in range(len(vCols)):
+            # Parse the complex value from the string.
+            # For now, assume voltage given in +/-mag+/-degreed V
+            # TODO: check string for a 'd' or 'j' to determine how to handle.
+            n = float(VMAG_REGEX.match(row[ind]).group(0))
+            
+            # Increment counters if necessary
+            if n >= vHigh:
+                high += 1
+            elif n <= vLow:
+                low += 1
+        
+        # Fetch next row.    
+        row = cursor.fetchone()
+        
+    return {'high': high, 'low': low}
+
+if __name__ == '__main__':
+    cnxn = connect()
+    dropAllTables(cnxn)
+    cursor = cnxn.cursor()
+    # dropTable(cursor, 'swing_benchmark')
+    """
+    r1 = sumMatrix(cursor=cursor, table='capcount_benchmark',
+                  cols=['cap_A_switch_count', 'cap_B_switch_count',
+                        'cap_C_switch_count'],
+                  tCol='t',
+                  starttime='2009-07-21 00:00:00',
+                  stoptime='2009-07-21 00:15:00')
+    
+    r2 = sumMatrix(cursor=cursor, table='regcount_benchmark',
+                  cols=['tap_A_change_count', 'tap_B_change_count',
+                        'tap_C_change_count'], tCol='t',
+                  starttime='2009-07-21 00:00:00',
+                  stoptime='2009-07-21 00:15:00')
+    
+    print(r1)
+    print(r2)
+    """
+        

@@ -20,7 +20,8 @@ INDIND = 1 # qOut will hold (uid, individual)
 class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
-                 starttime, stoptime, numThreads=os.cpu_count()):
+                 starttime, stoptime, numThreads=os.cpu_count(),
+                 energyPrice=0.00008, tapChangeCost=0.5, capSwitchCost=2):
         """Initialize a population of individuals.
         
         INPUTS:
@@ -37,6 +38,20 @@ class population:
         # self.cnxnpool = db.connectPool(pool_name='popObjPool',
         #                           pool_size=numThreads)
         
+        # Define some globals for use by the threads.
+        # These would be class constants, except we don't want to have to pass
+        # in a whole object or a million inputs to the thread-target function.
+        global STARTTIME
+        STARTTIME = starttime
+        global STOPTIME
+        STOPTIME = stoptime
+        global ENERGYPRICE
+        ENERGYPRICE = energyPrice
+        global TAPCHANGECOST
+        TAPCHANGECOST = tapChangeCost
+        global CAPSWITCHCOST
+        CAPSWITCHCOST = capSwitchCost
+        
         # Initialize queues and threads for running GLD models in parallel.
         self.threads = []
         self.qIn = Queue()
@@ -51,8 +66,7 @@ class population:
             #t = threading.Thread(target=population.writeRunEval,
             #           args=(self.qIn, self.qOut, self.cnxnpool))
             t = threading.Thread(target=population.writeRunEval,
-                                 args=(self.qIn, self.qOut, self.starttime,
-                                       self.stoptime))
+                                 args=(self.qIn, self.qOut))
             self.threads.append(t)
             t.start()
 
@@ -90,8 +104,27 @@ class population:
         self.indList = []
         self.indFitness = []
         self.uids = list(range(numInd))
-
-        for n in range(numInd):
+        
+        # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
+        c = 0
+        for allCap in individual.CAPSTATUS:
+            for peg in individual.REGPEG:
+                self.indList.append(individual.individual(uid=c, reg=self.reg,
+                                                        peg=peg, cap=self.cap,
+                                                        allCap=allCap))
+                c += 1
+                
+        # Create individuals with biased regulator positions
+        # TODO: Stop hard-coding the number.
+        # TODO: Consider leaving capacitors the same.
+        for n in range(c, c+4):
+            self.indList.append(individual.individual(uid=n, reg=self.reg,
+                                                      regBias=True,
+                                                      cap=self.cap))
+            c += 1
+        
+        # Randomly create the rest of the individuals.
+        for n in range(c, numInd):
             # Initialize individual.
             self.indList.append(individual.individual(uid=n, 
                                                       reg=self.reg, 
@@ -178,7 +211,7 @@ class population:
         #print('Threads terminated.', flush=True)
                 
     @staticmethod 
-    def writeRunEval(qIn, qOut, starttime, stoptime):
+    def writeRunEval(qIn, qOut):
                     #, cnxnpool):
         #tEvent):
         """Write individual's model, run the model, and evaluate fitness.
@@ -193,6 +226,9 @@ class population:
             object which is terminated when a 'None' object is put in the 
             qIn.
             
+        NOTE: This function depends on population's __init__ method setting
+            some global variables.
+            
         INPUTS:
             qIn: dictionary with individual, strModel, inPath, outDir fields
                 from a population object.
@@ -203,7 +239,7 @@ class population:
         while True:
             try:
                 # Extract an individual from the queue.
-                inDict = qIn.get(timeout=30)
+                inDict = qIn.get()
                 
                 # Check input.
                 if inDict is None:
@@ -229,7 +265,6 @@ class population:
                                                    inPath=inDict['inPath'],
                                                    outDir=inDict['outDir'])
                     #print("Individual {}'s model written.".format(inDict['individual'].uid))
-                    
                     # Run the model. gridlabd.exe must be on the path.
                     inDict['individual'].runModel()
                     if inDict['individual'].modelOutput.returncode:
@@ -239,8 +274,12 @@ class population:
                         pass
                     
                     # Evaluate the individuals fitness.
-                    inDict['individual'].evalFitness(cursor, starttime,
-                                                     stoptime)
+                    inDict['individual'].evalFitness(cursor,
+                                                     starttime=STARTTIME,
+                                                     stoptime=STOPTIME,
+                                                     energyPrice=ENERGYPRICE,
+                                                     tapChangeCost=TAPCHANGECOST,
+                                                     capSwitchCost=CAPSWITCHCOST)
                     #print("Individual {}'s fitness successfully evaluated.".format(inDict['individual'].uid))
                     
                     # Put the modified individual in the output queue.
@@ -394,7 +433,9 @@ class population:
                                                       regDict=
                                                       self.indList[ind1].reg,
                                                       capDict=
-                                                      self.indList[ind1].cap))
+                                                      self.indList[ind1].cap,
+                                                      cap=self.cap,
+                                                      reg=self.reg))
             
             # Add this UID to the list
             self.uids.append(self.lastUID)

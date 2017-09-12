@@ -30,6 +30,9 @@ SUPPRESS_REGEX = re.compile(r'#(\s*)\bset\b(\s+)\bsuppress_repeat_messages\b(\s*
 POWERFLOW_REGEX = re.compile((r'\bmodule\b(\s+)\bpowerflow\b'))
 CONTROL_REGEX = re.compile(r'(?<=(c|C)ontrol(\s))(\s*)(m|M)(a|A)(n|N)(u|U)(a|A)(l|L)(\s*);(\s*)//')
 COMMENT_REGEX = re.compile(r'(\S+);')
+TRIPLEX_LOAD_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_load\b')
+TRIPLEX_METER_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_meter\b')
+OBJEND_REGEX = re.compile(r'(\s*)}(\s*)(;*)$')
 
 def readModel(modelIn):
     '''Simple function to read file as string'''
@@ -240,7 +243,13 @@ class writeCommands:
             
             NOTE: Timezones can be included in start and stop.
         """
-        
+        # Extract a timezone string.
+        # TODO: this is AWFUL hard-coding.
+        if timezone:
+            tzStr = ' ' + timezone[-3:]
+        else:
+            tzStr = ''
+            
         # Look for clock object
         clockMatch = CLOCK_REGEX.search(self.strModel)
         if clockMatch is not None:
@@ -249,14 +258,14 @@ class writeCommands:
             
             # Fill out dictionary of included properties
             propDict = dict()
-            if starttime:
-                propDict['starttime'] = "'{}'".format(starttime)
-                
-            if stoptime:
-                propDict['stoptime'] = "'{}'".format(stoptime)
-                
             if timezone:
                 propDict['timezone'] = timezone
+                
+            if starttime:
+                propDict['starttime'] = "'{}{}'".format(starttime, tzStr)
+                
+            if stoptime:
+                propDict['stoptime'] = "'{}{}'".format(stoptime, tzStr)
                 
             # Modify the times
             clock['obj'] = self.modObjProps(clock['obj'], propDict)
@@ -268,14 +277,14 @@ class writeCommands:
             clockStr = "clock {\n"
             
             # Add defined properties.
-            if starttime:
-                clockStr += "  starttime '{}';\n".format(starttime)
-                
-            if stoptime:
-                clockStr += "  stoptime '{}';\n".format(stoptime)
-                
             if timezone:
                 clockStr += "  timezone {};\n".format(timezone)
+                
+            if starttime:
+                clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
+                
+            if stoptime:
+                clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
                 
             clockStr += "}\n"
             
@@ -406,13 +415,19 @@ class writeCommands:
         # Add string to model
         self.strModel = s + '}\n' + self.strModel
         
-    def addObject(self, objType, properties):
-        """Method to add an object to the beginning of a .gld model
+    def addObject(self, objType, properties, place='beginning', objStr=None):
+        """Method to add an object to a .gld model
         
         INPUTS:
             objType: object defition --> object objType  {
-            propreties: dictionary of properties mapped to their values. e.g.
+            properties: dictionary of properties mapped to their values. e.g.
                 {'name': 'zipload_schedule'}
+            place: 'beginning' or 'end' --> this is where object will be placed
+            objStr: if objStr is none, object will be added to self.strModel.
+                Otherwise, object will be nested into the given string object.
+                
+        NOTE: 'place' input does nothing if objStr is not None. Nested object
+            will always be placed at the end of objStr
         """
         # Build the start of the string
         s = "object {} {{\n".format(objType)
@@ -420,11 +435,29 @@ class writeCommands:
         # Loop over the dict and build up the model
         for prop, val in properties.items():
             s += '  {} {};\n'.format(prop, val)
-            
-        # Add string to model
-        self.strModel = s + '}\n' + self.strModel
+         
+        # Close object. Include semi-colon just in case.    
+        s += '};\n'
         
-    def addTapePlayer(self, name, parent, prop, file, loop=0):
+        if not objStr:
+            # Add string to model
+            if place == 'beginning':
+                self.strModel = s +  self.strModel
+            elif place == 'end':
+                self.strModel = self.strModel + '\n' + s
+            else:
+                assert False, ("'place' inputs must be 'beginning' "
+                               "or 'end.' '{}' was given.".format(place))
+            return None
+        else:
+            # Add string to the end of the object.
+            # Find the end.
+            e = OBJEND_REGEX.search(objStr)
+            # Splice new object into old object
+            strOut = objStr[:e.span()[0]] + '\n' + s + e.group(0)
+            return strOut
+        
+    def addTapePlayer(self, name, file, parent=None, prop=None, loop=0):
         """Method to add a player from the tape module to a model.
         
         INPUTS: see recorder in GridLAB-D Wiki. prop short for property -->
@@ -434,12 +467,25 @@ class writeCommands:
         s = (
             "object tape.player {{\n"
             "  name {name};\n"
-            "  parent {parent};\n"
-            "  property {prop};\n"
             '  file "{file}";\n'
             "  loop {loop};\n"
-            "}}\n"
-            ).format(name=name, parent=parent, prop=prop, file=file, loop=loop)
+            ).format(name=name, file=file, loop=loop)
+        
+        # Add parent if given.
+        if parent:
+            s += "  parent {};\n".format(parent)
+        
+        # Add property if given.
+        if prop:
+            s += "  property {};\n".format(prop)
+        
+        # Close the object.
+        s += "}\n"
+        
+        # If neither parent nor property are given, we need to expose the 
+        # player's value.
+        if (not parent) and (not prop):
+            s = "class player {\n  double value;\n}\n" + s
         
         # Add to model
         self.strModel = s + self.strModel
@@ -450,7 +496,7 @@ class writeCommands:
         self.strModel = line + '\n' + self.strModel
         
         
-    def repeatMessages(self, val=0):
+    def repeatMessages(self, val=1):
         """Method to set 'suppress_repeat_messages'
         
         TODO: unit test.
@@ -586,11 +632,71 @@ class writeCommands:
                          interval=interval)
         
         # Return the name of the table and powerProperties
-        out = {'table': table, 'swingColumns': swingColumns}
+        out = {'table': table, 'columns': swingColumns, 'interval': interval}
         return out
+    
+    def recordTriplex(self, suffix, interval=60):
+        """Method to add a recorder for each 'triplex_load' object.
+        
+        For now, this will only look for triplex_load objects and record the
+        voltage_12 property.
+        
+        INPUTS:
+            table: table to put recorded results in.
+            interval: interval at which to record results.
+        """
+        # Define table name
+        table = 'triplex_' + str(suffix)
+        
+        # Get iterator of triplex matches. Note that since we tack recorders
+        # onto the end, we don't screw up the indices in each match's span
+        # property.
+        matches = TRIPLEX_LOAD_REGEX.finditer(self.strModel)
+        
+        # Loop over each triplex load, and add a recorder for each one.
+        for m in matches:
+            # Extract the object:
+            tObj = self.extractObject(m)
+            
+            # Get the name
+            n = self.extractProperties(tObj['obj'], ['name'])
+            name = n['name']['prop']
+            
+            # Add a mysql recorder
+            self.addMySQLRecorder(parent=name, table=table,
+                                  properties=['voltage_12'], interval=interval)
+            
+        # Return the table name and columns
+        return {'table': table, 'columns': ['voltage_12'], 'interval':interval}
+    
+    def addTriplexMeters(self):
+        """Method to add a triplex_meter to each triplex_load
+        """
+        # Get iterator of triplex matches. Note that since we'll tack meters
+        # onto the end, we don't screw up the indices in each match's span
+        # property.
+        matches = TRIPLEX_LOAD_REGEX.finditer(self.strModel)
+        
+        # Loop over each triplex load, and add a recorder for each one.
+        for m in matches:
+            # Extract the object:
+            tObj = self.extractObject(m)
+            
+            # Get the name, phases, and nominal_voltage
+            n = self.extractProperties(tObj['obj'], ['name', 'phases',
+                                                     'nominal_voltage'])
+            
+            # Add a triplex meter to the end of the model
+            self.addObject(objType='triplex_meter',
+                           properties = {'name': n['name']['prop'] + '_meter',
+                                         'parent': n['name']['prop'],
+                                         'phases': n['phases']['prop'],
+                                         'nominal_voltage': n['nominal_voltage']['prop']},
+                           place='end')
+            
         
     def addMySQLRecorder(self, parent, table, properties, interval,
-                    header_fieldnames='name', options='PURGE'):
+                    header_fieldnames='name', options=None):
         """Method to add database recorder to end of model
         
         INPUTS:
@@ -603,22 +709,30 @@ class writeCommands:
                 record inserted. Valid fieldnames are "name", "class",
                 "latitude", and "longitude"
             options: PURGE|UNITS - PURGE drops and recreates table on init.
+                NOTE: Brandon found PURGE to be VERY slow experimentally for 
+                multiple recorders sharing a table. Table should be truncated
+                before use OUTSIDE of GridLAB-D. Maybe all this is true...
             
         TODO: Add more properties
         """
         # Add formatted string to end of model.
-        self.strModel = self.strModel + ('\n'
-            'object mysql.recorder {{\n'
-            '  parent {parent};\n'
-            '  table "{table}";\n'
-            '  property {properties};\n'
-            '  interval {interval};\n'
-            '  header_fieldnames "{header_fieldnames}";\n'
-            '  options {options};\n'
-            '}};').format(parent=parent, table=table,
-                          properties=('"' + ','.join(properties) + '"'),
-                          interval=interval,
-                          header_fieldnames=header_fieldnames, options=options)
+        recorder = ('\n'
+                    'object mysql.recorder {{\n'
+                    '  parent {parent};\n'
+                    '  table "{table}";\n'
+                    '  property {properties};\n'
+                    '  interval {interval};\n'
+                    '  header_fieldnames "{header_fieldnames}";\n'
+                    ).format(parent=parent, table=table,
+                             properties=('"' + ','.join(properties) + '"'),
+                             interval=interval,
+                             header_fieldnames=header_fieldnames)
+        
+        # Add options if included
+        if options:
+            recorder += '  options {options};\n'.format(options=options)
+            
+        self.strModel = self.strModel + recorder + '}'
             
     def replaceObject(self, objDict):
         """Function to replace object in the model string with a modified
@@ -642,23 +756,8 @@ class writeCommands:
                 propVal = writeCommands.extractProperties(objStr, [prop])
             except PropNotInObjError:
                 # If the property doesn't exist, append it to end of object
-                
-                # Determine if linesep is necessary before appended line
-                if objStr[-2] == '\n':
-                    preSep = ''
-                else:
-                    preSep = '\n'
-                    
-                # Determine if linesep is necessary after appended line.
-                # It would appear GridLAB-D requires closing curly brace to 
-                # be on its own line.
-                if objStr[-1] == '}':
-                    postSep = '\n'
-                else:
-                    postSep = ''
-                    
-                objStr = (objStr[0:-1] + preSep + prop + " " + str(value)
-                          + ";" + postSep + objStr[-1])
+                objStr = (objStr[0:-1] + "  " + prop + " " + str(value)
+                          + ";\n" + objStr[-1])
             else:
                 # Replace previous property value with this one
                 objStr = (objStr[0:propVal[prop]['start']] + str(value)
@@ -763,7 +862,8 @@ class writeCommands:
         return outPath
     
     def setupModel(self, starttime=None, stoptime=None, timezone=None,
-                   vSource=69715.065, playerFile=None, tz_offset=0):
+                   vSource=69715.065, playerFile=None, dbFlag=True,
+                   tz_offset=0, profiler=0):
         """Function to add the basics to get a running model. Designed with 
         the output from Tom McDermott's CIM exporter in mind.
         
@@ -780,25 +880,30 @@ class writeCommands:
         if playerFile:
             # Add a player.
             self.addTapePlayer(name='zip_sched', parent='zipload_schedule',
-                                   prop='value', file=playerFile, loop=1000)
+                                   prop='value', file=playerFile, loop=1)
             # Add hacky object (working around mysql player not being able to 
-            # expose 'value')
+            # expose 'value', and working around mysql + tape coexistence
+            # issues)
             self.addObject(objType='pOut',
                            properties={'name': 'zipload_schedule'})
             # Add hacky class
             self.addClass(className='pOut', properties={'value': 'double'})
+            
+            # Since we're using a player file, we'll need the tape module.
+            self.addModule('tape')
         
         # TODO: Get database inputs rather than just using the default.
-        self.addDatabase(tz_offset=tz_offset)
-        # Add tape and mysql modules.
-        self.addModule('mysql')
-        self.addModule('tape')
+        if dbFlag:
+            self.addDatabase(tz_offset=tz_offset)
+            # Add mysql modules
+            self.addModule('mysql')
+            
         # Update powerflow (add if it doesn't exist).
         self.updatePowerflow()
-        # Stop suppressing messages
+        # Ensure we're suppressing messages.
         self.repeatMessages()
-        # Stop using the profiler
-        self.toggleProfile()
+        # Set profiler.
+        self.toggleProfile(profiler)
         # Update the clock (add if it doesn't exist).
         if starttime or stoptime or timezone:
             self.updateClock(starttime=starttime, stoptime=stoptime,
@@ -828,6 +933,49 @@ class writeCommands:
             # NOTE: starting with eInd may not be 100% robust, but it shouldn't
             # ever be a problem.
             m = CONTROL_REGEX.search(self.strModel, eInd)
+            
+    def addMetricsCollectorWriter(self, interval=60, suffix=''):
+        """Function to add a metrics collector writer.
+        """
+        # Define filename
+        if suffix:
+            suffix = '_' + suffix
+            
+        fName = 'metrics' + suffix + '.json'
+        
+        # Create object
+        self.addObject(objType='metrics_collector_writer', place='end',
+                       properties={'interval': interval, 'filename': fName})
+        
+        # Return the name
+        return fName
+    
+    def addMetricsCollectors(self, interval=60):
+        """Function to add metrics collectors to all triplex_meter objects.
+        
+        If needed, this can easily be adopted to a different type of object.
+        
+        NOTE: Make sure to add meters first.
+        """
+        # Find the first triplex_meter.
+        m = TRIPLEX_METER_REGEX.search(self.strModel)
+        
+        # Loop over all the matches
+        while m:
+            # Extract the object
+            tObj = self.extractObject(m)
+            
+            # Splice in the metrics collector
+            tObj['obj'] = self.addObject(objType='metrics_collector',
+                                    properties = {'interval': interval},
+                                    objStr=tObj['obj'])
+            
+            # Replace the previous object with the new one.
+            self.replaceObject(tObj)
+            
+            # Get the next match, offsetting by length of new object.
+            m = TRIPLEX_METER_REGEX.search(self.strModel,
+                                          m.span()[0] + len(tObj['obj']))
 
 class Error(Exception):
     """"Base class for exceptions in this module"""

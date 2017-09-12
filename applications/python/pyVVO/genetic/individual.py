@@ -10,18 +10,21 @@ from powerflow import writeCommands
 from util import db, gld
 # import os
 import math
+import time
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
+REGPEG = ['max', 'min']
 # Define the percentage of the tap range which sigma should be for drawing
 # tap settings. Recall the 68-95-99.7 rule for normal distributions -
 # 1 std dev, 2 std dev, 3 std dev probabilities
 TAPSIGMAPCT = 0.1
-    
+ 
 class individual:
     
-    def __init__(self, uid, reg=None, cap=None, regChrom=None, regDict=None, 
-                 capChrom=None, capDict=None):
+    def __init__(self, uid, reg=None, regBias=False, peg=None, cap=None,
+                 allCap=None, regChrom=None, regDict=None, capChrom=None,
+                 capDict=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -38,12 +41,14 @@ class individual:
                 the following keys:
                     raise_taps
                     lower_taps
-                    phases
+                    taps --> dict of tap name (e.g. tap_A) mapped to previous
+                        position (e.g. 5)
                 Note possible tap positions be in interval [-(lower_taps - 1),
                 raise_taps]. 
                     
             cap: Dictionary describing capacitors.
-                Keys should be capacitor names, values a list of phases.
+                Keys should be capacitor names, values a dict of phases
+                    mapped to the capacitor status on the previous iteration.
                 
             uid: Unique ID of individual. Should be an int.
             
@@ -68,10 +73,18 @@ class individual:
         self.uid = uid
         # Full path to output model.
         self.model = None
-        # Name of table to record swing data.
+        # Table information
         self.swingTable = None
-        # Name of columns of swingTable
         self.swingColumns = None
+        self.swingInterval = None
+        self.triplexTable = None
+        self.triplexColumns = None
+        self.triplexInterval = None
+        
+        # Track tap changes and capacitor switching
+        self.tapChangeCount = 0
+        self.capSwitchCount = 0
+        
         # When the model is run, output will be saved.
         self.modelOutput = None
 
@@ -81,30 +94,44 @@ class individual:
         # If not given a regChrom or capChrom, generate them.
         if regChrom is None and capChrom is None:
             # Generate regulator chromosome:
-            self.genRegChrom(reg=reg)
+            self.genRegChrom(reg=reg, regBias=regBias, peg=peg)
             # Generate capacitor chromosome:
-            self.genCapChrom(cap=cap)
+            self.genCapChrom(cap=cap, allCap=allCap)
             # TODO: DERs
         else:
             # Use the given chromosomes to update the dictionaries.
-            self.genRegDict(regChrom, regDict)
-            self.genCapDict(capChrom, capDict)
+            self.genRegDict(regChrom, regDict, prevReg=reg)
+            self.genCapDict(capChrom, capDict, prevCap=cap)
         
-    def genRegChrom(self, reg):
+    def genRegChrom(self, reg, regBias, peg):
         """Method to randomly generate an individual's regulator chromosome
         
         INPUTS:
             reg: dict as described in __init__
+            regBias: Flag, True or False. True indicates that tap positions
+                for this individual will be biased (via a Gaussian 
+                distribution and the TAPSIGMAPCT constant) toward the previous
+                tap positions, while False indicates taps will be chosen purely
+                randomly.
+            peg: None, 'max', or 'min.' If 'None' is provided, input has no 
+                affect. 'max' will put all regulator taps at maximum position,
+                and 'min' will put all regulator taps at minimum position.
             
         NOTES:
-            Some heuristics are involved here. A single tap position will be
-            chosen at random, and then all tap positions will be biased to be
-            close to that position.
+            If the peg input is not None, regBias must be False.
+            
+        TODO: track tap changes. 
         """
+        # Make sure inputs aren't incompatible.
+        if peg:
+            assert (not regBias), ("If 'peg' is not None, "
+                                    "'regBias' must be False.")
+            assert peg in REGPEG
         
         # Initialize chromosome for regulator and dict to store list indices.
         self.regChrom = []
         self.reg = dict()
+         
         # Intialize index counters.
         s = 0;
         e = 0;
@@ -126,28 +153,49 @@ class individual:
             # Initialize dict for taps
             self.reg[r]['taps'] = dict()
             
+            # If we're pegging, set the position high or low.
+            if peg:
+                if peg == 'max':
+                    tapPos = tb
+                elif peg == 'min':
+                    tapPos = 0
+            elif regBias:
+                # If we're biasing from the previous position, get a sigma for
+                # the Gaussian distribution.
+                tapSigma = round(TAPSIGMAPCT * (tb + 1))
+                
             # Randomly choose a viable tap setting to mu for the standard dist.
-            tapMu = random.randint(0, tb)
-            
-            # Compute the tap sigma for drawing from the normal distribution.
-            tapSigma = round(TAPSIGMAPCT * (tb + 1))
+            # tapMu = random.randint(0, tb)
             
             # Loop through the phases
-            for tap in v['taps']:
+            for tap, position in v['taps'].items():
                 # Initialize dict for this tap.
                 self.reg[r]['taps'][tap] = dict()
                 
-                # Initialize the tapPos for while loop.
-                tapPos = -1
+                # Translate given position to integer on interval [0, tb]
+                position = gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
+                                                        pos=position)
                 
-                # The standard distribution runs from (-inf, +inf) - draw 
-                # until position is valid. Recall valid positions are [0, tb]
-                while (tapPos < 0) or (tapPos > tb):
-                    # Draw the tap position from the normal distribution.
-                    tapPos = round(random.gauss(tapMu, tapSigma))
+                if regBias:
+                    # Randomly draw tap position from gaussian distribution.
+                    
+                    # Initialize the tapPos for while loop.
+                    tapPos = -1
+                    
+                    # The standard distribution runs from (-inf, +inf) - draw 
+                    # until position is valid. Recall valid positions are
+                    # [0, tb]
+                    while (tapPos < 0) or (tapPos > tb):
+                        # Draw the tap position from the normal distribution.
+                        # Here oure 'mu' is the previous value
+                        tapPos = round(random.gauss(position, tapSigma))
+                        
+                elif not peg:
+                    # If we made it here, we aren't implementing a previous 
+                    # bias or 'pegging' the taps. Randomly draw.
+                    tapPos = random.randint(0, tb)
                 
-                # Express tap setting as binary list.
-                # For now, hard-code 6 positions
+                # Express tap setting as binary list with consistent width.
                 binList = [int(x) for x in "{0:0{width}b}".format(tapPos,
                                                                   width=width)]
                 
@@ -159,9 +207,10 @@ class individual:
                 
                 # Translate tapPos for GridLAB-D.
                 self.reg[r]['taps'][tap]['pos'] = \
-                    gld.translateTaps(lowerTaps=v['lower_taps'],
-                                       raiseTaps=v['raise_taps'],
-                                       pos=tapPos)
+                    gld.translateTaps(lowerTaps=v['lower_taps'], pos=tapPos)
+                    
+                # Increment the tap change counter (previous pos - this pos)
+                self.tapChangeCount += abs(position - tapPos)
                 
                 # Assign indices for this regulator
                 self.reg[r]['taps'][tap]['ind'] = (s, e)
@@ -169,12 +218,23 @@ class individual:
                 # Increment start index.
                 s += len(binList)
                 
-    def genCapChrom(self, cap):
-        """Method to randomly generate an individual's capacitor chromosome
+    def genCapChrom(self, cap, allCap):
+        """Method to randomly generate an individual's capacitor chromosome.
+        Alternatively, if the allCap input is provided, all capacitors will
+        be forced to the same status provided.
         
         INPUTS:
             cap: dict as described in __init__
+            allCap: None to do nothing, or one of the strings given in
+                CAPSTATUS ('OPEN' or 'CLOSED') which forces all caps to assume
+                the given status
         """
+        # If we're forcing all caps to the same status, determine the binary
+        # representation. TODO: add input checking.
+        if allCap:
+            capBinary = CAPSTATUS.index(allCap)
+            capStatus = allCap
+        
         # Initialize chromosome for capacitors and dict to store list indices.
         self.capChrom = []
         self.cap = dict()
@@ -191,20 +251,33 @@ class individual:
                 # Initialize subdict
                 self.cap[c][phase] = {}
                 
-                # Randomly determine capacitor status.
-                capBinary = round(random.random())
-                capStatus = CAPSTATUS[capBinary]
+                # Randomly determine capacitor status if allCap is None
+                if allCap is None:
+                    capBinary = round(random.random())
+                    capStatus = CAPSTATUS[capBinary]
                 
                 # Assign to the capacitor
                 self.capChrom.append(capBinary)
                 self.cap[c][phase]['status'] = capStatus
                 self.cap[c][phase]['ind'] = ind
                 
+                # Increment the switch counter if applicable
+                if capStatus != p[phase]:
+                    self.capSwitchCount += 1
+                
                 # Increment the chromosome counter
                 ind += 1
                 
-    def genRegDict(self, regChrom, regDict):
+    def genRegDict(self, regChrom, regDict, prevReg):
         """Create and assign new regDict from regChrom
+        
+        INPUTS:
+            regChrom: Pre-constructed regulator chromosome. See 'genRegChrom'
+            regDict: Dictionary corresponding to the regChrom, except the tap
+                positions haven't been updated to reflect the regChrom.
+            prevReg: Dictionary as described by 'reg' in __init__. This will be
+                used to increment tap-changer count.
+        TODO: track tap changes
         """
         # Loop through the regDict and correct tap positions
         for reg, t in regDict.items():
@@ -216,16 +289,25 @@ class individual:
                 # Convert integer to tap position
                 regDict[reg]['taps'][tap]['pos'] = \
                     gld.translateTaps(lowerTaps=regDict[reg]['lower_taps'],
-                                       raiseTaps=regDict[reg]['raise_taps'],
-                                       pos=posInt)
+                                      pos=posInt)
+                # Increment the tap change counter (previous pos - this pos)
+                self.tapChangeCount += abs(prevReg[reg]['taps'][tap] 
+                                           - regDict[reg]['taps'][tap]['pos'])
                     
         # Assign the regChrom and regDict
         self.regChrom = regChrom
         self.reg = regDict 
         
     
-    def genCapDict(self, capChrom, capDict):
-        """Create and assign new capDict from capChrom
+    def genCapDict(self, capChrom, capDict, prevCap):
+        """Create and assign new capDict from capChrom.
+        
+        INPUTS:
+            capChrom: Pre-constructed capacitor chromosom. See 'genCapChrom'
+            capDict: Dictionary corresponding to the capChrom, except the phase
+                statuses haven't been updated to reflect capChrom.
+            prevCap: Dictionary of previous capacitor statues as described
+                in __init__ of 'cap' input
         """
         # Loop through the capDict and correct status
         for cap, d in capDict.items():
@@ -233,6 +315,11 @@ class individual:
                 # Read chromosome and reassign the capDict
                 capDict[cap][phase]['status'] = \
                     CAPSTATUS[capChrom[phaseData['ind']]]
+                
+                # Bump the capacitor switch count if applicable
+                if capDict[cap][phase]['status'] != prevCap[cap][phase]:
+                    self.capSwitchCount += 1
+                
                     
         # Assign the capChrom and capDict to the individual
         self.capChrom = capChrom
@@ -286,8 +373,17 @@ class individual:
         # TODO: swing table won't be the only table.
         o = writeObj.recordSwing(suffix=self.uid)
         self.swingTable = o['table']
-        self.swingColumns = o['swingColumns']
+        self.swingColumns = o['columns']
+        self.swingInterval = o['interval']
         
+        # TODO: Uncomment when ready
+        '''
+        # Record triplex nodes
+        o = writeObj.recordTriplex(suffix=self.uid)
+        self.triplexTable = o['table']
+        self.triplexColumns = o['columns']
+        self.triplexInterval = o['interval']
+        ''' 
         # TODO: incorporate the two loops below into the functions that build
         # self.reg and self.cap. This double-looping is inefficient.
         # Get regulators in dict usable by writeCommands
@@ -328,34 +424,42 @@ class individual:
         """
         self.modelOutput = gld.runModel(self.model)
                             
-    def evalFitness(self, cursor, starttime=None, stoptime=None):
-        """Function to evaluate fitness of individual.
-        
-        For now, this will just be total energy consumed.
+    def evalFitness(self, cursor, energyPrice, tapChangeCost, capSwitchCost,
+                    tCol='t', starttime=None, stoptime=None):
+        """Function to evaluate fitness of individual. This is essentially a
+            wrapper to call gld.computeCosts
         
         TODO: Add more evaluators of fitness like voltage violations, etc.
         
         INPUTS:
             cursor: pyodbc cursor from pyodbc connection 
+            energyPrice: price of energy
+            tapChangeCost: cost changing regulator taps
+            capSwitchCost: cost of switching a capacitor
+            tCol: name of time column(s)
             starttime: starting time to evaluate
             stoptime: ending time to evaluate
         """
-        # Connect to the database.
-        # TODO: Add connection options to this function.
-        # cnxn = db.connect()
+        r = gld.computeCosts(cursor=cursor,
+                                        powerTable=self.swingTable,
+                                        powerColumns=self.swingColumns,
+                                        powerInterval=self.swingInterval,
+                                        energyPrice=energyPrice,
+                                        starttime=starttime,
+                                        stoptime=stoptime,
+                                        tCol=tCol,
+                                        tapChangeCost=tapChangeCost,
+                                        capSwitchCost=capSwitchCost,
+                                        tapChangeCount=self.tapChangeCount,
+                                        capSwitchCount=self.capSwitchCount)
         
-        # Sum the power of all three phases over all time.
-        f, _ = db.sumComplexPower(cursor=cursor, cols=self.swingColumns,
-                                  table=self.swingTable, starttime=starttime,
-                                  stoptime=stoptime) 
+        self.fitness = r['total']
+        self.energyCost = r['energy']
+        self.tapCost = r['tap']
+        self.capCost = r['cap']
         
-        # For now, consider the fitness to be the absolute value of the
-        # total complex power.
-        self.fitness = f.__abs__()
-        
-        # Drop table.
-        # db.dropTable(cursor=cursor, table=self.swingTable)
-                            
+'''
+DEPRECATED             
 if __name__ == "__main__":
     obj = individual(reg={'R2-12-47-2_reg_1': {
                                                 'raise_taps': 16, 
@@ -389,6 +493,6 @@ if __name__ == "__main__":
     r = obj.runModel()
     obj.evalFitness()
     print('hooray')
-            
+'''
         
         

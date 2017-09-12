@@ -4,30 +4,157 @@ Created on Aug 29, 2017
 @author: thay838
 '''
 import subprocess
+from util import db
 
-def runModel(modelPath, gldPath='gridlabd'):
+def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
     """Function to run GridLAB-D model.
-    
-    If gridlabd is not setup to just run with 'gridlabd,' pass in
-        the full path to the executable in gldPath
     
     TODO: Add support for command line inputs.
     """
-    # Construct command and run model. 
-    cmd = gldPath + ' ' + modelPath
+    # Set up the gridlabd path, run model
+    # TODO: Get this adapated for Unix.
+    # NOTE: On Windows, spaces between the '&&'s causes everything to break...
+    cmd = r'set PATH={}/bin;%PATH%'.format(gldPath)
+    cmd += r'&&set GLPATH={0}/share/gridlabd;{0}/lib/gridlabd'.format(gldPath)
+    cmd += r'&&set CXXFLAGS=-I{}/share/gridlabd'.format(gldPath)
+    cmd += r'&&gridlabd'
+    cmd += r' ' + modelPath
     # Run command. Note with check=True exception will be thrown on failure.
+    # TODO: rather than using check=True, handle the event of a GridLAB-D error
     output = subprocess.run(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, check=True)
+                            stderr=subprocess.PIPE, shell=True)#, check=True)
     return output
 
-def translateTaps(lowerTaps, raiseTaps, pos):
+def translateTaps(lowerTaps, pos):
     """Method to translate tap integer in range 
     [0, lowerTaps + raiseTaps - 1] to range [-(lower_taps - 1), raise_taps]
     """
     # TODO: unit test
-    if pos <= (lowerTaps - 1):
-        posOut = pos - lowerTaps + 1
-    else:
-        posOut = pos - raiseTaps + 1
-        
+    # Hmmm... is it this simple? 
+    posOut = pos - lowerTaps + 1
     return posOut
+
+def inverseTranslateTaps(lowerTaps, pos):
+    """Method to translate tap integer in range
+        [-(lower_taps - 1), raise_taps] to range [0, lowerTaps + raiseTaps - 1]
+    """
+    # TODO: unit test
+    # Hmmm... is it this simle? 
+    posOut = pos + lowerTaps - 1
+    return posOut
+
+def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
+                 starttime, stoptime, tapChangeCost, capSwitchCost, tCol='t',
+                 tapChangeCount=None, tapChangeTable=None,
+                 tapChangeColumns=None, capSwitchCount=None,
+                 capSwitchTable=None, capSwitchColumns=None):
+    """Method to compute VVO costs for a given time interval. This includes
+    cost of energy, capacitor switching, and regulator tap changing. Later this
+    should include cost of DER engagement.
+    
+    INPUTS:
+        cursor: database connection cursor
+        powerTable: name of table which records total system power. This is
+            likely the swing table.
+        powerColumns: name of the columns corresponding to the powerTable.
+            These will vary depending on node-type (substation vs. meter, etc)
+        powerInterval: recording interval (seconds) of the powerTable
+        energyPrice: price of energy in $/VAh
+        starttime: starting timestamp (yyyy-mm-dd HH:MM:SS) of interval in
+            question.
+        stoptime: stopping ""
+        tCol: name of time column. Assumed to be the same for tap/cap tables.
+            Only include if a table is given.
+        tapChangeCost: cost ($) of changing one regulator tap one position.
+        capSwitchCost: cost ($) of switching a single capacitor
+        tapChangeCount: total number of all tap changes. Don't include this 
+            input if tapChangeTable and tapChangeColumns are included.
+        tapChangeTable: table for recording regulator tap changes. Don't
+            include this input if tapChangeCount is specified
+        tapChangeColumns: list of columns corresponding to tapChangeTable for
+            computing total operations. Likely will be
+            ['tap_A_change_count', ...]
+        capSwitchCount: total number of all capacitor switching events. Don't
+            include this if capChangeTable and capChangeColumns are given.
+        capSwitchTable: table for recording capacitor switching events. Don't
+            include this if capSwitchCount is specified.
+        capSwitchColumns: columns of capSwitchTable to sum over to get total 
+            count. Likely to be ['cap_A_switch_count',...]
+            
+    NOTE: At this point, all capacitors and regulators are assigned the same
+    cost. If desired later, it wouldn't be too taxing to break that cost down
+    by piece of equipment.
+    """
+    # *************************************************************************
+    # ENERGY COST
+    
+    # Sum the total three-phase complex power over the given interval.
+    powerSum = db.sumComplexPower(cursor=cursor, table=powerTable, 
+                                  cols=powerColumns, starttime=starttime,
+                                  stoptime=stoptime)
+    
+    # Perform 'integration' by multiplying each measurement by its time
+    # duration (convert seconds to hours), then multiply this area (energy in 
+    # VAh) by price to get cost.
+    energyCost = ((powerSum['sum'].__abs__() * (powerInterval / 3600))
+                  * energyPrice)
+    
+    # *************************************************************************
+    # TAP CHANGING COST
+    
+    # If tap table and columns given, compute the total count.    
+    if (tapChangeTable and tapChangeColumns and tCol):
+        # Sum all the tap changes.
+        tapChangeCount = db.sumMatrix(cursor=cursor, table=tapChangeTable,
+                                      cols=tapChangeColumns, tCol=tCol,
+                                      starttime=starttime, stoptime=stoptime)
+    elif (tapChangeCount is None):
+        assert False, ("If tapChangeCount is not specified, tapChangeTable and"
+                       " tapChangeColumns must be specified!")
+        
+    # Simply multiply cost by number of operations.   
+    tapCost = tapChangeCost * tapChangeCount
+    
+    # *************************************************************************
+    # CAP SWITCHING COST
+    
+    # If cap table and columns given, compute the total count.
+    if (capSwitchTable and capSwitchColumns and tCol):
+        # Sum all the tap changes.
+        capSwitchCount = db.sumMatrix(cursor=cursor, table=capSwitchTable,
+                                      cols=capSwitchColumns, tCol=tCol,
+                                      starttime=starttime, stoptime=stoptime)
+    elif (capSwitchCount is None):
+        assert False, ("If capSwitchCount is not specified, capSwitchTable and"
+                       " capSwitchColumns must be specified!")
+        
+    # Simply multiply cost by number of operations.   
+    capCost = capSwitchCost * capSwitchCount
+    
+    # *************************************************************************
+    # VOLTAGE VIOLATION COSTS
+    # TODO: uncomment when ready
+    '''
+    # Get the voltage violations
+    self.violations = db.voltageViolations(cursor=cursor,
+                                      table=self.triplexTable, 
+                                      starttime=starttime,
+                                      stoptime=stoptime)
+    '''
+    # *************************************************************************
+    # DER COSTS
+    # TODO
+    
+    # *************************************************************************
+    # RETURN
+    return {'total': energyCost + tapCost + capCost, 'energy': energyCost, 
+            'tap': tapCost, 'cap': capCost}
+
+if __name__ == '__main__':
+    # Hack this to print the version
+    output = runModel('--version')
+    print('OUTPUT:')
+    print(output.stdout.decode('utf-8'))
+    print('ERROR:')
+    print(output.stderr.decode('utf-8'))
+    
