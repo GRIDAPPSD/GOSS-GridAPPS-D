@@ -5,6 +5,10 @@ language: java
 jdk:
   - oraclejdk8
 
+before_install:
+  - sudo apt-get install build-essential python-dev openssl libssl-dev libevent-dev
+  - sudo pip install pytest mock stomp.py
+
 install: ./gradlew --version
 
-script: ./gradlew check
+script: bash ./run-tests.sh
