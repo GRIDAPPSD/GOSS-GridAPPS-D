@@ -12,3 +12,5 @@ docs/build
 *cache/
 docs/source/api_docs/packages.rst
 docs/source/api_docs/pnnl/
+.pydevproject
+env/

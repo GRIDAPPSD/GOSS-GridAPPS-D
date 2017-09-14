@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright © 2017, Battelle Memorial Institute All rights reserved.
+# Copyright 2017, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
 # Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
 # the following disclaimer in the documentation and/or other materials provided with the distribution.
 # Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
 # form whatsoever without the express written consent of Battelle.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
 # EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
 # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
 # BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -56,11 +56,11 @@ import os
 
 __version__ = "0.0.1"
 
-logger_name = os.path.basename(__file__)[:-3]
+logger_name = "vvo-app"
 user_home = os.path.expanduser("~")
 logger_location = os.path.join(user_home, "var/log/" + logger_name + ".log")
 
-if not os.path.exists(logger_location):
+if not os.path.exists(os.path.dirname(logger_location)):
     os.makedirs(os.path.dirname(logger_location))
 
 write_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
