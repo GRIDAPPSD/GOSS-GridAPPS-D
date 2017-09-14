@@ -36,52 +36,126 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import junit.framework.TestCase;
 
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.HashMap;
+import java.util.List;
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.client.ClientServiceFactory;
+import com.google.gson.Gson;
 
-public class TestLogManager extends TestCase {
+public class AppInfo {
 	
-private static Logger log = LoggerFactory.getLogger(TestLogManager.class);
+	enum AppType {
+		   PYTHON, JAVA, WEB
+		}
 	
-	ClientFactory clientFactory = new ClientServiceFactory();
 	
-	Client client;
+	String id;
+	String description;
+	String creator;
+	List<String> inputs;
+	List<String> outputs;
+	HashMap<String, String> options;
+	String execution_path;
+	AppType type;
+	boolean launch_on_startup;
+	List<String> prereqs;
 	
-	public void testLogging() throws Exception {
 
-			
-			//Step1: Create GOSS Client
-//			Credentials credentials = new UsernamePasswordCredentials(
-//					GridAppsDConstants.username, GridAppsDConstants.password);
-//			client = clientFactory.create(PROTOCOL.STOMP, credentials);
-//			
-//			String message = "{"
-//					+ "\"process_id\":\"app_123\","
-//					+ "\"process_status\":\"started\","
-//					+ "\"log_level\":\"debug\","
-//					+ "\"log_message\":\"Testing LogManager\","
-//					+ "\"timestamp\": \"8\14\17 2:22:22\"}";
-//			client.publish("goss.gridappsd.process.log", message);
-			
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public List<String> getInputs() {
+		return inputs;
+	}
+
+	public void setInputs(List<String> inputs) {
+		this.inputs = inputs;
+	}
+
+	public List<String> getOutputs() {
+		return outputs;
+	}
+
+	public void setOutputs(List<String> outputs) {
+		this.outputs = outputs;
+	}
+
+	public HashMap<String, String> getOptions() {
+		return options;
+	}
+
+	public void setOptions(HashMap<String, String> options) {
+		this.options = options;
+	}
+
+	public String getExecution_path() {
+		return execution_path;
+	}
+
+	public void setExecution_path(String execution_path) {
+		this.execution_path = execution_path;
+	}
+
+	public AppType getType() {
+		return type;
+	}
+
+	public void setType(AppType type) {
+		this.type = type;
+	}
+
+	public boolean isLaunch_on_startup() {
+		return launch_on_startup;
+	}
+
+	public void setLaunch_on_startup(boolean launch_on_startup) {
+		this.launch_on_startup = launch_on_startup;
+	}
+
+	public List<String> getPrereqs() {
+		return prereqs;
+	}
+
+	public void setPrereqs(List<String> prereqs) {
+		this.prereqs = prereqs;
+	}
+
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-	public static void main(String[] args) throws Exception{
-		TestLogManager test = new TestLogManager();
-		test.testLogging();
+	public static AppInfo parse(String jsonString){
+		Gson  gson = new Gson();
+		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
+		if(obj.id==null)
+			throw new RuntimeException("Expected attribute app_id not found");
+		return obj;
 	}
 	
-
 }
