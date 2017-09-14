@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -39,120 +39,55 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 
 import com.google.gson.Gson;
 
-public class AppInfo implements Serializable {
+public class RequestAppStart implements Serializable {
 	
-	public enum AppType {
-		   PYTHON, JAVA, WEB
-		}
+	private static final long serialVersionUID = 1L;
+
 	
+	String app_id;
+	HashMap<String, String> runtime_options;
+	String simulation_id;
 	
-	String id;
-	String description;
-	String creator;
-	List<String> inputs;
-	List<String> outputs;
-	HashMap<String, String> options;
-	String execution_path;
-	AppType type;
-	boolean launch_on_startup;
-	List<String> prereqs;
-	boolean multiple_instances;
+	public RequestAppStart(){
+		
+	}
 	
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getCreator() {
-		return creator;
-	}
-
-	public void setCreator(String creator) {
-		this.creator = creator;
-	}
-
-	public List<String> getInputs() {
-		return inputs;
-	}
-
-	public void setInputs(List<String> inputs) {
-		this.inputs = inputs;
-	}
-
-	public List<String> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(List<String> outputs) {
-		this.outputs = outputs;
-	}
-
-	public HashMap<String, String> getOptions() {
-		return options;
-	}
-
-	public void setOptions(HashMap<String, String> options) {
-		this.options = options;
-	}
-
-	public String getExecution_path() {
-		return execution_path;
-	}
-
-	public void setExecution_path(String execution_path) {
-		this.execution_path = execution_path;
-	}
-
-	public AppType getType() {
-		return type;
-	}
-
-	public void setType(AppType type) {
-		this.type = type;
-	}
-
-	public boolean isLaunch_on_startup() {
-		return launch_on_startup;
-	}
-
-	public void setLaunch_on_startup(boolean launch_on_startup) {
-		this.launch_on_startup = launch_on_startup;
-	}
-
-	public List<String> getPrereqs() {
-		return prereqs;
-	}
-
-	public void setPrereqs(List<String> prereqs) {
-		this.prereqs = prereqs;
+	public RequestAppStart(String app_id, HashMap<String, String> runtime_options, String simulation_id){
+		this.app_id = app_id;
+		this.runtime_options = runtime_options;
+		this.simulation_id = simulation_id;
 	}
 
 	
-	public boolean isMultiple_instances() {
-		return multiple_instances;
+	
+
+	public String getApp_id() {
+		return app_id;
 	}
 
-	public void setMultiple_instances(boolean multiple_instances) {
-		this.multiple_instances = multiple_instances;
+	public void setApp_id(String app_id) {
+		this.app_id = app_id;
+	}
+
+	public HashMap<String, String> getRuntime_options() {
+		return runtime_options;
+	}
+
+	public void setRuntime_options(HashMap<String, String> runtime_options) {
+		this.runtime_options = runtime_options;
+	}
+
+	public String getSimulation_id() {
+		return simulation_id;
+	}
+
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
 	}
 
 	@Override
@@ -161,12 +96,12 @@ public class AppInfo implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static AppInfo parse(String jsonString){
+	
+	public static RequestAppStart parse(String jsonString){
 		Gson  gson = new Gson();
-		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
-		if(obj.id==null)
+		RequestAppStart obj = gson.fromJson(jsonString, RequestAppStart.class);
+		if(obj.app_id==null)
 			throw new RuntimeException("Expected attribute app_id not found");
 		return obj;
 	}
-	
 }

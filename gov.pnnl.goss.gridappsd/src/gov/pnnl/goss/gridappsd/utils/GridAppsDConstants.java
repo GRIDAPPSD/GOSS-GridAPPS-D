@@ -57,7 +57,18 @@ public class GridAppsDConstants {
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
 	public static final String topic_requestData = topic_process_prefix+".request.data";
+	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	//App Request Topics
+	public static final String topic_app_register = topic_requestApp+".register";
+	public static final String topic_app_list = topic_requestApp+".list";
+	public static final String topic_app_get = topic_requestApp+".get";
+	public static final String topic_app_deregister = topic_requestApp+".deregister";
+	public static final String topic_app_start = topic_requestApp+".start";
+	public static final String topic_app_stop = topic_requestApp+".stop";
+	public static final String topic_app_stop_instance = topic_requestApp+".stopinstance";
+	
 	
 	//Process Manager Log Messages Topic 
 	public static final String topic_log_prefix = topic_process_prefix+".log";
@@ -91,6 +102,8 @@ public class GridAppsDConstants {
 	public static final String VVO_APP_PATH = "vvo.app.path";
 	public static final String GRIDLABD_PATH = "gridlabd.path";
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
+	public static final String APPLICATIONS_PATH = "applications.path";
+	public static final String SERVICES_PATH = "services.path";
 	
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

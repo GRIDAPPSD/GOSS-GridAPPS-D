@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
@@ -84,6 +85,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	private volatile SimulationManager simulationManager;
 	
 	@ServiceDependency
+	private volatile AppManager appManager;
+	
+	@ServiceDependency
 	private volatile StatusReporter statusReporter;
 	
 	@ServiceDependency
@@ -97,12 +101,14 @@ public class ProcessManagerImpl implements ProcessManager {
 			SimulationManager simulationManager,
 			StatusReporter statusReporter,
 			LogManager logManager, 
+			AppManager appManager,
 			ProcessNewSimulationRequest newSimulationProcess){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
 		this.statusReporter = statusReporter;
 		this.logManager = logManager;
+		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
 	}
 
@@ -145,8 +151,19 @@ public class ProcessManagerImpl implements ProcessManager {
 						int simulationId = generateSimulationId();
 						client.publish(event.getReplyDestination(), simulationId);
 						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
-					}
-					else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
+					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
+						int processId = generateSimulationId();
+						try{
+							appManager.process(statusReporter, processId, event, message);
+						}
+						catch(Exception e){
+							e.printStackTrace();
+							logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+							logMessageObj.setLog_level("error");
+							logMessageObj.setLog_message(e.getMessage());
+							logManager.log(logMessageObj);
+						}
+					} else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
 						logManager.log(message.toString());
 					}
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;

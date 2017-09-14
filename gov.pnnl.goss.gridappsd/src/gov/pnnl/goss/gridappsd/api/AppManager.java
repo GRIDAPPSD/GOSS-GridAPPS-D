@@ -2,23 +2,36 @@ package gov.pnnl.goss.gridappsd.api;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.AppInstance;
+import pnnl.goss.core.DataResponse;
 
 public interface AppManager {
+	
+	void process(StatusReporter statusReporter,
+			int processId, DataResponse event, Serializable message) throws Exception;
 
 	void registerApp(AppInfo appInfo, Serializable appPackage);
 	
-	void listApps();  //Would return through message bus list of appInfo objects
+	List<AppInfo> listApps();  
 	
-	void getApp(String app_id); //Would return through message bus appInfo object
+	List<AppInstance> listRunningApps(); 
+
+	List<AppInstance> listRunningApps(String appId);
 	
-	void deRegisterApp(String app_id); 
+	AppInfo getApp(String appId); //Would return through message bus appInfo object
 	
-	void startApp(String app_id, HashMap<String, String> runtimeOptions);  //may also need input/output topics or simulation id
+	void deRegisterApp(String appId); 
 	
-	void startAppForSimultion(String app_id, HashMap<String, String> runtimeOptions, long simulationId);  //may also need input/output topics??
+	String startApp(String appId, HashMap<String, String> runtimeOptions);  //may also need input/output topics or simulation id, would return app instance id
 	
-	void stopApp(String app_id);  
+	String startAppForSimultion(String appId, HashMap<String, String> runtimeOptions, String simulationId);  //may also need input/output topics??, would return app instance id
+	
+	void stopApp(String appId);  
+
+	void stopAppInstance(String instanceId);
+
 	
 }

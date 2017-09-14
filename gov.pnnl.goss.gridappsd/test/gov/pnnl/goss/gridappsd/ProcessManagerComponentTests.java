@@ -42,6 +42,8 @@ package gov.pnnl.goss.gridappsd;
 import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -88,6 +90,9 @@ public class ProcessManagerComponentTests {
 	@Mock 
 	StatusReporter statusReporter;
 	
+	@Mock 
+	AppManager appManager;
+	
 	@Mock
 	LogManager logManager;
 	
@@ -119,7 +124,7 @@ public class ProcessManagerComponentTests {
 		
 		ProcessManagerImpl processManager = new ProcessManagerImpl(clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 		
 		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
@@ -155,7 +160,7 @@ public class ProcessManagerComponentTests {
 		//Initialize process manager with mock objects
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		//In junit the start() must be explicitly called
 		processManager.start();
 
@@ -182,7 +187,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl(clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 		client.publish("goss.gridappsd.process.start", "some message");
 
@@ -242,7 +247,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -280,7 +285,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -338,7 +343,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -403,7 +408,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, newSimulationProcess);
+											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -420,5 +425,6 @@ public class ProcessManagerComponentTests {
 	}
 	
 	
+	//TODO add appmanaager test
 
 }

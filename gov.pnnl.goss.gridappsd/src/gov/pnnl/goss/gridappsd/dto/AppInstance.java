@@ -42,117 +42,65 @@ package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 
 import com.google.gson.Gson;
 
-public class AppInfo implements Serializable {
+public class AppInstance implements Serializable{
 	
-	public enum AppType {
-		   PYTHON, JAVA, WEB
-		}
+	String instance_id;
+	AppInfo app_info;
+	HashMap<String, String> runtime_options;
+	String simulation_id;
+	Process process;
 	
 	
-	String id;
-	String description;
-	String creator;
-	List<String> inputs;
-	List<String> outputs;
-	HashMap<String, String> options;
-	String execution_path;
-	AppType type;
-	boolean launch_on_startup;
-	List<String> prereqs;
-	boolean multiple_instances;
+	public AppInstance(String instance_id, AppInfo app_info, HashMap<String, String> runtime_options, String simulation_id, Process process){
+		this.instance_id = instance_id;
+		this.app_info = app_info;
+		this.runtime_options = runtime_options;
+		this.simulation_id = simulation_id;
+		this.process = process;
+	}
+	public AppInstance(){}
 	
-
-	public String getId() {
-		return id;
+	public String getInstance_id() {
+		return instance_id;
 	}
 
-	public void setId(String id) {
-		this.id = id;
+	public void setInstance_id(String instance_id) {
+		this.instance_id = instance_id;
 	}
 
-	public String getDescription() {
-		return description;
+	public AppInfo getApp_info() {
+		return app_info;
 	}
 
-	public void setDescription(String description) {
-		this.description = description;
+	public void setApp_info(AppInfo app_info) {
+		this.app_info = app_info;
 	}
 
-	public String getCreator() {
-		return creator;
+	public HashMap<String, String> getRuntime_options() {
+		return runtime_options;
 	}
 
-	public void setCreator(String creator) {
-		this.creator = creator;
+	public void setRuntime_options(HashMap<String, String> runtime_options) {
+		this.runtime_options = runtime_options;
 	}
 
-	public List<String> getInputs() {
-		return inputs;
+	public String getSimulation_id() {
+		return simulation_id;
 	}
 
-	public void setInputs(List<String> inputs) {
-		this.inputs = inputs;
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
 	}
 
-	public List<String> getOutputs() {
-		return outputs;
+	public Process getProcess() {
+		return process;
 	}
 
-	public void setOutputs(List<String> outputs) {
-		this.outputs = outputs;
-	}
-
-	public HashMap<String, String> getOptions() {
-		return options;
-	}
-
-	public void setOptions(HashMap<String, String> options) {
-		this.options = options;
-	}
-
-	public String getExecution_path() {
-		return execution_path;
-	}
-
-	public void setExecution_path(String execution_path) {
-		this.execution_path = execution_path;
-	}
-
-	public AppType getType() {
-		return type;
-	}
-
-	public void setType(AppType type) {
-		this.type = type;
-	}
-
-	public boolean isLaunch_on_startup() {
-		return launch_on_startup;
-	}
-
-	public void setLaunch_on_startup(boolean launch_on_startup) {
-		this.launch_on_startup = launch_on_startup;
-	}
-
-	public List<String> getPrereqs() {
-		return prereqs;
-	}
-
-	public void setPrereqs(List<String> prereqs) {
-		this.prereqs = prereqs;
-	}
-
-	
-	public boolean isMultiple_instances() {
-		return multiple_instances;
-	}
-
-	public void setMultiple_instances(boolean multiple_instances) {
-		this.multiple_instances = multiple_instances;
+	public void setProcess(Process process) {
+		this.process = process;
 	}
 
 	@Override
@@ -161,11 +109,11 @@ public class AppInfo implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static AppInfo parse(String jsonString){
+	public static AppInstance parse(String jsonString){
 		Gson  gson = new Gson();
-		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
-		if(obj.id==null)
-			throw new RuntimeException("Expected attribute app_id not found");
+		AppInstance obj = gson.fromJson(jsonString, AppInstance.class);
+		if(obj.instance_id==null)
+			throw new RuntimeException("Expected attribute instance_id not found");
 		return obj;
 	}
 	
