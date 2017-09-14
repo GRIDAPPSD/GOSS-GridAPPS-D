@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright ï¿½ 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ï¿½AS ISï¿½ AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -95,7 +95,16 @@ public class SimulationManagerImpl implements SimulationManager{
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
 	
+	public SimulationManagerImpl(){ }
 	
+	
+	public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl, 
+			StatusReporter statusReporter, ConfigurationManager configurationManager) {
+		this.clientFactory = clientFactory;
+		this.serverControl = serverControl;
+		this.statusReporter = statusReporter;
+		this.configurationManager = configurationManager;
+	}
 	@Start
 	public void start() throws Exception{
 		log.info("Starting simulation manager");
@@ -151,7 +160,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
-//						RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
+						//RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
 						fncsBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs.log"));
@@ -164,7 +173,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Start GridLAB-D
 						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
-//						RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
+						//RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						
 						
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
@@ -263,17 +272,15 @@ public class SimulationManagerImpl implements SimulationManager{
 			});
 			
 			thread.start();
-			
-		
-		
-		
-		
 	}
-        class InitializedTracker {
-		public boolean isInited = false;
-        }	
+	
+	
+    class InitializedTracker {
+    	public boolean isInited = false;
+    }	
 
-	 class GossFncsResponseEvent implements GossResponseEvent{
+    
+    class GossFncsResponseEvent implements GossResponseEvent{
 		InitializedTracker initializedTracker;
 		StatusReporter statusReporter;
 		int simulationId;
@@ -311,7 +318,8 @@ public class SimulationManagerImpl implements SimulationManager{
 				e.printStackTrace();
 			}
 		}
-	 }
+	}
+    
 	
 	private void sendTimesteps(SimulationConfig simulationConfig, int simulationId) throws Exception{
 		// Send fncs timestep updates for the specified duration.
@@ -360,5 +368,6 @@ public class SimulationManagerImpl implements SimulationManager{
 	        }
 	    }.start();
 	}
-
+	
+	
 }
