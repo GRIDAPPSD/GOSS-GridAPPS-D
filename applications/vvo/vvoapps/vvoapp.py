@@ -37,24 +37,27 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
-'''
+"""
 Created on Jan 6, 2017
 
 @author: fish334
 @author: poorva1209
-'''
-#from vvo import VoltVarControl
-import json
-import yaml
-import sys
-import time
-import shutil
-import stomp
-import logging
-import traceback
-import os
+"""
 
 __version__ = "0.0.1"
+
+import logging
+import os
+import shutil
+import sys
+import time
+import traceback
+
+import json
+import stomp
+import yaml
+
+from vvo import VoltVarControl
 
 logger_name = "vvo-app"
 user_home = os.path.expanduser("~")
@@ -68,10 +71,10 @@ write_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDC
 
 read_topic = '/topic/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
 read_queue = '/queue/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
-gossConnection = None
-isInitialized = False
+goss_connection = None
+is_initialized = False
 # Number 
-simulationId = None
+simulation_id = None
 
 # This is currently what gridlabd will use for its object name.
 # TODO change to use concat of sim id and sim name.
@@ -87,40 +90,39 @@ logger.setLevel(logging.DEBUG)
 
 # Created in the bottom of the script before the instaniation of the
 # GossListener.
-mainApp = None
+main_app = None
 opts = None
 static_config = None
 
-from vvo import VoltVarControl
 
 class GOSSListener(object):
     def __init__(self, t0):
         self.t0 = t0
 
     def on_message(self, headers, msg):
-        global mainApp
+        global main_app
         message = {}
         try:
             self.t0 += 1
             logger.debug('received message ' + str(msg))
-            jsonmsg = yaml.safe_load(str(msg))
-            output = yaml.safe_load(jsonmsg['output'])
+            json_msg = yaml.safe_load(str(msg))
+            output = yaml.safe_load(json_msg['output'])
             # Ignore null output data. (Assumes initializing)
             if output is None:
               return
 
             print("the output is: {}".format(output))
             # This is the start of the application processes.
-            if mainApp is None:
+            if main_app is None:
                 # Start the main application class.  Note we are passsing the function
-                # appOutput which will be called when output from the application is
+                # app_output which will be called when output from the application is
                 # necessary.
-                mainApp = VoltVarControl(static_config, output, appOutput)
+                main_app = VoltVarControl(static_config, output, app_output)
 
-            mainApp.Input(output)
-            mainApp.RegControl(self.t0)
-            mainApp.CapControl(self.t0)
-            mainApp.Output()
+            main_app.input(output)
+            main_app.reg_control(self.t0)
+            main_app.cap_control(self.t0)
+            main_app.output()
 
         except Exception as e:
             traceback.print_exc(file=sys.stdout)
@@ -135,28 +137,28 @@ class GOSSListener(object):
         logger.error('Disconnected')
 
 
-def appOutput(outputDict):
+def app_output(outputDict):
     """
     Callback function for messages that are going to from the application
     back to goss.
     :param outputDict:
     :return:
     """
-    payload = dict(command='update', message={}) #, simulation_id=simulationId)
+    payload = dict(command='update', message={}) #, simulation_id=simulation_id)
     # Assumes now that simulation name is the top level of the outputDict
     # in vvo.py
     payload['message'] = outputDict
     logger.debug("Sending payload from vvo {}".format(payload))
-    gossConnection.send(write_topic , json.dumps(payload))
+    goss_connection.send(write_topic , json.dumps(payload))
 
-def _keepAlive():
+def _keep_alive():
     while 1:
         time.sleep(0.1)
 
 
-def _registerWithGOSS(username, password, gossServer='localhost',
+def _register_with_goss(username, password, gossServer='localhost',
                       stompPort='61613', ):
-    '''Register with the GOSS server broker and return.
+    """Register with the GOSS server broker and return.
 
     Function arguments:
         gossServer -- Type: string. Description: The ip location
@@ -172,7 +174,7 @@ def _registerWithGOSS(username, password, gossServer='localhost',
         None.
     Function exceptions:
         RuntimeError()
-    '''
+    """
     if (gossServer == None or gossServer == ''
         or type(gossServer) != str):
         raise ValueError(
@@ -183,17 +185,17 @@ def _registerWithGOSS(username, password, gossServer='localhost',
         raise ValueError(
             'stompPort must be a nonempty string.\n'
             + 'stompPort = {0}'.format(stompPort))
-    global gossConnection
-    gossConnection = stomp.Connection12([(gossServer, stompPort)])
-    gossConnection.start()
-    gossConnection.connect(username, password, wait=True)
-    gossConnection.set_listener('GOSSListener', GOSSListener(opts.t0))
-    gossConnection.subscribe(read_topic, 1)
-    gossConnection.subscribe(read_topic, 2)
+    global goss_connection
+    goss_connection = stomp.Connection12([(gossServer, stompPort)])
+    goss_connection.start()
+    goss_connection.connect(username, password, wait=True)
+    goss_connection.set_listener('GOSSListener', GOSSListener(opts.t0))
+    goss_connection.subscribe(read_topic, 1)
+    goss_connection.subscribe(read_topic, 2)
 
     print(
         'Registered with GOSS on topic ' + read_topic + ' ' + str(
-            gossConnection.is_connected()))
+            goss_connection.is_connected()))
 
 
 if __name__ == "__main__":
@@ -228,10 +230,10 @@ if __name__ == "__main__":
 
     # Connect and listen to the message bus for content.
     # The port should be cast to string because that makes the opening socket easier.
-    _registerWithGOSS(opts.user, opts.password, opts.address, str(opts.port))
+    _register_with_goss(opts.user, opts.password, opts.address, str(opts.port))
 
     # Sleep until notified of new data.
-    _keepAlive()
+    _keep_alive()
 
 
 

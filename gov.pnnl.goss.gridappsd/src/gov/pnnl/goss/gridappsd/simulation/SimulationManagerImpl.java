@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright � 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS �AS IS� AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -147,7 +147,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start FNCS
 						//TODO, verify no errors on this
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
-						//RunCommandLine.runCommand(getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
 						fncsBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs.log"));
@@ -160,9 +159,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//Start GridLAB-D
 						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
-						//RunCommandLine.runCommand(getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
-						
-						
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
 						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"gridlabd.log"));
@@ -175,8 +171,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
-						
-						
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 							//copy zipload_schedule.player file
@@ -186,8 +180,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								log.warn("Could not copy player file to working directory");
 							}
 						}
-						
-						
+												
 						//Start VVO Application
 						//TODO filname really should be constant
 						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
@@ -202,8 +195,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 
-						
-						
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
 						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
@@ -216,7 +207,6 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
 						
-						
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(statusReporter, isInitialized, simulationId));
 						
@@ -226,7 +216,6 @@ public class SimulationManagerImpl implements SimulationManager{
 							//TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
 							//This call would return true/false for initialization and simulation output of time step 0.
 							log.debug("Checking fncs is initialized, currently "+isInitialized.isInited);
-
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
 							initAttempts++;
 							Thread.sleep(1000);
@@ -235,7 +224,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						if(initAttempts<MAX_INIT_ATTEMPTS){
 							statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Initialized");
-							
+
 							//Send the timesteps by second for the amount of time specified in the simulation config
 	                        sendTimesteps(simulationConfig, simulationId); 
 						} else {
@@ -364,7 +353,5 @@ public class SimulationManagerImpl implements SimulationManager{
 	            }
 	        }
 	    }.start();
-	}
-	
-	
+	}	
 }
