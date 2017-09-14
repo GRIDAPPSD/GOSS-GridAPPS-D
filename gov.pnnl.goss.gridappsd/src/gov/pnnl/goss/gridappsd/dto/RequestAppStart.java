@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,66 +36,72 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-public class LogMessage {
+import java.io.Serializable;
+import java.util.HashMap;
+
+import com.google.gson.Gson;
+
+public class RequestAppStart implements Serializable {
 	
-	String process_id;
-	String timestamp;
-	String log_message;
-	String log_level;
-	String process_status;
-	Boolean storeToDB = true;
+	private static final long serialVersionUID = 1L;
+
 	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
+	String app_id;
+	HashMap<String, String> runtime_options;
+	String simulation_id;
 	
-	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
-		this.process_id = process_id;
-		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+	public RequestAppStart(){
+		
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public RequestAppStart(String app_id, HashMap<String, String> runtime_options, String simulation_id){
+		this.app_id = app_id;
+		this.runtime_options = runtime_options;
+		this.simulation_id = simulation_id;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
+
+	
+	
+
+	public String getApp_id() {
+		return app_id;
 	}
-	public String getTimestamp() {
-		return timestamp;
+
+	public void setApp_id(String app_id) {
+		this.app_id = app_id;
 	}
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
+
+	public HashMap<String, String> getRuntime_options() {
+		return runtime_options;
 	}
-	public String getLog_message() {
-		return log_message;
+
+	public void setRuntime_options(HashMap<String, String> runtime_options) {
+		this.runtime_options = runtime_options;
 	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
+
+	public String getSimulation_id() {
+		return simulation_id;
 	}
-	public String getLog_level() {
-		return log_level;
+
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
 	}
-	public void setLog_level(String log_level) {
-		this.log_level = log_level;
-	}
-	public String getProcess_status() {
-		return process_status;
-	}
-	public void setProcess_status(String process_status) {
-		this.process_status = process_status;
-	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
-	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
+
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
 	
+	public static RequestAppStart parse(String jsonString){
+		Gson  gson = new Gson();
+		RequestAppStart obj = gson.fromJson(jsonString, RequestAppStart.class);
+		if(obj.app_id==null)
+			throw new RuntimeException("Expected attribute app_id not found");
+		return obj;
+	}
 }

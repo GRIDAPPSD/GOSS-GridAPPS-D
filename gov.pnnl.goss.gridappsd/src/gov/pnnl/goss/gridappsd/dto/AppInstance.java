@@ -36,66 +36,85 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-public class LogMessage {
+
+import java.io.Serializable;
+import java.util.HashMap;
+
+import com.google.gson.Gson;
+
+public class AppInstance implements Serializable{
 	
-	String process_id;
-	String timestamp;
-	String log_message;
-	String log_level;
-	String process_status;
-	Boolean storeToDB = true;
+	String instance_id;
+	AppInfo app_info;
+	HashMap<String, String> runtime_options;
+	String simulation_id;
+	Process process;
 	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
 	
-	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
-		this.process_id = process_id;
-		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+	public AppInstance(String instance_id, AppInfo app_info, HashMap<String, String> runtime_options, String simulation_id, Process process){
+		this.instance_id = instance_id;
+		this.app_info = app_info;
+		this.runtime_options = runtime_options;
+		this.simulation_id = simulation_id;
+		this.process = process;
+	}
+	public AppInstance(){}
+	
+	public String getInstance_id() {
+		return instance_id;
+	}
+
+	public void setInstance_id(String instance_id) {
+		this.instance_id = instance_id;
+	}
+
+	public AppInfo getApp_info() {
+		return app_info;
+	}
+
+	public void setApp_info(AppInfo app_info) {
+		this.app_info = app_info;
+	}
+
+	public HashMap<String, String> getRuntime_options() {
+		return runtime_options;
+	}
+
+	public void setRuntime_options(HashMap<String, String> runtime_options) {
+		this.runtime_options = runtime_options;
+	}
+
+	public String getSimulation_id() {
+		return simulation_id;
+	}
+
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
+	}
+
+	public Process getProcess() {
+		return process;
+	}
+
+	public void setProcess(Process process) {
+		this.process = process;
+	}
+
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public static AppInstance parse(String jsonString){
+		Gson  gson = new Gson();
+		AppInstance obj = gson.fromJson(jsonString, AppInstance.class);
+		if(obj.instance_id==null)
+			throw new RuntimeException("Expected attribute instance_id not found");
+		return obj;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
-	}
-	public String getTimestamp() {
-		return timestamp;
-	}
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
-	}
-	public String getLog_message() {
-		return log_message;
-	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
-	}
-	public String getLog_level() {
-		return log_level;
-	}
-	public void setLog_level(String log_level) {
-		this.log_level = log_level;
-	}
-	public String getProcess_status() {
-		return process_status;
-	}
-	public void setProcess_status(String process_status) {
-		this.process_status = process_status;
-	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
-	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
-	}
-	
 	
 }

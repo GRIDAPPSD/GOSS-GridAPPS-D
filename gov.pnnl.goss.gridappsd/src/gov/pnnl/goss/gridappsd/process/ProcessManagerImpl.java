@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
@@ -84,6 +85,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	private volatile SimulationManager simulationManager;
 	
 	@ServiceDependency
+	private volatile AppManager appManager;
+	
+	@ServiceDependency
 	private volatile StatusReporter statusReporter;
 	
 	@ServiceDependency
@@ -97,12 +101,14 @@ public class ProcessManagerImpl implements ProcessManager {
 			SimulationManager simulationManager,
 			StatusReporter statusReporter,
 			LogManager logManager, 
+			AppManager appManager,
 			ProcessNewSimulationRequest newSimulationProcess){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
 		this.statusReporter = statusReporter;
 		this.logManager = logManager;
+		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
 	}
 
@@ -145,8 +151,19 @@ public class ProcessManagerImpl implements ProcessManager {
 						int simulationId = generateSimulationId();
 						client.publish(event.getReplyDestination(), simulationId);
 						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
-					}
-					else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
+					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
+						int processId = generateSimulationId();
+						try{
+							appManager.process(statusReporter, processId, event, message);
+						}
+						catch(Exception e){
+							e.printStackTrace();
+							logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+							logMessageObj.setLog_level("error");
+							logMessageObj.setLog_message(e.getMessage());
+							logManager.log(logMessageObj);
+						}
+					} else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
 						logManager.log(message.toString());
 					}
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;

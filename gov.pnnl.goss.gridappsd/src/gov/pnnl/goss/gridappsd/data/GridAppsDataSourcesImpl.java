@@ -63,12 +63,23 @@ import pnnl.goss.core.server.DataSourceRegistry;
 public class GridAppsDataSourcesImpl implements GridAppsDataSources{
 	private static final String CONFIG_PID = "pnnl.goss.sql.datasource.gridappsd";
 //	public static final String DS_NAME = "goss.powergrids";
-	private static final Logger log = LoggerFactory.getLogger(GridAppsDataSourcesImpl.class);
+	private static Logger log = LoggerFactory.getLogger(GridAppsDataSourcesImpl.class);
 //	private DataSource datasource;
 //
 //	// Eventually to hold more than one connection
 //	// private Map<String, ConnectionPoolDataSource> pooledMap = new ConcurrentHashMap<>();
 //	private ConnectionPoolDataSource pooledDataSource;
+	
+	public GridAppsDataSourcesImpl() {
+	}
+	public GridAppsDataSourcesImpl(Logger log, DataSourceBuilder datasourceBuilder,
+			DataSourceRegistry datasourceRegistry, Properties datasourceProperties){
+		GridAppsDataSourcesImpl.log = log;
+		this.datasourceBuilder = datasourceBuilder;
+		this.datasourceRegistry = datasourceRegistry;
+		this.datasourceProperties = datasourceProperties;
+	}
+	
 
 	@ServiceDependency
 	private DataSourceBuilder datasourceBuilder;
@@ -105,28 +116,35 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources{
 		properties.put(DataSourceBuilder.DATASOURCE_PASSWORD, config.get("password"));
 		properties.put(DataSourceBuilder.DATASOURCE_URL, config.get("url"));
 		properties.put("driverClassName", config.get("driver"));
-		
-		datasourceProperties = properties;
+		if(datasourceProperties==null)
+			datasourceProperties = new Properties();
+		datasourceProperties.putAll(properties);
+//		datasourceProperties = properties;
 		
 		
 	}
 	
 	
 	protected void registerDataSource(){
-		try {
+		
 			String datasourceName = datasourceProperties.getProperty(DataSourceBuilder.DATASOURCE_NAME);
+			if(datasourceName==null){
+				throw new RuntimeException("No datasource name provided when registering data source");
+			}
+			
 			if(datasourceBuilder!=null && registeredDatasources!=null){
-				datasourceBuilder.create(datasourceName, datasourceProperties);
+				try {
+					datasourceBuilder.create(datasourceName, datasourceProperties);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					
+					//TODO use logmanager to log error
+					e.printStackTrace();
+				}
 				registeredDatasources.add(datasourceName);
 			}
 
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		
 	}
 	

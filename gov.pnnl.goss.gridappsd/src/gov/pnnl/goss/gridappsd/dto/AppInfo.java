@@ -36,66 +36,137 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-public class LogMessage {
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+
+import com.google.gson.Gson;
+
+public class AppInfo implements Serializable {
 	
-	String process_id;
-	String timestamp;
-	String log_message;
-	String log_level;
-	String process_status;
-	Boolean storeToDB = true;
+	public enum AppType {
+		   PYTHON, JAVA, WEB
+		}
 	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
 	
-	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
-		this.process_id = process_id;
-		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+	String id;
+	String description;
+	String creator;
+	List<String> inputs;
+	List<String> outputs;
+	HashMap<String, String> options;
+	String execution_path;
+	AppType type;
+	boolean launch_on_startup;
+	List<String> prereqs;
+	boolean multiple_instances;
+	
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public List<String> getInputs() {
+		return inputs;
+	}
+
+	public void setInputs(List<String> inputs) {
+		this.inputs = inputs;
+	}
+
+	public List<String> getOutputs() {
+		return outputs;
+	}
+
+	public void setOutputs(List<String> outputs) {
+		this.outputs = outputs;
+	}
+
+	public HashMap<String, String> getOptions() {
+		return options;
+	}
+
+	public void setOptions(HashMap<String, String> options) {
+		this.options = options;
+	}
+
+	public String getExecution_path() {
+		return execution_path;
+	}
+
+	public void setExecution_path(String execution_path) {
+		this.execution_path = execution_path;
+	}
+
+	public AppType getType() {
+		return type;
+	}
+
+	public void setType(AppType type) {
+		this.type = type;
+	}
+
+	public boolean isLaunch_on_startup() {
+		return launch_on_startup;
+	}
+
+	public void setLaunch_on_startup(boolean launch_on_startup) {
+		this.launch_on_startup = launch_on_startup;
+	}
+
+	public List<String> getPrereqs() {
+		return prereqs;
+	}
+
+	public void setPrereqs(List<String> prereqs) {
+		this.prereqs = prereqs;
+	}
+
+	
+	public boolean isMultiple_instances() {
+		return multiple_instances;
+	}
+
+	public void setMultiple_instances(boolean multiple_instances) {
+		this.multiple_instances = multiple_instances;
+	}
+
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public static AppInfo parse(String jsonString){
+		Gson  gson = new Gson();
+		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
+		if(obj.id==null)
+			throw new RuntimeException("Expected attribute app_id not found");
+		return obj;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
-	}
-	public String getTimestamp() {
-		return timestamp;
-	}
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
-	}
-	public String getLog_message() {
-		return log_message;
-	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
-	}
-	public String getLog_level() {
-		return log_level;
-	}
-	public void setLog_level(String log_level) {
-		this.log_level = log_level;
-	}
-	public String getProcess_status() {
-		return process_status;
-	}
-	public void setProcess_status(String process_status) {
-		this.process_status = process_status;
-	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
-	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
-	}
-	
 	
 }

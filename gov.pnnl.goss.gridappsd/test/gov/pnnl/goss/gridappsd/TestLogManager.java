@@ -37,65 +37,51 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd;
 
-public class LogMessage {
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import junit.framework.TestCase;
+
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.client.ClientServiceFactory;
+
+public class TestLogManager extends TestCase {
 	
-	String process_id;
-	String timestamp;
-	String log_message;
-	String log_level;
-	String process_status;
-	Boolean storeToDB = true;
+private static Logger log = LoggerFactory.getLogger(TestLogManager.class);
 	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
+	ClientFactory clientFactory = new ClientServiceFactory();
 	
-	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
-		this.process_id = process_id;
-		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
-	}
+	Client client;
 	
-	public String getProcess_id() {
-		return process_id;
-	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
-	}
-	public String getTimestamp() {
-		return timestamp;
-	}
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
-	}
-	public String getLog_message() {
-		return log_message;
-	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
-	}
-	public String getLog_level() {
-		return log_level;
-	}
-	public void setLog_level(String log_level) {
-		this.log_level = log_level;
-	}
-	public String getProcess_status() {
-		return process_status;
-	}
-	public void setProcess_status(String process_status) {
-		this.process_status = process_status;
-	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
-	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
+	public void testLogging() throws Exception {
+
+			
+			//Step1: Create GOSS Client
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
+//			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+//			
+//			String message = "{"
+//					+ "\"process_id\":\"app_123\","
+//					+ "\"process_status\":\"started\","
+//					+ "\"log_level\":\"debug\","
+//					+ "\"log_message\":\"Testing LogManager\","
+//					+ "\"timestamp\": \"8\14\17 2:22:22\"}";
+//			client.publish("goss.gridappsd.process.log", message);
+			
 	}
 	
+	public static void main(String[] args) throws Exception{
+		TestLogManager test = new TestLogManager();
+		test.testLogging();
+	}
 	
+
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,66 +36,45 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-public class LogMessage {
+import java.io.Serializable;
+
+import com.google.gson.Gson;
+
+public class RequestAppList implements Serializable {
 	
-	String process_id;
-	String timestamp;
-	String log_message;
-	String log_level;
-	String process_status;
-	Boolean storeToDB = true;
+	private static final long serialVersionUID = 1L;
+
 	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
+	public String app_id = null;
+	public boolean list_running_only = false;
 	
-	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
-		this.process_id = process_id;
-		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+	public RequestAppList(){
+		
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public RequestAppList(String app_id, boolean list_running_only){
+		this.app_id = app_id;
+		this.list_running_only = list_running_only;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
-	}
-	public String getTimestamp() {
-		return timestamp;
-	}
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
-	}
-	public String getLog_message() {
-		return log_message;
-	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
-	}
-	public String getLog_level() {
-		return log_level;
-	}
-	public void setLog_level(String log_level) {
-		this.log_level = log_level;
-	}
-	public String getProcess_status() {
-		return process_status;
-	}
-	public void setProcess_status(String process_status) {
-		this.process_status = process_status;
-	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
-	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
+
+	
+	
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
 	
+	public static RequestAppList parse(String jsonString){
+		Gson  gson = new Gson();
+		RequestAppList obj = gson.fromJson(jsonString, RequestAppList.class);
+		if(obj.app_id==null)
+			throw new RuntimeException("Expected attribute app_id not found");
+		return obj;
+	}
 }

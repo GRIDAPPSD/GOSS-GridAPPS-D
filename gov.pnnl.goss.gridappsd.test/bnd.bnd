@@ -34,7 +34,9 @@ Test-Cases: ${test-cases}
 	pnnl.goss.core.goss-core-server-api,\
 	pnnl.goss.core.goss-core-security,\
 	org.amdatu.configurator.api,\
-	slf4j.api
+	slf4j.api,\
+	org.apache.httpcomponents.httpclient,\
+	javax.jms-api
 	
 
 -runrequires: \
