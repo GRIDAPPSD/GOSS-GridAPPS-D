@@ -96,6 +96,9 @@ public class AppManagerImpl implements AppManager{
 	final String CONFIG_DIR_NAME = "config";
 	final String CONFIG_FILE_NAME = "appinfo.json";
 	
+	//@ServiceDependency
+	//private volatile StatusReporter statusReporter;
+	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
@@ -115,6 +118,7 @@ public class AppManagerImpl implements AppManager{
 	}
 	 
 	public AppManagerImpl(StatusReporter statusReporter, LogManager logManager, ClientFactory clientFactory) {
+		this.statusReporter = statusReporter;
 		this.logManager = logManager;
 		this.clientFactory = clientFactory;
 
@@ -193,6 +197,7 @@ public class AppManagerImpl implements AppManager{
 	
 	@Start
 	public void start(){
+		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Long(new Date().getTime()).toString(), 
 				"Starting "+this.getClass().getName(), 
@@ -204,11 +209,10 @@ public class AppManagerImpl implements AppManager{
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Long(new Date().getTime()).toString(), 
-				"Stopping "+this.getClass().getName(), 
+				String.format("Found %s applications", apps.size()), 
 				"INFO", 
 				"Running", 
 				true));
-		
 	}
 	
 	protected void scanForApps(){
