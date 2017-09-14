@@ -96,9 +96,6 @@ public class AppManagerImpl implements AppManager{
 	final String CONFIG_DIR_NAME = "config";
 	final String CONFIG_FILE_NAME = "appinfo.json";
 	
-	//@ServiceDependency
-	//private volatile StatusReporter statusReporter;
-	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
@@ -118,7 +115,6 @@ public class AppManagerImpl implements AppManager{
 	}
 	 
 	public AppManagerImpl(StatusReporter statusReporter, LogManager logManager, ClientFactory clientFactory) {
-		this.statusReporter = statusReporter;
 		this.logManager = logManager;
 		this.clientFactory = clientFactory;
 
