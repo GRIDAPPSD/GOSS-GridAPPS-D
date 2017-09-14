@@ -255,9 +255,15 @@ def timeWhere(tCol, starttime, stoptime):
         stoptime: date string formatted as yyy-mm-dd HH:MM:SS
     """
     if starttime and stoptime:
-        s = (" WHERE {tCol}>='{starttime}' and "
-             "{tCol}<='{stoptime}'").format(tCol=tCol, starttime=starttime,
-                                              stoptime=stoptime)
+        if starttime != stoptime:
+            # Times aren't equal, use range
+            s = (" WHERE {tCol}>='{starttime}' and "
+                 "{tCol}<='{stoptime}'").format(tCol=tCol, starttime=starttime,
+                                                  stoptime=stoptime)
+        else:
+            # Times are equal, use equality
+            s = " WHERE {tCol}='{starttime}'".format(tCol=tCol,
+                                                     starttime=starttime)
     else:
         s = ''
         
@@ -307,6 +313,50 @@ def voltageViolations(cursor, table, vLow=228, vHigh=252, vCols=['voltage_12'],
         row = cursor.fetchone()
         
     return {'high': high, 'low': low}
+
+def updateStatus(inDict, dictType, cursor, table, phaseCols, t,
+                 nameCol='name', tCol='t'):
+    """
+    """
+    # Formulate query. Note how the name is intentionally put first.
+    q = "SELECT {}, {} FROM {}".format(nameCol, ','.join(phaseCols), table)
+    # Add timestamp
+    q += timeWhere(tCol=tCol, starttime=t, stoptime=t)
+    
+    # Based on the dictType, determine what to strip from the phaseCols to
+    # just leave the phase behind.
+    if dictType == 'reg':
+        s = 'tap_'
+    elif dictType == 'cap':
+        s = 'switch'
+        
+    # TODO: DERs.
+    
+    # Query the database.
+    cursor.execute(q)
+    
+    # Iterate through the rows
+    row = cursor.fetchone()
+    while row:
+        # extract the name
+        n = row[0]
+        # Loop through the rest of the row.
+        for k in range(1, len(phaseCols)+1):
+            # Infer the phase.
+            p = phaseCols[k-1].replace(s, '')
+            
+            # If this phase isn't in the dictionary, add it.
+            if p not in inDict[n]['phases']:
+                inDict[n]['phases'][p] = {}
+                
+            # Assign to 'newStatus'
+            inDict[n]['phases'][p]['newState'] = row[k]
+        
+        # Get next row.
+        row = cursor.fetchone()
+    
+    # Done. 
+    return inDict
 
 if __name__ == '__main__':
     cnxn = connect()

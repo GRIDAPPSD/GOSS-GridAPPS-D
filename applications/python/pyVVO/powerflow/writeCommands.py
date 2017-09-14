@@ -33,6 +33,9 @@ COMMENT_REGEX = re.compile(r'(\S+);')
 TRIPLEX_LOAD_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_load\b')
 TRIPLEX_METER_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_meter\b')
 OBJEND_REGEX = re.compile(r'(\s*)}(\s*)(;*)$')
+OBJY_BY_NAME = r'\bname\b(\s+)("?){}("?)(\s*);'
+# Expression below doesn't work since it can match multiple objects at once...
+# OBJ_BY_TYPE_NAME = r'\bobject\b(\s+)\b{}\b(.+?)\bname\b(\s+)("?){}("?)(\s*);' # Use with re.DOTALL
 
 def readModel(modelIn):
     '''Simple function to read file as string'''
@@ -69,167 +72,100 @@ class writeCommands:
         with open(self.pathModelOut, 'w') as f:
             f.write(self.strModel)
     
-    def commandRegulators(self, regulators):
-        """"Function to change tap positions on a given regulator.
+    def commandRegulators(self, reg):
+        """"Function to change tap positions and control for regulators.
         
-        This is performed by finding its configuration and changing 'tap_pos.'
-        
-        INPUT: Dictionary of dictionaries. Top level keys are regulator
-            names. Each subdict can have up to two keys: 'regulator' and 
-            'configuration.' Within the 'regulator' or 'configuration' dicts,
-            keys are properties to change (e.g. tap_A or Control) mappped to
-            the new desired value (e.g. 2 or MANUAL)
-            
-        Example regulators input:
-        regulators={'R2-12-47-2_reg_1': {
-                        'regulator': {
-                            'tap_A':1,
-                            'tap_B':2,
-                            'tap_C':3
-                        },
-                        'configuration': {
-                            'Control': 'MANUAL'
-                        }
-                    },
-                    'R2-12-47-2_reg_2': {
-                        'regulator': {
-                            'tap_A':4,
-                            'tap_B':5,
-                            'tap_C':6
-                        },
-                        'configuration': {
-                            'Control': 'MANUAL'
-                        }
-                    }
-        }
+        INPUT: regulator dictionary as described in the gld module docstring
         
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
-        # Find first regulator
-        regMatch = REGOBJ_REGEX.search(self.strModel)
-        
-        # Loop through regulators to find names and configs.
-        # Note that this could be more efficient, but oh well.
-        regDict = dict()
-        while regMatch is not None:
-            # Extract the object:
-            reg = self.extractObject(regMatch)
+        # Loop through regulators
+        for r in reg:
+            # Find regulator by name.
+            d = self.extractObjectByNameAndType(name=r, objRegEx=REGOBJ_REGEX,
+                                                minLength=\
+                                                    len('object regulator'))
             
-            # Extract name and configuration properties and assign to dict
-            d = self.extractProperties(reg['obj'],
-                                                ['name', 'configuration'])
-            name = d['name']['prop']
-            regDict[name] = d
+            # Extract its configuration
+            c = self.extractProperties(d['obj'], ['configuration'])
             
-            # If this regulator is in our input dictionary, alter properties
-            if (name in regulators) and ('regulator' in regulators[name]):
+            # Loop through phases and add to property dictionary.
+            regPropDict = {}
+            confPropDict = {}
+            for p in reg[r]['phases']:
+                # Note that regulator objects have 'tap_A' etc. while
+                # regulator_configuration objects have 'tap_pos_A' etc.
                 
-                # Modify the properties of the regulator
-                reg['obj'] = self.modObjProps(reg['obj'], 
-                                                       regulators[name]['regulator'])
-                
-                # Replace regulator with new modified regulator
-                self.replaceObject(reg)
-            
-            # Find the next regulator using index offset
-            regEndInd = reg['start'] + len(reg['obj'])
-            regMatch = REGOBJ_REGEX.search(self.strModel, regEndInd)
-            
-            
-            
-        # Find the configurations for the requested regulators and put in list.
-        # NOTE: confList and regList MUST be one to one.
-        confList = []
-        regList = []
-        for regName, commandDict in regulators.items():
-            # If we didn't find it, raise an exception
-            if regName not in regDict:
-                raise ObjNotFoundError(obj=regName, model=self.pathModelIn)
-            
-            # If we're commanding the configuration, add it to the list.
-            if 'configuration' in commandDict:
-                # Extract name of the configuration, put in list
-                confList.append(regDict[regName]['configuration']['prop'])
-                # Put the regulator in the list
-                regList.append(regName)
-        
-        # Next, loop through and command regulator configurations. Since we'll
-        # be modifying the model as we go, we shouldn't use the 'finditer' 
-        # method.
-        regConfMatch = REGCONF_REGEX.search(self.strModel)
-        
-        while regConfMatch is not None:
-            # Extract the object
-            regConf = self.extractObject(regConfMatch)
-            
-            # Extract the name
-            d = self.extractProperties(regConf['obj'], ['name'])
-            
-            # If the regulator is in our configuration list, alter config.
-            if d['name']['prop'] in confList:
-                # Get the name of the regulator to command
-                regInd = confList.index(d['name']['prop'])
-                regName = regList[regInd]
-                
-                # Modify the configuration
-                regConf['obj'] = self.modObjProps(regConf['obj'],
-                                                  regulators[regName]['configuration'])
+                # Use newState if it exists, otherwise use prevState
+                if 'newState' in reg[r]['phases'][p]:
+                    state = 'newState'
+                else:
+                    state = 'prevState'
                     
-                # Regulator configuration has been updated, now update model
-                self.replaceObject(regConf)
+                regPropDict['tap_' + p] = reg[r]['phases'][p][state]
+                confPropDict['tap_pos_' + p] = reg[r]['phases'][p][state]
+                
+            # Modify the object's properties.
+            d['obj'] = self.modObjProps(objStr=d['obj'], propDict=regPropDict)
             
-            # Find the next regulator configuration, using index offset
-            regEndInd = regConf['start'] + len(regConf['obj'])
-            regConfMatch = REGCONF_REGEX.search(self.strModel, regEndInd)
+            # Splice in the modified object.
+            self.replaceObject(d)
+            
+            # If we're given a control mode, use it.
+            # TODO: this is case dependent and therefore gross.
+            if ('Control' in reg[r]):
+                confPropDict['Control'] = reg[r]['Control']
+            
+            d2 = self.extractObjectByNameAndType(name=r,
+                                                 objRegEx=REGCONF_REGEX,
+                                                 minLength=len(
+                                                                ('object '
+                                                                'regulator_'
+                                                                'configuration'
+                                                                )
+                                                               )
+                                                 )
+
+            # Modify its properties.
+            d2['obj'] = self.modObjProps(objStr=d2['obj'],
+                                         propDict=confPropDict)
+            
+            # Splice in the modified object.
+            self.replaceObject(d2)
         
-    def commandCapacitors(self, capacitors):
+    def commandCapacitors(self, cap):
         """"Function to change state of capacitors.
         
-        INPUT: Dictionary of dictionaries. Top level keys are capacitor
-            names. Each subdict's keys are properties to change (e.g. 
-            switchA) mappped to the new desired value (e.g. OPEN)
+        INPUT: capacitor dictionary as described in the gld module docstring.
         
-        Example capacitors input:
-        capacitors={'R2-12-47-2_cap_1': {
-                        'switchA':'OPEN',
-                        'switchB':'CLOSED',
-                        'control': 'MANUAL'
-                    },
-                    'R2-12-47-2_cap_4': {
-                        'switchA':'CLOSED',
-                        'switchB':'CLOSED',
-                        'switchC': 'OPEN',
-                        'control': 'MANUAL'
-                    }
-        }
-        
-            
         OUTPUT: The GridLAB-D model in self.strModel is modified
         """
-        # Find the first capacitor
-        capMatch = CAP_REGEX.search(self.strModel)
         
         # Loop through the capacitors
-        while capMatch is not None:
-            # Extract the object
-            cap = self.extractObject(capMatch)
+        for c in cap:
+            # Find the object by name
+            d = self.extractObjectByNameAndType(name=c, objRegEx=CAP_REGEX,
+                                                minLength=\
+                                                    len('object capacitor'))
             
-            # Extract its name
-            capName = self.extractProperties(cap['obj'], ['name'])
-            n = capName['name']['prop']
+            # Loop through phases and add to property dictionary.
+            propDict = {}
+            for p in cap[c]['phases']:
+                # Note capacitor position are designated by 'switchA' etc.
+                
+                # Use newState if it exists, otherwise use prevState
+                if 'newState' in cap[c]['phases'][p]:
+                    state = 'newState'
+                else:
+                    state = 'prevState'
+                
+                propDict['switch' + p] = cap[c]['phases'][p][state]
+                
+            # Modify the object's properties.
+            d['obj'] = self.modObjProps(objStr=d['obj'], propDict=propDict)
             
-            # If the capacitor is in the list to command, do so
-            if n in capacitors:
-                # Modify the capacitor object to implement commands
-                cap['obj'] = self.modObjProps(cap['obj'], 
-                                                       capacitors[n])
-                                 
-                # Splice new capacitor object into model
-                self.replaceObject(cap)
-                                
-            # Find the next capacitor, using index offset
-            capEndInd = cap['start'] + len(cap['obj'])
-            capMatch = CAP_REGEX.search(self.strModel, capEndInd)
+            # Splice in the modified object.
+            self.replaceObject(d)
             
     def updateClock(self, starttime=None, stoptime=None, timezone=None):
         """Function to set model time. If there's no clock object, it will be
@@ -250,45 +186,34 @@ class writeCommands:
         else:
             tzStr = ''
             
+        # Build the clock string.
+        clockStr = "clock {\n"
+        
+        # Add defined properties.
+        if timezone:
+            clockStr += "  timezone {};\n".format(timezone)
+            
+        if starttime:
+            clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
+            
+        if stoptime:
+            clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
+            
+        clockStr += "}\n"
+            
         # Look for clock object
         clockMatch = CLOCK_REGEX.search(self.strModel)
         if clockMatch is not None:
             # If clock object exists, extract it.
-            clock = self.extractObject(clockMatch)
+            clock = self.extractObject(objMatch=clockMatch)
             
-            # Fill out dictionary of included properties
-            propDict = dict()
-            if timezone:
-                propDict['timezone'] = timezone
-                
-            if starttime:
-                propDict['starttime'] = "'{}{}'".format(starttime, tzStr)
-                
-            if stoptime:
-                propDict['stoptime'] = "'{}{}'".format(stoptime, tzStr)
-                
-            # Modify the times
-            clock['obj'] = self.modObjProps(clock['obj'], propDict)
-        
-            # Splice in new clock object.
+            # Replace the string with the clockStr
+            clock['obj'] = clockStr
+            
+            # Splice in new clock object
             self.replaceObject(clock)
         else:
             # If clock doesn't exist, create it.
-            clockStr = "clock {\n"
-            
-            # Add defined properties.
-            if timezone:
-                clockStr += "  timezone {};\n".format(timezone)
-                
-            if starttime:
-                clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
-                
-            if stoptime:
-                clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
-                
-            clockStr += "}\n"
-            
-            # Add clock to model
             self.strModel = clockStr + self.strModel
             
     def updatePowerflow(self, solver_method='NR', line_capacitance='TRUE',
@@ -305,7 +230,7 @@ class writeCommands:
         pfMatch = POWERFLOW_REGEX.search(self.strModel)
         if pfMatch is not None:
             # If powerflow module definition exists, extract it.
-            pf = self.extractObject(pfMatch)
+            pf = self.extractObject(objMatch=pfMatch)
             # Modify the properties
             propDict = {'solver_method': solver_method,
                         'line_capacitance': line_capacitance}
@@ -356,7 +281,7 @@ class writeCommands:
             tapeMatch = TAPE_REGEX2.search(self.strModel)
             if tapeMatch is not None:
                 # Extract the object
-                tapeObj = self.extractObject(tapeMatch)
+                tapeObj = self.extractObject(objMatch=tapeMatch)
                 # Eliminate the object
                 self.strModel = (self.strModel[0:tapeObj['start']]
                                  + self.strModel[tapeObj['end']+1:])
@@ -656,7 +581,7 @@ class writeCommands:
         # Loop over each triplex load, and add a recorder for each one.
         for m in matches:
             # Extract the object:
-            tObj = self.extractObject(m)
+            tObj = self.extractObject(objMatch=m)
             
             # Get the name
             n = self.extractProperties(tObj['obj'], ['name'])
@@ -680,7 +605,7 @@ class writeCommands:
         # Loop over each triplex load, and add a recorder for each one.
         for m in matches:
             # Extract the object:
-            tObj = self.extractObject(m)
+            tObj = self.extractObject(objMatch=m)
             
             # Get the name, phases, and nominal_voltage
             n = self.extractProperties(tObj['obj'], ['name', 'phases',
@@ -765,12 +690,58 @@ class writeCommands:
                          
         # Return the modified object
         return objStr
-                
-    def extractObject(self, objMatch):
-        """"Function to a GridLAB-D object from the larger model as a string.
+    
+    def extractObjectByNameAndType(self, *, name, objRegEx, minLength=1):
+        """Function to extract a GridLAB-D object given its name and type.
+            Nested objects will be included.
+            
+        INPUTS:
+            name: name of the object.
+            objRegEx: pre-compiled regular expression for the desired object
+                type.
+            minLength: minimum possible match length of the objRegEx. This
+                will save a few iterations - not critical.
+        """
+        # Find the name line.
+        m = re.search(OBJY_BY_NAME.format(name), self.strModel)
         
-        objMatch is a match object returned from the re package after calling
-            re.search or one member of re.finditer.
+        # Raise exception if not found.
+        if not m:
+            raise ObjNotFoundError(obj=name, model=self.pathModelIn)
+        
+        # Extract the starting index of the match. This represents the ending 
+        # index of the search for the beginning of the associated object.
+        eInd = m.span()[0]
+        
+        # Initialize the starting index of the search for the associated
+        # object.
+        sInd = eInd - minLength
+        
+        # Work backward until a match on the objRegEx is found.
+        m2 = objRegEx.match(self.strModel, sInd, eInd)
+        while (m2 is None) and (sInd >= 0):
+            # Decrement the starting index 
+            sInd -= 1
+            # Look for a match again
+            m2 = objRegEx.match(self.strModel, sInd, eInd)
+            
+        # If sInd < 0, the object definition doesn't exist.
+        if sInd < 0:
+            raise ObjNotFoundError(obj=name, model=self.pathModelIn)
+            
+        # Extract and return the full object.
+        out = self.extractObject(startInd=sInd)
+        return out
+            
+                
+    def extractObject(self, *, objMatch=None, startInd=None):
+        """"Function to extract a GridLAB-D object from the larger model.
+        
+        INPUTS:
+            NOTE: Only *one* of objMatch or startInd should be provided.
+            objMatch: a match object returned from the re package after calling
+                re.search or one member of re.finditer.
+            startInd: the starting index of the object.
         
         OUTPUT:
         dict with three fields: 'start,' 'end,' and 'obj'
@@ -779,8 +750,14 @@ class writeCommands:
             
         """
         
-        # Extract the starting index of the regular expression match.
-        startInd =  objMatch.span()[0]
+        # If objMatch is provided, extract the starting index. Otherwise, use
+        # provided index
+        if objMatch:
+            # Extract the starting index of the regular expression match.
+            startInd =  objMatch.span()[0]
+        elif startInd is None:
+            assert False, "If objMatch is not provided, startInd must be."
+        
         # Initialize the ending index (to be incremented in loop).
         endInd = startInd
         # Initialize counter for braces (to avoid problems with nested objects)
@@ -963,7 +940,7 @@ class writeCommands:
         # Loop over all the matches
         while m:
             # Extract the object
-            tObj = self.extractObject(m)
+            tObj = self.extractObject(objMatch=m)
             
             # Splice in the metrics collector
             tObj['obj'] = self.addObject(objType='metrics_collector',

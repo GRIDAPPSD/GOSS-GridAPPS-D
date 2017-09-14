@@ -8,8 +8,7 @@ if __name__ == '__main__':
     from powerflow import writeCommands
     from genetic import population
     import time
-    from util import db
-    from util import gld
+    from util import db, gld, helper
     import copy
     # import subprocess
     # Start MySQL server (no problem if already running). This assumes MySQL
@@ -34,7 +33,16 @@ if __name__ == '__main__':
     tapChangeCost=0.5
     capSwitchCost=2
     # Results file
-    f = open(outDir + '/output.txt', 'w')
+    f = open(outDir + '/results/'
+             + time.strftime('%m-%d_%H-%M', time.localtime()) + '.txt', 'w')
+    f.write('Number of individuals: {}\n'.format(numInd))
+    f.write('Number of generations: {}\n'.format(numGen))
+    f.write('Number of time intervals: {}\n'.format(numIntervals))
+    f.write('Energy price: {}\n'.format(energyPrice))
+    f.write('Tap change cost: {}\n'.format(tapChangeCost))
+    f.write('Capacitor switching cost: {}\n'.format(capSwitchCost))
+    f.write('Model is CONSTANT POWER.\n')
+    f.write('*'*80 + '\n')
     # Drop all tables in the database
     cnxn = db.connect()
     db.dropAllTables(cnxn)
@@ -44,54 +52,54 @@ if __name__ == '__main__':
     reg={'reg_VREG4': {
                         'raise_taps': 16, 
                         'lower_taps': 16,
-                        'taps': {
-                            'tap_A': 11,
-                            'tap_B': 11,
-                            'tap_C': 4
+                        'phases': {'A': {'prevState': 11},
+                                   'B': {'prevState': 11},
+                                   'C': {'prevState': 4}
                         },
                        },
          'reg_VREG2': {
                         'raise_taps': 16,
                         'lower_taps': 16,
-                        'taps': {
-                            'tap_A': 9,
-                            'tap_B': 6,
-                            'tap_C': 1
-                        }
+                        'phases': {'A': {'prevState': 9},
+                                   'B': {'prevState': 6},
+                                   'C': {'prevState': 1}
+                                   }
                        },
          'reg_VREG3': {
                         'raise_taps': 16,
                         'lower_taps': 16,
-                        'taps': {
-                            'tap_A': 16,
-                            'tap_B': 10,
-                            'tap_C': 1
-                        }
+                        'phases': {'A': {'prevState': 16},
+                                   'B': {'prevState': 10},
+                                   'C': {'prevState': 1}
+                                   }
                        },
          'reg_FEEDER_REG': {
                         'raise_taps': 16,
                         'lower_taps': 16,
-                        'taps': {
-                            'tap_A': 2,
-                            'tap_B': 2,
-                            'tap_C': 1
-                        }
-                       },
+                        'phases': {'A': {'prevState': 2},
+                                   'B': {'prevState': 2},
+                                   'C': {'prevState': 1}
+                                   }
+                            },
          }
+    # Get copy for benchmark to modify
+    regBench = copy.deepcopy(reg)
     
     cap={
-        'cap_capbank2a': {'switchA': 'CLOSED'},
-        'cap_capbank2b': {'switchB': 'CLOSED'},
-        'cap_capbank2c': {'switchC': 'CLOSED'},
-        'cap_capbank1a': {'switchA': 'CLOSED'},
-        'cap_capbank1b': {'switchB': 'CLOSED'},
-        'cap_capbank1c': {'switchC': 'CLOSED'},
-        'cap_capbank0a': {'switchA': 'CLOSED'},
-        'cap_capbank0b': {'switchB': 'CLOSED'},
-        'cap_capbank0c': {'switchC': 'CLOSED'},
+        'cap_capbank2a': {'phases': {'A': {'prevState': 'CLOSED'}}},
+        'cap_capbank2b': {'phases': {'B': {'prevState': 'CLOSED'}}},
+        'cap_capbank2c': {'phases': {'C': {'prevState': 'CLOSED'}}},
+        'cap_capbank1a': {'phases': {'A': {'prevState': 'CLOSED'}}},
+        'cap_capbank1b': {'phases': {'B': {'prevState': 'CLOSED'}}},
+        'cap_capbank1c': {'phases': {'C': {'prevState': 'CLOSED'}}},
+        'cap_capbank0a': {'phases': {'A': {'prevState': 'CLOSED'}}},
+        'cap_capbank0b': {'phases': {'B': {'prevState': 'CLOSED'}}},
+        'cap_capbank0c': {'phases': {'C': {'prevState': 'CLOSED'}}},
         # cap_capbank3 appears to be not controllable.
         #'cap_capbank3': ['switchA', 'switchB', 'switchC']
     }
+    # Get copy for benchmark to modify
+    capBench = copy.deepcopy(cap)
     #******************************************************************************
     # Modify model. NOTE: Things will be in reverse order intentionally.
     # Read the base model as a string.
@@ -107,7 +115,7 @@ if __name__ == '__main__':
                                            pathModelOut=benchFile)
 
     # Setup the model
-    writeBench.setupModel(timezone=timezone, vSource=69715.065,
+    writeBench.setupModel(vSource=69715.065,
                           playerFile=playerFile, tz_offset=tz_offset)
     
     # Make a copy of the writeCommands object for use in the genetic algorithm.
@@ -130,7 +138,7 @@ if __name__ == '__main__':
     allCapCols = []
     allCapCols.extend(capTableChangeCols)
     allCapCols.extend(capTableStatusCols)
-    for c, p in cap.items():
+    for c, p in capBench.items():
         # Create recorder for this capacitor
         writeBench.addMySQLRecorder(parent = c, table=capTable,
                                     properties=allCapCols, interval=tInt)
@@ -145,7 +153,7 @@ if __name__ == '__main__':
     allRegCols = []
     allRegCols.extend(regTableChangeCols)
     allRegCols.extend(regTableStatusCols)
-    for r, ph in reg.items():        
+    for r, ph in regBench.items():        
         # Create recorder for this regulator.    
         writeBench.addMySQLRecorder(parent=r, table=regTable,
                                     properties=allRegCols, interval=tInt)
@@ -173,9 +181,14 @@ if __name__ == '__main__':
               flush=True)
         print('Running for {} through {}'.format(starttime, stoptime),
               file=f, flush=True)
+        # Command the benchmark regulators and capacitors
+        writeBench.commandCapacitors(cap=capBench)
+        writeBench.commandRegulators(reg=regBench)
         # Update clocks.
-        writeBench.updateClock(starttime=starttime, stoptime=stoptime)
-        writeGenetic.updateClock(stoptime=stoptime, starttime=starttime)
+        writeBench.updateClock(starttime=starttime, stoptime=stoptime,
+                               timezone=timezone)
+        writeGenetic.updateClock(stoptime=stoptime, starttime=starttime,
+                                 timezone=timezone)
         # Write benchmark model
         writeBench.writeModel()
         # Run the model
@@ -200,10 +213,6 @@ if __name__ == '__main__':
                                       tapChangeColumns=regTableChangeCols,
                                       capSwitchTable=capTable,
                                       capSwitchColumns=capTableChangeCols)
-
-        # Close database cursor and connection.
-        cursor.close()
-        cnxn.close()
         # Write result to file.
         print('Benchmark scores:', file = f, flush=True)
         print('  Total: {:.4g}'.format(benchScores['total']), file=f,
@@ -214,7 +223,6 @@ if __name__ == '__main__':
               flush=True)
         print('  Cap: {:.4g}'.format(benchScores['cap']), file=f,
               flush=True)
-        print('')
         # TODO: Uncomment
         '''
         print('Benchmark violations: ')
@@ -223,9 +231,26 @@ if __name__ == '__main__':
         '''
         # Increment benchmark grand total
         benchTotal += benchScores['total']
+        #**********************************************************************
+        # Set bench settings for next iteration.
+        regBench = db.updateStatus(inDict=regBench, dictType='reg',
+                                   cursor=cursor, table=regTable,
+                                   phaseCols=regTableStatusCols, t=stoptime,
+                                   nameCol='name', tCol='t')
+        capBench = db.updateStatus(inDict=capBench, dictType='cap',
+                           cursor=cursor, table=capTable,
+                           phaseCols=capTableStatusCols, t=stoptime,
+                           nameCol='name', tCol='t')
+        
+        # Rotate the 'newState' to 'oldState'
+        regBench, capBench = helper.rotateVVODicts(reg=regBench, cap=capBench,
+                                                   deleteFlag=True)
+        # Close database cursor and connection.
+        cursor.close()
+        cnxn.close()
         #******************************************************************************
         # Run genetic algorithm.
-        print('Beginning genetic algorithm...', flush=True)
+        print('Initializing population...', flush=True)
         print('*' * 80, file=f)
         t0 = time.time()
         popObj = population.population(starttime=starttime, stoptime=stoptime,
@@ -239,9 +264,14 @@ if __name__ == '__main__':
                                        tapChangeCost=tapChangeCost,
                                        capSwitchCost=capSwitchCost
                                       )
-        popObj.ga()
-        print('Genetic algorithm complete, printing results to file...',
-              flush=True)
+        print('Beginning genetic algorithm...', flush=True)
+        bestIndividual = popObj.ga()
+        print('Genetic algorithm complete.',flush=True)
+        # Update 'reg' and 'cap' based on the most fit individual.
+        reg = copy.deepcopy(bestIndividual.reg)
+        cap = copy.deepcopy(bestIndividual.cap)
+        reg, cap = helper.rotateVVODicts(reg=reg, cap=cap, deleteFlag=True)
+        print('Printing results to file...', flush=True)
         print('The time is {}'.format(time.ctime(), flush=True))
         t1 = time.time()
         print('{} individuals per {} generations'.format(numInd, numGen),
@@ -254,36 +284,28 @@ if __name__ == '__main__':
         geneticTotal += popObj.generationBest[-1]
         print(file=f)
         print('Best Individual:', file=f)
-        bestUID = popObj.indFitness[0][population.UIDIND]
-        for ix in popObj.indList:
-            if ix.uid == bestUID:
-                print('Scores: ', file=f, flush=True)
-                print('  Total: {:.4g}'.format(ix.fitness), file=f,
-                      flush=True)
-                print('  Energy: {:.4g}'.format(ix.energyCost), file=f,
-                      flush=True)
-                print('  Reg: {:.4g}'.format(ix.tapCost), file=f,
-                      flush=True)
-                print('  Cap: {:.4g}'.format(ix.capCost), file=f,
-                      flush=True)
-                print('\tCapacitor settings:', file=f)
-                for capName, capDict in ix.cap.items():
-                    print('\t\t' + capName + ':', file=f)
-                    for switchName, switchDict in capDict.items():
-                        print('\t\t\t' + switchName + ': ' 
-                              + switchDict['status'], file=f)
-                print(file=f)
-                
-                print('\tRegulator settings:', file=f)
-                for regName, regDict in ix.reg.items():
-                    print('\t\t' + regName + ':', file=f)
-                    for tapName, tapDict in regDict['taps'].items():
-                        print('\t\t\t' + tapName + ': ' + str(tapDict['pos']),
-                              file=f)
-                    
-                break
-            else:
-                pass
+        print('Scores: ', file=f, flush=True)
+        print('  Total: {:.4g}'.format(bestIndividual.fitness), file=f,
+              flush=True)
+        print('  Energy: {:.4g}'.format(bestIndividual.energyCost), file=f,
+              flush=True)
+        print('  Reg: {:.4g}'.format(bestIndividual.tapCost), file=f,
+              flush=True)
+        print('  Cap: {:.4g}'.format(bestIndividual.capCost), file=f,
+              flush=True)
+        print('\tCapacitor settings:', file=f)
+        for capName, capDict in bestIndividual.cap.items():
+            print('\t\t' + capName + ':', file=f)
+            for switchName, switchDict in capDict['phases'].items():
+                print('\t\t\t' + switchName + ': ' 
+                      + switchDict['newState'], file=f)
+        
+        print('\tRegulator settings:', file=f)
+        for regName, regDict in bestIndividual.reg.items():
+            print('\t\t' + regName + ':', file=f)
+            for tapName, tapDict in regDict['phases'].items():
+                print('\t\t\t' + tapName + ': ' + str(tapDict['newState']),
+                      file=f)
             
         print('*' * 80, file=f, flush=True)
         

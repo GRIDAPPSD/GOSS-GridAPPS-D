@@ -11,11 +11,7 @@ from queue import Queue
 import threading
 from util import db
 import sys
-
-# Scores will be stored in a list of tuples in format (uid, score)
-UIDIND = 0
-SCOREIND = 1
-INDIND = 1 # qOut will hold (uid, individual)
+import copy
     
 class population:
 
@@ -66,7 +62,7 @@ class population:
             #t = threading.Thread(target=population.writeRunEval,
             #           args=(self.qIn, self.qOut, self.cnxnpool))
             t = threading.Thread(target=population.writeRunEval,
-                                 args=(self.qIn, self.qOut))
+                                 args=(self.qIn,))
             self.threads.append(t)
             t.start()
 
@@ -93,102 +89,71 @@ class population:
         # Track the best scores for each generation.
         self.generationBest = []
         
-        # Track the sum of fitness.
+        # Track the sum of fitness - used to compute roulette wheel weights
         self.fitSum = None
         
         # Track weights of fitness for "roulette wheel" method
         self.rouletteWeights = None
         
-        # Initialize individuals and write their models.
+        # Initialize individuals.
         # TODO: make this loop parallel?
-        self.indList = []
-        self.indFitness = []
-        self.uids = list(range(numInd))
+        # TODO: individuals should take strModel + paths as input to
+        # constructor
+        self.individualsList = []
         
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
         c = 0
         for allCap in individual.CAPSTATUS:
             for peg in individual.REGPEG:
-                self.indList.append(individual.individual(uid=c, reg=self.reg,
-                                                        peg=peg, cap=self.cap,
-                                                        allCap=allCap))
+                self.individualsList.append(individual.individual(uid=c,
+                                                          reg=copy.deepcopy(reg),
+                                                          peg=peg,
+                                                          cap=copy.deepcopy(cap),
+                                                          allCap=allCap))
                 c += 1
                 
         # Create individuals with biased regulator positions
         # TODO: Stop hard-coding the number.
         # TODO: Consider leaving capacitors the same.
         for n in range(c, c+4):
-            self.indList.append(individual.individual(uid=n, reg=self.reg,
+            self.individualsList.append(individual.individual(uid=n,
+                                                      reg=copy.deepcopy(reg),
                                                       regBias=True,
-                                                      cap=self.cap))
+                                                      cap=copy.deepcopy(cap)))
             c += 1
         
         # Randomly create the rest of the individuals.
         for n in range(c, numInd):
             # Initialize individual.
-            self.indList.append(individual.individual(uid=n, 
-                                                      reg=self.reg, 
-                                                      cap=self.cap))
+            self.individualsList.append(individual.individual(uid=n, 
+                                                      reg=copy.deepcopy(reg), 
+                                                      cap=copy.deepcopy(cap)))
             
         # Track the current UID
-        self.lastUID = n + 1
+        self.nextUID = n + 1
         
     def ga(self):
         """Main function to run the genetic algorithm.
         """
         g = 0
+        # Put all individuals in the queue for processing.
+        for individual in self.individualsList:
+            # TODO: Making so many copies of 'strModel' feels REALLY
+            # inefficient...
+            self.qIn.put_nowait({'individual':individual,
+                                 'strModel': self.strModel,
+                                 'inPath': self.inPath,
+                                 'outDir': self.outDir})
+        # Loop over the generations
         while g < self.numGen:
-            #print('Starting generation {}'.format(g), flush=True)
-            
-            # Put all the individuals in the queue for processing.
-            for individual in self.indList:
-                # TODO: Making so many copies of 'strModel' feels REALLY
-                # inefficient...
-                self.qIn.put_nowait({'individual':individual,
-                                     'strModel': self.strModel,
-                                     'inPath': self.inPath,
-                                     'outDir': self.outDir})
-            
-            #print('Input queue filled with individuals. Waiting for runs...',
-            #      flush=True)
-                
             # Wait until all models have been run and evaluated.
             self.qIn.join()
-            
-            #print('All runs should now be complete. Starting to process output queue.',
-            #      flush=True)
-            
-            # Loop over the resulting individuals to update the indList and
-            # indFitness.
-            while not self.qOut.empty():
-                # Extract the (uid, individual) pair from the queue.
-                pair = self.qOut.get()
-                # Find the index of this individual by their UID.
-                ind = self.uids.index(pair[UIDIND])
                 
-                # Only add fitness and update list if writeRunEval did
-                # something.
-                if pair[INDIND] is not None:
-                    # Add fitness in form of (uid, score)
-                    self.indFitness.append((pair[INDIND].uid,
-                                            pair[INDIND].fitness))
-                    # Update the individual in the indList
-                    self.indList[ind] = pair[INDIND]
-                
-                # Mark this queue task as complete 
-                self.qOut.task_done()
-            
-            # Make sure we completed all tasks in the queue.
-            # TODO - probably don't need this?
-            self.qOut.join()
-                
-            #print('Output queue processed. Moving on to natural selection and mutation.')
-                
-            # Sort the fitness levels by score in format of (uid, score).
-            self.indFitness.sort(key=lambda x: x[SCOREIND])
+            # Sort the individualsList by score.
+            self.individualsList.sort(key=lambda x: x.fitness)
             
             # Track best score for this generation.
-            self.generationBest.append(self.indFitness[0][SCOREIND])
+            self.generationBest.append(self.individualsList[0].fitness)
             
             # Increment generation counter.
             g += 1
@@ -198,20 +163,29 @@ class population:
                 # Select the fittest individuals and some unfit ones.
                 self.naturalSelection()
                 
+                # Get the number of remaining individuals
+                n = len(self.individualsList)
+                
                 # Replenish the population by crossing individuals.
                 self.crossAndMutate()
                 
-                #print('Natural selection and mutation complete.')
-                
-            #print('Generation {} complete.'.format(g-1))
+                # Put the new individuals in the queue for processing
+                for ind in range(n, len(self.individualsList)):
+                    self.qIn.put_nowait({'individual':self.individualsList[ind],
+                                         'strModel': self.strModel,
+                                         'inPath': self.inPath,
+                                         'outDir': self.outDir})
             
         # Signal to threads that we're done.
         for _ in self.threads: self.qIn.put_nowait(None)
         for t in self.threads: t.join()
         #print('Threads terminated.', flush=True)
+        
+        # Return the best individual.
+        return self.individualsList[0]
                 
     @staticmethod 
-    def writeRunEval(qIn, qOut):
+    def writeRunEval(qIn):
                     #, cnxnpool):
         #tEvent):
         """Write individual's model, run the model, and evaluate fitness.
@@ -258,41 +232,26 @@ class population:
                 #cnxn = cnxnpool.get_connection()
                 cnxn = db.connect()
                 cursor = cnxn.cursor()
-                if inDict['individual'].fitness is None:
-                    # If the individual has not been run and evaluated:
-                    # Write the model.
-                    inDict['individual'].writeModel(strModel=inDict['strModel'],
-                                                   inPath=inDict['inPath'],
-                                                   outDir=inDict['outDir'])
-                    #print("Individual {}'s model written.".format(inDict['individual'].uid))
-                    # Run the model. gridlabd.exe must be on the path.
-                    inDict['individual'].runModel()
-                    if inDict['individual'].modelOutput.returncode:
-                        print("FAILURE! Individual {}'s model gave non-zero returncode.".format(inDict['individual'].uid))
-                    else:
-                        #print("Individual {}'s model successfully run.".format(inDict['individual'].uid))
-                        pass
-                    
-                    # Evaluate the individuals fitness.
-                    inDict['individual'].evalFitness(cursor,
-                                                     starttime=STARTTIME,
-                                                     stoptime=STOPTIME,
-                                                     energyPrice=ENERGYPRICE,
-                                                     tapChangeCost=TAPCHANGECOST,
-                                                     capSwitchCost=CAPSWITCHCOST)
-                    #print("Individual {}'s fitness successfully evaluated.".format(inDict['individual'].uid))
-                    
-                    # Put the modified individual in the output queue.
-                    qOut.put((inDict['individual'].uid, inDict['individual']))
-                    #print('Individual {} put in output queue.'.format(inDict['individual'].uid),
-                    #      flush=True)
-                else:
-                    # If the individual has already been evaluated, there's no 
-                    # work to do.
-                    qOut.put((inDict['individual'].uid, None))
-                    #print('Individual {} has already been run. Putting None in output queue'.format(inDict['individual'].uid),
-                    #      flush=True)
                 
+                # Write the individual's model.
+                inDict['individual'].writeModel(strModel=inDict['strModel'],
+                                               inPath=inDict['inPath'],
+                                               outDir=inDict['outDir'])
+
+                # Run the model.
+                # TODO: need gridlabd path information here
+                inDict['individual'].runModel()
+                if inDict['individual'].modelOutput.returncode:
+                    print("FAILURE! Individual {}'s model gave non-zero returncode.".format(inDict['individual'].uid))
+                
+                # Evaluate the individuals fitness.
+                inDict['individual'].evalFitness(cursor,
+                                                 starttime=STARTTIME,
+                                                 stoptime=STOPTIME,
+                                                 energyPrice=ENERGYPRICE,
+                                                 tapChangeCost=TAPCHANGECOST,
+                                                 capSwitchCost=CAPSWITCHCOST)
+            
                 # Denote task as complete.
                 qIn.task_done()
                 
@@ -306,8 +265,6 @@ class population:
                 cursor.close()
                 cnxn.close()
                 
-        
-        
     def naturalSelection(self, top=0.2, keepProb=0.2):
         """Determines which individuals will be used to create next generation.
         
@@ -317,52 +274,30 @@ class population:
             keepProb: decimal in set [0, 1). Probability another random
                 individual is kept to regenerate the population
         """
-        # Determine the index of the first individual that didn't make the cut
-        k = math.ceil(top * len(self.indFitness))
+        # Determine how many individuals to keep for certain.
+        k = math.ceil(top * len(self.individualsList))
         
         # Loop over the unfit individuals, and either delete or keep based on
         # the keepProb
-        while k < len(self.indFitness):
+        while len(self.individualsList) > k:
             # Randomly decide whether or not to keep an unfit individual
             if random.random() > keepProb:
-                # Extract the uid and get the individual's index
-                uid = self.indFitness[k][UIDIND]
-                ind = self.uids.index(uid)
-                # Delete this individual's model file.
-                # TODO: This should be done in some cleanup stage rather
-                # than during the optimization
-                #os.remove(self.indList[ind].model)
-                # Delete the individuals score from the list
-                del self.indFitness[k]
-                # Delete the individual and its reference
-                del self.indList[ind]
-                del self.uids[ind]
-                # Decrement k since we shortened the lists
-                k -= 1
-            
-            # Increment k
-            k += 1
+                # Delete this individual
+                del self.individualsList[k]
+            else:
+                # Increment k
+                k += 1
         
-        # Compute fitness sum for surviving individuals
+        # Compute fitness sum for surviving individuals and assign a weight
         self.fitSum = 0
-        for s in self.indFitness:
-            # Add the score, recalling indFitness is in format (uid, score)
-            self.fitSum += s[SCOREIND]
-            
-        # Determine "roulette wheel" weights. Loop over remaining individuals.
-        # TODO: this feels so inefficient...
         self.rouletteWeights = []
-        prev = 0
-        for s in self.indFitness:
-            # Lower scores are better but result in lower pct, hence the '1/'.
-            # This is to be used with random.choices. Documentation states it's
-            # faster to use cumulative weights.
-            # NOTE: the weights don't have to sum to 1 or 100.
-            if len(self.rouletteWeights) > 0:
-                prev = self.rouletteWeights[-1]
-
-            self.rouletteWeights.append(prev 
-                                        + (1 / (s[SCOREIND]/self.fitSum)))
+        for individual in self.individualsList:
+            # Add the score.
+            self.fitSum += individual.fitness
+            # Give the weight as a fraction of the best score. Higher weight
+            # means higher likelihood of being picked for crossing/mutation
+            self.rouletteWeights.append(self.individualsList[0].fitness
+                                        / individual.fitness)
     
     def crossAndMutate(self, popMutate=0.2, crossChance=0.7, mutateChance=0.1):
         """Crosses traits from surviving individuals to regenerate population.
@@ -372,51 +307,48 @@ class population:
             crossChance: chance of an individual being created by crossover
             mutateChance: chance an individual gene mutates
         """
-        # Get the UIDs of the individuals eligible to breed
-        eligibleUIDs = tuple(self.uids)
+        # Loop until population has been replenished.
+        # Extract the number of individuals.
+        n = len(self.individualsList)
         
-        while len(self.indList) < self.numInd:
+        while len(self.individualsList) < self.numInd:
             if random.random() < crossChance:
                 # Since we're crossing over, we won't force a mutation.
                 forceMutate = False
 
-                # Initialize while loop. Note that random.choices() has 
-                # replacement, hence need for while loop.
-                uids = [-1, -1]
-                while uids[0] == uids[1]:
+                # Prime loop to select two unique individuals. Loop ensures
+                # unique individuals are chosen.
+                _individualsList = [0, 0]
+                while _individualsList[0] == _individualsList[1]:
                     # Pick two individuals based on cumulative weights.
-                    uids = random.choices(eligibleUIDs,
-                                          cum_weights=self.rouletteWeights,
-                                          k=2)
-                
-                # Extract the indices of the given indivuals.    
-                ind1 = self.uids.index(uids[0])
-                ind2 = self.uids.index(uids[1])
+                    _individualsList = random.choices(self.individualsList[:n],
+                                                      weights=\
+                                                        self.rouletteWeights,
+                                                      k=2)
             
                 # Cross the regulator chromosomes
-                regChrom = self.crossChrom(chrom1=self.indList[ind1].regChrom,
-                                           chrom2=self.indList[ind2].regChrom)
+                regChrom = self.crossChrom(chrom1=_individualsList[0].regChrom,
+                                           chrom2=_individualsList[1].regChrom)
                 
                 # Cross the capaictor chromosomes
-                capChrom = self.crossChrom(chrom1=self.indList[ind1].capChrom,
-                                           chrom2=self.indList[ind2].capChrom)
+                capChrom = self.crossChrom(chrom1=_individualsList[0].capChrom,
+                                           chrom2=_individualsList[1].capChrom)
                 
                 # TODO: Cross DER chromosomes
             else:
                 # We're not crossing over, so force mutation.
                 forceMutate = True
                 # Draw an individual.
-                uid = random.choices(eligibleUIDs,
-                                     cum_weights=self.rouletteWeights,
-                                     k=1)
-                # Extract the individual's index.
-                ind1 = self.uids.index(uid[0])
+                _individualsList = random.choices(self.individualsList[:n],
+                                                  weights=self.rouletteWeights,
+                                                  k=1)
+                
                 # Grab the necessary chromosomes
-                regChrom = self.indList[ind1].regChrom
-                capChrom = self.indList[ind1].capChrom
+                regChrom = _individualsList[0].regChrom
+                capChrom = _individualsList[0].capChrom
                 # TODO. DER chromosome.
             
-            # Possibly mutate this individual.
+            # Possibly mutate this new individual.
             if forceMutate or (random.random() < popMutate):
                 # Mutate regulator chromosome:
                 regChrom = self.mutateChrom(c=regChrom,
@@ -426,22 +358,20 @@ class population:
                                             mutateChance=mutateChance)
                 # TODO: Mutate DER chromosome
             
-            # Create individual based on new chromosomes, add to indList
-            self.indList.append(individual.individual(uid=self.lastUID, 
-                                                      regChrom=regChrom,
-                                                      capChrom=capChrom,
-                                                      regDict=
-                                                      self.indList[ind1].reg,
-                                                      capDict=
-                                                      self.indList[ind1].cap,
-                                                      cap=self.cap,
-                                                      reg=self.reg))
-            
-            # Add this UID to the list
-            self.uids.append(self.lastUID)
+            # Create individual based on new chromosomes, add to individualsList
+            self.individualsList.append(
+                individual.individual(uid=self.nextUID, 
+                                      regChrom=regChrom,
+                                      capChrom=capChrom,
+                                      reg=copy.deepcopy(
+                                          _individualsList[0].reg),
+                                      cap=copy.deepcopy(
+                                          _individualsList[0].cap)
+                                      )
+                                        )
             
             # Increment UID
-            self.lastUID += 1
+            self.nextUID += 1
             
     @staticmethod
     def mutateChrom(c, mutateChance):
@@ -542,7 +472,7 @@ if __name__ == "__main__":
         print(file=f)
         print('Best Individual:', file=f)
         bestUID = popObj.indFitness[0][UIDIND]
-        for ix in popObj.indList:
+        for ix in popObj.individualsList:
             if ix.uid == bestUID:
                 print('\tCapacitor settings:', file=f)
                 for capName, capDict in ix.cap.items():

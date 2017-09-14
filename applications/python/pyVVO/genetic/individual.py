@@ -7,10 +7,8 @@ Created on Aug 9, 2017
 """
 import random
 from powerflow import writeCommands
-from util import db, gld
-# import os
+from util import gld, helper
 import math
-import time
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
@@ -23,51 +21,40 @@ TAPSIGMAPCT = 0.1
 class individual:
     
     def __init__(self, uid, reg=None, regBias=False, peg=None, cap=None,
-                 allCap=None, regChrom=None, regDict=None, capChrom=None,
-                 capDict=None):
+                 allCap=None, regChrom=None, capChrom=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
         1) From scratch: Provide self, uid, reg, and cap inputs. Positions
             will be randomly generated
             
-        2) From a chromosome: Provide self, uid, regChrom, capChrom, regDict,
-            and capDict. After crossing two individuals, a new chromosome will
-            result. Use this chromosome to update regDict and capDict
+        2) From a chromosome: Provide self, reg, cap, uid, regChrom, and 
+            capChrom. After crossing two individuals, a new chromosome will
+            result. Use this chromosome to update reg and cap
         
         INPUTS:
-            reg: Dictionary describing on-load tap changers.
-                Keys should be regulator names, values dictionaries which have
-                the following keys:
-                    raise_taps
-                    lower_taps
-                    taps --> dict of tap name (e.g. tap_A) mapped to previous
-                        position (e.g. 5)
+            reg: Dictionary as described in the docstring for the gld module.
+            
                 Note possible tap positions be in interval [-(lower_taps - 1),
                 raise_taps]. 
                     
-            cap: Dictionary describing capacitors.
-                Keys should be capacitor names, values a dict of phases
-                    mapped to the capacitor status on the previous iteration.
+            cap: Dictionary describing capacitors as described in the docstring
+                for the gld module.
                 
             uid: Unique ID of individual. Should be an int.
             
             regChrom: Regulator chromosome resulting from crossing two
                 individuals. List of ones and zeros representing tap positions. 
                 
-            regDict: Dictionary mapping to input regChrom. Regulator tap
-                positions will be updated based on the regChrom
-                
             capChrom: Capacitor chromosome resulting from crossing two
                 individuals. List of ones and zeros representing switch status.
-            
-            capDict: Dictionary mapping to input capChrom. Capacitor switch
-                statuses will be updated based on capChrom.
-            
             
         TODO: add controllable DERs
                 
         """
+        # Assign reg and cap dicts
+        self.reg = reg
+        self.cap = cap
         
         # Assign the unique identifier.
         self.uid = uid
@@ -92,22 +79,23 @@ class individual:
         self.fitness = None
         
         # If not given a regChrom or capChrom, generate them.
-        if regChrom is None and capChrom is None:
+        if (regChrom is None) and (capChrom is None):
             # Generate regulator chromosome:
-            self.genRegChrom(reg=reg, regBias=regBias, peg=peg)
+            self.genRegChrom(regBias=regBias, peg=peg)
             # Generate capacitor chromosome:
-            self.genCapChrom(cap=cap, allCap=allCap)
+            self.genCapChrom(allCap=allCap)
             # TODO: DERs
         else:
             # Use the given chromosomes to update the dictionaries.
-            self.genRegDict(regChrom, regDict, prevReg=reg)
-            self.genCapDict(capChrom, capDict, prevCap=cap)
+            self.regChrom = regChrom
+            self.modifyRegGivenChrom()
+            self.capChrom = capChrom
+            self.modifyCapGivenChrom()
         
-    def genRegChrom(self, reg, regBias, peg):
+    def genRegChrom(self, regBias, peg):
         """Method to randomly generate an individual's regulator chromosome
         
         INPUTS:
-            reg: dict as described in __init__
             regBias: Flag, True or False. True indicates that tap positions
                 for this individual will be biased (via a Gaussian 
                 distribution and the TAPSIGMAPCT constant) toward the previous
@@ -116,6 +104,9 @@ class individual:
             peg: None, 'max', or 'min.' If 'None' is provided, input has no 
                 affect. 'max' will put all regulator taps at maximum position,
                 and 'min' will put all regulator taps at minimum position.
+                
+        OUTPUTS:
+            sets self.regChrom and modifies self.reg
             
         NOTES:
             If the peg input is not None, regBias must be False.
@@ -130,19 +121,13 @@ class individual:
         
         # Initialize chromosome for regulator and dict to store list indices.
         self.regChrom = []
-        self.reg = dict()
          
         # Intialize index counters.
         s = 0;
         e = 0;
         
         # Loop through the regs and create binary representation of taps.
-        for r, v in reg.items():
-            
-            # Initialize dict for tracking regulator indices in the chromosome
-            self.reg[r] = dict()
-            self.reg[r]['raise_taps'] = v['raise_taps']
-            self.reg[r]['lower_taps'] = v['lower_taps']
+        for r, v in self.reg.items():
             
             # Define the upper tap bound (tb).
             tb = v['raise_taps'] + v['lower_taps'] - 1
@@ -150,53 +135,47 @@ class individual:
             # Compute the needed field width to represent the upper tap bound
             width = math.ceil(math.log(tb, 2))
             
-            # Initialize dict for taps
-            self.reg[r]['taps'] = dict()
-            
             # If we're pegging, set the position high or low.
             if peg:
                 if peg == 'max':
-                    tapPos = tb
+                    newState = tb
                 elif peg == 'min':
-                    tapPos = 0
+                    newState = 0
             elif regBias:
                 # If we're biasing from the previous position, get a sigma for
                 # the Gaussian distribution.
                 tapSigma = round(TAPSIGMAPCT * (tb + 1))
-                
-            # Randomly choose a viable tap setting to mu for the standard dist.
-            # tapMu = random.randint(0, tb)
             
             # Loop through the phases
-            for tap, position in v['taps'].items():
-                # Initialize dict for this tap.
-                self.reg[r]['taps'][tap] = dict()
+            for phase, phaseData in v['phases'].items():
                 
-                # Translate given position to integer on interval [0, tb]
-                position = gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
-                                                        pos=position)
-                
+                # If we're biasing new positions based on previous positions:
                 if regBias:
                     # Randomly draw tap position from gaussian distribution.
                     
-                    # Initialize the tapPos for while loop.
-                    tapPos = -1
+                    # Translate previous position to integer on interval [0,tb]
+                    prevState = \
+                        gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
+                                                 pos=phaseData['prevState'])
+                        
+                    # Initialize the newState for while loop.
+                    newState = -1
                     
                     # The standard distribution runs from (-inf, +inf) - draw 
                     # until position is valid. Recall valid positions are
                     # [0, tb]
-                    while (tapPos < 0) or (tapPos > tb):
+                    while (newState < 0) or (newState > tb):
                         # Draw the tap position from the normal distribution.
                         # Here oure 'mu' is the previous value
-                        tapPos = round(random.gauss(position, tapSigma))
+                        newState = round(random.gauss(prevState, tapSigma))
                         
                 elif not peg:
                     # If we made it here, we aren't implementing a previous 
                     # bias or 'pegging' the taps. Randomly draw.
-                    tapPos = random.randint(0, tb)
+                    newState = random.randint(0, tb)
                 
                 # Express tap setting as binary list with consistent width.
-                binList = [int(x) for x in "{0:0{width}b}".format(tapPos,
+                binList = [int(x) for x in "{0:0{width}b}".format(newState,
                                                                   width=width)]
                 
                 # Extend the regulator chromosome.
@@ -205,29 +184,33 @@ class individual:
                 # Increment end index.
                 e += len(binList)
                 
-                # Translate tapPos for GridLAB-D.
-                self.reg[r]['taps'][tap]['pos'] = \
-                    gld.translateTaps(lowerTaps=v['lower_taps'], pos=tapPos)
+                # Translate newState for GridLAB-D.
+                self.reg[r]['phases'][phase]['newState'] = \
+                    gld.translateTaps(lowerTaps=v['lower_taps'], pos=newState)
                     
                 # Increment the tap change counter (previous pos - this pos)
-                self.tapChangeCount += abs(position - tapPos)
+                self.tapChangeCount += \
+                    abs(self.reg[r]['phases'][phase]['prevState']
+                        - self.reg[r]['phases'][phase]['newState'])
                 
-                # Assign indices for this regulator
-                self.reg[r]['taps'][tap]['ind'] = (s, e)
+                # Assign indices for this phase
+                self.reg[r]['phases'][phase]['chromInd'] = (s, e)
                 
                 # Increment start index.
                 s += len(binList)
                 
-    def genCapChrom(self, cap, allCap):
+    def genCapChrom(self, allCap):
         """Method to randomly generate an individual's capacitor chromosome.
         Alternatively, if the allCap input is provided, all capacitors will
         be forced to the same status provided.
         
         INPUTS:
-            cap: dict as described in __init__
             allCap: None to do nothing, or one of the strings given in
                 CAPSTATUS ('OPEN' or 'CLOSED') which forces all caps to assume
                 the given status
+                
+        OUTPUTS:
+            modifies self.cap, sets self.capChrom
         """
         # If we're forcing all caps to the same status, determine the binary
         # representation. TODO: add input checking.
@@ -237,19 +220,15 @@ class individual:
         
         # Initialize chromosome for capacitors and dict to store list indices.
         self.capChrom = []
-        self.cap = dict()
+
         # Keep track of chromosome index
         ind = 0
+        
         # Loop through the capacitors, randomly assign state for each phase
-        # 0 --> open, 1 --> closed
-        for c, p in cap.items():
-            # Initialize dict for this capacitor
-            self.cap[c] = {}
+        for c, capData in self.cap.items():
             
             # Loop through the phases and randomly decide state
-            for phase in p:
-                # Initialize subdict
-                self.cap[c][phase] = {}
+            for phase in capData['phases']:
                 
                 # Randomly determine capacitor status if allCap is None
                 if allCap is None:
@@ -258,91 +237,64 @@ class individual:
                 
                 # Assign to the capacitor
                 self.capChrom.append(capBinary)
-                self.cap[c][phase]['status'] = capStatus
-                self.cap[c][phase]['ind'] = ind
+                self.cap[c]['phases'][phase]['newState'] = capStatus
+                self.cap[c]['phases'][phase]['chromInd'] = ind
                 
                 # Increment the switch counter if applicable
-                if capStatus != p[phase]:
+                if (self.cap[c]['phases'][phase]['newState'] !=
+                        self.cap[c]['phases'][phase]['prevState']):
+                    
                     self.capSwitchCount += 1
                 
                 # Increment the chromosome counter
                 ind += 1
                 
-    def genRegDict(self, regChrom, regDict, prevReg):
-        """Create and assign new regDict from regChrom
-        
-        INPUTS:
-            regChrom: Pre-constructed regulator chromosome. See 'genRegChrom'
-            regDict: Dictionary corresponding to the regChrom, except the tap
-                positions haven't been updated to reflect the regChrom.
-            prevReg: Dictionary as described by 'reg' in __init__. This will be
-                used to increment tap-changer count.
-        TODO: track tap changes
+    def modifyRegGivenChrom(self):
+        """Modifiy self.reg based on self.regChrom
         """
-        # Loop through the regDict and correct tap positions
-        for reg, t in regDict.items():
-            for tap, tapData in t['taps'].items():
+        # Loop through self.reg and update 'newState'
+        for r, regData in self.reg.items():
+            for phase, phaseData in regData['phases'].items():
+                
                 # Extract the binary representation of tap position.
-                tapBin = regChrom[tapData['ind'][0]:tapData['ind'][1]]
-                # Convert the binary to an integer
-                posInt = self.bin2int(tapBin)
-                # Convert integer to tap position
-                regDict[reg]['taps'][tap]['pos'] = \
-                    gld.translateTaps(lowerTaps=regDict[reg]['lower_taps'],
-                                      pos=posInt)
-                # Increment the tap change counter (previous pos - this pos)
-                self.tapChangeCount += abs(prevReg[reg]['taps'][tap] 
-                                           - regDict[reg]['taps'][tap]['pos'])
+                tapBin = \
+                    self.regChrom[phaseData['chromInd'][0]:\
+                                  phaseData['chromInd'][1]]
                     
-        # Assign the regChrom and regDict
-        self.regChrom = regChrom
-        self.reg = regDict 
-        
+                # Convert the binary to an integer
+                posInt = helper.bin2int(tapBin)
+                
+                # Convert integer to tap position and assign to new position
+                self.reg[r]['phases'][phase]['newState'] = \
+                    gld.translateTaps(lowerTaps=self.reg[r]['lower_taps'],
+                                      pos=posInt)
+                    
+                # Increment the tap change counter (previous pos - this pos)
+                self.tapChangeCount += \
+                    abs(self.reg[r]['phases'][phase]['prevState']
+                        - self.reg[r]['phases'][phase]['newState'])
     
-    def genCapDict(self, capChrom, capDict, prevCap):
-        """Create and assign new capDict from capChrom.
-        
-        INPUTS:
-            capChrom: Pre-constructed capacitor chromosom. See 'genCapChrom'
-            capDict: Dictionary corresponding to the capChrom, except the phase
-                statuses haven't been updated to reflect capChrom.
-            prevCap: Dictionary of previous capacitor statues as described
-                in __init__ of 'cap' input
+    def modifyCapGivenChrom(self):
+        """Modify self.cap based on self.capChrom
         """
-        # Loop through the capDict and correct status
-        for cap, d in capDict.items():
-            for phase, phaseData in d.items():
-                # Read chromosome and reassign the capDict
-                capDict[cap][phase]['status'] = \
-                    CAPSTATUS[capChrom[phaseData['ind']]]
+        # Loop through the capDict and assign 'newState'
+        for c, capData in self.cap.items():
+            for phase in capData['phases']:
+                # Read chromosome and assign newState
+                self.cap[c]['phases'][phase]['newState'] = \
+                    CAPSTATUS[self.capChrom[self.cap[c]['phases'][phase]\
+                                            ['chromInd']]]
                 
                 # Bump the capacitor switch count if applicable
-                if capDict[cap][phase]['status'] != prevCap[cap][phase]:
+                if self.cap[c]['phases'][phase]['newState'] != \
+                        self.cap[c]['phases'][phase]['prevState']:
+                    
                     self.capSwitchCount += 1
                 
-                    
-        # Assign the capChrom and capDict to the individual
-        self.capChrom = capChrom
-        self.cap = capDict
-        
-    
-    @staticmethod
-    def bin2int(binList):
-        """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
-        convert to an integer
-        """
-        # TODO: unit test
-        # initialize number and counter
-        n = 0
-        k = 0
-        for b in reversed(binList):
-            n += b * (2 ** k)
-            k += 1
-            
-        return n
-                
     def writeModel(self, strModel, inPath, outDir):
-        """Create a GridLAB-D .glm file for the given individual.
+        """Create a GridLAB-D .glm file for the given individual by modifying
+        setpoints for controllable devices (capacitors, regulators, eventually
+        DERs)
         
         INPUTS:
             self: constructed individual
@@ -357,9 +309,10 @@ class individual:
         """
         
         # Get the filename of the original model and create output path
-        outPath = writeCommands.writeCommands.addFileSuffix(inPath=inPath,
-                                                            suffix=str(self.uid),
-                                                            outDir = outDir)
+        outPath = \
+            writeCommands.writeCommands.addFileSuffix(inPath=inPath,
+                                                      suffix=str(self.uid),
+                                                      outDir = outDir)
         
         # Track the output path for running the model later.
         self.model = outPath
@@ -384,34 +337,16 @@ class individual:
         self.triplexColumns = o['columns']
         self.triplexInterval = o['interval']
         ''' 
-        # TODO: incorporate the two loops below into the functions that build
-        # self.reg and self.cap. This double-looping is inefficient.
-        # Get regulators in dict usable by writeCommands
-        regDict = dict()
-        for reg, tapDict in self.reg.items():
-            # For now, force regulators to be in MANUAL control mode.
-            regDict[reg] = {'regulator': {}, 
-                            'configuration': {'Control': 'MANUAL'}}
-            # Assign tap positions.
-            for tap in tapDict['taps']:
-                regDict[reg]['regulator'][tap] = tapDict['taps'][tap]['pos']
-                
-        # Get capacitors in dict usable by writeCommands
-        capDict = dict()
-        for cap, capData in self.cap.items():
-            # Initialize dict for this cap
-            capDict[cap] = {}
-            for phase in capData:
-                capDict[cap][phase] = capData[phase]['status']
-
-            # For now, force capacitors to be in 'MANUAL' control mode.
-            capDict[cap]['control'] = 'MANUAL'
+        # Set regulator and capacitor control schemes to manual.
+        for r in self.reg:
+            self.reg[r]['Control'] = 'MANUAL'
             
-        # TODO: DERs (PV inverters) will need handled here.
+        for c in self.cap:
+            self.cap[c]['control'] = 'MANUAL'
         
-        # Change capacitor and regulator statuses/positions
-        writeObj.commandRegulators(regulators=regDict)
-        writeObj.commandCapacitors(capacitors=capDict)
+        # Change capacitor and regulator statuses/positions.
+        writeObj.commandRegulators(reg=self.reg)
+        writeObj.commandCapacitors(cap=self.cap)
         
         # Write the modified model to file.
         writeObj.writeModel()
@@ -457,42 +392,3 @@ class individual:
         self.energyCost = r['energy']
         self.tapCost = r['tap']
         self.capCost = r['cap']
-        
-'''
-DEPRECATED             
-if __name__ == "__main__":
-    obj = individual(reg={'R2-12-47-2_reg_1': {
-                                                'raise_taps': 16, 
-                                                'lower_taps': 16,
-                                                'taps': [
-                                                    'tap_A',
-                                                    'tap_B',
-                                                    'tap_C'
-                                                ]
-                                               },
-                          'R2-12-47-2_reg_2': {
-                                                'raise_taps': 16,
-                                                'lower_taps': 16,
-                                                'taps': [
-                                                    'tap_A',
-                                                    'tap_B',
-                                                    'tap_C'
-                                                ]
-                                               }
-                          },
-                     cap={'R2-12-47-2_cap_1': ['switchA', 'switchB', 'switchC'],
-                          'R2-12-47-2_cap_2': ['switchA', 'switchB', 'switchC'],
-                          'R2-12-47-2_cap_3': ['switchA', 'switchB', 'switchC'],
-                          'R2-12-47-2_cap_4': ['switchA', 'switchB', 'switchC']
-                          },
-                     uid=1)
-    inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
-    strModel = writeCommands.readModel(inPath)
-    obj.writeModel(strModel=strModel, inPath=inPath,
-                   outDir='C:/Users/thay838/Desktop/vvo')
-    r = obj.runModel()
-    obj.evalFitness()
-    print('hooray')
-'''
-        
-        

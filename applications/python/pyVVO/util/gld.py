@@ -1,8 +1,62 @@
-'''
+"""Module for interfacing with GridLAB-D.
+
+IMPORTANT: 
+For consistency, there will be one global dictionary format for regulators and
+one global dictionary format for capacitors. That is defined below:
+
+Global regulator dictionary:
+Top level keys are regulator names.
+
+regulators={'reg_VREG4': {'raise_taps': 16,
+                          'lower_taps': 16,
+                          'phases': {'A': {'newState': 10, 'prevState': 11,
+                                           'chromInd': (0, 4)},
+                                     'B': {'newState': 7, 'prevState': 11, 
+                                           'chromInd': (4, 8)},
+                                     'C': {'newState': 2, 'prevState': 4,
+                                           'chromInd': (8, 12)},
+                                  },
+                          'Control': 'MANUAL'
+                         },
+            'reg_VREG2': {'raise_taps': 16,
+                          'lower_taps': 16,
+                          'phases': {'A': {'newState': 10, 'prevState': 11,
+                                           'chromInd': (12, 16)},
+                                     'B': {'newState': 7, 'prevState': 11, 
+                                           'chromInd': (16, 20)},
+                                     'C': {'newState': 2, 'prevState': 4,
+                                           'chromInd': (20, 24)},
+                                  },
+                          'Control': 'MANUAL'
+                          }
+            }
+
+capacitors={'cap_capbank2a': {'phases': {'A': {'newState': 'CLOSED',
+                                               'prevState': 'OPEN', 
+                                               'chromInd': 0
+                                               },
+                                         'B': {'newState': 'OPEN',
+                                               'prevState': 'OPEN',
+                                               'chromInd': 1
+                                               },
+                                         },
+                              'control': 'MANUAL'
+                             },
+            'cap_capbank2c': {'phases': {'A': {'newState': 'CLOSED',
+                                               'prevState': 'OPEN',
+                                               'chromInd': 2
+                                               },
+                                         'C': {'newState': 'OPEN',
+                                               'prevState': 'OPEN',
+                                               'chromInd': 3}
+                                         }
+                              }
+            }
+
 Created on Aug 29, 2017
 
 @author: thay838
-'''
+"""
 import subprocess
 from util import db
 
@@ -107,7 +161,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
         # Sum all the tap changes.
         tapChangeCount = db.sumMatrix(cursor=cursor, table=tapChangeTable,
                                       cols=tapChangeColumns, tCol=tCol,
-                                      starttime=starttime, stoptime=stoptime)
+                                      starttime=stoptime, stoptime=stoptime)
     elif (tapChangeCount is None):
         assert False, ("If tapChangeCount is not specified, tapChangeTable and"
                        " tapChangeColumns must be specified!")
@@ -123,7 +177,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
         # Sum all the tap changes.
         capSwitchCount = db.sumMatrix(cursor=cursor, table=capSwitchTable,
                                       cols=capSwitchColumns, tCol=tCol,
-                                      starttime=starttime, stoptime=stoptime)
+                                      starttime=stoptime, stoptime=stoptime)
     elif (capSwitchCount is None):
         assert False, ("If capSwitchCount is not specified, capSwitchTable and"
                        " capSwitchColumns must be specified!")
