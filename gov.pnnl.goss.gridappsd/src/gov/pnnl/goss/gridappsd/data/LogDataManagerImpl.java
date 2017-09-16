@@ -1,8 +1,17 @@
 package gov.pnnl.goss.gridappsd.data;
 
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.Start;
+
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 
+
+@Component
 public class LogDataManagerImpl implements LogDataManager {
+	
+	@Start
+	public void start(){
+	}
 
 	@Override
 	public void store(String process_id, String username, String timestamp, String log_message, String log_level,

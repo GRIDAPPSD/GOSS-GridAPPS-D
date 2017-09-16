@@ -58,7 +58,7 @@ public class AppInfo implements Serializable {
 	String creator;
 	List<String> inputs;
 	List<String> outputs;
-	HashMap<String, String> options;
+	String options;
 	String execution_path;
 	AppType type;
 	boolean launch_on_startup;
@@ -106,11 +106,11 @@ public class AppInfo implements Serializable {
 		this.outputs = outputs;
 	}
 
-	public HashMap<String, String> getOptions() {
+	public String getOptions() {
 		return options;
 	}
 
-	public void setOptions(HashMap<String, String> options) {
+	public void setOptions(String options) {
 		this.options = options;
 	}
 

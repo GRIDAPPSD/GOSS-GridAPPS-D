@@ -39,15 +39,25 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.app;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.jms.Destination;
 
@@ -94,7 +104,7 @@ public class AppManagerImpl implements AppManager{
 	private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
 	final String CONFIG_DIR_NAME = "config";
-	final String CONFIG_FILE_NAME = "appinfo.json";
+//	final String CONFIG_FILE_NAME = "appinfo.json";
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
@@ -122,6 +132,7 @@ public class AppManagerImpl implements AppManager{
 	
 	@Override
 	public void process(StatusReporter statusReporter, int processId, DataResponse event, Serializable message) throws Exception {
+		System.out.println("APP MANAGER PROCESS RECEIVED ");
 		if(client==null){
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -130,7 +141,7 @@ public class AppManagerImpl implements AppManager{
 		Destination replyDestination = event.getReplyDestination();
 		
 		String destination = event.getDestination();
-		if(destination.startsWith(GridAppsDConstants.topic_app_list)){
+		if(destination.contains(GridAppsDConstants.topic_app_list)){
 			RequestAppList requestObj = RequestAppList.parse(message.toString());
 			if(!requestObj.list_running_only){
 				List<AppInfo> appResponseList = listApps();
@@ -149,25 +160,25 @@ public class AppManagerImpl implements AppManager{
 
 			}
 			 
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_get)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_get)){
 			String appId = message.toString();
 			AppInfo appInfo = getApp(appId);
 			//TODO publish appinfo object on reply destination
 			client.publish(replyDestination, appInfo);
 
 			
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_register)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_register)){
 			RequestAppRegister requestObj = RequestAppRegister.parse(message.toString());
 			registerApp(requestObj.app_info, requestObj.app_package);
 			
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_deregister)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_deregister)){
 			String appId = message.toString();
 			deRegisterApp(appId);
 			
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_start)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_start)){
 			RequestAppStart requestObj = RequestAppStart.parse(message.toString());
 			String instanceId = null;
-			if(requestObj.getSimulation_id()!=null){
+			if(requestObj.getSimulation_id()==null){
 				instanceId = startApp(requestObj.getApp_id(),requestObj.getRuntime_options());
 			} else {
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), requestObj.getSimulation_id());
@@ -175,10 +186,10 @@ public class AppManagerImpl implements AppManager{
 			//TODO publish instance id
 			client.publish(replyDestination, instanceId);
 
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_stop)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
 			String appId = message.toString();
 			stopApp(appId);
-		} else if(destination.startsWith(GridAppsDConstants.topic_app_stop_instance)){
+		} else if(destination.contains(GridAppsDConstants.topic_app_stop_instance)){
 			String appInstanceId = message.toString();
 			stopAppInstance(appInstanceId);
 			
@@ -194,6 +205,7 @@ public class AppManagerImpl implements AppManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
+		System.out.println("STARTING APP MGR");
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Long(new Date().getTime()).toString(), 
 				"Starting "+this.getClass().getName(), 
@@ -216,25 +228,72 @@ public class AppManagerImpl implements AppManager{
 		File appConfigDir = getAppConfigDirectory();
 		
 		//for each app found, parse the appinfo.json config file to create appinfo object and add to apps map
-		File[] appDirs = appConfigDir.listFiles();
-		for(File appDir: appDirs){
-			AppInfo appInfo = parseAppInfo(appDir);
+		File[] appConfigFiles = appConfigDir.listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.endsWith(".json");
+			}
+		});
+		for(File appConfigFile: appConfigFiles){
+			AppInfo appInfo = parseAppInfo(appConfigFile);
 			apps.put(appInfo.getId(), appInfo);
+			System.out.println("FOUND APP "+appInfo.getId());
+
 		}
 	}
 	
 
-	
+	//TODO probably need an updateApp call or integrate this with register app
 	
 	@Override
-	public void registerApp(AppInfo appInfo, Serializable appPackage) {
+	public void registerApp(AppInfo appInfo, byte[] appPackage) throws Exception {
+		System.out.println("REGISTER REQUEST RECEIVED ");
 		//appPackage should be received as a zip file. extract this to the apps directory, and write appinfo to a json file under config/
-		//TODO extract
+		File appHomeDir = getAppConfigDirectory();
+		if(!appHomeDir.exists()){
+			appHomeDir.mkdirs();
+			if(!appHomeDir.exists()){
+				//if it still doesn't exist throw an error
+				throw new Exception("App home directory does not exist and cannot be created "+appHomeDir.getAbsolutePath());
+			}
+		}
+		System.out.println("HOME DIR "+appHomeDir.getAbsolutePath());
+		//create a directory for the app
+		File newAppDir = new File(appHomeDir.getAbsolutePath()+File.separator+appInfo.getId());
+		if(newAppDir.exists()){
+			throw new Exception("App "+appInfo.getId()+" already exists");
+		}
 		
-		writeAppInfo(appInfo);
-		
-		//add to apps
-		apps.put(appInfo.getId(), appInfo);
+		try {
+			newAppDir.mkdirs();
+			//Extract zip file into new app dir 
+			ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(appPackage));
+			ZipEntry entry = zipIn.getNextEntry();
+			// iterates over entries in the zip file and write to dir
+			while (entry != null) {
+				String filePath = newAppDir + File.separator + entry.getName();
+				if (!entry.isDirectory()) {
+					// if the entry is a file, extracts it
+					extractFile(zipIn, filePath);
+				} else {
+					// if the entry is a directory, make the directory
+					File dir = new File(filePath);
+					dir.mkdir();
+				}
+				zipIn.closeEntry();
+				entry = zipIn.getNextEntry();
+			}
+			zipIn.close();
+				
+			writeAppInfo(appInfo);
+			
+			//add to apps hashmap
+			apps.put(appInfo.getId(), appInfo);
+		} catch (Exception e){
+			//Clean up app dir if fails
+			newAppDir.delete();
+			throw e;
+		}
 	}
 
 	@Override
@@ -266,11 +325,13 @@ public class AppManagerImpl implements AppManager{
 
 	@Override
 	public AppInfo getApp(String appId) {
+		appId = appId.trim();
 		return apps.get(appId);
 	}
 
 	@Override
 	public void deRegisterApp(String appId) {
+		appId = appId.trim();
 		// find and stop any running instances
 		stopApp(appId);
 		
@@ -280,17 +341,52 @@ public class AppManagerImpl implements AppManager{
 		//get app directory from config and remove files for app_id
 		File configDir = getAppConfigDirectory();
 		File appDir = new File(configDir.getAbsolutePath()+File.separator+appId);
+		try {
+			Files.walkFileTree(appDir.toPath(), new FileVisitor<Path>() {
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+					if( dir.toFile().delete()){
+						return FileVisitResult.CONTINUE;
+					} else {
+						return FileVisitResult.TERMINATE;
+					}
+				}
+				@Override
+				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+					return FileVisitResult.CONTINUE;
+				}
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					if( file.toFile().delete()){
+						return FileVisitResult.CONTINUE;
+					} else {
+						return FileVisitResult.TERMINATE;
+					}
+				}
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+					return FileVisitResult.TERMINATE;
+				}
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		appDir.delete();
+		
+		File appInfoFile  = new File(configDir.getAbsolutePath()+File.separator+appId+".json");
+		appInfoFile.delete();
 		
 	}
 
 	@Override
-	public String startApp(String appId, HashMap<String, String> runtimeOptions) {
+	public String startApp(String appId, String runtimeOptions) {
 		return startAppForSimultion(appId, runtimeOptions, null);
 	}
 
 	@Override
-	public String startAppForSimultion(String appId, HashMap<String, String> runtimeOptions, String simulationId) {
+	public String startAppForSimultion(String appId, String runtimeOptions, String simulationId) {
+		appId = appId.trim();
 		String instanceId = appId+"-"+new Date().getTime();
 		// get execution path
 		AppInfo appInfo = apps.get(appId);
@@ -305,19 +401,38 @@ public class AppManagerImpl implements AppManager{
 
 		//build options
 		//might need a standard method for replacing things like SIMULATION_ID in the input/output options
+		String optionsString = appInfo.getOptions();
+		if(simulationId!=null){
+			if(optionsString.contains("SIMULATION_ID")){
+				optionsString = optionsString.replace("SIMULATION_ID", simulationId);	
+			}
+			if(runtimeOptions.contains("SIMULATION_ID")){
+				runtimeOptions = runtimeOptions.replace("SIMULATION_ID", simulationId);	
+			}
+		}
+		File appDirectory = new File(getAppConfigDirectory().getAbsolutePath()+File.separator+appId);
 		
 		Process process = null;
 		//something like 
-		if(appInfo.getType().equals(AppType.PYTHON)){
+		if(AppType.PYTHON.equals(appInfo.getType())){
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(appInfo.getExecution_path());
+			commands.add(optionsString);
+			commands.add(runtimeOptions);
 			//TODO add other options
 			
 			
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
+			processAppBuilder.directory(appDirectory);
+			try {
+				process = processAppBuilder.start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 //		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 //		fncsBridgeBuilder.redirectErrorStream(true);
@@ -327,7 +442,7 @@ public class AppManagerImpl implements AppManager{
 //		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
 		//during watch, send stderr/out to logmanager
 			
-		} else if(appInfo.getType().equals(AppType.JAVA)){
+		} else if(AppType.JAVA.equals(appInfo.getType())){
 //			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 //			fncsBridgeBuilder.redirectErrorStream(true);
 //			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
@@ -336,7 +451,7 @@ public class AppManagerImpl implements AppManager{
 //			watch(fncsBridgeProcess, "FNCS GOSS Bridge");
 			//during watch, send stderr/out to logmanager
 				
-		} else if(appInfo.getType().equals(AppType.WEB)){
+		} else if(AppType.WEB.equals(appInfo.getType())){
 //			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 //			fncsBridgeBuilder.redirectErrorStream(true);
 //			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
@@ -363,6 +478,7 @@ public class AppManagerImpl implements AppManager{
 
 	@Override
 	public void stopApp(String appId) {
+		appId = appId.trim();
 		for(AppInstance instance: listRunningApps(appId)){
 			if(instance.getApp_info().getId().equals(appId)){
 				stopAppInstance(instance.getInstance_id());
@@ -373,6 +489,7 @@ public class AppManagerImpl implements AppManager{
 	
 	@Override
 	public void stopAppInstance(String instanceId) {
+		instanceId = instanceId.trim();
 		AppInstance instance = appInstances.get(instanceId);
 		instance.getProcess().destroy();
 		appInstances.remove(instanceId); 
@@ -415,15 +532,15 @@ public class AppManagerImpl implements AppManager{
 		
 	}
 	
-	protected AppInfo parseAppInfo(File appDirectory){
+	protected AppInfo parseAppInfo(File appConfigFile){
 		AppInfo appInfo = null;
-		File confFile = new File(appDirectory.getAbsolutePath()+File.separator+CONFIG_DIR_NAME+File.separator+CONFIG_FILE_NAME);
-		if(!confFile.exists()){
-			throw new RuntimeException("App config file does not exist: "+confFile.getAbsolutePath());
+
+		if(!appConfigFile.exists()){
+			throw new RuntimeException("App config file does not exist: "+appConfigFile.getAbsolutePath());
 		}
 		
 		try {
-			String appConfigStr = new String(Files.readAllBytes(confFile.toPath()));
+			String appConfigStr = new String(Files.readAllBytes(appConfigFile.toPath()));
 			appInfo = AppInfo.parse(appConfigStr);
 		} catch (IOException e) {
 			logManager.log(new LogMessage("App Manager", new Long(new Date().getTime()).toString(), "Error while reading app config file: "+e.getMessage(), "ERROR", "failed", false));
@@ -436,7 +553,7 @@ public class AppManagerImpl implements AppManager{
 	protected void writeAppInfo(AppInfo appInfo){
 		File appConfigDirectory = getAppConfigDirectory();
 		
-		File confFile = new File(appConfigDirectory.getAbsolutePath()+File.separator+appInfo.getId()+File.separator+CONFIG_DIR_NAME+File.separator+CONFIG_FILE_NAME);
+		File confFile = new File(appConfigDirectory.getAbsolutePath()+File.separator+appInfo.getId()+".json");
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
@@ -445,4 +562,15 @@ public class AppManagerImpl implements AppManager{
 	}
 
 
+	private static final int BUFFER_SIZE = 4096;
+
+	private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+		BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
+		byte[] bytesIn = new byte[BUFFER_SIZE];
+		int read = 0;
+		while ((read = zipIn.read(bytesIn)) != -1) {
+			bos.write(bytesIn, 0, read);
+		}
+		bos.close();
+	}
 }

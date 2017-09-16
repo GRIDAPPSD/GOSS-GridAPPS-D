@@ -49,12 +49,12 @@ public class AppInstance implements Serializable{
 	
 	String instance_id;
 	AppInfo app_info;
-	HashMap<String, String> runtime_options;
+	String runtime_options;
 	String simulation_id;
 	Process process;
 	
 	
-	public AppInstance(String instance_id, AppInfo app_info, HashMap<String, String> runtime_options, String simulation_id, Process process){
+	public AppInstance(String instance_id, AppInfo app_info, String runtime_options, String simulation_id, Process process){
 		this.instance_id = instance_id;
 		this.app_info = app_info;
 		this.runtime_options = runtime_options;
@@ -79,11 +79,11 @@ public class AppInstance implements Serializable{
 		this.app_info = app_info;
 	}
 
-	public HashMap<String, String> getRuntime_options() {
+	public String getRuntime_options() {
 		return runtime_options;
 	}
 
-	public void setRuntime_options(HashMap<String, String> runtime_options) {
+	public void setRuntime_options(String runtime_options) {
 		this.runtime_options = runtime_options;
 	}
 

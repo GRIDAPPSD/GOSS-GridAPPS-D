@@ -203,9 +203,14 @@ if __name__ == "__main__":
 
     parser.add_argument("simulationId",
                         help="Simulation id to use for responses on the message bus.")
-    parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
-                        default=sys.stdin,
-                        help="Static configuration file for VVO app")
+# FYI Changed this to use either -c or -f so the config can be passed in on the command line						
+#    parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
+#                   default=sys.stdin,
+#                        help="Static configuration file for VVO app")
+    parser.add_argument("-c", "--config",  
+                        help="The static configuration string for VVO app, if used then -f will be ignored")						
+    parser.add_argument("-f", "--infile",  type=argparse.FileType('r'),
+                        help="The static configuration file for VVO app, will be ignored if -c is also used")						
     parser.add_argument("-u", "--user", default="system",
                         help="The username to authenticate with the message bus.")
     parser.add_argument("-p", "--password", default="manager",
@@ -219,7 +224,15 @@ if __name__ == "__main__":
     opts = parser.parse_args()
 
     logger.debug("Waiting for ")
-    static_config = yaml.safe_load(opts.infile.read())
+    
+    if not opts.config is None:
+        static_config = yaml.safe_load(opts.config)
+    elif not opts.infile is None:
+        static_config = yaml.safe_load(opts.infile.read())
+    else:
+        sys.stderr.write("Error: config or infile parameter expected")
+        logger.error('Error: config or infile parameter expected')
+        exit(1)
     logger.debug("Received static config "+str(static_config))
     # TODO validate that we are getting the correct things here.
     keys = static_config['static_inputs'].keys()
