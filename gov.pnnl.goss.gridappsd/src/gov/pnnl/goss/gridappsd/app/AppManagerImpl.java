@@ -103,8 +103,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 public class AppManagerImpl implements AppManager{
 	private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
-	final String CONFIG_DIR_NAME = "config";
-//	final String CONFIG_FILE_NAME = "appinfo.json";
+	final String CONFIG_FILE_EXT = ".config";
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
@@ -227,11 +226,11 @@ public class AppManagerImpl implements AppManager{
 		//Get directory for apps from the config
 		File appConfigDir = getAppConfigDirectory();
 		
-		//for each app found, parse the appinfo.json config file to create appinfo object and add to apps map
+		//for each app found, parse the appinfo.config file to create appinfo object and add to apps map
 		File[] appConfigFiles = appConfigDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.endsWith(".json");
+				return name.endsWith(CONFIG_FILE_EXT);
 			}
 		});
 		for(File appConfigFile: appConfigFiles){
@@ -374,7 +373,7 @@ public class AppManagerImpl implements AppManager{
 		
 		appDir.delete();
 		
-		File appInfoFile  = new File(configDir.getAbsolutePath()+File.separator+appId+".json");
+		File appInfoFile  = new File(configDir.getAbsolutePath()+File.separator+appId+CONFIG_FILE_EXT);
 		appInfoFile.delete();
 		
 	}
@@ -553,7 +552,7 @@ public class AppManagerImpl implements AppManager{
 	protected void writeAppInfo(AppInfo appInfo){
 		File appConfigDirectory = getAppConfigDirectory();
 		
-		File confFile = new File(appConfigDirectory.getAbsolutePath()+File.separator+appInfo.getId()+".json");
+		File confFile = new File(appConfigDirectory.getAbsolutePath()+File.separator+appInfo.getId()+CONFIG_FILE_EXT);
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
