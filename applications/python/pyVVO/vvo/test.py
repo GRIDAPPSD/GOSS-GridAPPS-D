@@ -3,18 +3,20 @@ Created on Aug 30, 2017
 
 @author: thay838
 '''
-
-if __name__ == '__main__':
-    from powerflow import writeCommands
-    from genetic import population
-    import time
-    from util import db, gld, helper
-    import copy
+from powerflow import writeCommands
+from genetic import population
+import time
+from util import db, gld, helper
+import copy
+    
+def main(populationInputs={}):
     # import subprocess
     # Start MySQL server (no problem if already running). This assumes MySQL
     # was used with a Windows installer and is setup as a Windows service.
     #subprocess.run("net start MySQL57")
-    print('The time is {}'.format(time.ctime(), flush=True))
+    
+    # print('The time is {}'.format(time.ctime(), flush=True))
+    
     # *****************************************************************************
     # Stuff to start
     timezone= "EST+5EDT"
@@ -26,8 +28,8 @@ if __name__ == '__main__':
     playerFile = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/zipload_schedule.player"
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output"
     numInd = 40 # Best if this is a multiple of num cores.
-    numGen = 3
-    numIntervals = 4
+    numGen = 5
+    numIntervals = 1
     tInt = 60 * 15 # 15 minutes
     energyPrice=0.00008
     tapChangeCost=0.5
@@ -123,6 +125,7 @@ if __name__ == '__main__':
     # so no need for a deepcopy
     writeGenetic = copy.copy(writeBench)
     #******************************************************************************
+    """
     # Benchmark model:
     # Switch control strategy to commented version.
     writeBench.switchControl()
@@ -171,24 +174,30 @@ if __name__ == '__main__':
     writeBench.addMetricsCollectors()
     '''
     # Loop over the number of time intervals
+    """
     benchTotal = 0
     geneticTotal = 0 
+    individualsList = []
+    nextUID=0
     for t in range(numIntervals): 
         # Write to file
         print('*'*80, file=f, flush=True)
         print('*'*80, file=f, flush=True)
-        print('Running for {} through {}'.format(starttime, stoptime),
-              flush=True)
+        #print('Running for {} through {}'.format(starttime, stoptime),
+        #      flush=True)
         print('Running for {} through {}'.format(starttime, stoptime),
               file=f, flush=True)
+        """
         # Command the benchmark regulators and capacitors
         writeBench.commandCapacitors(cap=capBench)
         writeBench.commandRegulators(reg=regBench)
         # Update clocks.
         writeBench.updateClock(starttime=starttime, stoptime=stoptime,
                                timezone=timezone)
+        """
         writeGenetic.updateClock(stoptime=stoptime, starttime=starttime,
                                  timezone=timezone)
+        """
         # Write benchmark model
         writeBench.writeModel()
         # Run the model
@@ -212,7 +221,8 @@ if __name__ == '__main__':
                                       tapChangeTable=regTable,
                                       tapChangeColumns=regTableChangeCols,
                                       capSwitchTable=capTable,
-                                      capSwitchColumns=capTableChangeCols)
+                                      capSwitchColumns=capTableChangeCols,
+                                      )
         # Write result to file.
         print('Benchmark scores:', file = f, flush=True)
         print('  Total: {:.4g}'.format(benchScores['total']), file=f,
@@ -248,9 +258,10 @@ if __name__ == '__main__':
         # Close database cursor and connection.
         cursor.close()
         cnxn.close()
+        """
         #******************************************************************************
         # Run genetic algorithm.
-        print('Initializing population...', flush=True)
+        # print('Initializing population...', flush=True)
         print('*' * 80, file=f)
         t0 = time.time()
         popObj = population.population(starttime=starttime, stoptime=stoptime,
@@ -262,53 +273,40 @@ if __name__ == '__main__':
                                        outDir=outDir,
                                        energyPrice=energyPrice,
                                        tapChangeCost=tapChangeCost,
-                                       capSwitchCost=capSwitchCost
+                                       capSwitchCost=capSwitchCost,
+                                       individualsList=individualsList,
+                                       nextUID=nextUID,
+                                       **populationInputs
                                       )
-        print('Beginning genetic algorithm...', flush=True)
+        # print('Beginning genetic algorithm...', flush=True)
         bestIndividual = popObj.ga()
-        print('Genetic algorithm complete.',flush=True)
+        """
+        # Pull the first 10% of individuals
+        individualsList=popObj.individualsList[0:round(len(popObj.individualsList)*0.1)]
+        nextUID = popObj.nextUID
+        # print('Genetic algorithm complete.',flush=True)
         # Update 'reg' and 'cap' based on the most fit individual.
         reg = copy.deepcopy(bestIndividual.reg)
         cap = copy.deepcopy(bestIndividual.cap)
         reg, cap = helper.rotateVVODicts(reg=reg, cap=cap, deleteFlag=True)
-        print('Printing results to file...', flush=True)
-        print('The time is {}'.format(time.ctime(), flush=True))
+        """
+        # print('Printing results to file...', flush=True)
+        # print('The time is {}'.format(time.ctime(), flush=True))
         t1 = time.time()
         print('{} individuals per {} generations'.format(numInd, numGen),
-              file=f)
-        print('Runtime: {:.0f} s'.format(t1-t0), file=f)
-        print('Scores: ', file=f)
+              file=f, flush=True)
+        print('Runtime: {:.0f} s'.format(t1-t0), file=f, flush=True)
+        print('Scores: ', file=f,flush=True)
         for s in popObj.generationBest:
-            print('{:.4g}'.format(s), end=', ', file=f)
+            print('{:.4g}'.format(s), end=', ', file=f, flush=True)
         # Increment genetic total
         geneticTotal += popObj.generationBest[-1]
         print(file=f)
-        print('Best Individual:', file=f)
-        print('Scores: ', file=f, flush=True)
-        print('  Total: {:.4g}'.format(bestIndividual.fitness), file=f,
-              flush=True)
-        print('  Energy: {:.4g}'.format(bestIndividual.energyCost), file=f,
-              flush=True)
-        print('  Reg: {:.4g}'.format(bestIndividual.tapCost), file=f,
-              flush=True)
-        print('  Cap: {:.4g}'.format(bestIndividual.capCost), file=f,
-              flush=True)
-        print('\tCapacitor settings:', file=f)
-        for capName, capDict in bestIndividual.cap.items():
-            print('\t\t' + capName + ':', file=f)
-            for switchName, switchDict in capDict['phases'].items():
-                print('\t\t\t' + switchName + ': ' 
-                      + switchDict['newState'], file=f)
-        
-        print('\tRegulator settings:', file=f)
-        for regName, regDict in bestIndividual.reg.items():
-            print('\t\t' + regName + ':', file=f)
-            for tapName, tapDict in regDict['phases'].items():
-                print('\t\t\t' + tapName + ': ' + str(tapDict['newState']),
-                      file=f)
-            
+        print('Best Individual:', file=f, flush=True)
+        print(bestIndividual, file=f, flush=True)
         print('*' * 80, file=f, flush=True)
         
+        """
         # Increment the time
         # TODO: Daylight savings problems?
         # TODO: We're running an extra minute of simulation each run.
@@ -321,3 +319,9 @@ if __name__ == '__main__':
     print('Benchmark grand total: {:.5g}'.format(benchTotal), file=f)
     print('Genetic grand total: {:.5g}'.format(geneticTotal), file=f)  
     print('Results printed to file. All done.', flush=True)
+    """
+    
+    return bestIndividual.fitness
+    
+if __name__ == '__main__':
+    main()

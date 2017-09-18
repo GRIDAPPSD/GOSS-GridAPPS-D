@@ -12,12 +12,15 @@ import threading
 from util import db
 import sys
 import copy
-    
+
 class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
                  starttime, stoptime, numThreads=os.cpu_count(),
-                 energyPrice=0.00008, tapChangeCost=0.5, capSwitchCost=2):
+                 energyPrice=0.00008, tapChangeCost=0.5, capSwitchCost=2, 
+                 individualsList=[], nextUID=0, topPct=0.2, weakProb=0.2, 
+                 popMutateProb=0.2, crossProb=0.7, capGeneMutateProb=0.1,
+                 regGeneMutateProb=0.05):
         """Initialize a population of individuals.
         
         INPUTS:
@@ -95,42 +98,52 @@ class population:
         # Track weights of fitness for "roulette wheel" method
         self.rouletteWeights = None
         
+        # Assign probabilites, etc.
+        self.topPct = topPct
+        self.weakProb = weakProb 
+        self.popMutateProb = popMutateProb
+        self.crossProb = crossProb
+        self.capGeneMutateProb = capGeneMutateProb
+        self.regGeneMutateProb = regGeneMutateProb
+        
         # Initialize individuals.
         # TODO: make this loop parallel?
         # TODO: individuals should take strModel + paths as input to
         # constructor
-        self.individualsList = []
+        self.individualsList = individualsList
+        self.nextUID = nextUID
         
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
-        c = 0
+        c = len(self.individualsList)
         for allCap in individual.CAPSTATUS:
             for peg in individual.REGPEG:
-                self.individualsList.append(individual.individual(uid=c,
+                self.individualsList.append(individual.individual(uid=self.nextUID,
                                                           reg=copy.deepcopy(reg),
                                                           peg=peg,
                                                           cap=copy.deepcopy(cap),
                                                           allCap=allCap))
                 c += 1
+                self.nextUID += 1
                 
         # Create individuals with biased regulator positions
         # TODO: Stop hard-coding the number.
         # TODO: Consider leaving capacitors the same.
-        for n in range(c, c+4):
-            self.individualsList.append(individual.individual(uid=n,
+        for _ in range(c, c+4):
+            self.individualsList.append(individual.individual(uid=self.nextUID,
                                                       reg=copy.deepcopy(reg),
                                                       regBias=True,
                                                       cap=copy.deepcopy(cap)))
             c += 1
+            self.nextUID += 1
         
         # Randomly create the rest of the individuals.
-        for n in range(c, numInd):
+        for _ in range(c, numInd):
             # Initialize individual.
-            self.individualsList.append(individual.individual(uid=n, 
+            self.individualsList.append(individual.individual(uid=self.nextUID,
                                                       reg=copy.deepcopy(reg), 
                                                       cap=copy.deepcopy(cap)))
+            self.nextUID += 1
             
-        # Track the current UID
-        self.nextUID = n + 1
         
     def ga(self):
         """Main function to run the genetic algorithm.
@@ -166,10 +179,15 @@ class population:
                 # Get the number of remaining individuals
                 n = len(self.individualsList)
                 
+                # Measure diversity
+                # regDiff, capDiff = self.measureDiversity()
+                
                 # Replenish the population by crossing individuals.
                 self.crossAndMutate()
                 
                 # Put the new individuals in the queue for processing
+                # TODO: If this is performed in crossAndMutate, we'll see a
+                # small speedup and a moderate code simplification.
                 for ind in range(n, len(self.individualsList)):
                     self.qIn.put_nowait({'individual':self.individualsList[ind],
                                          'strModel': self.strModel,
@@ -265,23 +283,17 @@ class population:
                 cursor.close()
                 cnxn.close()
                 
-    def naturalSelection(self, top=0.2, keepProb=0.2):
+    def naturalSelection(self):
         """Determines which individuals will be used to create next generation.
-        
-        INPUTS:
-            top: decimal in set (0, 1). Determines percentage of top
-                individuals to be used to regenerate the population
-            keepProb: decimal in set [0, 1). Probability another random
-                individual is kept to regenerate the population
         """
         # Determine how many individuals to keep for certain.
-        k = math.ceil(top * len(self.individualsList))
+        k = math.ceil(self.topPct * len(self.individualsList))
         
         # Loop over the unfit individuals, and either delete or keep based on
-        # the keepProb
+        # the weakProb
         while len(self.individualsList) > k:
             # Randomly decide whether or not to keep an unfit individual
-            if random.random() > keepProb:
+            if random.random() > self.weakProb:
                 # Delete this individual
                 del self.individualsList[k]
             else:
@@ -290,16 +302,27 @@ class population:
         
         # Compute fitness sum for surviving individuals and assign a weight
         self.fitSum = 0
-        self.rouletteWeights = []
+        # TODO: If locks are used, the threaded fitness computation could add
+        # to the fitSum, and we could cut down on some looping.
         for individual in self.individualsList:
             # Add the score.
             self.fitSum += individual.fitness
+            '''
             # Give the weight as a fraction of the best score. Higher weight
             # means higher likelihood of being picked for crossing/mutation
             self.rouletteWeights.append(self.individualsList[0].fitness
                                         / individual.fitness)
+            '''
+            '''
+            self.rouletteWeights.append(round(3 ** 
+                                        (self.individualsList[-1].fitness
+                                         / individual.fitness), 2))
+            '''
+        self.rouletteWeights = []
+        for individual in self.individualsList:
+            self.rouletteWeights.append(1 / (individual.fitness/self.fitSum))
     
-    def crossAndMutate(self, popMutate=0.2, crossChance=0.7, mutateChance=0.1):
+    def crossAndMutate(self):
         """Crosses traits from surviving individuals to regenerate population.
         
         INPUTS:
@@ -310,9 +333,9 @@ class population:
         # Loop until population has been replenished.
         # Extract the number of individuals.
         n = len(self.individualsList)
-        
+        #chooseCount = []
         while len(self.individualsList) < self.numInd:
-            if random.random() < crossChance:
+            if random.random() < self.crossProb:
                 # Since we're crossing over, we won't force a mutation.
                 forceMutate = False
 
@@ -321,18 +344,22 @@ class population:
                 _individualsList = [0, 0]
                 while _individualsList[0] == _individualsList[1]:
                     # Pick two individuals based on cumulative weights.
-                    _individualsList = random.choices(self.individualsList[:n],
+                    _individualsList = random.choices(self.individualsList[0:n],
                                                       weights=\
                                                         self.rouletteWeights,
                                                       k=2)
-            
+                # Keep track of who created these next individuals.
+                parents = (_individualsList[0].uid, _individualsList[1].uid)
+                
                 # Cross the regulator chromosomes
-                regChrom = self.crossChrom(chrom1=_individualsList[0].regChrom,
-                                           chrom2=_individualsList[1].regChrom)
+                regChroms = self.crossChrom(
+                                        chrom1=_individualsList[0].regChrom,
+                                        chrom2=_individualsList[1].regChrom)
                 
                 # Cross the capaictor chromosomes
-                capChrom = self.crossChrom(chrom1=_individualsList[0].capChrom,
-                                           chrom2=_individualsList[1].capChrom)
+                capChroms = self.crossChrom(
+                                        chrom1=_individualsList[0].capChrom,
+                                        chrom2=_individualsList[1].capChrom)
                 
                 # TODO: Cross DER chromosomes
             else:
@@ -343,62 +370,101 @@ class population:
                                                   weights=self.rouletteWeights,
                                                   k=1)
                 
-                # Grab the necessary chromosomes
-                regChrom = _individualsList[0].regChrom
-                capChrom = _individualsList[0].capChrom
+                # Track parents
+                parents = (_individualsList[0].uid,)
+                # Grab the necessary chromosomes, put in a list
+                regChroms = [_individualsList[0].regChrom]
+                capChroms = [_individualsList[0].capChrom]
                 # TODO. DER chromosome.
             
-            # Possibly mutate this new individual.
-            if forceMutate or (random.random() < popMutate):
+            # Track chosen individuals.
+            """
+            for i in _individualsList:
+                uids = [x[1] for x in chooseCount]
+                if i.uid in uids:
+                    ind = uids.index(i.uid)
+                    # Increment the occurence count
+                    chooseCount[ind][2] += 1
+                else:
+                    chooseCount.append([i.fitness, i.uid, 1])
+            """
+            
+            # Possibly mutate individual(s).
+            if forceMutate or (random.random() < self.popMutateProb):
                 # Mutate regulator chromosome:
-                regChrom = self.mutateChrom(c=regChrom,
-                                            mutateChance=mutateChance)
+                regChroms = self.mutateChroms(c=regChroms,
+                                            mutateChance=self.regGeneMutateProb)
                 # Mutate capacitor chromosome:
-                capChrom = self.mutateChrom(c=capChrom,
-                                            mutateChance=mutateChance)
+                capChroms = self.mutateChroms(c=capChroms,
+                                            mutateChance=self.capGeneMutateProb)
                 # TODO: Mutate DER chromosome
+                """
+                print('Reg: {} genes mutated. Cap: {} genes mutated.'.format(
+                        rCount, cCount), flush=True)
+                """
             
-            # Create individual based on new chromosomes, add to individualsList
-            self.individualsList.append(
-                individual.individual(uid=self.nextUID, 
-                                      regChrom=regChrom,
-                                      capChrom=capChrom,
-                                      reg=copy.deepcopy(
-                                          _individualsList[0].reg),
-                                      cap=copy.deepcopy(
-                                          _individualsList[0].cap)
-                                      )
-                                        )
-            
-            # Increment UID
-            self.nextUID += 1
-            
+            # Create individuals based on new chromosomes,
+            # add to individualsList
+            for i in range(len(regChroms)):
+                self.individualsList.append(
+                    individual.individual(uid=self.nextUID, 
+                                          regChrom=regChroms[i],
+                                          capChrom=capChroms[i],
+                                          reg=copy.deepcopy(
+                                              _individualsList[0].reg),
+                                          cap=copy.deepcopy(
+                                              _individualsList[0].cap
+                                                            ),
+                                          parents=parents
+                                          )
+                                            )
+                
+                # Increment UID
+                self.nextUID += 1
+        
+        """
+        # Sort the chooseCount by number of occurences
+        chooseCount.sort(key=lambda x: x[2])
+        print('Fitness, UID, Occurences', flush=True)
+        for el in chooseCount:
+            print('{:.2f},{},{}'.format(el[0], el[1], el[2]))
+        """
+        
     @staticmethod
-    def mutateChrom(c, mutateChance):
+    def mutateChroms(c, mutateChance):
         """Take a chromosome and randomly mutate it.
         
         INPUTS:
-            c: chromosome, list of 1's and 0's. Ex: [1, 0, 0, 1, 0]
+            c: list of chromsomes, which are tuples of 1's and 0's. Ex: (1, 0, 0, 1, 0)
             mutateChance: decimal in set [0.0, 1.0] to determine chance of
-                mutating (bit-flipping) and individual gene
+                mutating (bit-flipping) an individual gene
         """
-        for ind in range(len(c)):
-            if random.random() < mutateChance:
-                # Flip the bit!
-                c[ind] = 1 - c[ind]
-        
-        return c
+        out = []
+        for chrom in c:
+            newC = list(chrom)
+            #count = 0
+            for ind in range(len(c)):
+                if random.random() < mutateChance:
+                    # Flip the bit!
+                    newC[ind] = 1 - newC[ind]
+                    #count += 1
+                    
+            # Convert to tuple, put in output list
+            out.append(tuple(newC))
+            
+        return out
     
     @staticmethod
     def crossChrom(chrom1, chrom2):
-        """Take two chromosomes and create a new one
+        """Take two chromosomes and create two new ones.
         
         INPUTS:
-            chrom1: list of 1's and 0's, same length as chrom2
-            chrom2: list of 1's and 0's, same length as chrom1
+            chrom1: tuple of 1's and 0's, same length as chrom2
+            chrom2: tuple of 1's and 0's, same length as chrom1
             
         OUTPUTS:
-            chrom: new list of 1's and 0's, same length as chrom1 and 2
+            c1: new list of 1's and 0's, same length as chrom1 and 2
+            c2: ""
         """
         # Force chromosomes to be same length
         assert len(chrom1) == len(chrom2)
@@ -406,8 +472,9 @@ class population:
         # Randomly determine range of crossover
         r = range(random.randint(0, len(chrom1)), len(chrom1))
         
-        # Initialize chrom to return to be copy of chrom1
-        chrom = chrom1
+        # Initialize the two chromosomes to be copies of 1 and 2, respectively
+        c1 = list(chrom1)
+        c2 = list(chrom2)
         
         # Loop over crossover range
         for k in r:
@@ -416,10 +483,43 @@ class population:
             # Note that since we initialized chrom to be a copy of chrom1, 
             # there's no need for an else case.
             if random.random() < 0.5:
-                chrom[k] = chrom2[k]
+                # Crossover.
+                c1[k] = chrom2[k]
+                c2[k] = chrom1[k]
                 
-        # Return the new chromosome
-        return chrom
+        # Return the new chromosomes
+        return [tuple(c1), tuple(c2)]
+    
+    def measureDiversity(self):
+        """Function to loop over chromosomes and count differences between
+        individuals. This information is useful in a histogram.
+        """
+        # Compute diversity
+        n = 0
+        regDiff = []
+        capDiff = []
+        # Loop over all individuals in the list
+        for ind in self.individualsList:
+            n += 1
+            # Loop over all individuals later in the list
+            for i in range(n, len(self.individualsList)):
+                # Loop over reg chrom, count differences.
+                regCount = 0
+                for g in range(0, len(ind.regChrom)):
+                    if ind.regChrom[g] != self.individualsList[i].regChrom[g]:
+                        regCount += 1
+                        
+                regDiff.append(regCount)
+                
+                # Loop over cap chrom, count differences.
+                capCount = 0
+                for g in range(0, len(ind.capChrom)):
+                    if ind.capChrom[g] != self.individualsList[i].capChrom[g]:
+                        capCount += 1
+                        
+                capDiff.append(capCount)
+                
+        return regDiff, capDiff
 
 if __name__ == "__main__":
     pass

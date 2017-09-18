@@ -9,6 +9,7 @@ import random
 from powerflow import writeCommands
 from util import gld, helper
 import math
+import json
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
@@ -21,7 +22,7 @@ TAPSIGMAPCT = 0.1
 class individual:
     
     def __init__(self, uid, reg=None, regBias=False, peg=None, cap=None,
-                 allCap=None, regChrom=None, capChrom=None):
+                 allCap=None, regChrom=None, capChrom=None, parents=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -77,6 +78,12 @@ class individual:
 
         # The evalFitness method assigns to fitness
         self.fitness = None
+        self.energyCost = None
+        self.capCost = None
+        self.regCost = None
+        
+        # Parent tracking is useful to see how well the GA is working
+        self.parents = parents
         
         # If not given a regChrom or capChrom, generate them.
         if (regChrom is None) and (capChrom is None):
@@ -91,6 +98,42 @@ class individual:
             self.modifyRegGivenChrom()
             self.capChrom = capChrom
             self.modifyCapGivenChrom()
+            
+    def __str__(self):
+        """Individual's string should include fitness and reg/cap info.
+        """
+        # Put the individual's fitness in a dictionary, convert to string via
+        # json.dumps.
+        fitDict = {'Fitness': self.fitness, 'Energy cost': self.energyCost,
+                   'Capacitor cost': self.capCost,
+                   'Regulator cost': self.regCost}
+        s = json.dumps(fitDict)
+        s += '\n'
+        # Add parents.
+        s += 'Parents: {}\n'.format(self.parents)
+        # Add the essential regulator elements to the string.
+        for r in self.reg:
+            s += r + ':\n'
+            for p in self.reg[r]['phases']:
+                s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
+                    self.reg[r]['phases'][p]['newState'],
+                    self.reg[r]['phases'][p]['prevState'])
+                
+        # Add the regulator chromosome
+        s += 'RegChrom: ' + json.dumps(self.regChrom) + '\n'
+        
+        # Add the essential capacitor elements to the string.
+        for c in self.cap: 
+            for p in self.cap[c]['phases']:
+                s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
+                    self.cap[c]['phases'][p]['newState'],
+                    self.cap[c]['phases'][p]['prevState'])
+                
+        # Add the capacitor chromosome
+        s += 'CapChrom: ' + json.dumps(self.capChrom)
+        
+        # That's all for now.
+        return s
         
     def genRegChrom(self, regBias, peg):
         """Method to randomly generate an individual's regulator chromosome
@@ -120,7 +163,7 @@ class individual:
             assert peg in REGPEG
         
         # Initialize chromosome for regulator and dict to store list indices.
-        self.regChrom = []
+        self.regChrom = ()
          
         # Intialize index counters.
         s = 0;
@@ -175,14 +218,14 @@ class individual:
                     newState = random.randint(0, tb)
                 
                 # Express tap setting as binary list with consistent width.
-                binList = [int(x) for x in "{0:0{width}b}".format(newState,
-                                                                  width=width)]
+                binTuple = tuple([int(x) for x in "{0:0{width}b}".format(newState,
+                                                                  width=width)])
                 
                 # Extend the regulator chromosome.
-                self.regChrom.extend(binList)
+                self.regChrom += binTuple
                 
                 # Increment end index.
-                e += len(binList)
+                e += len(binTuple)
                 
                 # Translate newState for GridLAB-D.
                 self.reg[r]['phases'][phase]['newState'] = \
@@ -197,7 +240,7 @@ class individual:
                 self.reg[r]['phases'][phase]['chromInd'] = (s, e)
                 
                 # Increment start index.
-                s += len(binList)
+                s += len(binTuple)
                 
     def genCapChrom(self, allCap):
         """Method to randomly generate an individual's capacitor chromosome.
@@ -219,7 +262,7 @@ class individual:
             capStatus = allCap
         
         # Initialize chromosome for capacitors and dict to store list indices.
-        self.capChrom = []
+        self.capChrom = ()
 
         # Keep track of chromosome index
         ind = 0
@@ -236,7 +279,7 @@ class individual:
                     capStatus = CAPSTATUS[capBinary]
                 
                 # Assign to the capacitor
-                self.capChrom.append(capBinary)
+                self.capChrom += (capBinary,)
                 self.cap[c]['phases'][phase]['newState'] = capStatus
                 self.cap[c]['phases'][phase]['chromInd'] = ind
                 
@@ -390,5 +433,5 @@ class individual:
         
         self.fitness = r['total']
         self.energyCost = r['energy']
-        self.tapCost = r['tap']
+        self.regCost = r['tap']
         self.capCost = r['cap']

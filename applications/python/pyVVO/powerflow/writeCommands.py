@@ -116,7 +116,9 @@ class writeCommands:
             if ('Control' in reg[r]):
                 confPropDict['Control'] = reg[r]['Control']
             
-            d2 = self.extractObjectByNameAndType(name=r,
+            # Extract the configuration.
+            d2 = self.extractObjectByNameAndType(name=\
+                                                    c['configuration']['prop'],
                                                  objRegEx=REGCONF_REGEX,
                                                  minLength=len(
                                                                 ('object '
@@ -685,7 +687,7 @@ class writeCommands:
                           + ";\n" + objStr[-1])
             else:
                 # Replace previous property value with this one
-                objStr = (objStr[0:propVal[prop]['start']] + str(value)
+                objStr = (objStr[0:propVal[prop]['start']] + " " + str(value)
                           + objStr[propVal[prop]['end']:])
                          
         # Return the modified object
@@ -801,7 +803,7 @@ class writeCommands:
         for p in props:
             # Create regular expression to extract the property after the 
             # property name and before the semi-colon.
-            exp = r'(?<=\b' + p + r'\b\s)(.*?)(?=;)'
+            exp = r'(?<=\b' + p + r'\b)(\s+)(.*?)(?=;)'
             prop = re.search(exp, objString)
             
             # If the property was not found, raise an exception.
