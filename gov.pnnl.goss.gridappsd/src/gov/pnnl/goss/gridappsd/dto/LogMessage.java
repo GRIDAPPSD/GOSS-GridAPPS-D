@@ -42,6 +42,8 @@ package gov.pnnl.goss.gridappsd.dto;
 public class LogMessage {
 	
 	String process_id;
+	String parent_process_id;
+
 	String timestamp;
 	String log_message;
 	String log_level;
@@ -65,6 +67,12 @@ public class LogMessage {
 	}
 	public void setProcess_id(String process_id) {
 		this.process_id = process_id;
+	}
+	public String getParent_process_id() {
+		return parent_process_id;
+	}
+	public void setParent_process_id(String parent_process_id) {
+		this.parent_process_id = parent_process_id;
 	}
 	public String getTimestamp() {
 		return timestamp;

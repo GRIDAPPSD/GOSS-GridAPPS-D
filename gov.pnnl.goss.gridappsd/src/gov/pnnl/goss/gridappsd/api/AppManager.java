@@ -24,9 +24,9 @@ public interface AppManager {
 	
 	void deRegisterApp(String appId); 
 	
-	String startApp(String appId, String runtimeOptions);  //may also need input/output topics or simulation id, would return app instance id
+	String startApp(String appId, String runtimeOptions, String requestId);  //may also need input/output topics or simulation id, would return app instance id
 	
-	String startAppForSimultion(String appId, String runtimeOptions, String simulationId);  //may also need input/output topics??, would return app instance id
+	String startAppForSimultion(String appId, String runtimeOptions, String simulationId, String requestId);  //may also need input/output topics??, would return app instance id
 	
 	void stopApp(String appId);  
 

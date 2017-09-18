@@ -40,11 +40,13 @@
 package gov.pnnl.goss.gridappsd.app;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -178,9 +180,9 @@ public class AppManagerImpl implements AppManager{
 			RequestAppStart requestObj = RequestAppStart.parse(message.toString());
 			String instanceId = null;
 			if(requestObj.getSimulation_id()==null){
-				instanceId = startApp(requestObj.getApp_id(),requestObj.getRuntime_options());
+				instanceId = startApp(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString());
 			} else {
-				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), requestObj.getSimulation_id());
+				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
 			//TODO publish instance id
 			client.publish(replyDestination, instanceId);
@@ -379,12 +381,12 @@ public class AppManagerImpl implements AppManager{
 	}
 
 	@Override
-	public String startApp(String appId, String runtimeOptions) {
-		return startAppForSimultion(appId, runtimeOptions, null);
+	public String startApp(String appId, String runtimeOptions, String requestId) {
+		return startAppForSimultion(appId, runtimeOptions, requestId, null);
 	}
 
 	@Override
-	public String startAppForSimultion(String appId, String runtimeOptions, String simulationId) {
+	public String startAppForSimultion(String appId, String runtimeOptions, String requestId, String simulationId) {
 		appId = appId.trim();
 		String instanceId = appId+"-"+new Date().getTime();
 		// get execution path
@@ -465,9 +467,9 @@ public class AppManagerImpl implements AppManager{
 		
 		
 		//create appinstance object
-		AppInstance appInstance = new AppInstance(instanceId, appInfo, runtimeOptions, simulationId, process);
+		AppInstance appInstance = new AppInstance(instanceId, appInfo, runtimeOptions, requestId, simulationId, process);
 		appInstance.setApp_info(appInfo);
-		
+		watch(appInstance);
 		//add to app instances map
 		appInstances.put(instanceId, appInstance);
 		
@@ -571,5 +573,36 @@ public class AppManagerImpl implements AppManager{
 			bos.write(bytesIn, 0, read);
 		}
 		bos.close();
+	}
+	
+	
+	private void watch(final AppInstance appInstance) {
+	    new Thread() {
+	        public void run() {
+	            BufferedReader input = new BufferedReader(new InputStreamReader(appInstance.getProcess().getInputStream()));
+	            String line = null; 
+	            try {
+	                while ((line = input.readLine()) != null) {
+	                	
+	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Long(new Date().getTime()).toString(), line, "INFO", "running", false));
+	                	
+//	                    log.info(processName+": "+line);
+	                }
+	            } catch (IOException e) {
+//	                log.error("Error on process "+processName, e);
+                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Long(new Date().getTime()).toString(), e.getMessage(), "ERROR", "running", false));
+
+	            }
+	        }
+	    }.start();
+	}
+	
+	
+	@Override
+	protected void finalize() throws Throwable {
+		super.finalize();
+		for(AppInstance instance:appInstances.values()){
+			instance.getProcess().destroyForcibly();
+		}
 	}
 }
