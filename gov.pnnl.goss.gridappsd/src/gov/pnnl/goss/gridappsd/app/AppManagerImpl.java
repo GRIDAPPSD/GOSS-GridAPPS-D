@@ -58,6 +58,8 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -76,6 +78,8 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestAppList;
@@ -185,7 +189,8 @@ public class AppManagerImpl implements AppManager{
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
 			//TODO publish instance id
-			client.publish(replyDestination, instanceId);
+//			client.publish(replyDestination, instanceId);
+			System.out.println("STARTED APP "+instanceId);
 
 		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
 			String appId = message.toString();
@@ -208,19 +213,19 @@ public class AppManagerImpl implements AppManager{
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		System.out.println("STARTING APP MGR");
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()).toString(), 
+				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
-				"INFO", 
-				"Running", 
+				LogLevel.INFO, 
+				ProcessStatus.RUNNING, 
 				true));
 		
 		scanForApps();
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()).toString(), 
+				new Date().getTime(), 
 				String.format("Found %s applications", apps.size()), 
-				"INFO", 
-				"Running", 
+				LogLevel.INFO, 
+				ProcessStatus.RUNNING, 
 				true));
 	}
 	
@@ -419,9 +424,8 @@ public class AppManagerImpl implements AppManager{
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(appInfo.getExecution_path());
-			commands.add(optionsString);
-			commands.add(runtimeOptions);
-			//TODO add other options
+			commands.addAll(splitOptionsString(optionsString));
+			commands.addAll(splitOptionsString(runtimeOptions));
 			
 			
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
@@ -544,7 +548,7 @@ public class AppManagerImpl implements AppManager{
 			String appConfigStr = new String(Files.readAllBytes(appConfigFile.toPath()));
 			appInfo = AppInfo.parse(appConfigStr);
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager", new Long(new Date().getTime()).toString(), "Error while reading app config file: "+e.getMessage(), "ERROR", "failed", false));
+			logManager.log(new LogMessage("App Manager",new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
 		}
 		
 		return appInfo;
@@ -558,7 +562,7 @@ public class AppManagerImpl implements AppManager{
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager", new Long(new Date().getTime()).toString(), "Error while writing app config file: "+e.getMessage(), "ERROR", "failed", false));
+			logManager.log(new LogMessage("App Manager", new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
 		}
 	}
 
@@ -577,24 +581,42 @@ public class AppManagerImpl implements AppManager{
 	
 	
 	private void watch(final AppInstance appInstance) {
+		System.out.println("WATCHING "+appInstance.getInstance_id());
 	    new Thread() {
 	        public void run() {
 	            BufferedReader input = new BufferedReader(new InputStreamReader(appInstance.getProcess().getInputStream()));
 	            String line = null; 
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	
-	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Long(new Date().getTime()).toString(), line, "INFO", "running", false));
+	                	System.out.println("APPRECEIVED "+line);
+	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false));
 	                	
 //	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
+	            	e.printStackTrace();
 //	                log.error("Error on process "+processName, e);
-                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Long(new Date().getTime()).toString(), e.getMessage(), "ERROR", "running", false));
+                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
 
 	            }
 	        }
 	    }.start();
+	}
+	
+	
+	private List<String> splitOptionsString(String optionsStr){
+		//first replace all \" with a string that won't get parsed
+		optionsStr = optionsStr.replaceAll("\\\\\"", "ESC_QUOTE");
+		List<String> list = new ArrayList<String>();
+		Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(optionsStr);
+		while (m.find()) {
+			//revert back all ESC_QUOTE to \"
+			String groupStr = m.group(1);
+			groupStr = groupStr.replaceAll("ESC_QUOTE", "\\\\\"");
+			list.add(groupStr); // Add .replace("\"", "") to remove surrounding quotes.
+		}
+
+		return list;
 	}
 	
 	

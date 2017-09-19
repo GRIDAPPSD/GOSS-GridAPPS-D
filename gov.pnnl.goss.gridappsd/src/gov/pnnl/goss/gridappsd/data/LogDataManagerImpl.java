@@ -4,6 +4,8 @@ import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.Start;
 
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 
 @Component
@@ -14,14 +16,14 @@ public class LogDataManagerImpl implements LogDataManager {
 	}
 
 	@Override
-	public void store(String process_id, String username, String timestamp, String log_message, String log_level,
-			String process_status) {
+	public void store(String process_id, String username, long timestamp, String log_message, LogLevel log_level,
+			ProcessStatus process_status) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void query(String process_id, String timestamp, String log_level, String process_status, String username) {
+	public void query(String process_id, long timestamp, LogLevel log_level, ProcessStatus process_status, String username) {
 		// TODO Auto-generated method stub
 
 	}

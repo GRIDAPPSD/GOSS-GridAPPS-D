@@ -44,6 +44,8 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 
 import java.io.File;
@@ -76,38 +78,37 @@ public class ProcessNewSimulationRequest {
 			int simulationId, DataResponse event, Serializable message) {
 
 		try {
-
 			RequestSimulation config = RequestSimulation.parse(message.toString());
-			logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Parsed config " + config, "info", "running", false));
+			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Parsed config " + config, LogLevel.INFO, ProcessStatus.RUNNING, false));
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {
-				logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "No simulation file returned for request "
-						+ config, "error", "failed", false));
+				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
+						+ config, LogLevel.ERROR, ProcessStatus.ERROR, false));
 				throw new RuntimeException("Invalid configuration received");
 			}
 
 			// make request to configuration Manager to get power grid model
 			// file locations and names
-			logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Creating simulation and power grid model files for simulation Id "
-					+ simulationId, "debug", "running", false));
+			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Creating simulation and power grid model files for simulation Id "
+					+ simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 			File simulationFile = configurationManager.getSimulationFile(
 					simulationId, config);
 			if (simulationFile == null) {
-				logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "No simulation file returned for request "
-						+ config, "error", "failed", false));
+				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
+						+ config, LogLevel.ERROR, ProcessStatus.ERROR, false));
 				throw new Exception("No simulation file returned for request "
 						+ config);
 			}
 
-			logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Simulation and power grid model files generated for simulation Id "
-					+ simulationId, "debug", "running", false));
+			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Simulation and power grid model files generated for simulation Id "
+					+ simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 			// start simulation
-			logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Starting simulation for id " + simulationId, "debug", "running", false));
+			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Starting simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 			simulationManager.startSimulation(simulationId, simulationFile,
 					config.getSimulation_config());
-			logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Started simulation for id " + simulationId, "debug", "running", false));
+			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 		} catch (Exception e) {
 			try {
@@ -115,7 +116,7 @@ public class ProcessNewSimulationRequest {
 						GridAppsDConstants.topic_simulationStatus
 								+ simulationId,
 						"Process Initialization error: " + e.getMessage());
-				logManager.log(new LogMessage(new Integer(simulationId).toString(), new Long(new Date().getTime()).toString(), "Process Initialization error: " + e.getMessage(), "error", "failed", false));
+				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Process Initialization error: " + e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
 
 			} catch (Exception e1) {
 				e1.printStackTrace();

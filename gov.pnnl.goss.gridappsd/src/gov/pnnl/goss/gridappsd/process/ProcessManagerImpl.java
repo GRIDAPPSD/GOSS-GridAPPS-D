@@ -46,6 +46,8 @@ import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
@@ -116,18 +118,18 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@Start
 	public void start(){
-		
+		System.out.println("STARTING PROCESS MANAGER");
 		LogMessage logMessageObj = new LogMessage();
 		
 		try{
 			
 			
-			logMessageObj.setLog_level("debug");
+			logMessageObj.setLog_level(LogLevel.DEBUG);
 			logMessageObj.setProcess_id(this.getClass().getName());
-			logMessageObj.setProcess_status("running");
+			logMessageObj.setProcess_status(ProcessStatus.RUNNING);
 			logMessageObj.setStoreToDB(true);
 			
-			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Starting "+this.getClass().getName());
 			logManager.log(logMessageObj);
 			
@@ -138,10 +140,10 @@ public class ProcessManagerImpl implements ProcessManager {
 				
 				@Override
 				public void onMessage(Serializable message) {
-					
+					System.out.println("GOT MESSAGE");
 					DataResponse event = (DataResponse)message;
 					
-					logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
 					logManager.log(logMessageObj);
 					
@@ -158,13 +160,13 @@ public class ProcessManagerImpl implements ProcessManager {
 						}
 						catch(Exception e){
 							e.printStackTrace();
-							logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
-							logMessageObj.setLog_level("error");
+							logMessageObj.setTimestamp(new Date().getTime());
+							logMessageObj.setLog_level(LogLevel.ERROR);
 							logMessageObj.setLog_message(e.getMessage());
 							logManager.log(logMessageObj);
 						}
 					} else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
-						logManager.log(message.toString());
+						logManager.log(LogMessage.parse(message.toString()));
 					}
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
@@ -175,8 +177,8 @@ public class ProcessManagerImpl implements ProcessManager {
 		}
 		catch(Exception e){
 			e.printStackTrace();
-			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
-			logMessageObj.setLog_level("error");
+			logMessageObj.setTimestamp(new Date().getTime());
+			logMessageObj.setLog_level(LogLevel.ERROR);
 			logMessageObj.setLog_message(e.getMessage());
 			logManager.log(logMessageObj);
 		}
