@@ -58,7 +58,11 @@ Created on Aug 29, 2017
 @author: thay838
 """
 import subprocess
-from util import db
+import util.db
+import csv
+
+# GridLAB-D should get dates in this format.
+DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
 def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
     """Function to run GridLAB-D model.
@@ -98,10 +102,12 @@ def inverseTranslateTaps(lowerTaps, pos):
     return posOut
 
 def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
-                 starttime, stoptime, tapChangeCost, capSwitchCost, tCol='t',
+                 starttime, stoptime, tapChangeCost, capSwitchCost, voltCost,
+                 voltdumpDir, voltdumpFiles, tCol='t',
                  tapChangeCount=None, tapChangeTable=None,
                  tapChangeColumns=None, capSwitchCount=None,
-                 capSwitchTable=None, capSwitchColumns=None):
+                 capSwitchTable=None, capSwitchColumns=None
+                 ):
     """Method to compute VVO costs for a given time interval. This includes
     cost of energy, capacitor switching, and regulator tap changing. Later this
     should include cost of DER engagement.
@@ -117,6 +123,8 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
         starttime: starting timestamp (yyyy-mm-dd HH:MM:SS) of interval in
             question.
         stoptime: stopping ""
+        voltdumpDir: Directory of voltdump files
+        voltdumpFiles: list of voltdump files (without the path 'head')
         tCol: name of time column. Assumed to be the same for tap/cap tables.
             Only include if a table is given.
         tapChangeCost: cost ($) of changing one regulator tap one position.
@@ -143,7 +151,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     # ENERGY COST
     
     # Sum the total three-phase complex power over the given interval.
-    powerSum = db.sumComplexPower(cursor=cursor, table=powerTable, 
+    powerSum = util.db.sumComplexPower(cursor=cursor, table=powerTable, 
                                   cols=powerColumns, starttime=starttime,
                                   stoptime=stoptime)
     
@@ -159,7 +167,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     # If tap table and columns given, compute the total count.    
     if (tapChangeTable and tapChangeColumns and tCol):
         # Sum all the tap changes.
-        tapChangeCount = db.sumMatrix(cursor=cursor, table=tapChangeTable,
+        tapChangeCount = util.db.sumMatrix(cursor=cursor, table=tapChangeTable,
                                       cols=tapChangeColumns, tCol=tCol,
                                       starttime=stoptime, stoptime=stoptime)
     elif (tapChangeCount is None):
@@ -175,7 +183,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     # If cap table and columns given, compute the total count.
     if (capSwitchTable and capSwitchColumns and tCol):
         # Sum all the tap changes.
-        capSwitchCount = db.sumMatrix(cursor=cursor, table=capSwitchTable,
+        capSwitchCount = util.db.sumMatrix(cursor=cursor, table=capSwitchTable,
                                       cols=capSwitchColumns, tCol=tCol,
                                       starttime=stoptime, stoptime=stoptime)
     elif (capSwitchCount is None):
@@ -187,10 +195,16 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     
     # *************************************************************************
     # VOLTAGE VIOLATION COSTS
+    
+    # Get all voltage violations. Use default voltages and tolerances for now.
+    v = sumVoltViolations(fileDir=voltdumpDir, files=voltdumpFiles)
+    overvoltage = v['high'] * voltCost
+    undervoltage = v['low'] * voltCost
+    
     # TODO: uncomment when ready
     '''
     # Get the voltage violations
-    self.violations = db.voltageViolations(cursor=cursor,
+    self.violations = util.db.voltageViolations(cursor=cursor,
                                       table=self.triplexTable, 
                                       starttime=starttime,
                                       stoptime=stoptime)
@@ -201,14 +215,85 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     
     # *************************************************************************
     # RETURN
-    return {'total': energyCost + tapCost + capCost, 'energy': energyCost, 
-            'tap': tapCost, 'cap': capCost}
+    return {'total': energyCost + tapCost + capCost + overvoltage
+            + undervoltage, 'energy': energyCost, 
+            'tap': tapCost, 'cap': capCost, 'overvoltage': overvoltage,
+            'undervoltage': undervoltage}
+    
+def voltViolationsFromDump(fName, vNom=120, vTol=6):
+    """Method to read a voltdump file which is recording triplex loads/meters
+    and count high and low voltage violations.
+    
+    NOTE: voltdump should be made with the 'polar' option!
+    
+    NOTE: This is hard-coded to read two-phase triplex, so phase C is not used.
+    
+    INPUTS:
+        fName: Name of the voltdump .csv file.
+        vNom: Nominal voltage magnitude (V)
+        vTol: Tolerance +/- (V).
+        
+    OUTPUTS:
+        violations: dictionary with two fields, 'low' and 'high' representing
+            the total number of single phase voltage violations in the file.
+    """
+    # Intialize return:
+    violations = {'low': 0, 'high': 0}
+    # Compute low and high voltages once.
+    lowV = vNom - vTol
+    highV = vNom + vTol
+    with open(fName, newline='') as f:
+        # Advance the file one line, since the first line is metadata.
+        f.readline()
+        reader = csv.reader(f)
+        headers = reader.__next__()
+        # Note that voltdump reads phases 1 and 2 as A and B.
+        # Get the row indices of the properties we care about.
+        magA = headers.index('voltA_mag')
+        magB = headers.index('voltB_mag')
+        for row in reader:
+            # Grab the voltage magnitudes for the two phases
+            v = (float(row[magA]), float(row[magB]))
+            # For the two phases, increment violations count if one occurs.
+            for pV in v:
+                if pV < lowV:
+                    violations['low'] += 1
+                elif pV > highV:
+                    violations['high'] += 1
+                    
+    return violations
 
+def sumVoltViolations(fileDir, files, vNom=120, vTol=6):
+    """Helper method which calls voltViolationsFromDump in a loop and sums
+        all violations
+        
+    """
+    # Initialize violations count.
+    violations = {'low': 0, 'high': 0}
+    
+    # Loop over each file.
+    for f in files:
+        # Call method to cound violations.
+        v = voltViolationsFromDump(fName=fileDir + '/' + f, vNom=vNom,
+                                   vTol=vTol)
+        # Add to the running total.
+        violations['low'] += v['low']
+        violations['high'] += v['high']
+        
+    return violations
+    
 if __name__ == '__main__':
+    f = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\python\pyVVO\test\output\dump1.csv'
+    # voltViolationsFromDump(fName=f)
+    t = sumVoltViolations(fileDir=r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\python\pyVVO\test\output',
+                          baseName='dump')
+    print(t)
+    """
     # Hack this to print the version
     output = runModel('--version')
     print('OUTPUT:')
     print(output.stdout.decode('utf-8'))
     print('ERROR:')
     print(output.stderr.decode('utf-8'))
+    """
     

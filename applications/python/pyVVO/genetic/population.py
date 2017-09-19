@@ -9,7 +9,7 @@ import random
 import os
 from queue import Queue
 import threading
-from util import db
+import util.db
 import sys
 import copy
 
@@ -17,7 +17,8 @@ class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
                  starttime, stoptime, numThreads=os.cpu_count(),
-                 energyPrice=0.00008, tapChangeCost=0.5, capSwitchCost=2, 
+                 energyPrice=0.00008, tapChangeCost=0.5, capSwitchCost=2,
+                 voltCost = 0.5,
                  individualsList=[], nextUID=0, topPct=0.2, weakProb=0.2, 
                  popMutateProb=0.2, crossProb=0.7, capGeneMutateProb=0.1,
                  regGeneMutateProb=0.05):
@@ -34,7 +35,7 @@ class population:
         # CIM.   
         
         # Get database connection pool (threadsafe)
-        # self.cnxnpool = db.connectPool(pool_name='popObjPool',
+        # self.cnxnpool = util.db.connectPool(pool_name='popObjPool',
         #                           pool_size=numThreads)
         
         # Define some globals for use by the threads.
@@ -50,6 +51,8 @@ class population:
         TAPCHANGECOST = tapChangeCost
         global CAPSWITCHCOST
         CAPSWITCHCOST = capSwitchCost
+        global VOLTCOST
+        VOLTCOST = voltCost
         
         # Initialize queues and threads for running GLD models in parallel.
         self.threads = []
@@ -117,11 +120,16 @@ class population:
         c = len(self.individualsList)
         for allCap in individual.CAPSTATUS:
             for peg in individual.REGPEG:
-                self.individualsList.append(individual.individual(uid=self.nextUID,
-                                                          reg=copy.deepcopy(reg),
-                                                          peg=peg,
-                                                          cap=copy.deepcopy(cap),
-                                                          allCap=allCap))
+                self.individualsList.append(\
+                    individual.individual(uid=self.nextUID,
+                                          reg=copy.deepcopy(reg),
+                                          peg=peg,
+                                          cap=copy.deepcopy(cap),
+                                          allCap=allCap,
+                                          starttime=self.starttime,
+                                          stoptime=self.stoptime
+                                          )
+                                            )
                 c += 1
                 self.nextUID += 1
                 
@@ -129,19 +137,29 @@ class population:
         # TODO: Stop hard-coding the number.
         # TODO: Consider leaving capacitors the same.
         for _ in range(c, c+4):
-            self.individualsList.append(individual.individual(uid=self.nextUID,
-                                                      reg=copy.deepcopy(reg),
-                                                      regBias=True,
-                                                      cap=copy.deepcopy(cap)))
+            self.individualsList.append(\
+                individual.individual(uid=self.nextUID,
+                                      reg=copy.deepcopy(reg),
+                                      regBias=True,
+                                      cap=copy.deepcopy(cap),
+                                      starttime=self.starttime,
+                                      stoptime=self.stoptime
+                                     )
+                                        )
             c += 1
             self.nextUID += 1
         
         # Randomly create the rest of the individuals.
         for _ in range(c, numInd):
             # Initialize individual.
-            self.individualsList.append(individual.individual(uid=self.nextUID,
-                                                      reg=copy.deepcopy(reg), 
-                                                      cap=copy.deepcopy(cap)))
+            self.individualsList.append(\
+                individual.individual(uid=self.nextUID,
+                                      reg=copy.deepcopy(reg), 
+                                      cap=copy.deepcopy(cap),
+                                      starttime=self.starttime,
+                                      stoptime=self.stoptime
+                                      )
+                                        )
             self.nextUID += 1
             
         
@@ -248,7 +266,7 @@ class population:
                 # transaction' error. It took way too long to find this as the 
                 # problem...
                 #cnxn = cnxnpool.get_connection()
-                cnxn = db.connect()
+                cnxn = util.db.connect()
                 cursor = cnxn.cursor()
                 
                 # Write the individual's model.
@@ -264,11 +282,11 @@ class population:
                 
                 # Evaluate the individuals fitness.
                 inDict['individual'].evalFitness(cursor,
-                                                 starttime=STARTTIME,
-                                                 stoptime=STOPTIME,
                                                  energyPrice=ENERGYPRICE,
                                                  tapChangeCost=TAPCHANGECOST,
-                                                 capSwitchCost=CAPSWITCHCOST)
+                                                 capSwitchCost=CAPSWITCHCOST,
+                                                 voltCost=VOLTCOST
+                                                 )
             
                 # Denote task as complete.
                 qIn.task_done()
@@ -415,7 +433,9 @@ class population:
                                           cap=copy.deepcopy(
                                               _individualsList[0].cap
                                                             ),
-                                          parents=parents
+                                          parents=parents,
+                                          starttime=self.starttime,
+                                          stoptime=self.stoptime
                                           )
                                             )
                 

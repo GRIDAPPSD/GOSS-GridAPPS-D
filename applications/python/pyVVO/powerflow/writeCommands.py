@@ -12,7 +12,11 @@ Created on Jul 27, 2017
 
 import re
 import os
+import time
+import util.gld
 
+# Time formatting:
+TIME_FMT = "%Y-%m-%d %H:%M:%S"
 # Define some constants for GridLAB-D model parsing.
 REGOBJ_REGEX = re.compile(r'\bobject\b(\s+)\bregulator\b')
 REGCONF_REGEX = re.compile(r'\bobject\b(\s+)\bregulator_configuration\b')
@@ -562,6 +566,32 @@ class writeCommands:
         out = {'table': table, 'columns': swingColumns, 'interval': interval}
         return out
     
+    def addGroupToObjects(self, objectRegex, groupName):
+        """Method to add a groupid to a given type of object.
+        
+        INPUTS: 
+            objectRegex: compiled regular expression for the object type
+                desired.
+            groupName: desired groupid to be added to objects.
+        """
+        # Get the first match.
+        m = objectRegex.search(self.strModel)
+        
+        # Loop over all the matches
+        while m:
+            # Extract the object
+            obj = self.extractObject(objMatch=m)
+            
+            # Add a groupid.
+            obj['obj'] = self.modObjProps(obj['obj'], {'groupid': groupName})
+            
+            # Replace the previous object with the new one.
+            self.replaceObject(obj)
+            
+            # Get the next match, offsetting by length of new object.
+            m = objectRegex.search(self.strModel,
+                                          m.span()[0] + len(obj['obj']))
+    
     def recordTriplex(self, suffix, interval=60):
         """Method to add a recorder for each 'triplex_load' object.
         
@@ -831,11 +861,11 @@ class writeCommands:
         if outDir is None:
             outDir = os.path.dirname(inPath)
             
-        if suffix:
-            suffix = '_' + suffix
+        if suffix != '':
+            suffix = '_' + str(suffix)
         
         # Define the output path by adding suffix    
-        outPath = os.path.join(outDir, fParts[0] +  suffix + fParts[1])
+        outPath = os.path.join(outDir, fParts[0] + str(suffix) + fParts[1]).replace("\\", "/")
         
         # Done.
         return outPath
@@ -955,7 +985,47 @@ class writeCommands:
             # Get the next match, offsetting by length of new object.
             m = TRIPLEX_METER_REGEX.search(self.strModel,
                                           m.span()[0] + len(tObj['obj']))
-
+            
+    def addVoltDumps(self, starttime, stoptime, group, fileDir,
+                     baseFile='voltdump.csv', suffix=0, interval=60):
+        """Function to add voltage dumps for a given group, times, and interval
+        
+        NOTE: Given dates HAD BETTER BE in the format defined in gld.DATE_FMT
+        """
+        # Create base file name.
+        f = self.addFileSuffix(inPath=baseFile, suffix=suffix)
+        
+        # Get times as seconds since epoch. s -> start, e -> end.
+        s = time.mktime(time.strptime(starttime, util.gld.DATE_FMT))
+        e = time.mktime(time.strptime(stoptime, util.gld.DATE_FMT))
+        
+        # To make things simpler and more clear, track file names.
+        n = []
+        
+        # Initialize counter which essentially makes a second suffix.
+        c = 0
+        
+        while s <= e:
+            # Add another suffix to the file
+            fNew = self.addFileSuffix(inPath=f, suffix=c)
+            n.append(os.path.basename(fNew))
+            self.addObject(objType='voltdump',
+                           properties={'filename': '"{}"'.format(fileDir 
+                                                                 + '/' + fNew),
+                                       'group': group,
+                                       # Note use of localtime to avoid Python
+                                       # converting local to UTC
+                                       'runtime': "'{}'".format(\
+                                            time.strftime(util.gld.DATE_FMT,
+                                                          time.localtime(s))),
+                                       'mode': 'polar'},
+                           place='end'
+                          )
+            c += 1
+            s += interval
+            
+        return(n)
+        
 class Error(Exception):
     """"Base class for exceptions in this module"""
     pass
@@ -1004,15 +1074,3 @@ class UnexpectedSwingType(Error):
         
     def __str__(self):
         return(repr(self.message))
-
-if __name__ == "__main__":
-    inPath = 'C:/Users/thay838/Desktop/R2-12.47-2.glm'
-    strModel = readModel(inPath)
-    obj = writeCommands(strModel=strModel, pathModelIn=inPath, pathModelOut='C:/Users/thay838/Desktop/vvo/R2-12.47-2-copy.glm')
-    obj.commandRegulators(regulators={'R2-12-47-2_reg_1': {'regulator': {'tap_A':1, 'tap_B':2, 'tap_C':3}, 'configuration': {'Control': 'MANUAL'}}, 'R2-12-47-2_reg_2': {'regulator': {'tap_A':4, 'tap_B':5, 'tap_C':6}, 'configuration': {'Control': 'MANUAL'}}})
-    obj.commandCapacitors(capacitors={'R2-12-47-2_cap_1': {'switchA':'OPEN', 'switchB':'CLOSED', 'control': 'MANUAL'}, 'R2-12-47-2_cap_4': {'switchA':'CLOSED', 'switchB':'CLOSED', 'switchC': 'OPEN', 'control': 'MANUAL'}})
-    obj.updateClock(start="'2015-03-01 05:15:00'", stop="'2015-03-01 05:30:00'")
-    obj.removeTape()
-    obj.addMySQL()
-    obj.recordSwing()
-    obj.writeModel()

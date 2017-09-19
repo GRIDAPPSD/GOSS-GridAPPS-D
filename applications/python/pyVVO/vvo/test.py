@@ -6,7 +6,9 @@ Created on Aug 30, 2017
 from powerflow import writeCommands
 from genetic import population
 import time
-from util import db, gld, helper
+import util.gld
+import util.db
+import util.helper
 import copy
     
 def main(populationInputs={}):
@@ -23,17 +25,19 @@ def main(populationInputs={}):
     tz_offset = 10800
     starttime= "2009-07-21 00:00:00"
     stoptime = "2009-07-21 00:15:00"
-    tFmt = "%Y-%m-%d %H:%M:%S"
+    tFmt = util.gld.DATE_FMT
     inPath = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/ieee8500_base.glm"
     playerFile = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/zipload_schedule.player"
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output"
-    numInd = 40 # Best if this is a multiple of num cores.
-    numGen = 5
-    numIntervals = 1
+    tLoad = 'tLoad' # triplex load group.
+    numInd = 80 # Best if this is a multiple of num cores.
+    numGen = 10
+    numIntervals = 16
     tInt = 60 * 15 # 15 minutes
     energyPrice=0.00008
     tapChangeCost=0.5
     capSwitchCost=2
+    voltCost = 0.01
     # Results file
     f = open(outDir + '/results/'
              + time.strftime('%m-%d_%H-%M', time.localtime()) + '.txt', 'w')
@@ -46,8 +50,8 @@ def main(populationInputs={}):
     f.write('Model is CONSTANT POWER.\n')
     f.write('*'*80 + '\n')
     # Drop all tables in the database
-    cnxn = db.connect()
-    db.dropAllTables(cnxn)
+    cnxn = util.db.connect()
+    util.db.dropAllTables(cnxn)
     cnxn.close()
     #******************************************************************************
     # Definitions of regulators and capacitors. TODO: Pull from CIM.
@@ -125,7 +129,6 @@ def main(populationInputs={}):
     # so no need for a deepcopy
     writeGenetic = copy.copy(writeBench)
     #******************************************************************************
-    """
     # Benchmark model:
     # Switch control strategy to commented version.
     writeBench.switchControl()
@@ -160,6 +163,10 @@ def main(populationInputs={}):
         # Create recorder for this regulator.    
         writeBench.addMySQLRecorder(parent=r, table=regTable,
                                     properties=allRegCols, interval=tInt)
+        
+    # Add a group to the triplex loads
+    writeBench.addGroupToObjects(objectRegex=writeCommands.TRIPLEX_LOAD_REGEX,
+                                groupName=tLoad)
     # TODO: uncomment when ready, maybe
     '''
     # Record the triplex voltages.
@@ -174,7 +181,6 @@ def main(populationInputs={}):
     writeBench.addMetricsCollectors()
     '''
     # Loop over the number of time intervals
-    """
     benchTotal = 0
     geneticTotal = 0 
     individualsList = []
@@ -187,42 +193,50 @@ def main(populationInputs={}):
         #      flush=True)
         print('Running for {} through {}'.format(starttime, stoptime),
               file=f, flush=True)
-        """
         # Command the benchmark regulators and capacitors
         writeBench.commandCapacitors(cap=capBench)
         writeBench.commandRegulators(reg=regBench)
         # Update clocks.
         writeBench.updateClock(starttime=starttime, stoptime=stoptime,
                                timezone=timezone)
-        """
         writeGenetic.updateClock(stoptime=stoptime, starttime=starttime,
                                  timezone=timezone)
-        """
+        
+        # Add voltdumps to the benchmark model. Record each minute.
+        benchVoltFiles = writeBench.addVoltDumps(starttime=starttime, 
+                                                stoptime=stoptime,
+                                                group=tLoad, fileDir=outDir,
+                                                baseFile='dump.csv',
+                                                suffix='benchmark', interval=60)
+        
         # Write benchmark model
         writeBench.writeModel()
         # Run the model
         t0 = time.time()
-        result = gld.runModel(writeBench.pathModelOut)
+        result = util.gld.runModel(writeBench.pathModelOut)
         t1 = time.time()
         print('Benchmark model run in {:.2f} seconds.'.format(t1-t0), file=f,
               flush=True)
         
         # Evaluate model.
-        cnxn = db.connect()
+        cnxn = util.db.connect()
         cursor = cnxn.cursor()
-        benchScores = gld.computeCosts(cursor=cursor,
-                                      powerTable=swingDat['table'],
-                                      powerColumns=swingDat['columns'],
-                                      powerInterval=swingDat['interval'],
-                                      energyPrice=energyPrice,
-                                      starttime=starttime, stoptime=stoptime,
-                                      tapChangeCost=tapChangeCost,
-                                      capSwitchCost=capSwitchCost,
-                                      tapChangeTable=regTable,
-                                      tapChangeColumns=regTableChangeCols,
-                                      capSwitchTable=capTable,
-                                      capSwitchColumns=capTableChangeCols,
-                                      )
+        benchScores = util.gld.computeCosts(cursor=cursor,
+                                          powerTable=swingDat['table'],
+                                          powerColumns=swingDat['columns'],
+                                          powerInterval=swingDat['interval'],
+                                          energyPrice=energyPrice,
+                                          starttime=starttime, stoptime=stoptime,
+                                          tapChangeCost=tapChangeCost,
+                                          capSwitchCost=capSwitchCost,
+                                          tapChangeTable=regTable,
+                                          tapChangeColumns=regTableChangeCols,
+                                          capSwitchTable=capTable,
+                                          capSwitchColumns=capTableChangeCols,
+                                          voltCost=voltCost,
+                                          voltdumpDir=outDir,
+                                          voltdumpFiles=benchVoltFiles
+                                          )
         # Write result to file.
         print('Benchmark scores:', file = f, flush=True)
         print('  Total: {:.4g}'.format(benchScores['total']), file=f,
@@ -233,6 +247,10 @@ def main(populationInputs={}):
               flush=True)
         print('  Cap: {:.4g}'.format(benchScores['cap']), file=f,
               flush=True)
+        print('  Undervoltage: {:.4g}'.format(benchScores['undervoltage']),
+              file=f, flush=True)
+        print('  Overvoltage: {:.4g}'.format(benchScores['overvoltage']),
+              file=f, flush=True)
         # TODO: Uncomment
         '''
         print('Benchmark violations: ')
@@ -243,22 +261,21 @@ def main(populationInputs={}):
         benchTotal += benchScores['total']
         #**********************************************************************
         # Set bench settings for next iteration.
-        regBench = db.updateStatus(inDict=regBench, dictType='reg',
+        regBench = util.db.updateStatus(inDict=regBench, dictType='reg',
                                    cursor=cursor, table=regTable,
                                    phaseCols=regTableStatusCols, t=stoptime,
                                    nameCol='name', tCol='t')
-        capBench = db.updateStatus(inDict=capBench, dictType='cap',
+        capBench = util.db.updateStatus(inDict=capBench, dictType='cap',
                            cursor=cursor, table=capTable,
                            phaseCols=capTableStatusCols, t=stoptime,
                            nameCol='name', tCol='t')
         
         # Rotate the 'newState' to 'oldState'
-        regBench, capBench = helper.rotateVVODicts(reg=regBench, cap=capBench,
+        regBench, capBench = util.helper.rotateVVODicts(reg=regBench, cap=capBench,
                                                    deleteFlag=True)
         # Close database cursor and connection.
         cursor.close()
         cnxn.close()
-        """
         #******************************************************************************
         # Run genetic algorithm.
         # print('Initializing population...', flush=True)
@@ -280,7 +297,6 @@ def main(populationInputs={}):
                                       )
         # print('Beginning genetic algorithm...', flush=True)
         bestIndividual = popObj.ga()
-        """
         # Pull the first 10% of individuals
         individualsList=popObj.individualsList[0:round(len(popObj.individualsList)*0.1)]
         nextUID = popObj.nextUID
@@ -288,8 +304,7 @@ def main(populationInputs={}):
         # Update 'reg' and 'cap' based on the most fit individual.
         reg = copy.deepcopy(bestIndividual.reg)
         cap = copy.deepcopy(bestIndividual.cap)
-        reg, cap = helper.rotateVVODicts(reg=reg, cap=cap, deleteFlag=True)
-        """
+        reg, cap = util.helper.rotateVVODicts(reg=reg, cap=cap, deleteFlag=True)
         # print('Printing results to file...', flush=True)
         # print('The time is {}'.format(time.ctime(), flush=True))
         t1 = time.time()
@@ -306,20 +321,18 @@ def main(populationInputs={}):
         print(bestIndividual, file=f, flush=True)
         print('*' * 80, file=f, flush=True)
         
-        """
         # Increment the time
         # TODO: Daylight savings problems?
         # TODO: We're running an extra minute of simulation each run.
-        ts = time.mktime(time.strptime(starttime, tFmt)) + tInt
-        te = time.mktime(time.strptime(stoptime, tFmt)) + tInt
-        starttime = time.strftime(tFmt, time.localtime(ts))
-        stoptime = time.strftime(tFmt, time.localtime(te))
+        starttime = util.helper.incrementTime(t=starttime, fmt=tFmt,
+                                              interval=tInt)
+        stoptime = util.helper.incrementTime(t=stoptime, fmt=tFmt,
+                                              interval=tInt)
           
     print('*'*80, file=f, flush=True)
     print('Benchmark grand total: {:.5g}'.format(benchTotal), file=f)
     print('Genetic grand total: {:.5g}'.format(geneticTotal), file=f)  
     print('Results printed to file. All done.', flush=True)
-    """
     
     return bestIndividual.fitness
     

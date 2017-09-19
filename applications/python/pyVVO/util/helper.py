@@ -3,6 +3,8 @@ Created on Sep 12, 2017
 
 @author: thay838
 '''
+import time
+
 def bin2int(binList):
         """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
         convert to an integer
@@ -55,4 +57,27 @@ def _rotate(d, deleteFlag):
                 
                     
     return d
+
+def incrementTime(t, fmt, interval):
+        """Simple function to increment a time string by a specified amount.
         
+        INPTUS: 
+            t: string representation of a time, in the format given by 'fmt'
+            fmt: Python time string format corresponding to 't'
+            interval: interval in seconds to increment t by.
+            
+        TODO: unit test
+        TODO: daylight savings safe?
+        """
+        # TODO: Daylight savings problems?
+        # TODO: We're running an extra minute of simulation each run.
+        tN = time.mktime(time.strptime(t, fmt)) + interval
+        tOut = time.strftime(fmt, time.localtime(tN))
+        return tOut
+    
+if __name__ == '__main__':
+    starttime= "2009-07-21 00:00:00"
+    tFmt = "%Y-%m-%d %H:%M:%S"
+    interval = 60
+    s = incrementTime(t=starttime, fmt=tFmt, interval=interval)
+    print(s)

@@ -7,7 +7,8 @@ Created on Aug 9, 2017
 """
 import random
 from powerflow import writeCommands
-from util import gld, helper
+import util.gld
+import util.helper
 import math
 import json
 
@@ -21,8 +22,9 @@ TAPSIGMAPCT = 0.1
  
 class individual:
     
-    def __init__(self, uid, reg=None, regBias=False, peg=None, cap=None,
-                 allCap=None, regChrom=None, capChrom=None, parents=None):
+    def __init__(self, uid, starttime, stoptime, reg=None, regBias=False,
+                 peg=None, cap=None, allCap=None, regChrom=None, capChrom=None,
+                 parents=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -49,6 +51,9 @@ class individual:
                 
             capChrom: Capacitor chromosome resulting from crossing two
                 individuals. List of ones and zeros representing switch status.
+                
+            parents: Tuple of UIDs of parents that created this individual.
+                None if individual was randomly created at population init.
             
         TODO: add controllable DERs
                 
@@ -59,6 +64,9 @@ class individual:
         
         # Assign the unique identifier.
         self.uid = uid
+        # Assing times.
+        self.starttime = starttime
+        self.stoptime = stoptime
         # Full path to output model.
         self.model = None
         # Table information
@@ -76,14 +84,17 @@ class individual:
         # When the model is run, output will be saved.
         self.modelOutput = None
 
-        # The evalFitness method assigns to fitness
+        # The evalFitness method assigns to fitness and costs
         self.fitness = None
-        self.energyCost = None
-        self.capCost = None
-        self.regCost = None
-        
+        self.costs = None
         # Parent tracking is useful to see how well the GA is working
         self.parents = parents
+        
+        # When writing model, names of voltdump files will be saved
+        self.voltdumpFiles = None
+        
+        # When writing model, output directory will be saved.
+        self.outDir = None
         
         # If not given a regChrom or capChrom, generate them.
         if (regChrom is None) and (capChrom is None):
@@ -102,12 +113,7 @@ class individual:
     def __str__(self):
         """Individual's string should include fitness and reg/cap info.
         """
-        # Put the individual's fitness in a dictionary, convert to string via
-        # json.dumps.
-        fitDict = {'Fitness': self.fitness, 'Energy cost': self.energyCost,
-                   'Capacitor cost': self.capCost,
-                   'Regulator cost': self.regCost}
-        s = json.dumps(fitDict)
+        s = json.dumps(self.costs)
         s += '\n'
         # Add parents.
         s += 'Parents: {}\n'.format(self.parents)
@@ -198,7 +204,7 @@ class individual:
                     
                     # Translate previous position to integer on interval [0,tb]
                     prevState = \
-                        gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
+                        util.gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
                                                  pos=phaseData['prevState'])
                         
                     # Initialize the newState for while loop.
@@ -229,7 +235,7 @@ class individual:
                 
                 # Translate newState for GridLAB-D.
                 self.reg[r]['phases'][phase]['newState'] = \
-                    gld.translateTaps(lowerTaps=v['lower_taps'], pos=newState)
+                    util.gld.translateTaps(lowerTaps=v['lower_taps'], pos=newState)
                     
                 # Increment the tap change counter (previous pos - this pos)
                 self.tapChangeCount += \
@@ -305,11 +311,11 @@ class individual:
                                   phaseData['chromInd'][1]]
                     
                 # Convert the binary to an integer
-                posInt = helper.bin2int(tapBin)
+                posInt = util.helper.bin2int(tapBin)
                 
                 # Convert integer to tap position and assign to new position
                 self.reg[r]['phases'][phase]['newState'] = \
-                    gld.translateTaps(lowerTaps=self.reg[r]['lower_taps'],
+                    util.gld.translateTaps(lowerTaps=self.reg[r]['lower_taps'],
                                       pos=posInt)
                     
                 # Increment the tap change counter (previous pos - this pos)
@@ -334,7 +340,7 @@ class individual:
                     
                     self.capSwitchCount += 1
                 
-    def writeModel(self, strModel, inPath, outDir):
+    def writeModel(self, strModel, inPath, outDir, dumpGroup='tLoad'):
         """Create a GridLAB-D .glm file for the given individual by modifying
         setpoints for controllable devices (capacitors, regulators, eventually
         DERs)
@@ -346,10 +352,13 @@ class individual:
             outDir: directory to write new model to. Filename will be inferred
                 from the inPath, and the individuals uid preceded by an
                 underscore will be added
+            dumpGroup: Name of group used for triplex_loads.
                 
         OUTPUTS:
             Path to new model after it's created
         """
+        # Assign output directory.
+        self.outDir = outDir
         
         # Get the filename of the original model and create output path
         outPath = \
@@ -371,6 +380,19 @@ class individual:
         self.swingTable = o['table']
         self.swingColumns = o['columns']
         self.swingInterval = o['interval']
+        
+        # Add voltdumps for each triplex load. Start by adding groups.
+        writeObj.addGroupToObjects(objectRegex=writeCommands.TRIPLEX_LOAD_REGEX,
+                                   groupName=dumpGroup)
+        
+        self.voltdumpFiles = writeObj.addVoltDumps(starttime=self.starttime,
+                                                   stoptime=self.stoptime,
+                                                   group=dumpGroup, 
+                                                   fileDir=self.outDir,
+                                                   baseFile='vDump.csv',
+                                                   suffix=self.uid,
+                                                   interval=60)
+        
         
         # TODO: Uncomment when ready
         '''
@@ -400,12 +422,12 @@ class individual:
     def runModel(self):
         """Function to run GridLAB-D model.
         """
-        self.modelOutput = gld.runModel(self.model)
+        self.modelOutput = util.gld.runModel(self.model)
                             
     def evalFitness(self, cursor, energyPrice, tapChangeCost, capSwitchCost,
-                    tCol='t', starttime=None, stoptime=None):
+                    voltCost, tCol='t'):
         """Function to evaluate fitness of individual. This is essentially a
-            wrapper to call gld.computeCosts
+            wrapper to call util.gld.computeCosts
         
         TODO: Add more evaluators of fitness like voltage violations, etc.
         
@@ -418,20 +440,22 @@ class individual:
             starttime: starting time to evaluate
             stoptime: ending time to evaluate
         """
-        r = gld.computeCosts(cursor=cursor,
-                                        powerTable=self.swingTable,
-                                        powerColumns=self.swingColumns,
-                                        powerInterval=self.swingInterval,
-                                        energyPrice=energyPrice,
-                                        starttime=starttime,
-                                        stoptime=stoptime,
-                                        tCol=tCol,
-                                        tapChangeCost=tapChangeCost,
-                                        capSwitchCost=capSwitchCost,
-                                        tapChangeCount=self.tapChangeCount,
-                                        capSwitchCount=self.capSwitchCount)
+        self.costs = util.gld.computeCosts(cursor=cursor,
+                                            powerTable=self.swingTable,
+                                            powerColumns=self.swingColumns,
+                                            powerInterval=self.swingInterval,
+                                            energyPrice=energyPrice,
+                                            starttime=self.starttime,
+                                            stoptime=self.stoptime,
+                                            tCol=tCol,
+                                            tapChangeCost=tapChangeCost,
+                                            capSwitchCost=capSwitchCost,
+                                            tapChangeCount=self.tapChangeCount,
+                                            capSwitchCount=self.capSwitchCount,
+                                            voltCost=voltCost,
+                                            voltdumpDir=self.outDir,
+                                            voltdumpFiles=self.voltdumpFiles
+                                            )
         
-        self.fitness = r['total']
-        self.energyCost = r['energy']
-        self.regCost = r['tap']
-        self.capCost = r['cap']
+        # Assign fitness to simplify things.
+        self.fitness = self.costs['total']
