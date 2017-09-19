@@ -165,6 +165,7 @@ public class AppManagerTest2 {
 		}
 		
 		String runtimeOptions = "-c \""+APPLICATION_OBJECT_CONFIG+"\"";
+
 		String simulationId = "12345";
 		RequestAppStart appStart = new RequestAppStart(appInfo.getId(), runtimeOptions, simulationId);
 		sendMessage(GridAppsDConstants.topic_app_start, appStart);
