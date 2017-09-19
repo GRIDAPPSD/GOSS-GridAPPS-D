@@ -150,6 +150,8 @@ public class AppManagerTest2 {
 		byte[] fileData = Files.readAllBytes(f.toPath());
 
 		RequestAppRegister appRegister = new RequestAppRegister(appInfo,fileData);
+		System.out.println("REGISTER"+appRegister);
+
 //		DataRequest request = new DataRequest();
 //		request.setRequestContent(appRegister);
 //		client.publish(GridAppsDConstants.topic_requestSimulation, appRegister);
@@ -163,10 +165,10 @@ public class AppManagerTest2 {
 		}
 		
 		String runtimeOptions = "-c \""+APPLICATION_OBJECT_CONFIG+"\"";
-		String simulationId = "12345 somethingelse fail";
+		String simulationId = "12345";
 		RequestAppStart appStart = new RequestAppStart(appInfo.getId(), runtimeOptions, simulationId);
 		sendMessage(GridAppsDConstants.topic_app_start, appStart);
-
+		System.out.println(appStart);
 		
 		
 		try {
