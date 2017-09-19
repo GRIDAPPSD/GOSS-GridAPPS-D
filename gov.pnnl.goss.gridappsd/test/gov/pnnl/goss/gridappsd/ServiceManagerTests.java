@@ -3,6 +3,7 @@ package gov.pnnl.goss.gridappsd;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 
+import java.io.File;
 import java.util.Hashtable;
 
 import org.junit.Test;
@@ -25,9 +26,14 @@ public class ServiceManagerTests {
 	public void test(){
 		ServiceManagerImpl servManagerImpl = new ServiceManagerImpl(logManager, clientFactory);
 		
+		//use directory relative to current running directory
+		File f = new File("");
+		File currentDir = new File(f.getAbsolutePath());
+		File parentDir = currentDir.getParentFile();
+		
 		Hashtable<String, String> props = new Hashtable<String, String>();
-		props.put("applications.path", "C:/Users/shar064/git/GOSS-GridAPPS-D/applications");
-		props.put("services.path", "C:/Users/shar064/git/GOSS-GridAPPS-D/services");
+		props.put("applications.path", parentDir.getAbsolutePath()+File.separator+"applications");
+		props.put("services.path", parentDir.getAbsolutePath()+File.separator+"/services");
 		servManagerImpl.updated(props);
 		
 		servManagerImpl.start();

@@ -7,6 +7,8 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
 import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
@@ -60,19 +62,19 @@ public class ServiceManagerImpl implements ServiceManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()).toString(), 
+				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
-				"INFO", 
-				"Running", 
+				LogLevel.INFO, 
+				ProcessStatus.RUNNING, 
 				true));
 		
 		scanForServices();
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()).toString(), 
+				new Date().getTime(), 
 				String.format("Found %s servicelications", services.size()), 
-				"INFO", 
-				"Running", 
+				LogLevel.INFO, 
+				ProcessStatus.RUNNING, 
 				true));
 	}
 	

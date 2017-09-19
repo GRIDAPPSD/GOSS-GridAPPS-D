@@ -63,6 +63,8 @@ import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -127,10 +129,10 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 			try {
 				logManager.log(new LogMessage(Integer.toString(simulationId), 
-						new Long(new Date().getTime()).toString(), 
+						new Date().getTime(), 
 						"Starting simulation "+simulationId, 
-						"INFO", 
-						"Starting", 
+						LogLevel.INFO, 
+						ProcessStatus.STARTING, 
 						true));
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
@@ -176,10 +178,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
 						
 						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()).toString(), 
+								new Date().getTime(), 
 								"FNCS Co-Simulator started", 
-								"INFO", 
-								"Running", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 						
 						
@@ -199,10 +201,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()).toString(), 
+								new Date().getTime(), 
 								"GridLAB-D started", 
-								"INFO", 
-								"Running", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 						
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
@@ -228,10 +230,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()).toString(), 
+								new Date().getTime(), 
 								"FNCS-GOSS Bridge started", 
-								"INFO", 
-								"Running", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 
 						//Start GOSS-FNCS Bridge
@@ -245,10 +247,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()).toString(), 
+								new Date().getTime(), 
 								"FNCS-GOSS Bridge started", 
-								"INFO", 
-								"Running", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 
 						
@@ -269,10 +271,10 @@ public class SimulationManagerImpl implements SimulationManager{
 						
 						if(initAttempts<MAX_INIT_ATTEMPTS){
 							logManager.log(new LogMessage(Integer.toString(simulationId), 
-									new Long(new Date().getTime()).toString(), 
+									new Date().getTime(), 
 									"FNCS Initialized", 
-									"INFO", 
-									"Running", 
+									LogLevel.INFO, 
+									ProcessStatus.RUNNING, 
 									true));
 							
 
@@ -280,10 +282,10 @@ public class SimulationManagerImpl implements SimulationManager{
 	                        sendTimesteps(simulationConfig, simulationId); 
 						} else {
 							logManager.log(new LogMessage(Integer.toString(simulationId), 
-									new Long(new Date().getTime()).toString(), 
+									new Date().getTime(), 
 									"FNCS Initialization Failed", 
-									"ERROR", 
-									"Failed", 
+									LogLevel.ERROR, 
+									ProcessStatus.ERROR,  
 									true));
 							
 						}
@@ -291,20 +293,20 @@ public class SimulationManagerImpl implements SimulationManager{
                         //call to stop the fncs broker
 					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
 					    logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()).toString(), 
+								new Date().getTime(), 
 								"Simulation "+simulationId+" complete", 
-								"INFO", 
-								"Complete", 
+								LogLevel.INFO, 
+								ProcessStatus.COMPLETE,
 								true));
 					}
 					catch(Exception e){
 							log.error("Error during simulation",e);
 							try {
 								logManager.log(new LogMessage(Integer.toString(simulationId), 
-										new Long(new Date().getTime()).toString(), 
+										new Date().getTime(), 
 										"Simulation error: "+e.getMessage(),
-										"ERROR", 
-										"Error", 
+										LogLevel.ERROR, 
+										ProcessStatus.ERROR,
 										true));
 							} catch (Exception e1) {
 								log.error("Error while reporting error status", e);
@@ -350,10 +352,10 @@ public class SimulationManagerImpl implements SimulationManager{
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
 				logManager.log(new LogMessage(Integer.toString(simulationId), 
-						new Long(new Date().getTime()).toString(), 
+						new Date().getTime(), 
 						 "FNCS-GOSS Bridge response:"+response, 
-						"INFO", 
-						"Running", 
+							LogLevel.INFO, 
+							ProcessStatus.RUNNING,
 						true));
 				
 				Gson  gson = new Gson();
@@ -390,10 +392,10 @@ public class SimulationManagerImpl implements SimulationManager{
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge 
 			logManager.log(new LogMessage(Integer.toString(simulationId), 
-					new Long(new Date().getTime()).toString(), 
+					new Date().getTime(), 
 					"Sending timestep "+seconds, 
-					"INFO", 
-					"Running", 
+					LogLevel.INFO, 
+					ProcessStatus.RUNNING, 
 					true));
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
