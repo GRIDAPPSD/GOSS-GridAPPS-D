@@ -47,7 +47,7 @@ public class LogMessage {
 		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
 	}
 	public enum ProcessStatus {
-		STARTING, STARTED, RUNNING, ERROR, CLOSED
+		STARTING, STARTED, RUNNING, ERROR, CLOSED, STOPPED
 	}
 	
 	String process_id;

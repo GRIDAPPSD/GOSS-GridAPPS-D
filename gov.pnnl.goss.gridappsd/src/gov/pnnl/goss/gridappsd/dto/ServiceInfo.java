@@ -41,7 +41,6 @@ package gov.pnnl.goss.gridappsd.dto;
 
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -64,6 +63,7 @@ public class ServiceInfo implements Serializable {
 	boolean launch_on_startup;
 	List<String> prereqs;
 	boolean multiple_instances;
+	List<EnvironmentVariable> environmentVariables;
 	
 
 	public String getId() {
@@ -153,6 +153,16 @@ public class ServiceInfo implements Serializable {
 
 	public void setMultiple_instances(boolean multiple_instances) {
 		this.multiple_instances = multiple_instances;
+	}
+	
+	
+
+	public List<EnvironmentVariable> getEnvironmentVariables() {
+		return environmentVariables;
+	}
+
+	public void setEnvironmentVariables(List<EnvironmentVariable> environmentVariables) {
+		this.environmentVariables = environmentVariables;
 	}
 
 	@Override
