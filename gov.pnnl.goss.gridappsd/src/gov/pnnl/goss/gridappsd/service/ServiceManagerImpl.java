@@ -10,6 +10,7 @@ import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 
@@ -27,6 +29,8 @@ import pnnl.goss.core.ClientFactory;
 
 @Component
 public class ServiceManagerImpl implements ServiceManager{
+	
+	private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 	
 	@ServiceDependency
 	LogManager logManager;
@@ -77,9 +81,18 @@ public class ServiceManagerImpl implements ServiceManager{
 		File serviceConfigDir = getServiceConfigDirectory();
 		
 		//for each service found, parse the serviceinfo.json config file to create serviceinfo object and add to services map
-		File[] serviceDirs = serviceConfigDir.listFiles();
-		for(File serviceDir: serviceDirs){
-			ServiceInfo serviceInfo = parseServiceInfo(serviceDir);
+		File[] serviceconfigFiles = serviceConfigDir.listFiles(new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				if(pathname.isFile() && pathname.getName().endsWith(".config"))
+					return true;
+				else
+					return false;
+			}
+		});
+		for(File serviceConfigFile: serviceconfigFiles){
+			ServiceInfo serviceInfo = parseServiceInfo(serviceConfigFile);
 			services.put(serviceInfo.getId(), serviceInfo);
 		}
 	}
@@ -111,20 +124,16 @@ public class ServiceManagerImpl implements ServiceManager{
 		return null;
 	}
 	
-	protected ServiceInfo parseServiceInfo(File serviceDirectory){
+	protected ServiceInfo parseServiceInfo(File serviceConfigFile){
 		ServiceInfo serviceInfo = null;
-		File confFile = new File(serviceDirectory.getAbsolutePath()+File.separator+CONFIG_DIR_NAME+File.separator+CONFIG_FILE_NAME);
-		if(!confFile.exists()){
-			throw new RuntimeException("Service config file does not exist: "+confFile.getAbsolutePath());
-		}
-		
+		String serviceConfigStr;
 		try {
-			String serviceConfigStr = new String(Files.readAllBytes(confFile.toPath()));
+			serviceConfigStr = new String(Files.readAllBytes(serviceConfigFile.toPath()));
 			serviceInfo = ServiceInfo.parse(serviceConfigStr);
 		} catch (IOException e) {
-			logManager.log(new LogMessage("Service Manager", new Long(new Date().getTime()).toString(), "Error while reading sercice config file: "+e.getMessage(), "ERROR", "failed", false));
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		
 		return serviceInfo;
 		
 	}
@@ -260,6 +269,13 @@ public class ServiceManagerImpl implements ServiceManager{
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@ConfigurationDependency(pid=CONFIG_PID)
+	public synchronized void updated(Dictionary<String, ?> config)  {
+		this.configurationProperties = config;
+	}
+	
+	
 
 
 }
