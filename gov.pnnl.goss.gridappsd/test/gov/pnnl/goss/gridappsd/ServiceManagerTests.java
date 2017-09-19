@@ -32,6 +32,8 @@ public class ServiceManagerTests {
 		
 		servManagerImpl.start();
 		
+		//for(SerrivservManagerImpl.list)
+		
 		servManagerImpl.startServiceForSimultion("gridlabd", "testFile.glm", "simulation_1");
 		
 	}
