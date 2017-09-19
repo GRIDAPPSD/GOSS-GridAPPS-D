@@ -36,7 +36,10 @@ Test-Cases: ${test-cases}
 	org.amdatu.configurator.api,\
 	slf4j.api,\
 	org.apache.httpcomponents.httpclient,\
-	javax.jms-api
+	javax.jms-api,\
+	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
+	com.google.gson,\
+	org.fusesource.stompjms.stompjms-client
 	
 
 -runrequires: \

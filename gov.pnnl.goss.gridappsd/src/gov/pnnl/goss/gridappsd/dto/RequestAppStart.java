@@ -50,14 +50,14 @@ public class RequestAppStart implements Serializable {
 
 	
 	String app_id;
-	HashMap<String, String> runtime_options;
+	String runtime_options;
 	String simulation_id;
 	
 	public RequestAppStart(){
 		
 	}
 	
-	public RequestAppStart(String app_id, HashMap<String, String> runtime_options, String simulation_id){
+	public RequestAppStart(String app_id, String runtime_options, String simulation_id){
 		this.app_id = app_id;
 		this.runtime_options = runtime_options;
 		this.simulation_id = simulation_id;
@@ -74,11 +74,12 @@ public class RequestAppStart implements Serializable {
 		this.app_id = app_id;
 	}
 
-	public HashMap<String, String> getRuntime_options() {
+
+	public String getRuntime_options() {
 		return runtime_options;
 	}
 
-	public void setRuntime_options(HashMap<String, String> runtime_options) {
+	public void setRuntime_options(String runtime_options) {
 		this.runtime_options = runtime_options;
 	}
 

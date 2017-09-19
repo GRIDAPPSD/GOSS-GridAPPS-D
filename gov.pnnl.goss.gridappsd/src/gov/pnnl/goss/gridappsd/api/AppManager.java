@@ -1,7 +1,6 @@
 package gov.pnnl.goss.gridappsd.api;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
@@ -13,7 +12,7 @@ public interface AppManager {
 	void process(StatusReporter statusReporter,
 			int processId, DataResponse event, Serializable message) throws Exception;
 
-	void registerApp(AppInfo appInfo, Serializable appPackage);
+	void registerApp(AppInfo appInfo, byte[] appPackage) throws Exception;
 	
 	List<AppInfo> listApps();  
 	
@@ -25,9 +24,9 @@ public interface AppManager {
 	
 	void deRegisterApp(String appId); 
 	
-	String startApp(String appId, HashMap<String, String> runtimeOptions);  //may also need input/output topics or simulation id, would return app instance id
+	String startApp(String appId, String runtimeOptions, String requestId);  //may also need input/output topics or simulation id, would return app instance id
 	
-	String startAppForSimultion(String appId, HashMap<String, String> runtimeOptions, String simulationId);  //may also need input/output topics??, would return app instance id
+	String startAppForSimultion(String appId, String runtimeOptions, String simulationId, String requestId);  //may also need input/output topics??, would return app instance id
 	
 	void stopApp(String appId);  
 
