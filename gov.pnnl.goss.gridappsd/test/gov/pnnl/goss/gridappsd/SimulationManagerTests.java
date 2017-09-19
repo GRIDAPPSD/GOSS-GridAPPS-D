@@ -16,6 +16,7 @@ import org.mockito.Mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
@@ -37,7 +38,7 @@ public class SimulationManagerTests {
 	ConfigurationManager mockConfigurationManager;
 	
 	@Mock
-	StatusReporter mockStatusReporter;
+	LogManager logManager;
 	
 	@Mock
 	FncsBridgeResponse mockFncsBridgeResponse;
@@ -60,7 +61,7 @@ public class SimulationManagerTests {
 	@Test
 	public void correctCredsWhenStarted(){
 		
-		SimulationManagerImpl manager = new SimulationManagerImpl(mockClientFactory, mockServerControl, mockStatusReporter, mockConfigurationManager);
+		SimulationManagerImpl manager = new SimulationManagerImpl(mockClientFactory, mockServerControl, logManager, mockConfigurationManager);
 		
 		try {
 			manager.start();

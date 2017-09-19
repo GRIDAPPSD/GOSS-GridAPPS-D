@@ -1,14 +1,14 @@
-import pytest
-import mock
-import sys
-import os
-import json
-import yaml
-from datetime import datetime
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from vvoapps.vvoapp import GOSSListener, _registerWithGOSS as vvo_reg
-import vvoapps.vvoapp as vvoapp
 import argparse
+from datetime import datetime
+import json
+
+import mock
+import pytest
+import yaml
+
+from vvoapps.vvoapp import GOSSListener, _register_with_goss as vvo_reg
+import vvoapps.vvoapp as vvoapp
+
 
 @pytest.fixture
 def my_fixture():
@@ -283,7 +283,7 @@ def my_fixture():
 	        }
 	    }
 	}
-    vvo_output_dict = {
+    vvo_expected_output_dict = {
 		"ieee8500": {
 			"reg_FEEDER_REG": {
 				"tap_C": 0,
@@ -308,14 +308,14 @@ def my_fixture():
 		}
     }
     vvo_message = {"output":json.dumps(vvo_message_dict)}
-    yield [vvo_static_config, json.dumps(vvo_message), vvo_output_dict]
+    yield [vvo_static_config, json.dumps(vvo_message), vvo_expected_output_dict]
     print "tear down"
 
 
-@mock.patch('vvoapps.vvoapp.gossConnection')
+@mock.patch('vvoapps.vvoapp.goss_connection')
 @mock.patch('vvoapps.vvoapp.stomp')
 @mock.patch('vvoapps.vvoapp.logging')
-def test_vvo_app(mock_logging, mock_stomp, mock_gossConnection, my_fixture):
+def test_vvo_app(mock_logging, mock_stomp, mock_goss_connection, my_fixture):
 	#test _registerWithGoss function
 	parser = argparse.ArgumentParser(version=vvoapp.__version__)
 	parser.add_argument("-t0", default=2, type=int,
@@ -325,30 +325,30 @@ def test_vvo_app(mock_logging, mock_stomp, mock_gossConnection, my_fixture):
 	
 	msg = my_fixture[1]
 	vvo_output = my_fixture[2]
-	mock_stomp.Connection12.return_value = mock_gossConnection
+	mock_stomp.Connection12.return_value = mock_goss_connection
 	mock_logging.getLogger.return_value = mock_logging
 	vvo_reg("username", "password", "gossServer", "13259")
 	mock_stomp.Connection12.assert_called_once_with([("gossServer", "13259")])
-	mock_gossConnection.start.assert_called_once()
-	mock_gossConnection.connect.assert_called_once_with("username", "password", wait=True)
-	mock_gossConnection.set_listener.assert_called_once()
+	mock_goss_connection.start.assert_called_once()
+	mock_goss_connection.connect.assert_called_once_with("username", "password", wait=True)
+	mock_goss_connection.set_listener.assert_called_once()
 	assert 2 == vvoapp.opts.t0
-	mock_gossConnection.subscribe.assert_any_call('/topic/goss/gridappsd/fncs/output', 1)
-	mock_gossConnection.subscribe.assert_any_call('/topic/goss/gridappsd/fncs/output', 2)
-	assert 2 == mock_gossConnection.subscribe.call_count
-	mock_gossConnection.is_connected.assert_called_once()
-	#test the appOutput function
+	mock_goss_connection.subscribe.assert_any_call('/topic/goss/gridappsd/fncs/output', 1)
+	mock_goss_connection.subscribe.assert_any_call('/topic/goss/gridappsd/fncs/output', 2)
+	assert 2 == mock_goss_connection.subscribe.call_count
+	mock_goss_connection.is_connected.assert_called_once()
+	#test the app_output function
 	mock_stomp.reset_mock()
-	mock_gossConnection.reset_mock()
-	vvoapp.appOutput(vvo_output)
-	mock_gossConnection.send.assert_called_once_with('/topic/goss/gridappsd/fncs/input', json.dumps({"command":"update","message":vvo_output}))
+	mock_goss_connection.reset_mock()
+	vvoapp.app_output(vvo_output)
+	mock_goss_connection.send.assert_called_once_with('/topic/goss/gridappsd/fncs/input', json.dumps({"command":"update","message":vvo_output}))
 	#test GOSSListener class
-	mock_gossConnection.reset_mock()
+	mock_goss_connection.reset_mock()
 	inst = GOSSListener(4)
 	assert inst.t0 == 4
 	#test the on_message function
 	inst.on_message(None, msg)
-	mock_gossConnection.send.assert_called_once_with('/topic/goss/gridappsd/fncs/input', json.dumps({"command":"update","message":vvo_output}))
+	mock_goss_connection.send.assert_called_once_with('/topic/goss/gridappsd/fncs/input', json.dumps({"command":"update","message":vvo_output}))
 	#test the on_error function
 	mock_logging.reset_mock()
 	vvoapp.logger = mock_logging
