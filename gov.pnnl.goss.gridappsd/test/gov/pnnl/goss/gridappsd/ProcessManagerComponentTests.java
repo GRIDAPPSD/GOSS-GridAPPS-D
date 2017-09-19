@@ -49,6 +49,8 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
 import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
@@ -131,16 +133,11 @@ public class ProcessManagerComponentTests {
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), "debug");
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
 		assertEquals(logMessage.getLog_message(), "Starting "+ProcessManagerImpl.class.getName());
-		assertEquals(logMessage.getProcess_status(), "running");
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-		try {
-			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		assertNotNull(logMessage.getTimestamp());
 				
 	}
 
@@ -204,29 +201,19 @@ public class ProcessManagerComponentTests {
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), "debug");
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
 		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), "running");
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-		try {
-			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), "debug");
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
 		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), "running");
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-		try {
-			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		assertNotNull(logMessage.getTimestamp());
 				
 	}
 	
@@ -299,29 +286,19 @@ public class ProcessManagerComponentTests {
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), "debug");
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
 		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), "running");
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-		try {
-			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), "debug");
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
 		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), "running");
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-		try {
-			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		assertNotNull(logMessage.getTimestamp());
 		
 		
 	}	
@@ -392,37 +369,38 @@ public class ProcessManagerComponentTests {
 //	
 	
 	//error if no simulation config is created
-	/**
-	 *    Succeeds when the correct message is logged after valid message is sent to the log topic
-	 */
-	@Test
-	public void loggedStatusWhen_logTopicSent(){
-		
-		try {
-			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}		
-		ArgumentCaptor<GossResponseEvent> gossResponseEventArgCaptor = ArgumentCaptor.forClass(GossResponseEvent.class);
-
-
-		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
-											configurationManager, simulationManager, 
-											statusReporter, logManager, appManager, newSimulationProcess);
-		processManager.start();
-
-		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
-		String logMessage = "My Test Log Message";
-		
-		DataResponse dr = new DataResponse(logMessage);
-		dr.setDestination("goss.gridappsd.process.log");
-		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
-		response.onMessage(dr);
-		
-		Mockito.verify(logManager).log(argCaptor.capture());
-
-		assertEquals(logMessage, argCaptor.getValue());
-	}
+	//DOesn't currently support log with string only
+//	/**
+//	 *    Succeeds when the correct message is logged after valid message is sent to the log topic
+//	 */
+//	@Test
+//	public void loggedStatusWhen_logTopicSent(){
+//		
+//		try {
+//			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}		
+//		ArgumentCaptor<GossResponseEvent> gossResponseEventArgCaptor = ArgumentCaptor.forClass(GossResponseEvent.class);
+//
+//
+//		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
+//											configurationManager, simulationManager, 
+//											statusReporter, logManager, appManager, newSimulationProcess);
+//		processManager.start();
+//
+//		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
+//		String logMessage = "My Test Log Message";
+//		
+//		DataResponse dr = new DataResponse(logMessage);
+//		dr.setDestination("goss.gridappsd.process.log");
+//		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
+//		response.onMessage(dr);
+//		
+//		Mockito.verify(logManager).log(argCaptor.capture());
+//
+//		assertEquals(logMessage, argCaptor.getValue());
+//	}
 	
 	
 	//TODO add appmanaager test

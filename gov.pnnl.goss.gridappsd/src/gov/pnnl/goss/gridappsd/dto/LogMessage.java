@@ -39,21 +39,30 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto;
 
+import com.google.gson.Gson;
+
 public class LogMessage {
+	
+	public enum LogLevel {
+		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
+	}
+	public enum ProcessStatus {
+		STARTING, STARTED, RUNNING, ERROR, CLOSED
+	}
 	
 	String process_id;
 	String parent_process_id;
 
-	String timestamp;
+	long timestamp;
 	String log_message;
-	String log_level;
-	String process_status;
+	LogLevel log_level;
+	ProcessStatus process_status;
 	Boolean storeToDB = true;
 	
 	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
 	
 	public LogMessage(){}
-	public LogMessage(String process_id, String timestamp, String log_message, String log_level, String process_status, Boolean storeToDB){
+	public LogMessage(String process_id, long timestamp, String log_message, LogLevel log_level, ProcessStatus process_status, Boolean storeToDB){
 		this.process_id = process_id;
 		this.timestamp = timestamp;
 		this.log_level = log_level;
@@ -74,10 +83,10 @@ public class LogMessage {
 	public void setParent_process_id(String parent_process_id) {
 		this.parent_process_id = parent_process_id;
 	}
-	public String getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
-	public void setTimestamp(String timestamp) {
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 	public String getLog_message() {
@@ -86,16 +95,16 @@ public class LogMessage {
 	public void setLog_message(String log_message) {
 		this.log_message = log_message;
 	}
-	public String getLog_level() {
+	public LogLevel getLog_level() {
 		return log_level;
 	}
-	public void setLog_level(String log_level) {
+	public void setLog_level(LogLevel log_level) {
 		this.log_level = log_level;
 	}
-	public String getProcess_status() {
+	public ProcessStatus getProcess_status() {
 		return process_status;
 	}
-	public void setProcess_status(String process_status) {
+	public void setProcess_status(ProcessStatus process_status) {
 		this.process_status = process_status;
 	}
 	public Boolean getStoreToDB() {
@@ -106,4 +115,16 @@ public class LogMessage {
 	}
 	
 	
+	public static LogMessage parse(String jsonString){
+		Gson  gson = new Gson();
+		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
+		if(obj.log_message==null)
+			throw new RuntimeException("Expected attribute log_message not found");
+		return obj;
+	}
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 }

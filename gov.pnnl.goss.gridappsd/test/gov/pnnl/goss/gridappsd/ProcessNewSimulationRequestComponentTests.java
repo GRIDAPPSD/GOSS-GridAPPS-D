@@ -46,6 +46,8 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 
 import java.io.File;
@@ -106,9 +108,9 @@ public class ProcessNewSimulationRequestComponentTests {
 		Mockito.verify(logManager, Mockito.times(5)).log(argCaptorLogMessage.capture());
 		LogMessage capturedMessage = argCaptorLogMessage.getAllValues().get(0);
 		assertEquals( "Parsed config " + REQUEST_SIMULATION_CONFIG, capturedMessage.getLog_message());
-		assertEquals("info", capturedMessage.getLog_level());
+		assertEquals(LogLevel.INFO, capturedMessage.getLog_level());
 		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcess_id());
-		assertEquals("running", capturedMessage.getProcess_status());
+		assertEquals(ProcessStatus.RUNNING, capturedMessage.getProcess_status());
 		assertEquals(false, capturedMessage.getStoreToDB());
 		
 		//	get simulation file called
@@ -159,9 +161,9 @@ public class ProcessNewSimulationRequestComponentTests {
 		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
 		LogMessage capturedMessage = argCaptorLogMessage.getValue();
 		assertEquals(true, capturedMessage.getLog_message().startsWith("Process Initialization error: "));
-		assertEquals("error", capturedMessage.getLog_level());
+		assertEquals(LogLevel.ERROR, capturedMessage.getLog_level());
 		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcess_id());
-		assertEquals("failed", capturedMessage.getProcess_status());
+		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcess_status());
 		assertEquals(false, capturedMessage.getStoreToDB());
 	}
 	
@@ -194,9 +196,9 @@ public class ProcessNewSimulationRequestComponentTests {
 		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
 		LogMessage capturedMessage = argCaptorLogMessage.getValue();
 		assertEquals(true, capturedMessage.getLog_message().startsWith("Process Initialization error: "));
-		assertEquals("error", capturedMessage.getLog_level());
+		assertEquals(LogLevel.ERROR, capturedMessage.getLog_level());
 		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcess_id());
-		assertEquals("failed", capturedMessage.getProcess_status());
+		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcess_status());
 		assertEquals(false, capturedMessage.getStoreToDB());
 	}
 	
@@ -223,9 +225,8 @@ public class ProcessNewSimulationRequestComponentTests {
 		Mockito.verify(logManager, Mockito.times(4)).log(argCaptorLogMessage.capture());
 		LogMessage capturedMessage = argCaptorLogMessage.getAllValues().get(2);
 		assertEquals(true, capturedMessage.getLog_message().startsWith("No simulation file returned for request "));
-		assertEquals("error", capturedMessage.getLog_level());
-		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcess_id());
-		assertEquals("failed", capturedMessage.getProcess_status());
+		assertEquals(LogLevel.ERROR, capturedMessage.getLog_level());
+		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcess_status());
 		assertEquals(false, capturedMessage.getStoreToDB());
 	}
 	
