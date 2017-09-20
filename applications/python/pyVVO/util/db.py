@@ -345,12 +345,12 @@ def updateStatus(inDict, dictType, cursor, table, phaseCols, t,
             # Infer the phase.
             p = phaseCols[k-1].replace(s, '')
             
-            # If this phase isn't in the dictionary, add it.
-            if p not in inDict[n]['phases']:
-                inDict[n]['phases'][p] = {}
-                
-            # Assign to 'newStatus'
-            inDict[n]['phases'][p]['newState'] = row[k]
+            # If this phase is in the dictionary, update status.
+            # Recall that we had to make a column for every phase, even if
+            # this device isn't connected to the phase.
+            if p in inDict[n]['phases']:    
+                # Assign to 'newStatus'
+                inDict[n]['phases'][p]['newState'] = row[k]
         
         # Get next row.
         row = cursor.fetchone()

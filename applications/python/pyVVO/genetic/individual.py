@@ -10,7 +10,6 @@ from powerflow import writeCommands
 import util.gld
 import util.helper
 import math
-import json
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
@@ -23,7 +22,7 @@ TAPSIGMAPCT = 0.1
 class individual:
     
     def __init__(self, uid, starttime, stoptime, reg=None, regBias=False,
-                 peg=None, cap=None, allCap=None, regChrom=None, capChrom=None,
+                 peg=None, cap=None, capFlag=2, regChrom=None, capChrom=None,
                  parents=None):
         """An individual contains information about Volt/VAR control devices
         
@@ -43,6 +42,13 @@ class individual:
                     
             cap: Dictionary describing capacitors as described in the docstring
                 for the gld module.
+                
+            capFlag: Flag for special handling of capacitors.
+                0: All capacitors set to CAPSTATUS[0] (OPEN)
+                1: All capacitors set to CAPSTATUS[1] (CLOSED)
+                2: Capacitor state randomly determined
+                3: Capacitor state unchanged - simply reflects what's in the
+                    'cap' input.
                 
             uid: Unique ID of individual. Should be an int.
             
@@ -101,7 +107,7 @@ class individual:
             # Generate regulator chromosome:
             self.genRegChrom(regBias=regBias, peg=peg)
             # Generate capacitor chromosome:
-            self.genCapChrom(allCap=allCap)
+            self.genCapChrom(flag=capFlag)
             # TODO: DERs
         else:
             # Use the given chromosomes to update the dictionaries.
@@ -112,33 +118,15 @@ class individual:
             
     def __str__(self):
         """Individual's string should include fitness and reg/cap info.
+        
+        This is a simple wrapper to call helper.getSummaryStr since the
+        benchmark system should be displayed in the same way.
         """
-        s = json.dumps(self.costs)
-        s += '\n'
-        # Add parents.
-        s += 'Parents: {}\n'.format(self.parents)
-        # Add the essential regulator elements to the string.
-        for r in self.reg:
-            s += r + ':\n'
-            for p in self.reg[r]['phases']:
-                s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
-                    self.reg[r]['phases'][p]['newState'],
-                    self.reg[r]['phases'][p]['prevState'])
-                
-        # Add the regulator chromosome
-        s += 'RegChrom: ' + json.dumps(self.regChrom) + '\n'
+        s = util.helper.getSummaryStr(costs=self.costs, reg=self.reg,
+                                      cap=self.cap, regChrom=self.regChrom,
+                                      capChrom=self.capChrom,
+                                      parents=self.parents)
         
-        # Add the essential capacitor elements to the string.
-        for c in self.cap: 
-            for p in self.cap[c]['phases']:
-                s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
-                    self.cap[c]['phases'][p]['newState'],
-                    self.cap[c]['phases'][p]['prevState'])
-                
-        # Add the capacitor chromosome
-        s += 'CapChrom: ' + json.dumps(self.capChrom)
-        
-        # That's all for now.
         return s
         
     def genRegChrom(self, regBias, peg):
@@ -248,24 +236,25 @@ class individual:
                 # Increment start index.
                 s += len(binTuple)
                 
-    def genCapChrom(self, allCap):
-        """Method to randomly generate an individual's capacitor chromosome.
-        Alternatively, if the allCap input is provided, all capacitors will
-        be forced to the same status provided.
+    def genCapChrom(self, flag):
+        """Method to generate an individual's capacitor chromosome.
         
         INPUTS:
-            allCap: None to do nothing, or one of the strings given in
-                CAPSTATUS ('OPEN' or 'CLOSED') which forces all caps to assume
-                the given status
+            flag:
+                0: All capacitors set to CAPSTATUS[0] (OPEN)
+                1: All capacitors set to CAPSTATUS[1] (CLOSED)
+                2: Capacitor state randomly determined
+                3: Capacitor state unchanged - simply reflects what's in the
+                    'cap' input.
                 
         OUTPUTS:
             modifies self.cap, sets self.capChrom
         """
         # If we're forcing all caps to the same status, determine the binary
         # representation. TODO: add input checking.
-        if allCap:
-            capBinary = CAPSTATUS.index(allCap)
-            capStatus = allCap
+        if flag < 2:
+            capBinary = flag
+            capStatus = CAPSTATUS[flag]
         
         # Initialize chromosome for capacitors and dict to store list indices.
         self.capChrom = ()
@@ -279,10 +268,13 @@ class individual:
             # Loop through the phases and randomly decide state
             for phase in capData['phases']:
                 
-                # Randomly determine capacitor status if allCap is None
-                if allCap is None:
+                # Randomly determine capacitor status if flag is 2
+                if flag == 2:
                     capBinary = round(random.random())
                     capStatus = CAPSTATUS[capBinary]
+                elif flag == 3:
+                    capStatus = self.cap[c]['phases'][phase]['prevState']
+                    capBinary = CAPSTATUS.index(capStatus)
                 
                 # Assign to the capacitor
                 self.capChrom += (capBinary,)

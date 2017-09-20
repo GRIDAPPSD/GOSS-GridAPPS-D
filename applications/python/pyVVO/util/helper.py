@@ -4,6 +4,7 @@ Created on Sep 12, 2017
 @author: thay838
 '''
 import time
+import json
 
 def bin2int(binList):
         """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
@@ -74,6 +75,53 @@ def incrementTime(t, fmt, interval):
         tN = time.mktime(time.strptime(t, fmt)) + interval
         tOut = time.strftime(fmt, time.localtime(tN))
         return tOut
+    
+def getSummaryStr(costs, reg, cap, regChrom=None, capChrom=None, parents=None):
+    """Helper method to create a string representation of a model.
+        Information could come from genetic.individual or a benchmark run.
+        
+    INPUTS:
+        costs: dictionary which comes from gld.computeCosts
+        reg: dictionary described in docstring of gld
+        cap: dictionary described in docstring of gld
+        regChrom: regulator chromosome as described in individual.py
+        capChrom: capacitor chromosome as described in individual.py
+        parents: uid's of parents that made this model (none for benchmark)
+    """
+    s = ''
+    if costs:
+        s += json.dumps(costs) + '\n'
+    
+    # Add parents.
+    if parents:
+        s += 'Parents: {}\n'.format(parents)
+        
+    # Add the essential regulator elements to the string.
+    for r in reg:
+        s += r + ':\n'
+        for p in reg[r]['phases']:
+            s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
+                reg[r]['phases'][p]['newState'],
+                reg[r]['phases'][p]['prevState'])
+            
+    # Add the regulator chromosome.
+    if regChrom:
+        s += 'RegChrom: ' + json.dumps(regChrom) + '\n'
+    
+    # Add the essential capacitor elements to the string.
+    for c in cap: 
+        s += c + ':\n'
+        for p in cap[c]['phases']:
+            s += '  ' + p + ': ' + 'newState={}, prevState={}\n'.format(
+                cap[c]['phases'][p]['newState'],
+                cap[c]['phases'][p]['prevState'])
+            
+    # Add the capacitor chromosome.
+    if capChrom:
+        s += 'CapChrom: ' + json.dumps(capChrom)
+    
+    # That's all for now.
+    return s
     
 if __name__ == '__main__':
     starttime= "2009-07-21 00:00:00"

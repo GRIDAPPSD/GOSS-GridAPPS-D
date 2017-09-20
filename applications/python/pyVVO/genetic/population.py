@@ -118,14 +118,14 @@ class population:
         
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
         c = len(self.individualsList)
-        for allCap in individual.CAPSTATUS:
+        for n in range(2):
             for peg in individual.REGPEG:
                 self.individualsList.append(\
                     individual.individual(uid=self.nextUID,
                                           reg=copy.deepcopy(reg),
                                           peg=peg,
                                           cap=copy.deepcopy(cap),
-                                          allCap=allCap,
+                                          capFlag=n,
                                           starttime=self.starttime,
                                           stoptime=self.stoptime
                                           )
@@ -133,15 +133,16 @@ class population:
                 c += 1
                 self.nextUID += 1
                 
-        # Create individuals with biased regulator positions
+        # Create individuals with biased regulator positions, but leave
+        # capacitors the same.
         # TODO: Stop hard-coding the number.
-        # TODO: Consider leaving capacitors the same.
         for _ in range(c, c+4):
             self.individualsList.append(\
                 individual.individual(uid=self.nextUID,
                                       reg=copy.deepcopy(reg),
                                       regBias=True,
                                       cap=copy.deepcopy(cap),
+                                      capFlag=3, 
                                       starttime=self.starttime,
                                       stoptime=self.stoptime
                                      )
@@ -156,6 +157,7 @@ class population:
                 individual.individual(uid=self.nextUID,
                                       reg=copy.deepcopy(reg), 
                                       cap=copy.deepcopy(cap),
+                                      capFlag=2,
                                       starttime=self.starttime,
                                       stoptime=self.stoptime
                                       )

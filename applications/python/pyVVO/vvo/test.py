@@ -237,26 +237,7 @@ def main(populationInputs={}):
                                           voltdumpDir=outDir,
                                           voltdumpFiles=benchVoltFiles
                                           )
-        # Write result to file.
-        print('Benchmark scores:', file = f, flush=True)
-        print('  Total: {:.4g}'.format(benchScores['total']), file=f,
-              flush=True)
-        print('  Energy: {:.4g}'.format(benchScores['energy']), file=f,
-              flush=True)
-        print('  Tap: {:.4g}'.format(benchScores['tap']), file=f,
-              flush=True)
-        print('  Cap: {:.4g}'.format(benchScores['cap']), file=f,
-              flush=True)
-        print('  Undervoltage: {:.4g}'.format(benchScores['undervoltage']),
-              file=f, flush=True)
-        print('  Overvoltage: {:.4g}'.format(benchScores['overvoltage']),
-              file=f, flush=True)
-        # TODO: Uncomment
-        '''
-        print('Benchmark violations: ')
-        print('    High: {}'.format(violations['high']))
-        print('    Low: {}'.format(violations['low']))
-        '''
+
         # Increment benchmark grand total
         benchTotal += benchScores['total']
         #**********************************************************************
@@ -269,6 +250,12 @@ def main(populationInputs={}):
                            cursor=cursor, table=capTable,
                            phaseCols=capTableStatusCols, t=stoptime,
                            nameCol='name', tCol='t')
+        
+        # Get string representation of benchmark run and write to file.
+        s = util.helper.getSummaryStr(costs=benchScores, reg=regBench,
+                                      cap=capBench)
+        print(s, file=f, flush=True)
+        
         
         # Rotate the 'newState' to 'oldState'
         regBench, capBench = util.helper.rotateVVODicts(reg=regBench, cap=capBench,
@@ -335,6 +322,6 @@ def main(populationInputs={}):
     print('Results printed to file. All done.', flush=True)
     
     return bestIndividual.fitness
-    
+ 
 if __name__ == '__main__':
     main()
