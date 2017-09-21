@@ -60,6 +60,7 @@ Created on Aug 29, 2017
 import subprocess
 import util.db
 import csv
+import os
 
 # GridLAB-D should get dates in this format.
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
@@ -69,6 +70,7 @@ def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
     
     TODO: Add support for command line inputs.
     """
+    cwd, model = os.path.split(modelPath)
     # Set up the gridlabd path, run model
     # TODO: Get this adapated for Unix.
     # NOTE: On Windows, spaces between the '&&'s causes everything to break...
@@ -76,11 +78,12 @@ def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
     cmd += r'&&set GLPATH={0}/share/gridlabd;{0}/lib/gridlabd'.format(gldPath)
     cmd += r'&&set CXXFLAGS=-I{}/share/gridlabd'.format(gldPath)
     cmd += r'&&gridlabd'
-    cmd += r' ' + modelPath
+    cmd += r' ' + model
     # Run command. Note with check=True exception will be thrown on failure.
     # TODO: rather than using check=True, handle the event of a GridLAB-D error
     output = subprocess.run(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=True)#, check=True)
+                            stderr=subprocess.PIPE, shell=True, 
+                            cwd=cwd)#, check=True)
     return output
 
 def translateTaps(lowerTaps, pos):

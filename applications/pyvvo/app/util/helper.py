@@ -59,6 +59,47 @@ def _rotate(d, deleteFlag):
                     
     return d
 
+def _update(dOld, dNew, dType):
+    """Function to update the 'prevState' in dOld with the 'prevState' in dNew
+    
+    Unfortunately this is really similiar to '_rotate', but I didn't want to 
+    jam a square peg in a round hole.
+    """
+    c = 0
+    # Loop through dictionary
+    for _d in dOld:
+        # Loop through phases of each element
+        for p in dOld[_d]['phases']:
+            # Update dOld with value from dNew
+            dOld[_d]['phases'][p]['prevState'] = \
+                dNew[_d]['phases'][p]['prevState']
+                
+            # Update count
+            if dType == 'reg':
+                # previous position minus new position
+                c += abs(dOld[_d]['phases'][p]['prevState']
+                         - dOld[_d]['phases'][p]['newState'])
+            elif dType == 'cap':
+                if (dOld[_d]['phases'][p]['prevState']
+                        != dOld[_d]['phases'][p]['newState']):
+                    
+                    c += 1
+            else:
+                assert False, 'dType must be reg or cap'
+                
+    return dOld, c
+                
+def updateVVODicts(regOld, capOld, regNew, capNew):
+    """Function to update 'prevState' in old dictionaries with the 'prevState'
+    in new dictionaries. This is used when keeping an old individual from the
+    previous genetic algorithm run to seed the next run's population.
+    """
+    regOld, tapChangeCount = _update(dOld=regOld, dNew=regNew, dType='reg')
+    capOld, capSwitchCount = _update(dOld=capOld, dNew=capNew, dType='cap')
+    
+    return {'reg': regOld, 'cap': capOld, 'tapChangeCount': tapChangeCount,
+            'capSwitchCount': capSwitchCount}
+
 def incrementTime(t, fmt, interval):
         """Simple function to increment a time string by a specified amount.
         

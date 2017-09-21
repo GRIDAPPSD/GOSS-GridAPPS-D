@@ -10,6 +10,7 @@ from powerflow import writeCommands
 import util.gld
 import util.helper
 import math
+import os
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
@@ -21,9 +22,9 @@ TAPSIGMAPCT = 0.1
  
 class individual:
     
-    def __init__(self, uid, starttime, stoptime, reg=None, regBias=False,
-                 peg=None, cap=None, capFlag=2, regChrom=None, capChrom=None,
-                 parents=None):
+    def __init__(self, uid, starttime, stoptime, voltdumpFiles, reg=None,
+                 regBias=False, peg=None, cap=None, capFlag=2, regChrom=None, 
+                 capChrom=None, parents=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -35,6 +36,10 @@ class individual:
             result. Use this chromosome to update reg and cap
         
         INPUTS:
+            starttime: date/time str in format of gld.DATE_FMT for model start.
+            stoptime: "..." end 
+            voltdumpFiles: list of filenames of voltdump files. Used to
+                evaluate voltage violations.
             reg: Dictionary as described in the docstring for the gld module.
             
                 Note possible tap positions be in interval [-(lower_taps - 1),
@@ -64,40 +69,22 @@ class individual:
         TODO: add controllable DERs
                 
         """
+        # Initialize some attributes that also need reset when re-using an
+        # individual.
+        self.prep(starttime=starttime, stoptime=stoptime)
+        
+        # Assign voltdumpFiles
+        self.voltdumpFiles = voltdumpFiles
+        
         # Assign reg and cap dicts
         self.reg = reg
         self.cap = cap
         
         # Assign the unique identifier.
         self.uid = uid
-        # Assing times.
-        self.starttime = starttime
-        self.stoptime = stoptime
-        # Full path to output model.
-        self.model = None
-        # Table information
-        self.swingTable = None
-        self.swingColumns = None
-        self.swingInterval = None
-        self.triplexTable = None
-        self.triplexColumns = None
-        self.triplexInterval = None
         
-        # Track tap changes and capacitor switching
-        self.tapChangeCount = 0
-        self.capSwitchCount = 0
-        
-        # When the model is run, output will be saved.
-        self.modelOutput = None
-
-        # The evalFitness method assigns to fitness and costs
-        self.fitness = None
-        self.costs = None
         # Parent tracking is useful to see how well the GA is working
         self.parents = parents
-        
-        # When writing model, names of voltdump files will be saved
-        self.voltdumpFiles = None
         
         # When writing model, output directory will be saved.
         self.outDir = None
@@ -115,6 +102,65 @@ class individual:
             self.modifyRegGivenChrom()
             self.capChrom = capChrom
             self.modifyCapGivenChrom()
+            
+    def prep(self, starttime, stoptime, reg=None, cap=None):
+        """Method to get an individual ready for use/re-use - in the genetic
+            algorithm, the population for the next time interval should be
+            seeded with the best individuals from the previous time interval.
+            
+        During a call to the constructor, this gets attributes initialized.
+        
+        Pass in 'reg' and 'cap' ONLY to get an individual ready to be used in
+        a new population.
+        """
+        # Assing times.
+        self.starttime = starttime
+        self.stoptime = stoptime
+        # Full path to output model.
+        self.model = None
+        # Table information
+        self.swingTable = None
+        self.swingColumns = None
+        self.swingInterval = None
+        
+        # When the model is run, output will be saved.
+        self.modelOutput = None
+
+        # The evalFitness method assigns costs
+        self.costs = None
+        
+        # Update the 'prevState' of the individuals reg and cap dictionaries.
+        if reg and cap:
+            out = util.helper.updateVVODicts(regOld=self.reg, capOld=self.cap,
+                                             regNew=reg, capNew=cap)
+            
+            self.reg = out['reg']
+            self.cap = out['cap']
+            self.tapChangeCount = out['tapChangeCount']
+            self.capSwitchCount = out['capSwitchCount']
+        else:
+            # Track tap changes and capacitor switching
+            self.tapChangeCount = 0
+            self.capSwitchCount = 0
+            
+    def __eq__(self, other):
+        """Compare individuals by looping over their chromosomes
+        
+        TODO: This isn't very sophisticated. It doesn't check if chromosomes
+        are the same length, exist, etc.
+        """
+        # Start with regulator
+        for k in range(len(self.regChrom)):
+            if self.regChrom[k] != other.regChrom[k]:
+                return False
+            
+        # On to capacitor
+        for k in range(len(self.capChrom)):
+            if self.capChrom[k] != other.capChrom[k]:
+                return False
+            
+        return True
+        
             
     def __str__(self):
         """Individual's string should include fitness and reg/cap info.
@@ -332,7 +378,7 @@ class individual:
                     
                     self.capSwitchCount += 1
                 
-    def writeModel(self, strModel, inPath, outDir, dumpGroup='tLoad'):
+    def writeModel(self, strModel, inPath, outDir):
         """Create a GridLAB-D .glm file for the given individual by modifying
         setpoints for controllable devices (capacitors, regulators, eventually
         DERs)
@@ -349,22 +395,27 @@ class individual:
         OUTPUTS:
             Path to new model after it's created
         """
+        # Check if directory exists - if not, create it.
+        if not os.path.isdir(outDir):
+            os.mkdir(outDir)
+        
         # Assign output directory.
         self.outDir = outDir
         
         # Get the filename of the original model and create output path
-        outPath = \
-            writeCommands.writeCommands.addFileSuffix(inPath=inPath,
-                                                      suffix=str(self.uid),
-                                                      outDir = outDir)
+        model = \
+            writeCommands.writeCommands.addFileSuffix(inPath=\
+                                                        os.path.basename(inPath),
+                                                      suffix=str(self.uid))
         
         # Track the output path for running the model later.
-        self.model = outPath
+        self.model = model
         
         # Instantiate a writeCommands object.
         writeObj = writeCommands.writeCommands(strModel=strModel,
                                                pathModelIn=inPath,
-                                               pathModelOut=outPath)
+                                               pathModelOut=(outDir + '/'
+                                                             + model))
         
         # Update the swing node to a meter and get it writing power to a table
         # TODO: swing table won't be the only table.
@@ -372,19 +423,6 @@ class individual:
         self.swingTable = o['table']
         self.swingColumns = o['columns']
         self.swingInterval = o['interval']
-        
-        # Add voltdumps for each triplex load. Start by adding groups.
-        writeObj.addGroupToObjects(objectRegex=writeCommands.TRIPLEX_LOAD_REGEX,
-                                   groupName=dumpGroup)
-        
-        self.voltdumpFiles = writeObj.addVoltDumps(starttime=self.starttime,
-                                                   stoptime=self.stoptime,
-                                                   group=dumpGroup, 
-                                                   fileDir=self.outDir,
-                                                   baseFile='vDump.csv',
-                                                   suffix=self.uid,
-                                                   interval=60)
-        
         
         # TODO: Uncomment when ready
         '''
@@ -407,14 +445,11 @@ class individual:
         
         # Write the modified model to file.
         writeObj.writeModel()
-        
-        # Return the path to the new file.
-        return outPath
     
     def runModel(self):
         """Function to run GridLAB-D model.
         """
-        self.modelOutput = util.gld.runModel(self.model)
+        self.modelOutput = util.gld.runModel((self.outDir + '/' + self.model))
                             
     def evalFitness(self, cursor, energyPrice, tapChangeCost, capSwitchCost,
                     voltCost, tCol='t'):
@@ -428,6 +463,7 @@ class individual:
             energyPrice: price of energy
             tapChangeCost: cost changing regulator taps
             capSwitchCost: cost of switching a capacitor
+            voltCost: cost of voltage violations.
             tCol: name of time column(s)
             starttime: starting time to evaluate
             stoptime: ending time to evaluate
@@ -449,5 +485,66 @@ class individual:
                                             voltdumpFiles=self.voltdumpFiles
                                             )
         
-        # Assign fitness to simplify things.
-        self.fitness = self.costs['total']
+    def buildCleanupDict(self, truncateFlag=False):
+        """Function to build dictionary to be passed to the 'cleanupQueue' of 
+        the 'cleanup' method.
+        """
+        d = {'tables': [self.swingTable], 'files': list(self.voltdumpFiles),
+             'dir': self.outDir}
+        # Add the model file to the file list.
+        d['files'].append(self.model)
+        
+        # Set flag for table truncation (rather than deletion)
+        d['truncateFlag'] = truncateFlag
+        
+        # Return.
+        return d
+
+def cleanup(cleanupQueue):
+    """Method to cleanup (delete) an individuals files, tables, etc. 
+    
+    As the genetic algorithm grows in sophistication, more output is 
+    created. With so many files and tables floating around, it can
+    simply take forever to clean things up. This function should be called
+    before an individual is deleted.
+    
+    Note this function is specifically formatted to work with threads.
+    
+    INPUTS:
+        cleanupQueue: queue which will have dictionaries inserted into it.
+            Dictionaries should contain a list of tables in 'tables', a list
+            of files in 'files', and a directory to find the files in 'dir'.
+    """
+    while True:
+        # Extract inputs from the queue.
+        inDict = cleanupQueue.get()
+        
+        # Check input.
+        if inDict is None:
+            # 'None' is the done signal.
+            cleanupQueue.task_done()
+            break
+        
+        # Connect to the database.
+        cnxn = util.db.connect()
+        cursor = cnxn.cursor()
+        
+        # Drop or truncate all tables.
+        if inDict['truncateFlag']:
+            for t in inDict['tables']:
+                util.db.truncateTable(cursor=cursor, table=t)            
+        else:
+            for t in inDict['tables']:
+                util.db.dropTable(cursor=cursor, table=t)
+            
+        # Delete all files.
+        for f in inDict['files']:
+            os.remove(inDict['dir'] + '/' + f)
+            
+        # Delete the directory. This will error if the directory isn't empty -
+        # this is good, it'll prevent us from forgetting to clean up.
+        os.rmdir(inDict['dir'])
+        
+        # Cleanup complete.
+        cleanupQueue.task_done()
+        

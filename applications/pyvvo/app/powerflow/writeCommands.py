@@ -37,6 +37,7 @@ COMMENT_REGEX = re.compile(r'(\S+);')
 TRIPLEX_LOAD_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_load\b')
 TRIPLEX_METER_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_meter\b')
 OBJEND_REGEX = re.compile(r'(\s*)}(\s*)(;*)$')
+VOLTDUMP_REGEX = re.compile(r'\bobject\b(\s+)\bvoltdump\b')
 OBJY_BY_NAME = r'\bname\b(\s+)("?){}("?)(\s*);'
 # Expression below doesn't work since it can match multiple objects at once...
 # OBJ_BY_TYPE_NAME = r'\bobject\b(\s+)\b{}\b(.+?)\bname\b(\s+)("?){}("?)(\s*);' # Use with re.DOTALL
@@ -872,7 +873,8 @@ class writeCommands:
     
     def setupModel(self, starttime=None, stoptime=None, timezone=None,
                    vSource=69715.065, playerFile=None, dbFlag=True,
-                   tz_offset=0, profiler=0):
+                   tz_offset=0, profiler=0, triplexGroup=None,
+                   voltdump=None):
         """Function to add the basics to get a running model. Designed with 
         the output from Tom McDermott's CIM exporter in mind.
         
@@ -917,6 +919,19 @@ class writeCommands:
         if starttime or stoptime or timezone:
             self.updateClock(starttime=starttime, stoptime=stoptime,
                                  timezone=timezone)
+            
+        # Add groupid to triplex_node objects
+        if triplexGroup:
+            self.addGroupToObjects(objectRegex=TRIPLEX_LOAD_REGEX,
+                                   groupName=triplexGroup)
+            
+        # Add voltdump objects
+        if voltdump:
+            dumpfiles = self.addVoltDumps(**voltdump)
+        else:
+            dumpfiles = None
+            
+        return dumpfiles
         
     def switchControl(self):
         """If file has commented out control options, use them instead.
@@ -986,45 +1001,64 @@ class writeCommands:
             m = TRIPLEX_METER_REGEX.search(self.strModel,
                                           m.span()[0] + len(tObj['obj']))
             
-    def addVoltDumps(self, starttime, stoptime, group, fileDir,
-                     baseFile='voltdump.csv', suffix=0, interval=60):
+    def addVoltDumps(self, num, group, mode='polar'):
         """Function to add voltage dumps for a given group, times, and interval
+        
+        NOTE: There's an important assumption here - models will be run in
+            a directory that doesn't contain other running models.
+            
+        """
+        
+        # To make things simpler and more clear, track file names.
+        n = []
+        c = 0
+        for _ in range(num):
+            n.append('vDump_' + str(c) + '.csv')
+            self.addObject(objType='voltdump',
+                           properties={'group': group,
+                                       'filename': '"{}"'.format(n[-1]),
+                                       'mode': mode},
+                           place='end'
+                          )
+            c += 1
+            
+        return(n)
+    
+    def addRuntimeToVoltDumps(self, starttime, stoptime, interval=60):
+        """Function to add runtimes to existing voltage dump objects.
         
         NOTE: Given dates HAD BETTER BE in the format defined in gld.DATE_FMT
         """
-        # Create base file name.
-        f = self.addFileSuffix(inPath=baseFile, suffix=suffix)
-        
         # Get times as seconds since epoch. s -> start, e -> end.
         s = time.mktime(time.strptime(starttime, util.gld.DATE_FMT))
         e = time.mktime(time.strptime(stoptime, util.gld.DATE_FMT))
         
-        # To make things simpler and more clear, track file names.
-        n = []
+        # Find a voltdump object.
+        m = VOLTDUMP_REGEX.search(self.strModel)
         
-        # Initialize counter which essentially makes a second suffix.
-        c = 0
-        
-        while s <= e:
-            # Add another suffix to the file
-            fNew = self.addFileSuffix(inPath=f, suffix=c)
-            n.append(os.path.basename(fNew))
-            self.addObject(objType='voltdump',
-                           properties={'filename': '"{}"'.format(fileDir 
-                                                                 + '/' + fNew),
-                                       'group': group,
-                                       # Note use of localtime to avoid Python
-                                       # converting local to UTC
-                                       'runtime': "'{}'".format(\
+        # Loop over all the matches to add runtimes.
+        while m and (s <= e):
+            # Extract the object
+            obj = self.extractObject(objMatch=m)
+            
+            # Add the runtime.
+            # Note use of localtime to avoid Python converting local to UTC
+            obj['obj'] = self.modObjProps(obj['obj'],
+                                            {'runtime': "'{}'".format(\
                                             time.strftime(util.gld.DATE_FMT,
                                                           time.localtime(s))),
-                                       'mode': 'polar'},
-                           place='end'
-                          )
-            c += 1
+                                             }
+                                          )
+            
+            # Replace the previous object with the new one.
+            self.replaceObject(obj)
+            
+            # Increment the time.
             s += interval
             
-        return(n)
+            # Get the next match, offsetting by length of new object.
+            m = VOLTDUMP_REGEX.search(self.strModel,
+                                          m.span()[0] + len(obj['obj']))
         
 class Error(Exception):
     """"Base class for exceptions in this module"""
