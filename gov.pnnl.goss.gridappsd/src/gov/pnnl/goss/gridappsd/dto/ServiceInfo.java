@@ -48,20 +48,20 @@ import com.google.gson.Gson;
 public class ServiceInfo implements Serializable {
 	
 	public enum ServiceType {
-		   PYTHON, JAVA, WEB
+		   PYTHON, JAVA, WEB, EXE
 		}
 	
 	
 	String id;
 	String description;
 	String creator;
-	List<String> inputs;
-	List<String> outputs;
-	String options;
+	List<String> input_topics;
+	List<String> output_topics;
+	String static_args;
 	String execution_path;
 	ServiceType type;
 	boolean launch_on_startup;
-	List<String> prereqs;
+	List<String> service_dependencies;
 	boolean multiple_instances;
 	List<EnvironmentVariable> environmentVariables;
 	
@@ -90,28 +90,28 @@ public class ServiceInfo implements Serializable {
 		this.creator = creator;
 	}
 
-	public List<String> getInputs() {
-		return inputs;
+	public List<String> getInput_topics() {
+		return input_topics;
 	}
 
-	public void setInputs(List<String> inputs) {
-		this.inputs = inputs;
+	public void setInput_topics(List<String> input_topics) {
+		this.input_topics = input_topics;
 	}
 
-	public List<String> getOutputs() {
-		return outputs;
+	public List<String> getOutput_topics() {
+		return output_topics;
 	}
 
-	public void setOutputs(List<String> outputs) {
-		this.outputs = outputs;
+	public void setOutput_topics(List<String> output_topics) {
+		this.output_topics = output_topics;
 	}
 
-	public String getOptions() {
-		return options;
+	public String getStatic_args() {
+		return static_args;
 	}
 
-	public void setOptions(String options) {
-		this.options = options;
+	public void setStatic_args(String static_args) {
+		this.static_args = static_args;
 	}
 
 	public String getExecution_path() {
@@ -138,15 +138,14 @@ public class ServiceInfo implements Serializable {
 		this.launch_on_startup = launch_on_startup;
 	}
 
-	public List<String> getPrereqs() {
-		return prereqs;
+	public List<String> getService_dependencies() {
+		return service_dependencies;
 	}
 
-	public void setPrereqs(List<String> prereqs) {
-		this.prereqs = prereqs;
+	public void setService_dependencies(List<String> service_dependencies) {
+		this.service_dependencies = service_dependencies;
 	}
 
-	
 	public boolean isMultiple_instances() {
 		return multiple_instances;
 	}
@@ -154,8 +153,6 @@ public class ServiceInfo implements Serializable {
 	public void setMultiple_instances(boolean multiple_instances) {
 		this.multiple_instances = multiple_instances;
 	}
-	
-	
 
 	public List<EnvironmentVariable> getEnvironmentVariables() {
 		return environmentVariables;

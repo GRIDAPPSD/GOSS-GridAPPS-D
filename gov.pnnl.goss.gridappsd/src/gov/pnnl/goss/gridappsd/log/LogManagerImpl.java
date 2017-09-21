@@ -113,7 +113,6 @@ public class LogManagerImpl implements LogManager {
 						break;
 				
 		}
-		System.out.println(logString);
 		
 
 		if(storeToDB)
