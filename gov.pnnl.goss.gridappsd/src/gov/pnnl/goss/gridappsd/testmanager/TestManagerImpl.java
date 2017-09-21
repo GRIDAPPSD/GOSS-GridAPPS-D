@@ -57,15 +57,19 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestConfiguration;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.api.TestScript;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -101,30 +105,58 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
 	
-//	@ServiceDependency
-//	private volatile ProcessManager processManager;
+	@ServiceDependency
+	private volatile ProcessManager processManager;
 	
 	@ServiceDependency
 	private volatile StatusReporter statusReporter;
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
-
+	
+	public TestManagerImpl(){}
+	public TestManagerImpl(ClientFactory clientFactory, 
+			ConfigurationManager configurationManager,
+			SimulationManager simulationManager,
+			StatusReporter statusReporter,
+			LogManager logManager){
+		this.clientFactory = clientFactory;
+		this.configurationManager = configurationManager;
+		this.simulationManager = simulationManager;
+		this.statusReporter = statusReporter;
+		this.logManager = logManager;
+	}
 	
 	@Start
 	public void start(){
+		LogMessage logMessageObj = new LogMessage();
 		try{
-			log.debug("Starting "+this.getClass().getName());
+			logMessageObj.setLog_level("debug");
+			logMessageObj.setProcess_id(this.getClass().getName());
+			logMessageObj.setProcess_status("running");
+			logMessageObj.setStoreToDB(true);
+			
+			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+			logMessageObj.setLog_message("Starting "+this.getClass().getName());
+			logManager.log(logMessageObj);
+//			log.debug("Starting "+this.getClass().getName());
 			
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			TestConfigurationImpl tc = null;
+//			String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
+//			TestConfiguration testConf = loadTestConfig(path);
+//			path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
+//			TestScript testScript = loadTestScript(path);
+//			
+//			requestSimulation(client, testConf, testScript);
 			
-			TestScriptImpl ts = null;
-			
+//			TestConfigurationImpl tc = null;
+//			
+//			TestScriptImpl ts = null;
+//			
 			//TODO: Setup Figure out location of TestScripts
 			
 //			requestSimulation(client, tc, ts);
@@ -223,8 +255,6 @@ public class TestManagerImpl implements TestManager {
 			jsonReader.setLenient(true);
 			testConfig = gson.fromJson(new FileReader(path),TestConfigurationImpl.class);
 			System.out.println(testConfig.toString());
-			
-			System.out.println("Hi");
 				
 //			jsonReader.beginObject();
 //			while (jsonReader.hasNext()) {
@@ -246,6 +276,16 @@ public class TestManagerImpl implements TestManager {
 		return testConfig;
 	}
 	
+	public void compare(){
+		JsonParser parser = new JsonParser();
+		JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
+		JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
+		JsonElement o3 = parser.parse("{b : 2, a : {a : 2}}");
+		System.out.println(o1.equals(o2));
+		System.out.println(o1.equals(o3));
+//		Assert.assertEquals(o1, o2);
+	}
+	
 	public TestScriptImpl loadTestScript(String path){
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
@@ -253,7 +293,7 @@ public class TestManagerImpl implements TestManager {
 		try {
 			jsonReader = new JsonReader(new FileReader(path));
 			jsonReader.setLenient(true);
-			testScript = gson.fromJson(new FileReader(path),TestScriptImpl.class);
+			testScript = gson.fromJson(new FileReader(path), TestScriptImpl.class);
 			System.out.println(testScript.toString());
 			jsonReader.close();
 		} catch (Exception e) {
@@ -296,16 +336,27 @@ public class TestManagerImpl implements TestManager {
 		    public void onMessage(Serializable response) {
 		      log.debug("simulation output is: "+response);
 		      System.out.println("simulation output is: "+response);
+		      //TODO capture stream and save
 		      
 		    }
 		});
 	}
 	
+	
 	public static void main(String[] args) {
 		TestManagerImpl tm = new TestManagerImpl();
+		tm.compare();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		tm.loadTestConfig(path);
+		TestConfiguration testConf = tm.loadTestConfig(path);
 		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		tm.loadTestScript(path);
+		TestScript testScript = tm.loadTestScript(path);
+		
+//		Credentials credentials = new UsernamePasswordCredentials(
+//				GridAppsDConstants.username, GridAppsDConstants.password);
+//		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+//		
+//		
+//		requestSimulation(client, testConf, testScript);
+//		
 	}
 }

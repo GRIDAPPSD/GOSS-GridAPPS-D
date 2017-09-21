@@ -1,9 +1,10 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+
+import com.google.gson.Gson;
 
 import gov.pnnl.goss.gridappsd.api.TestConfiguration;
 
@@ -46,16 +47,28 @@ public class TestConfigurationImpl implements TestConfiguration,Serializable {
 		return power_system_configuration;		
 	}
 
+//	@Override
+//	public String toString() {
+//		return "TestConfiguration \n[power_system_configuration=" + power_system_configuration
+//				+ " \n, simulation_configuration=" + simulation_configuration + " \n, durations=" + durations
+//				+ " \n, run_start=" + run_start + " \n, run_end=" + run_end + " \n, region_name=" + region_name
+//				+ " \n, subregion_name=" + subregion_name + " \n, line_name=" + line_name + " \n, logging=" + logging
+//				+ " \n, logging_options=" + logging_options + " \n, initial_conditions=" + initial_conditions
+//				+ " \n, default_values=" + default_values + " \n, outputs=" + Arrays.toString(outputs) + "]";
+//	}
+
 	@Override
 	public String toString() {
-		return "TestConfiguration \n[power_system_configuration=" + power_system_configuration
-				+ " \n, simulation_configuration=" + simulation_configuration + " \n, durations=" + durations
-				+ " \n, run_start=" + run_start + " \n, run_end=" + run_end + " \n, region_name=" + region_name
-				+ " \n, subregion_name=" + subregion_name + " \n, line_name=" + line_name + " \n, logging=" + logging
-				+ " \n, logging_options=" + logging_options + " \n, initial_conditions=" + initial_conditions
-				+ " \n, default_values=" + default_values + " \n, outputs=" + Arrays.toString(outputs) + "]";
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
-
-
+	
+	public static TestConfigurationImpl parse(String jsonString){
+		Gson  gson = new Gson();
+		TestConfigurationImpl obj = gson.fromJson(jsonString, TestConfigurationImpl.class);
+		if(obj.power_system_configuration==null)
+			throw new RuntimeException("Expected attribute power_system_configuration not found");
+		return obj;
+	}
 
 }
