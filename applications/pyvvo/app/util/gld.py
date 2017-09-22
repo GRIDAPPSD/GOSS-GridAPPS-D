@@ -258,11 +258,11 @@ def voltViolationsFromDump(fName, vNom=120, vTol=6):
             # Grab the voltage magnitudes for the two phases
             v = (float(row[magA]), float(row[magB]))
             # For the two phases, increment violations count if one occurs.
-            for pV in v:
-                if pV < lowV:
-                    violations['low'] += 1
-                elif pV > highV:
-                    violations['high'] += 1
+            if (v[0] < lowV) or (v[1] < lowV):
+                violations['low'] += 1
+                
+            if (v[0] > highV) or (v[1] > highV):
+                violations['high'] += 1
                     
     return violations
 
@@ -286,11 +286,13 @@ def sumVoltViolations(fileDir, files, vNom=120, vTol=6):
     return violations
     
 if __name__ == '__main__':
-    f = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\python\pyVVO\test\output\dump1.csv'
+    """
+    f = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output/dump1.csv'
     # voltViolationsFromDump(fName=f)
-    t = sumVoltViolations(fileDir=r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\python\pyVVO\test\output',
+    t = sumVoltViolations(fileDir=r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output',
                           baseName='dump')
     print(t)
+    """
     """
     # Hack this to print the version
     output = runModel('--version')
@@ -299,4 +301,7 @@ if __name__ == '__main__':
     print('ERROR:')
     print(output.stderr.decode('utf-8'))
     """
-    
+    output = runModel(modelPath='C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output/ieee8500_base_benchmark.glm')
+    print(output.stdout.decode('utf-8'))
+    print(output.stderr.decode('utf-8'))
+    print('yay')

@@ -23,18 +23,19 @@ def main(populationInputs={}):
     # Stuff to start
     timezone= "EST+5EDT"
     tz_offset = 10800
-    starttime= "2009-07-21 15:30:00"
-    stoptime = "2009-07-21 15:45:00"
+    starttime= "2009-07-21 12:00:00"
     tFmt = util.gld.DATE_FMT
+    tRec = 60 # recording interval
+    tInt = 60 * 15 # model runtime
+    stoptime = util.helper.incrementTime(t=starttime, fmt=tFmt,
+                                         interval=tInt)
     inPath = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/ieee8500_base.glm"
     playerFile = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/zipload_schedule.player"
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output"
     tLoad = 'tLoad' # triplex load group.
-    numInd = 16 # Best if this is a multiple of num cores.
-    numGen = 4
-    numIntervals = 1
-    tRec = 60 # recording interval
-    tInt = 60 * 15 # 15 minutes
+    numInd = 80 # Best if this is a multiple of num cores.
+    numGen = 5
+    numIntervals = 32
     costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
     # Results file
     f = open(outDir + '/results/'
