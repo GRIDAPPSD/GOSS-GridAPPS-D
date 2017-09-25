@@ -17,7 +17,7 @@ manner, and only local measurements and a feedback signal from the
 substation aggregator are needed to determine the optimal setpoints for
 each controlled DER unit.
 
-|image0|
+|nrel_OPF_image0|
 
 **Figure 1 The conceptual framework of distribution OPF for real-time
 setpoint dispatch.**
@@ -41,7 +41,7 @@ the control iteration for the studied time point, and new setpoints for
 the following time points will be determined in the same manner using
 the updated model and measurements.
 
-|image1|
+|nrel_OPF_image1|
 
 **Figure 2 The workflow of real-time setpoint dispatch application and
 its interaction with GridApps-D.**
@@ -87,9 +87,9 @@ Projected-gradient Method for Real-time Optimization of Aggregations
 of Energy Resources," IEEE Global Conference on Signal and Information
 Processing (GlobalSIP), Montreal, Canada, Nov. 2017. 
 
-.. |image0| image:: NREL_APPS/media/image1.png
+.. |nrel_OPF_image0| image:: NREL_APPS/media/image1.png
    :width: 5.42687in
    :height: 3.61346in
-.. |image1| image:: NREL_APPS/media/Distribution_OPF2.png
+.. |nrel_OPF_image1| image:: NREL_APPS/media/Distribution_OPF2.png
 
 
