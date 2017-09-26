@@ -33,4 +33,6 @@ public interface AppManager {
 	void stopAppInstance(String instanceId);
 
 	
+	//TODO add isRunning and is Runningforsimulation
+	
 }
