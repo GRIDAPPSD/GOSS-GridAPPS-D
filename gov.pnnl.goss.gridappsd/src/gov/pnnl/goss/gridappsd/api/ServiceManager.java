@@ -1,19 +1,19 @@
 package gov.pnnl.goss.gridappsd.api;
 
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
-
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
+
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
 
 public interface ServiceManager {
 
-	void registerService(AppInfo appInfo, Serializable appPackage);
+	void registerService(ServiceInfo appInfo, Serializable appPackage);
 	
-	void listServices();  //Would return through message bus list of appInfo objects
+	List<ServiceInfo> listServices();  //Would return through message bus list of appInfo objects
 	
-	void getService(String service_id); //Would return through message bus appInfo object
+	ServiceInfo getService(String service_id); //Would return through message bus appInfo object
 	
 	void deRegisterService(String service_id); 
 	
@@ -26,5 +26,7 @@ public interface ServiceManager {
 	List<ServiceInstance> listRunningServices(); 
 
 	List<ServiceInstance> listRunningServices(String serviceId);
+
+	void stopServiceInstance(String instanceId);
 	
 }

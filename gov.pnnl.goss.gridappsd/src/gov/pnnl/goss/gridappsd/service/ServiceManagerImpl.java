@@ -1,16 +1,5 @@
 package gov.pnnl.goss.gridappsd.service;
 
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -27,6 +16,15 @@ import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
+import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
 @Component
@@ -39,9 +37,6 @@ public class ServiceManagerImpl implements ServiceManager{
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
-	
-	final String CONFIG_DIR_NAME = "config";
-	final String CONFIG_FILE_NAME = "serviceinfo.json";
 	
 	private HashMap<String, ServiceInfo> services = new HashMap<String, ServiceInfo>();
 	
@@ -82,7 +77,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		//Get directory for services from the config
 		File serviceConfigDir = getServiceConfigDirectory();
 		
-		//for each service found, parse the serviceinfo.json config file to create serviceinfo object and add to services map
+		//for each service found, parse the [service].config file to create serviceinfo object and add to services map
 		File[] serviceconfigFiles = serviceConfigDir.listFiles(new FileFilter() {
 			
 			@Override
@@ -133,7 +128,6 @@ public class ServiceManagerImpl implements ServiceManager{
 			serviceConfigStr = new String(Files.readAllBytes(serviceConfigFile.toPath()));
 			serviceInfo = ServiceInfo.parse(serviceConfigStr);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return serviceInfo;
@@ -141,29 +135,23 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public void listServices() {
-		// TODO Auto-generated method stub
+	public List<ServiceInfo> listServices() {
+		List<ServiceInfo> result = new ArrayList<ServiceInfo>();
+		result.addAll(services.values());
+		return result;
 		
 	}
 
 	@Override
-	public void getService(String service_id) {
-		// TODO Auto-generated method stub
-		
+	public ServiceInfo getService(String service_id) {
+		service_id = service_id.trim();
+		return services.get(service_id);
 	}
 
 	@Override
-	public void deRegisterService(String service_id) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public String startService(String service_id,
+	public String startService(String serviceId,
 			String runtimeOptions) {
-		// TODO Auto-generated method stub
-		return new String();
-		
+		return startServiceForSimultion(serviceId, runtimeOptions, null);	
 	}
 
 	@Override
@@ -261,13 +249,31 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 	
 	@Override
-	public void stopService(String service_id) {
-		// TODO Auto-generated method stub
+	public void stopService(String serviceId) {
+		serviceId = serviceId.trim();
+		for(ServiceInstance instance: listRunningServices(serviceId)){
+			if(instance.getService_info().getId().equals(serviceId)){
+				stopServiceInstance(instance.getInstance_id());
+			}
+		}
 		
+	}
+	
+	@Override
+	public void stopServiceInstance(String instanceId) {
+		instanceId = instanceId.trim();
+		ServiceInstance instance = serviceInstances.get(instanceId);
+		instance.getProcess().destroy();
+		serviceInstances.remove(instanceId); 
 	}
 
 	@Override
-	public void registerService(AppInfo appInfo, Serializable appPackage) {
+	public void registerService(ServiceInfo appInfo, Serializable appPackage) {
+		// TODO Implement this method when service registration request comes on message bus	
+	}
+	
+	@Override
+	public void deRegisterService(String service_id) {
 		// TODO Auto-generated method stub
 		
 	}

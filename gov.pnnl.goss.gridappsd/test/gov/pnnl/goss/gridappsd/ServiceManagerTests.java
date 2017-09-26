@@ -6,6 +6,7 @@ import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 import java.io.File;
 import java.util.Hashtable;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -22,9 +23,11 @@ public class ServiceManagerTests {
 	@Mock
 	ClientFactory clientFactory;
 	
-	@Test
-	public void test(){
-		ServiceManagerImpl servManagerImpl = new ServiceManagerImpl(logManager, clientFactory);
+	ServiceManagerImpl serviceManager;
+	
+	@Before
+	public void beforeTests(){
+		serviceManager = new ServiceManagerImpl(logManager, clientFactory);
 		
 		//use directory relative to current running directory
 		File f = new File("");
@@ -33,15 +36,25 @@ public class ServiceManagerTests {
 		
 		Hashtable<String, String> props = new Hashtable<String, String>();
 		props.put("applications.path", parentDir.getAbsolutePath()+File.separator+"applications");
-		props.put("services.path", parentDir.getAbsolutePath()+File.separator+"/services");
-		servManagerImpl.updated(props);
+		props.put("services.path", parentDir.getAbsolutePath()+File.separator+"services");
+		serviceManager.updated(props);
 		
-		servManagerImpl.start();
-		
-		//for(SerrivservManagerImpl.list)
-		
-		servManagerImpl.startServiceForSimultion("gridlabd", "testFile.glm", "simulation_1");
-		
+		serviceManager.start();
+	}
+	
+	@Test
+	public void testPythonServiceStart_WithNoDependencyNoSimulation(){
+		serviceManager.startService("fncs", null);
+	}
+	
+	@Test
+	public void testPythonServiceStart_WithDependencyAndSimulation(){
+		serviceManager.startService("fncsgossbridge", "simulation_1");
+	}
+	
+	@Test
+	public void testCppServiceStart_WithDependencyAndSimulation(){
+		serviceManager.startService("gridlabd", "simulation_1");
 	}
 
 }
