@@ -6,17 +6,25 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
 import javax.jms.JMSConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.naming.ConfigurationException;
 
 import org.amdatu.testing.configurator.TestConfiguration;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.fusesource.stomp.jms.StompJmsConnectionFactory;
 import org.fusesource.stomp.jms.StompJmsDestination;
 import org.junit.runner.RunWith;
@@ -34,6 +42,9 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
+import pnnl.goss.core.client.ClientServiceFactory;
+import pnnl.goss.core.client.GossClient;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -114,9 +125,32 @@ public class AppManagerTest2 {
 
 	
 	
-	public void registerApp() throws IOException, SystemException, JMSException{
+	public void registerApp() throws Exception{
+		
+		ClientServiceFactory clientFactory = new ClientServiceFactory();
+		Dictionary properties = new Hashtable();
+		properties.put("goss.system.manager", "system");
+		properties.put("goss.system.manager.password", "manager");
+
+		// The following are used for the core-client connection.
+		properties.put("goss.openwire.uri", "tcp://0.0.0.0:61616");
+		properties.put("goss.stomp.uri", "stomp://0.0.0.0:61613");
+		properties.put("goss.ws.uri", "ws://0.0.0.0:61614");
+		properties.put("goss.ssl.uri", "ssl://0.0.0.0:61443");
+		clientFactory.updated(properties);
+		
+		//Step1: Create GOSS Client
+		Credentials credentials = new UsernamePasswordCredentials(
+				GridAppsDConstants.username, GridAppsDConstants.password);
+		client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
 		
 		
+//		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
+//		connectionFactory.setBrokerURI("tcp://localhost:61613");
+//		connectionFactory.setUsername("system");
+//		connectionFactory.setPassword("manager");
+//		Connection connection = connectionFactory.createConnection(); 
+//		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 		
 		
 		AppInfo appInfo = new AppInfo();
@@ -155,7 +189,8 @@ public class AppManagerTest2 {
 //		DataRequest request = new DataRequest();
 //		request.setRequestContent(appRegister);
 //		client.publish(GridAppsDConstants.topic_requestSimulation, appRegister);
-		sendMessage(GridAppsDConstants.topic_app_register, appRegister);
+		Serializable replyDest = sendMessage(GridAppsDConstants.topic_app_register, appRegister, client);
+		
 //		String response = client.getResponse(request,GridAppsDConstants.topic_app_register, RESPONSE_FORMAT.JSON).toString();
 		try {
 			Thread.sleep(3000);
@@ -168,19 +203,20 @@ public class AppManagerTest2 {
 
 		String simulationId = "12345";
 		RequestAppStart appStart = new RequestAppStart(appInfo.getId(), runtimeOptions, simulationId);
-		sendMessage(GridAppsDConstants.topic_app_start, appStart);
+		replyDest = sendMessage(GridAppsDConstants.topic_app_start, appStart, client);
 		System.out.println(appStart);
-		
+//		Serializable appInstanceId = recieveMessage(replyDest, client);
+//		System.out.println("APP INSTANCE ID "+appInstanceId);
 		
 		try {
-			Thread.sleep(30000);
+			Thread.sleep(15000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		
-//		sendMessage(GridAppsDConstants.topic_app_deregister, appInfo.getId());
+//		 replyDest = sendMessage(GridAppsDConstants.topic_app_deregister, appInfo.getId(), session);
 //		System.out.println("RESPONSE "+response);
 		
 		
@@ -188,24 +224,35 @@ public class AppManagerTest2 {
 	}
 	
 	
-	private void sendMessage(String destination, Serializable message) throws JMSException{
+	private Serializable sendMessage(String destination, Serializable message, Client client) throws JMSException{
 		Gson gson = new Gson();
-		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
-		connectionFactory.setBrokerURI("tcp://localhost:61613");
-		connectionFactory.setUsername("system");
-		connectionFactory.setPassword("manager");
-		Connection connection = connectionFactory.createConnection(); 
-		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
-		TextMessage textMessage = null;
-		if(message instanceof String){
-			textMessage = session.createTextMessage(message.toString());
-		} else {
-			textMessage = session.createTextMessage(gson.toJson(message));
+		
 			
-		}
-		producer.send(textMessage);
+		return client.getResponse(message, destination, RESPONSE_FORMAT.JSON);
+//		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
+//		TextMessage textMessage = null;
+//		if(message instanceof String){
+//			textMessage = session.createTextMessage(message.toString());
+//		} else {
+//			textMessage = session.createTextMessage(gson.toJson(message));
+//			
+//		}
+//		Destination tmpDest = session.createTemporaryQueue();
+//		System.out.println("SENDING MESSAGE WITH REPLY "+tmpDest);
+//
+//		textMessage.setJMSReplyTo(tmpDest);
+//		producer.send(textMessage);
+//		return tmpDest;
 	}
 	
+	
+	private Object recieveMessage(Destination destination, Session session) throws JMSException{
+		System.out.println("RECEIVING MESSAGE ON "+destination);
+		MessageConsumer consumer = session.createConsumer(destination);
+		Message msg = consumer.receive(5000);
+		System.out.println(msg);
+		
+		return msg;
+	}
 	
 }
