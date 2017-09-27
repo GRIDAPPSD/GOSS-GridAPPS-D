@@ -430,6 +430,7 @@ public class AppManagerImpl implements AppManager{
 			commands.addAll(splitOptionsString(runtimeOptions));
 			
 			
+			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
 			processAppBuilder.directory(appDirectory);
