@@ -2,7 +2,6 @@ package gov.pnnl.goss.gridappsd.test;
 
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -10,44 +9,32 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
-import javax.jms.JMSConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.naming.ConfigurationException;
 
 import org.amdatu.testing.configurator.TestConfiguration;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.fusesource.stomp.jms.StompJmsConnectionFactory;
-import org.fusesource.stomp.jms.StompJmsDestination;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.gson.Gson;
-import com.northconcepts.exception.SystemException;
 
-import gov.pnnl.goss.gridappsd.TestConstants;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
 import gov.pnnl.goss.gridappsd.dto.RequestAppRegister;
 import gov.pnnl.goss.gridappsd.dto.RequestAppStart;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.core.server.ServerControl;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.client.ClientServiceFactory;
-import pnnl.goss.core.client.GossClient;
 
 
-@RunWith(MockitoJUnitRunner.class)
+//@RunWith(MockitoJUnitRunner.class)
 public class AppManagerTest2 {
 
 //	ClientFactory clientFactory;
