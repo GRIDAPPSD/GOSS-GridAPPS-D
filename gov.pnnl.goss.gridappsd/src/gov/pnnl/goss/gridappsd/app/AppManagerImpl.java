@@ -189,7 +189,9 @@ public class AppManagerImpl implements AppManager{
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
 			//TODO publish instance id
-//			client.publish(replyDestination, instanceId);
+			System.out.println("SENDING APP INSTANCE MESSAGE ON "+replyDestination);
+
+			client.publish(replyDestination, instanceId);
 			System.out.println("STARTED APP "+instanceId);
 
 		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
@@ -428,7 +430,6 @@ public class AppManagerImpl implements AppManager{
 			commands.addAll(splitOptionsString(runtimeOptions));
 			
 			
-			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
 			processAppBuilder.directory(appDirectory);

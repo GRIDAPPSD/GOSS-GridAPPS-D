@@ -194,6 +194,25 @@ public class ServiceManagerImpl implements ServiceManager{
 //		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
 		//during watch, send stderr/out to logmanager
 			
+		} else if(serviceInfo.getType().equals(ServiceType.EXE)){
+			List<String> commands = new ArrayList<String>();
+			commands.add(serviceInfo.getExecution_path());
+			commands.add(runtimeOptions);
+			//TODO add other options
+			
+			
+			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+			processServiceBuilder.redirectErrorStream(true);
+			processServiceBuilder.redirectOutput();
+			
+//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
+//		fncsBridgeBuilder.redirectErrorStream(true);
+//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
+//		fncsBridgeProcess = fncsBridgeBuilder.start();
+//		// Watch the process
+//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
+		//during watch, send stderr/out to logmanager
+			
 		} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
 //			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
 //			fncsBridgeBuilder.redirectErrorStream(true);
