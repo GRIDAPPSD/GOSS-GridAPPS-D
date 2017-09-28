@@ -78,23 +78,23 @@ public class GridAppsDConstants {
 	public static final String topic_log_app = topic_log_prefix+".app";
 	
 	//Configuration Manager topics
-	public static final String topic_configuration = topic_prefix+"/configuration";
-	public static final String topic_configuration_powergrid = topic_configuration+"/powergrid";
-	public static final String topic_configuration_simulation = topic_configuration+"/simulation";
+	public static final String topic_configuration = topic_prefix+".configuration";
+	public static final String topic_configuration_powergrid = topic_configuration+".powergrid";
+	public static final String topic_configuration_simulation = topic_configuration+".simulation";
 	
 	//Simulation Manager Topics
-	public static final String topic_simulation = topic_prefix+"/simulation";
-	public static final String topic_simulationOutput = topic_simulation+"/output/";
-	public static final String topic_simulationStatus = topic_simulation+"/status/";
+	public static final String topic_simulation = topic_prefix+".simulation";
+	public static final String topic_simulationOutput = topic_simulation+".output";
+	public static final String topic_simulationStatus = topic_simulation+".status.";
 	
 	//Data Manager Topics
-	public static final String topic_getDataFilesLocation = topic_prefix+"/data/filesLocation";
-	public static final String topic_getDataContent = topic_prefix+"/data/content";
+	public static final String topic_getDataFilesLocation = topic_prefix+".data.filesLocation";
+	public static final String topic_getDataContent = topic_prefix+".data.content";
 	
 	//FNCS GOSS Bridge Topics
-	public static final String topic_FNCS = topic_prefix+"/fncs";
-	public static final String topic_FNCS_input = topic_FNCS+"/input";
-	public static final String topic_FNCS_output = topic_FNCS+"/output";
+	public static final String topic_FNCS = topic_prefix+".fncs";
+	public static final String topic_FNCS_input = topic_FNCS+".input";
+	public static final String topic_FNCS_output = topic_FNCS+".output";
 	
 	
 	public static final String FNCS_PATH = "fncs.path";

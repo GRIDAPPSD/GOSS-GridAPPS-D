@@ -46,7 +46,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.sql.Connection;
+//import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -76,7 +76,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
-import pnnl.goss.core.server.DataSourcePooledJdbc;
+//import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -152,12 +152,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		
 		Map<String, DataSourceType> datasources = datasourceRegistry.getAvailable();
 		
-		DataSourcePooledJdbc jdbcPool = (DataSourcePooledJdbc)datasourceRegistry.get(datasourceName);
-		if(jdbcPool!=null){
+//		DataSourcePooledJdbc jdbcPool = (DataSourcePooledJdbc)datasourceRegistry.get(datasourceName);
+//		if(jdbcPool!=null){
 			BufferedWriter rdfWriter = null;
 			FileWriter rdfOut = null;
 			try {
-				Connection conn = jdbcPool.getConnection();
+//				Connection conn = jdbcPool.getConnection();
 				
 				//[SubGeographicalRegion_name = "
 				//+ SubGeographicalRegion_name + ", GeographicalRegion_name = "
@@ -197,7 +197,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new HttpBlazegraphQueryHandler("http://localhost:9999");
+				QueryHandler queryHandler = new BlazegraphQueryHandler("http://localhost:9999/blazegraph/namespace/kb/sparql");
 				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;
@@ -372,9 +372,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				}
 				
 			}
-		} else {
-			throw new Exception("No jdbc pool avialable for "+datasourceName);
-		}
+//		} else {
+//			throw new Exception("No jdbc pool avialable for "+datasourceName);
+//		}
 		
 		
 	}

@@ -95,7 +95,7 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile LogManager logManager;
 	
-	ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
+	ProcessNewSimulationRequest newSimulationProcess;
 
 	public ProcessManagerImpl(){}
 	public ProcessManagerImpl(ClientFactory clientFactory, 
@@ -122,7 +122,8 @@ public class ProcessManagerImpl implements ProcessManager {
 		LogMessage logMessageObj = new LogMessage();
 		
 		try{
-			
+			if(newSimulationProcess==null)
+				newSimulationProcess = new ProcessNewSimulationRequest(logManager); 
 			
 			logMessageObj.setLog_level(LogLevel.DEBUG);
 			logMessageObj.setProcess_id(this.getClass().getName());
@@ -137,7 +138,7 @@ public class ProcessManagerImpl implements ProcessManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new GossResponseEvent() {
-				
+//			client.subscribe(GridAppsDConstants.topic_process_prefix+"", new GossResponseEvent() {
 				@Override
 				public void onMessage(Serializable message) {
 					System.out.println("GOT MESSAGE");
@@ -146,6 +147,7 @@ public class ProcessManagerImpl implements ProcessManager {
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
 					logManager.log(logMessageObj);
+					
 					
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){

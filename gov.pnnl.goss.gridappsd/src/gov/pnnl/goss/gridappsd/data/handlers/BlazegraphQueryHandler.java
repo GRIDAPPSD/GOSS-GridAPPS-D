@@ -8,7 +8,7 @@ import org.apache.jena.query.ResultSet;
 
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 
-public class HttpBlazegraphQueryHandler implements QueryHandler {
+public class BlazegraphQueryHandler implements QueryHandler {
 	String endpoint;
 	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
@@ -16,7 +16,7 @@ public class HttpBlazegraphQueryHandler implements QueryHandler {
 
 	
 	
-	public HttpBlazegraphQueryHandler(String endpoint) {
+	public BlazegraphQueryHandler(String endpoint) {
 		this.endpoint = endpoint;
 	}
 	public String getEndpoint() {

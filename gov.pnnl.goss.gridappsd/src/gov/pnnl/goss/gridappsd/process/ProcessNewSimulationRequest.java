@@ -111,6 +111,7 @@ public class ProcessNewSimulationRequest {
 			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			try {
 				statusReporter.reportStatus(
 						GridAppsDConstants.topic_simulationStatus

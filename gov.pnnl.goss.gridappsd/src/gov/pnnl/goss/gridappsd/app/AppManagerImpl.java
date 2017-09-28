@@ -213,7 +213,6 @@ public class AppManagerImpl implements AppManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		System.out.println("STARTING APP MGR");
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
@@ -245,7 +244,6 @@ public class AppManagerImpl implements AppManager{
 		for(File appConfigFile: appConfigFiles){
 			AppInfo appInfo = parseAppInfo(appConfigFile);
 			apps.put(appInfo.getId(), appInfo);
-			System.out.println("FOUND APP "+appInfo.getId());
 
 		}
 	}
