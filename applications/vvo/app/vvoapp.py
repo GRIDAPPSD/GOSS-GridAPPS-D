@@ -66,11 +66,11 @@ logger_location = os.path.join(user_home, "var/log/" + logger_name + ".log")
 if not os.path.exists(os.path.dirname(logger_location)):
     os.makedirs(os.path.dirname(logger_location))
 
-write_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
-write_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_topic = '/topic/goss.gridappsd.fncs.input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_queue = '/queue/goss.gridappsd.fncs.input'  # this should match GridAppsDConstants.topic_FNCS_input
 
-read_topic = '/topic/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
-read_queue = '/queue/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_topic = '/topic/goss.gridappsd.fncs.output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_queue = '/queue/goss.gridappsd.fncs.output'  # this should match GridAppsDConstants.topic_FNCS_output
 goss_connection = None
 is_initialized = False
 # Number 
