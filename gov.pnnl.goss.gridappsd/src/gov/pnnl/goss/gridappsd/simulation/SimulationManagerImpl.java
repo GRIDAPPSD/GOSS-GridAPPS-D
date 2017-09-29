@@ -159,12 +159,11 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start FNCS
 						//TODO, verify no errors on this
 						
-						
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
-								RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+								RunCommandLine.runCommand("cp "+serviceDir+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
@@ -210,15 +209,6 @@ public class SimulationManagerImpl implements SimulationManager{
 								ProcessStatus.RUNNING, 
 								true));
 						
-						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							File serviceDir = serviceManager.getServiceConfigDirectory();
-							//copy zipload_schedule.player file
-							try{
-								RunCommandLine.runCommand("cp "+serviceDir+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
-							}catch(Exception e){
-								log.warn("Could not copy player file to working directory");
-							}
-						}
 												
 						//Start VVO Application
 						//TODO filname really should be constant
