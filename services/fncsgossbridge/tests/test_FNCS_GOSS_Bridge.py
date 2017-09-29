@@ -6,7 +6,7 @@ import sys
 import mock
 import pytest
 
-from apps.fncs_goss_bridge import GOSSListener, _main as fncs_main
+from service.fncs_goss_bridge import GOSSListener, _main as fncs_main
 
 
 @pytest.fixture
@@ -113,12 +113,12 @@ def my_fixture():
     print "tear down"
 
 
-@mock.patch('apps.fncs_goss_bridge.datetime')
-@mock.patch('apps.fncs_goss_bridge.stomp')
-@mock.patch('apps.fncs_goss_bridge.goss_connection')
-@mock.patch('apps.fncs_goss_bridge.fncs')
-@mock.patch('apps.fncs_goss_bridge._keep_alive')
-@mock.patch('apps.fncs_goss_bridge.sys')
+@mock.patch('service.fncs_goss_bridge.datetime')
+@mock.patch('service.fncs_goss_bridge.stomp')
+@mock.patch('service.fncs_goss_bridge.goss_connection')
+@mock.patch('service.fncs_goss_bridge.fncs')
+@mock.patch('service.fncs_goss_bridge._keep_alive')
+@mock.patch('service.fncs_goss_bridge.sys')
 def test_goss_listener(mock_sys,mock__keep_alive, mock_fncs, mock_goss_connection, 
                        mock_stomp, mock_datetime, my_fixture):
     command_msg = my_fixture[0]
