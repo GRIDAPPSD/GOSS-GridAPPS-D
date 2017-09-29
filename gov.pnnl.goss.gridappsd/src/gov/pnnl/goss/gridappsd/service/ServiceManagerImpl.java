@@ -94,7 +94,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		}
 	}
 	
-	protected File getServiceConfigDirectory(){
+	public File getServiceConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.SERVICES_PATH);
 		if (configDirStr==null){
 			configDirStr = "services";

@@ -519,7 +519,7 @@ public class AppManagerImpl implements AppManager{
 	}
 
 	
-	protected File getAppConfigDirectory(){
+	public File getAppConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.APPLICATIONS_PATH);
 		if (configDirStr==null){
 			configDirStr = "applications";

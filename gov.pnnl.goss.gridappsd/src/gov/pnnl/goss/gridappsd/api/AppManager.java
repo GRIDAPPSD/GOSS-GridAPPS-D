@@ -1,5 +1,6 @@
 package gov.pnnl.goss.gridappsd.api;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public interface AppManager {
 
 	void stopAppInstance(String instanceId);
 
-	
+	File getAppConfigDirectory();
 	//TODO add isRunning and is Runningforsimulation
 	
 }

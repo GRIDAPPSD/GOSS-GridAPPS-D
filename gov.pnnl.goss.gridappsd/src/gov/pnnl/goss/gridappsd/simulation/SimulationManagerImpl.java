@@ -58,8 +58,8 @@ import com.google.gson.Gson;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -95,6 +95,9 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
+	
+	@ServiceDependency
+	private volatile ServiceManager serviceManager;
 	
 	@ServiceDependency
 	LogManager logManager;
@@ -208,10 +211,10 @@ public class SimulationManagerImpl implements SimulationManager{
 								true));
 						
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
-								RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+								RunCommandLine.runCommand("cp "+serviceDir+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
