@@ -4,8 +4,10 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 
 public interface LogManager {
 
-	void log(String message);
 	
 	void log(LogMessage message);
+	
+	
+	void get(LogMessage message);
 	
 }

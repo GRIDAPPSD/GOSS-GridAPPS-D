@@ -40,14 +40,15 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
 
-public class AppInfo {
+public class AppInfo implements Serializable {
 	
-	enum AppType {
+	public enum AppType {
 		   PYTHON, JAVA, WEB
 		}
 	
@@ -57,11 +58,12 @@ public class AppInfo {
 	String creator;
 	List<String> inputs;
 	List<String> outputs;
-	HashMap<String, String> options;
+	String options;
 	String execution_path;
 	AppType type;
 	boolean launch_on_startup;
 	List<String> prereqs;
+	boolean multiple_instances;
 	
 
 	public String getId() {
@@ -104,11 +106,11 @@ public class AppInfo {
 		this.outputs = outputs;
 	}
 
-	public HashMap<String, String> getOptions() {
+	public String getOptions() {
 		return options;
 	}
 
-	public void setOptions(HashMap<String, String> options) {
+	public void setOptions(String options) {
 		this.options = options;
 	}
 
@@ -142,6 +144,15 @@ public class AppInfo {
 
 	public void setPrereqs(List<String> prereqs) {
 		this.prereqs = prereqs;
+	}
+
+	
+	public boolean isMultiple_instances() {
+		return multiple_instances;
+	}
+
+	public void setMultiple_instances(boolean multiple_instances) {
+		this.multiple_instances = multiple_instances;
 	}
 
 	@Override
