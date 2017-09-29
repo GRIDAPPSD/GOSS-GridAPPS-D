@@ -163,7 +163,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
-								RunCommandLine.runCommand("cp "+serviceDir+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+								RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
