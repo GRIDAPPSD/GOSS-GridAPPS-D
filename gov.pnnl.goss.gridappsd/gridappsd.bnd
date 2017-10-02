@@ -6,10 +6,12 @@ Private-Package: \
 	gov.pnnl.goss.gridappsd.data,\
 	gov.pnnl.goss.gridappsd.process,\
 	gov.pnnl.goss.gridappsd.requests,\
-    gov.pnnl.goss.gridappsd.simulation,\
-    gov.pnnl.goss.gridappsd.utils,\
-	gov.pnnl.goss.gridappsd.testmanager,\
-	gov.pnnl.goss.gridappsd.log
+	gov.pnnl.goss.gridappsd.simulation,\
+	gov.pnnl.goss.gridappsd.utils,\
+	gov.pnnl.goss.gridappsd.log,\
+	gov.pnnl.goss.gridappsd.app,\
+	gov.pnnl.goss.gridappsd.service, \
+	gov.pnnl.goss.gridappsd.testmanager
 Export-Package: \
 	gov.pnnl.goss.gridappsd.dto,\
 	gov.pnnl.goss.gridappsd.api

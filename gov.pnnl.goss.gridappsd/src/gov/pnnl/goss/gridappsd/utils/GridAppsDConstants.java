@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright ï¿½ 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ï¿½AS ISï¿½ AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -57,7 +57,18 @@ public class GridAppsDConstants {
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
 	public static final String topic_requestData = topic_process_prefix+".request.data";
+	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	//App Request Topics
+	public static final String topic_app_register = topic_requestApp+".register";
+	public static final String topic_app_list = topic_requestApp+".list";
+	public static final String topic_app_get = topic_requestApp+".get";
+	public static final String topic_app_deregister = topic_requestApp+".deregister";
+	public static final String topic_app_start = topic_requestApp+".start";
+	public static final String topic_app_stop = topic_requestApp+".stop";
+	public static final String topic_app_stop_instance = topic_requestApp+".stopinstance";
+	
 	
 	//Process Manager Log Messages Topic 
 	public static final String topic_log_prefix = topic_process_prefix+".log";
@@ -91,6 +102,8 @@ public class GridAppsDConstants {
 	public static final String VVO_APP_PATH = "vvo.app.path";
 	public static final String GRIDLABD_PATH = "gridlabd.path";
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
+	public static final String APPLICATIONS_PATH = "applications.path";
+	public static final String SERVICES_PATH = "services.path";
 	
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

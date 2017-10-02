@@ -73,6 +73,8 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -131,16 +133,14 @@ public class TestManagerImpl implements TestManager {
 	public void start(){
 		LogMessage logMessageObj = new LogMessage();
 		try{
-			logMessageObj.setLog_level("debug");
+			logMessageObj.setLog_level(LogLevel.DEBUG);
 			logMessageObj.setProcess_id(this.getClass().getName());
-			logMessageObj.setProcess_status("running");
+			logMessageObj.setProcess_status(ProcessStatus.RUNNING);
 			logMessageObj.setStoreToDB(true);
 			
-			logMessageObj.setTimestamp(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.format(new Date()));
+			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Starting "+this.getClass().getName());
 			logManager.log(logMessageObj);
-//			log.debug("Starting "+this.getClass().getName());
-			
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
