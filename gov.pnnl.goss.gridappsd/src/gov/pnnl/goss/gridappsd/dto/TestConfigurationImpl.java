@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright � 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright © 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS �AS IS� AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,21 +36,66 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import javax.jms.JMSException;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Map;
 
-import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
-import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
-import pnnl.goss.core.Client;
+import com.google.gson.Gson;
 
-public interface TestManager {
+public class TestConfigurationImpl implements Serializable {
+
+
+	private static final long serialVersionUID = 1L;
+
+	public String power_system_configuration;
+
+	public String simulation_configuration;
 	
-	public TestScriptImpl loadTestScript(String path);
+	public Integer durations;
+
+	public Date run_start;
+
+	public Date run_end;
+
+	public String region_name;
+
+	public String subregion_name;
+
+	public String line_name;
+
+	public Boolean logging;
 	
-	public TestConfigurationImpl loadTestConfig(String path);
+	public Map<String,String> logging_options;
 	
-	public void requestSimulation(Client client, TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException;
+	public Map<String,String> initial_conditions;
+	
+	public Map<String,String> default_values;
+	
+	public String[] outputs;
+
+	public TestConfigurationImpl() {
+
+	}
+	
+	public String getPowerSystemConfiguration(){
+		return power_system_configuration;		
+	}
+
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	public static TestConfigurationImpl parse(String jsonString){
+		Gson  gson = new Gson();
+		TestConfigurationImpl obj = gson.fromJson(jsonString, TestConfigurationImpl.class);
+		if(obj.power_system_configuration==null)
+			throw new RuntimeException("Expected attribute power_system_configuration not found");
+		return obj;
+	}
 
 }

@@ -82,6 +82,16 @@ public class CompareResults {
 	public static boolean equals(Complex a, Complex b){
 	    return a.equals(b) ? true : (a.subtract(b)).abs() < EPSILON;
 	}
+	
+	public void compare(){
+		JsonParser parser = new JsonParser();
+		JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
+		JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
+		JsonElement o3 = parser.parse("{b : 2, a : {a : 2}}");
+		System.out.println(o1.equals(o2));
+		System.out.println(o1.equals(o3));
+//		Assert.assertEquals(o1, o2);
+	}
 
 	public SimulationOutput getOutputProperties(String path) {
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();

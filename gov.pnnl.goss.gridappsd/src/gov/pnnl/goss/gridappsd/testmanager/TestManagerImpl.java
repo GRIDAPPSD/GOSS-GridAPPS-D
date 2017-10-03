@@ -57,8 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -66,15 +64,16 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.api.TestConfiguration;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.api.TestScript;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RequestTest;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
+import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -94,7 +93,7 @@ import pnnl.goss.core.Request.RESPONSE_FORMAT;
 public class TestManagerImpl implements TestManager {
 	
 
-	public static final String topic_requestTest = GridAppsDConstants.topic_process_prefix+".test";
+	public static final String topic_requestTest = "goss.gridappsd" +".test";
 	
 	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
 	
@@ -131,14 +130,10 @@ public class TestManagerImpl implements TestManager {
 	
 	@Start
 	public void start(){
-		LogMessage logMessageObj = new LogMessage();
+		
 		try{
-			logMessageObj.setLog_level(LogLevel.DEBUG);
-			logMessageObj.setProcess_id(this.getClass().getName());
-			logMessageObj.setProcess_status(ProcessStatus.RUNNING);
-			logMessageObj.setStoreToDB(true);
+			LogMessage logMessageObj = createLogMessage();
 			
-			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Starting "+this.getClass().getName());
 			logManager.log(logMessageObj);
 			
@@ -177,74 +172,48 @@ public class TestManagerImpl implements TestManager {
 				
 				@Override
 				public void onMessage(Serializable message) {
-					log.debug("Test manager received message ");
 					DataResponse event = (DataResponse)message;
+					logMessageObj.setTimestamp(new Date().getTime());
+					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+					logManager.log(logMessageObj);
 					
-					statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
-					//TODO: create registry mapping between request topics and request handlers.
-					switch(event.getDestination().replace("/queue/", "")){
-						case topic_requestTest : {
-							log.debug("Received test request: "+ event.getData());
-							
-							//generate simulation id and reply to event's reply destination.
-//							int simulationId = generateSimulationId();
-							int testId = 1234;
-							client.publish(event.getReplyDestination(), testId);
-							try{
-								// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
-								Gson  gson = new Gson();
-									
-								RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
-								log.info("Parsed config "+config);
-								if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
-									throw new RuntimeException("Invalid configuration received");
-								}
-								
-								
-								
-									
-								
-								//make request to configuration Manager to get power grid model file locations and names
-								log.debug("Creating simulation and power grid model files for simulation Id "+ testId);
-								File simulationFile = configurationManager.getSimulationFile(testId, config);
-								if(simulationFile==null){
-									throw new Exception("No simulation file returned for request "+config);
-								}
-									
-									
-								log.debug("Simulation and power grid model files generated for simulation Id "+ testId);
-								
-								//start simulation
-								log.debug("Starting simulation for id "+ testId);
-								simulationManager.startSimulation(testId, simulationFile, config.getSimulation_config());
-								log.debug("Starting simulation for id "+ testId);
-									
-		//								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
-							}catch (Exception e){
-								e.printStackTrace();
-								try {
-									statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+testId, "Test Initialization error: "+e.getMessage());
-									log.error("Test Initialization error",e);
-								} catch (Exception e1) {
-									e1.printStackTrace();
-								}
-							}
-						}
-						//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
-						//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+					RequestTest reqTest = RequestTest.parse(message.toString());
+					
+					TestConfigurationImpl testConfig = loadTestConfig(reqTest.getTestConfigPath());
+					
+					TestScriptImpl testScript = loadTestScript(reqTest.getTestScriptPath());
+					
+					try {
+						requestSimulation(client, testConfig, testScript);
+					} catch (JMSException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					
 				}
+
 			});
 		}
 		catch(Exception e){
 			log.error("Error in process manager",e);
-		}
-		
+		}	
+	}
+	
+	private LogMessage createLogMessage() {
+		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setLog_level(LogLevel.DEBUG);
+		logMessageObj.setProcess_id(this.getClass().getName());
+		logMessageObj.setProcess_status(ProcessStatus.RUNNING);
+		logMessageObj.setStoreToDB(true);
+		logMessageObj.setTimestamp(new Date().getTime());
+		return logMessageObj;
 	}
 	
 	
 	public TestConfigurationImpl loadTestConfig(String path){
+		LogMessage logMessageObj = createLogMessage();
+		logMessageObj.setLog_message("Loading TestCofiguration from:" + path);
+		logManager.log(logMessageObj);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
@@ -271,22 +240,18 @@ public class TestManagerImpl implements TestManager {
 			jsonReader.close();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+//			e.printStackTrace();
+			logMessageObj.setTimestamp(new Date().getTime());
+			logMessageObj.setLog_message("Error" + e.getMessage());
+			logManager.log(logMessageObj);
 		}
 		return testConfig;
 	}
 	
-	public void compare(){
-		JsonParser parser = new JsonParser();
-		JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
-		JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
-		JsonElement o3 = parser.parse("{b : 2, a : {a : 2}}");
-		System.out.println(o1.equals(o2));
-		System.out.println(o1.equals(o3));
-//		Assert.assertEquals(o1, o2);
-	}
-	
 	public TestScriptImpl loadTestScript(String path){
+		LogMessage logMessageObj = createLogMessage();
+		logMessageObj.setLog_message("Loading TestScript from:" + path);
+		logManager.log(logMessageObj);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
 		TestScriptImpl testScript = null;
@@ -294,15 +259,18 @@ public class TestManagerImpl implements TestManager {
 			jsonReader = new JsonReader(new FileReader(path));
 			jsonReader.setLenient(true);
 			testScript = gson.fromJson(new FileReader(path), TestScriptImpl.class);
-			System.out.println(testScript.toString());
+//			System.out.println(testScript.toString());
 			jsonReader.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+			logMessageObj.setTimestamp(new Date().getTime());
+			logMessageObj.setLog_message("Error" + e.getMessage());
+			logManager.log(logMessageObj);
 		}
 		return testScript;
 	}
 
-	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException {
+	public void requestSimulation(Client client, TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException {
 		//TODO: Request Simulation
 			//TODO: 1 PowerSystemConfig
 			//TODO: 2 SimulationConfig simulation_config
@@ -342,14 +310,65 @@ public class TestManagerImpl implements TestManager {
 		});
 	}
 	
+	private void requestSimOld(Client client, Serializable message, DataResponse event) {
+		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
+		//TODO: create registry mapping between request topics and request handlers.
+		switch(event.getDestination().replace("/queue/", "")){
+			case topic_requestTest : {
+				log.debug("Received test request: "+ event.getData());
+				
+				//generate simulation id and reply to event's reply destination.
+//				int simulationId = generateSimulationId();
+				int testId = 1234;
+				client.publish(event.getReplyDestination(), testId);
+				try{
+					// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+					Gson  gson = new Gson();
+						
+					RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+					log.info("Parsed config "+config);
+					if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
+						throw new RuntimeException("Invalid configuration received");
+					}
+
+					//make request to configuration Manager to get power grid model file locations and names
+					log.debug("Creating simulation and power grid model files for simulation Id "+ testId);
+					File simulationFile = configurationManager.getSimulationFile(testId, config);
+					if(simulationFile==null){
+						throw new Exception("No simulation file returned for request "+config);
+					}
+						
+						
+					log.debug("Simulation and power grid model files generated for simulation Id "+ testId);
+					
+					//start simulation
+					log.debug("Starting simulation for id "+ testId);
+					simulationManager.startSimulation(testId, simulationFile, config.getSimulation_config());
+					log.debug("Starting simulation for id "+ testId);
+						
+//								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+				}catch (Exception e){
+					e.printStackTrace();
+					try {
+						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+testId, "Test Initialization error: "+e.getMessage());
+						log.error("Test Initialization error",e);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+			//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+			//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+		}
+	}
+	
 	
 	public static void main(String[] args) {
 		TestManagerImpl tm = new TestManagerImpl();
-		tm.compare();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		TestConfiguration testConf = tm.loadTestConfig(path);
+		TestConfigurationImpl testConf = tm.loadTestConfig(path);
 		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		TestScript testScript = tm.loadTestScript(path);
+		TestScriptImpl testScript = tm.loadTestScript(path);
 		
 //		Credentials credentials = new UsernamePasswordCredentials(
 //				GridAppsDConstants.username, GridAppsDConstants.password);

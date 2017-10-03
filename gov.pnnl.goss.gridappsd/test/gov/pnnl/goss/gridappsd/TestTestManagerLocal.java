@@ -1,6 +1,7 @@
 package gov.pnnl.goss.gridappsd;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,11 +18,15 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.api.TestConfiguration;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.api.TestScript;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.RequestTest;
+import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
+import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -74,37 +79,61 @@ public class TestTestManagerLocal {
 		
 		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
 		
-//		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
-//		
-//		assertEquals(logMessage.getLog_level(), "debug");
-//		assertEquals(logMessage.getLog_message(), "Starting "+ProcessManagerImpl.class.getName());
-//		assertEquals(logMessage.getProcess_status(), "running");
+		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
+
+		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLog_message(), "Starting "+TestManagerImpl.class.getName());
+		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
-//		try {
-//			assertNotNull(GridAppsDConstants.GRIDAPPSD_DATE_FORMAT.parse(logMessage.getTimestamp()));
-//		} catch (ParseException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		assertNotNull(logMessage.getTimestamp());
 	}
 	
 	@Test
 	public void testLoadConfig(){	
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter,logManager);
+		testManager.start();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		TestConfiguration testConfig = tm.loadTestConfig(path);
+//		/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json
+		TestConfigurationImpl testConfig = testManager.loadTestConfig(path);
 		assertEquals(testConfig.getPowerSystemConfiguration(),"ieee8500");
 	}
 
 	@Test
-	public void testLoadScript(){	
+	public void testLoadScript(){
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter,logManager);
+		testManager.start();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		TestScript testScript = tm.loadTestScript(path);
-//		assertEquals(testScript.name,"VVO");
+		TestScriptImpl testScript = testManager.loadTestScript(path);
+		assertEquals(testScript.name,"VVO");
 	}
 	
 	@Test
+	public void testRequest(){	
+		String testCfg = "{\"testConfigPath\":\"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json\",\"testScriptPath\":\"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json\"}";
+		RequestTest.parse(testCfg);
+
+	}
+	
+	
+	@Test
 	public void compare(){	
-		((TestManagerImpl) tm).compare();
+//		((TestManagerImpl) tm).compare();
 		JsonParser parser = new JsonParser();
 		JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
 		JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
