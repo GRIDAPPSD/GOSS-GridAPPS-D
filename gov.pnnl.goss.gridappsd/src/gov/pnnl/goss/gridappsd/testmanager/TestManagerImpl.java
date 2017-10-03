@@ -72,8 +72,8 @@ import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
-import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
+import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
+import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -179,9 +179,9 @@ public class TestManagerImpl implements TestManager {
 					
 					RequestTest reqTest = RequestTest.parse(message.toString());
 					
-					TestConfigurationImpl testConfig = loadTestConfig(reqTest.getTestConfigPath());
+					TestConfiguration testConfig = loadTestConfig(reqTest.getTestConfigPath());
 					
-					TestScriptImpl testScript = loadTestScript(reqTest.getTestScriptPath());
+					TestScript testScript = loadTestScript(reqTest.getTestScriptPath());
 					
 					try {
 						requestSimulation(client, testConfig, testScript);
@@ -210,7 +210,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	
-	public TestConfigurationImpl loadTestConfig(String path){
+	public TestConfiguration loadTestConfig(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLog_message("Loading TestCofiguration from:" + path);
 		logManager.log(logMessageObj);
@@ -218,11 +218,11 @@ public class TestManagerImpl implements TestManager {
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
-		TestConfigurationImpl testConfig = null;
+		TestConfiguration testConfig = null;
 		try {
 			jsonReader = new JsonReader(new FileReader(path));
 			jsonReader.setLenient(true);
-			testConfig = gson.fromJson(new FileReader(path),TestConfigurationImpl.class);
+			testConfig = gson.fromJson(new FileReader(path),TestConfiguration.class);
 			System.out.println(testConfig.toString());
 				
 //			jsonReader.beginObject();
@@ -248,17 +248,17 @@ public class TestManagerImpl implements TestManager {
 		return testConfig;
 	}
 	
-	public TestScriptImpl loadTestScript(String path){
+	public TestScript loadTestScript(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLog_message("Loading TestScript from:" + path);
 		logManager.log(logMessageObj);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
-		TestScriptImpl testScript = null;
+		TestScript testScript = null;
 		try {
 			jsonReader = new JsonReader(new FileReader(path));
 			jsonReader.setLenient(true);
-			testScript = gson.fromJson(new FileReader(path), TestScriptImpl.class);
+			testScript = gson.fromJson(new FileReader(path), TestScript.class);
 //			System.out.println(testScript.toString());
 			jsonReader.close();
 		} catch (Exception e) {
@@ -270,7 +270,7 @@ public class TestManagerImpl implements TestManager {
 		return testScript;
 	}
 
-	public void requestSimulation(Client client, TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException {
+	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException {
 		//TODO: Request Simulation
 			//TODO: 1 PowerSystemConfig
 			//TODO: 2 SimulationConfig simulation_config
@@ -366,9 +366,9 @@ public class TestManagerImpl implements TestManager {
 	public static void main(String[] args) {
 		TestManagerImpl tm = new TestManagerImpl();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		TestConfigurationImpl testConf = tm.loadTestConfig(path);
+		TestConfiguration testConf = tm.loadTestConfig(path);
 		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		TestScriptImpl testScript = tm.loadTestScript(path);
+		TestScript testScript = tm.loadTestScript(path);
 		
 //		Credentials credentials = new UsernamePasswordCredentials(
 //				GridAppsDConstants.username, GridAppsDConstants.password);

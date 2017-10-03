@@ -45,7 +45,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
-public class TestConfigurationImpl implements Serializable {
+public class TestConfiguration implements Serializable {
 
 
 	private static final long serialVersionUID = 1L;
@@ -76,7 +76,7 @@ public class TestConfigurationImpl implements Serializable {
 	
 	public String[] outputs;
 
-	public TestConfigurationImpl() {
+	public TestConfiguration() {
 
 	}
 	
@@ -90,9 +90,9 @@ public class TestConfigurationImpl implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static TestConfigurationImpl parse(String jsonString){
+	public static TestConfiguration parse(String jsonString){
 		Gson  gson = new Gson();
-		TestConfigurationImpl obj = gson.fromJson(jsonString, TestConfigurationImpl.class);
+		TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
 		if(obj.power_system_configuration==null)
 			throw new RuntimeException("Expected attribute power_system_configuration not found");
 		return obj;

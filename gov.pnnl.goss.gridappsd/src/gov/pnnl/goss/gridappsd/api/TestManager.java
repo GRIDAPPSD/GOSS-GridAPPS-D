@@ -41,16 +41,16 @@ package gov.pnnl.goss.gridappsd.api;
 
 import javax.jms.JMSException;
 
-import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
-import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
+import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
+import gov.pnnl.goss.gridappsd.dto.TestScript;
 import pnnl.goss.core.Client;
 
 public interface TestManager {
 	
-	public TestScriptImpl loadTestScript(String path);
+	public TestScript loadTestScript(String path);
 	
-	public TestConfigurationImpl loadTestConfig(String path);
+	public TestConfiguration loadTestConfig(String path);
 	
-	public void requestSimulation(Client client, TestConfigurationImpl testConfiguration, TestScriptImpl ts) throws JMSException;
+	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException;
 
 }

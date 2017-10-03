@@ -43,7 +43,7 @@ import java.io.Serializable;
 
 import com.google.gson.Gson;
 
-public class TestScriptImpl implements Serializable {
+public class TestScript implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -55,7 +55,7 @@ public class TestScriptImpl implements Serializable {
 	
 //	private String[] events;
 
-	public TestScriptImpl() {
+	public TestScript() {
 
 	}
 
@@ -81,9 +81,9 @@ public class TestScriptImpl implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static TestScriptImpl parse(String jsonString){
+	public static TestScript parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScriptImpl obj = gson.fromJson(jsonString, TestScriptImpl.class);
+		TestScript obj = gson.fromJson(jsonString, TestScript.class);
 		if(obj.name==null)
 			throw new RuntimeException("Expected attribute name not found");
 		return obj;

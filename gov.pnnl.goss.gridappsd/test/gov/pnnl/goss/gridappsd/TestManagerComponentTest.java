@@ -21,8 +21,8 @@ import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
-import gov.pnnl.goss.gridappsd.dto.TestConfigurationImpl;
-import gov.pnnl.goss.gridappsd.dto.TestScriptImpl;
+import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
+import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
@@ -31,7 +31,7 @@ import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestTestManagerLocal {
+public class TestManagerComponentTest {
 	
 	TestManager tm = new TestManagerImpl();
 	
@@ -102,7 +102,7 @@ public class TestTestManagerLocal {
 		testManager.start();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
 //		/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json
-		TestConfigurationImpl testConfig = testManager.loadTestConfig(path);
+		TestConfiguration testConfig = testManager.loadTestConfig(path);
 		assertEquals(testConfig.getPowerSystemConfiguration(),"ieee8500");
 	}
 
@@ -119,7 +119,7 @@ public class TestTestManagerLocal {
 											statusReporter,logManager);
 		testManager.start();
 		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		TestScriptImpl testScript = testManager.loadTestScript(path);
+		TestScript testScript = testManager.loadTestScript(path);
 		assertEquals(testScript.name,"VVO");
 	}
 	
