@@ -52,7 +52,9 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -76,7 +78,7 @@ import pnnl.goss.core.GossResponseEvent;
  */
 @Component
 public class ProcessManagerImpl implements ProcessManager {
-		
+	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
@@ -96,6 +98,10 @@ public class ProcessManagerImpl implements ProcessManager {
 	private volatile LogManager logManager;
 	
 	ProcessNewSimulationRequest newSimulationProcess = new ProcessNewSimulationRequest();
+	
+	private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
+	
+	private Random randPort = new Random();
 
 	public ProcessManagerImpl(){}
 	public ProcessManagerImpl(ClientFactory clientFactory, 
@@ -151,8 +157,17 @@ public class ProcessManagerImpl implements ProcessManager {
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 						//generate simulation id and reply to event's reply destination.
 						int simulationId = generateSimulationId();
-						client.publish(event.getReplyDestination(), simulationId);
-						newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message);
+						try {
+							int simPort = assignSimulationPort(simulationId);
+							client.publish(event.getReplyDestination(), simulationId);
+							newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message, simPort);
+						} catch (Exception e) {
+							e.printStackTrace();
+							logMessageObj.setTimestamp(new Date().getTime());
+							logMessageObj.setLog_level(LogLevel.ERROR);
+							logMessageObj.setLog_message(e.getMessage());
+							logManager.log(logMessageObj);
+						}
 					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 						int processId = generateSimulationId();
 						try{
@@ -170,8 +185,6 @@ public class ProcessManagerImpl implements ProcessManager {
 					}
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
-					
-					
 				}
 			});
 		}
@@ -206,6 +219,21 @@ public class ProcessManagerImpl implements ProcessManager {
 	}
 	
 
-
+	public int assignSimulationPort(int simulationId) throws Exception {
+		Integer simIdKey = new Integer(simulationId);
+		if (!simulationPorts.containsKey(simIdKey)) {
+			int tempPort = 49152 + randPort.nextInt(16384);
+			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
+			while (simulationPorts.containsValue(tempPortObj)) {
+				int newTempPort = 49152 + randPort.nextInt(16384);
+				tempPortObj.set(newTempPort);
+			}
+			simulationPorts.put(simIdKey, tempPortObj);
+			return tempPortObj.get();
+		} else {
+			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
+					+ "simulation in progress.");
+		}
+	}
 	
 }

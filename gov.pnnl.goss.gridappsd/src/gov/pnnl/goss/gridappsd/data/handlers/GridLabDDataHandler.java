@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright ï¿½ 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ï¿½AS ISï¿½ AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -256,7 +256,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				PrintWriter startupFileWriter = new PrintWriter(startupFile);
 				//add an include reference to the base glm 
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
-
+				String brokerLocation = dataRequest.getSimulation_config().getSimulation_broker_location();
+				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
 				Calendar c = Calendar.getInstance();
 				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
@@ -288,7 +289,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     name "+simulationName+";");
 				startupFileWriter.println("     message_type JSON;");
 				startupFileWriter.println("     configure configfile.json;");
-				startupFileWriter.println("     option \"transport:hostname localhost, port 5570\";");
+				startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
 				startupFileWriter.println("}");
 				startupFileWriter.println("object recorder {");
 				startupFileWriter.println("     parent "+simulationName+";");

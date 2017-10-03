@@ -55,7 +55,7 @@ public interface SimulationManager {
 	 * This method is called by Process Manager to start a simulation
 	 * @param simulationId
 	 * @param simulationFile
+	 * @param simulationConfig
 	 */
 	void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig);
-
 }

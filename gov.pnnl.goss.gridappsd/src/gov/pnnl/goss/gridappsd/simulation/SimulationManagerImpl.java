@@ -155,9 +155,9 @@ public class SimulationManagerImpl implements SimulationManager{
 					
 						//Start FNCS
 						//TODO, verify no errors on this
-						
-						
+						String broker_location = "tcp://localhost:5570";
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
+							broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 							//copy zipload_schedule.player file
 							try{
@@ -167,7 +167,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 						}
 						
-						
+						//TODO, need to execute broker as follows FNCS_BROKER=broker_location fncs_broker 2
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
@@ -238,7 +238,7 @@ public class SimulationManagerImpl implements SimulationManager{
 
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
-						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
+						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name(), broker_location);
 						fncsBridgeBuilder.redirectErrorStream(true);
 						fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
 						fncsBridgeProcess = fncsBridgeBuilder.start();
