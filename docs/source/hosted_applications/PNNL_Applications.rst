@@ -158,36 +158,62 @@ Transactive energy is a method of controlling loads and resources on the
 distribution system, combining both market and electrical principles
 [4]_. One reason for including this application in DOE-funded GridAPPS-D
 is that PNNL has made several technical contributions and led several
-demonstration projects in transactive systems, also funded by DOE. We’ve
-selected building-to-grid integration as a new topic for utility
-operations, and this will not overlap with other sample applications.
-The details of application scope are still to be established in
-consultation with industry advisors and potential utility hosts. Some
-candidates or examples would be:
+demonstration projects in transactive systems, also funded by DOE [5]_.
 
-1. Integration with transactive campuses at PNNL, University of
-   Washington, Washington State University, Case Western, University of
-   Toledo, and/or NASA Glenn Research Center
+**Application structure**
 
-2. Integration with the micro-transactive grid project at Avista
-   Utilities in Spokane, funded by WA Clean Energy Fund 2
+This transactive systems application is to be implemented as a
+modularized 2-layer 3-level structure, as seen from Figure 3. The layer
+decomposition helps the control of various groups, with limited
+information flow between different layers. With the predefined functions
+in each agent type (Agent A, B, and C) in each level, the existing
+transactive system related work can be conveniently integrated into the
+application, and the new control features can be added into specific
+control function in each type of the agent easily.
 
-3. Integration with a building energy management system (BEMS) in a host
-   utility service area
+|TransactiveSystemAppStructure|
 
-4. Forecasting and management of load and/or resources from a large
-   urban building
+Figure 3: The structure of the modularized 2-layer 3-level transactive
+system application
 
-5. Integration with a smart-home management system, especially one
-   hosted on a smart meter
+The modularized agents opens the door for integrating different control
+mechanisms into the application. Users need to consider which level
+their control algorithm fits into, and fill in the control function of
+the Agent class in that level, without worrying about communications
+between the agents. In each level, the same type of the agent may have
+various control functions, which help combining benefits of different
+control schemes together.
 
-Specifically for GridAPPS-D, we wish to include VOLTTRON [5]_ as the
-basis of a standard that might be federated with CIM, or extensions to
-CIM. We also wish to leverage existing PNNL tools that simulate
-buildings and transactive agents over a FNCS bus [6]_. Because it
-proposes to interface with customer-owned systems, this application
-would require more attention to privacy and cybersecurity issues than
-some other applications.
+Agent A, B and C will be implemented as VOLTTRON applications. VOLTTRON
+is an application platform for distributed sensing and control
+applications [6]_. With the capability of hardware-in-the-loop (HIL)
+testing through VOLTTRON, the transactive systems application will be
+tested using the actual devices. A GOSS-VOLTTRON Bridge is to be
+implemented, for the communication between GridAPPS-D and the VOLTTRON
+agents in the transactive systems application.
+
+**Application test cases**
+
+
+The hierarchical control framework introduced in [7]_ for integrated
+coordination between distributed energy resources and demand response
+will be implemented into the application. In addition, [7] has not
+considered the power losses or power constrains, which will be taken
+into consideration in this test case. The two-layer control mechanism,
+including the coordination layer and device layer, fits the proposed
+structure of the application well. The control in each level will be
+implemented into corresponding function in each type of the agent. The
+IEEE 123-node test feeder built in GridLAB-D will be used for testing
+the application.
+
+**CIM extension for the Application**
+
+The latest versions of GridAPPS-D has used a reduced-order CIM to
+support feeder modeling. With transactive system application included
+into GridAPPS-D platform, more objects, such as house air conditioner
+and water heater, need to be defined in CIM. Before the definition in
+CIM, a simplified version of the house object and water heater object
+are to be implemented in GridLAB-D.
 
 References
 ^^^^^^^^^^
@@ -200,10 +226,13 @@ References
 
 .. [4] Gridwise Architecture Council. (2017). *Transactive Energy*. Available: http://www.gridwiseac.org/about/transactive\_energy.aspx
 
-.. [5] S. Katipamula, J. Haack, G. Hernandez, B. Akyol, and J. Hagerman, "VOLTTRON: An Open-Source Software Platform of the Future," *IEEE Electrification Magazine,* vol. 4, pp. 15-22, 2016.
+.. [5] Pacific Northwest National Laboratory. (2017). *Transactive Energy Simulation Platform (TESP)*. Available: http://tesp.readthedocs.io/en/latest/
 
-.. [6] Pacific Northwest National Laboratory. (2017). *Transactive Energy Simulation Platform (TESP)*. Available: http://tesp.readthedocs.io/en/latest/
+.. [6] S. Katipamula, J. Haack, G. Hernandez, B. Akyol, and J. Hagerman, "VOLTTRON: An Open-Source Software Platform of the Future," *IEEE Electrification Magazine,* vol. 4, pp. 15-22, 2016.
+
+.. [7] Di Wu, Jianming Lian, Yannan Sun, Tao Yang, Jacob Hansen, "Hierarchical control framework for integrated coordination between distributed energy resources and demand response," Electric Power Systems Research, pp. 45-54, May 2017.
 
 .. |image0| image:: PNNL_Apps/media/SE_Service.png
 .. |image1| image:: PNNL_Apps/media/MV_App.png
+.. |TransactiveSystemAppStructure| image:: PNNL_Apps/media/TransactiveSystemAppStructure.png
 
