@@ -120,7 +120,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
         ValueError()
     """
     global is_initialized
-	configuration_zpl = ''
+    configuration_zpl = ''
     try:
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
         _send_simulation_status('started', message_str, 'info')
@@ -327,7 +327,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
         RuntimeError()
     """
     global simulation_id
-	global goss_connection
+    global goss_connection
     simulation_id = sim_id
     if (goss_server == None or goss_server == ''
             or type(goss_server) != str):
