@@ -64,6 +64,7 @@ import com.google.gson.Gson;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 //import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
@@ -90,6 +91,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 
 	@ServiceDependency
 	private volatile DataManager dataManager;
+	
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
 	 
     private Logger log = LoggerFactory.getLogger(getClass());
     private final String datasourceName = "gridappsd";
@@ -195,9 +199,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", "-n=zipload_schedule", "-z=0.3", "-i=0.3", "-p=0.4",
 				
-				
+				String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+				if(bgHost==null || bgHost.trim().length()==0){
+					bgHost = "http://localhost:9999";
+				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new BlazegraphQueryHandler("http://localhost:9999/blazegraph/namespace/kb/sparql");
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
 				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;

@@ -104,7 +104,8 @@ public class GridAppsDConstants {
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
-	
+	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
+
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
