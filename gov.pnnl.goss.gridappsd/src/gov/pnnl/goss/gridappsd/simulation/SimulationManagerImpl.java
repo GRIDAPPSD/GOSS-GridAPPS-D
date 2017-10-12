@@ -1,40 +1,40 @@
 /*******************************************************************************
  * Copyright 2017, Battelle Memorial Institute All rights reserved.
- * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
- * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
- * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
- * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+ * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
+ * lawfully obtaining a copy of this software and associated documentation files (hereinafter the
+ * Software) to redistribute and use the Software in source and binary forms, with or without modification.
+ * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and may permit others to do so, subject to the following conditions:
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the
  * following disclaimers.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
- * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+ * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
- * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+ * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * General disclaimer for use with OSS licenses
- * 
- * This material was prepared as an account of work sponsored by an agency of the United States Government. 
- * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
- * of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
- * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
- * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+ *
+ * This material was prepared as an account of work sponsored by an agency of the United States Government.
+ * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
+ * of their employees, nor any jurisdiction or organization that has cooperated in the development of these
+ * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
+ * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
  * disclosed, or represents that its use would not infringe privately owned rights.
- * 
- * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
- * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
- * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+ *
+ * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
+ * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
+ * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
  * herein do not necessarily state or reflect those of the United States Government or any agency thereof.
- * 
- * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+ *
+ * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.simulation;
@@ -76,33 +76,33 @@ import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 /**
  * This represents Internal Function 405 Simulation Control Manager.
  * This is the management function that controls the running/execution of the Distribution Simulator (401).
- * @author shar064 
+ * @author shar064
  */
 
 @Component
 public class SimulationManagerImpl implements SimulationManager{
-	
+
 	private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
 	final static int MAX_INIT_ATTEMPTS = 50;
-	
-	Client client = null; 
-	
+
+	Client client = null;
+
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
-	
+
 	@ServiceDependency
 	ServerControl serverControl;
-	
+
 	@ServiceDependency
 	private volatile ConfigurationManager configurationManager;
-	
+
 	@ServiceDependency
 	LogManager logManager;
-	
+
 	public SimulationManagerImpl(){ }
-	
-	
-	public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl, 
+
+
+	public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl,
 			LogManager logManager, ConfigurationManager configurationManager) {
 		this.clientFactory = clientFactory;
 		this.serverControl = serverControl;
@@ -116,9 +116,9 @@ public class SimulationManagerImpl implements SimulationManager{
 		Credentials credentials = new UsernamePasswordCredentials(
 				GridAppsDConstants.username, GridAppsDConstants.password);
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);
-		
+
 	}
-	
+
 	/**
 	 * This method is called by Process Manager to start a simulation
 	 * @param simulationId
@@ -126,37 +126,37 @@ public class SimulationManagerImpl implements SimulationManager{
 	 */
 	@Override
 	public void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig){
-		
+
 			try {
-				logManager.log(new LogMessage(Integer.toString(simulationId), 
-						new Long(new Date().getTime()), 
-						"Starting simulation "+simulationId, 
-						LogLevel.INFO, 
-						ProcessStatus.STARTING, 
+				logManager.log(new LogMessage(Integer.toString(simulationId),
+						new Long(new Date().getTime()),
+						"Starting simulation "+simulationId,
+						LogLevel.INFO,
+						ProcessStatus.STARTING,
 						true));
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
 			}
 
-			
+
 			Thread thread = new Thread(new Runnable() {
-				
+
 				@Override
 				public void run() {
-					
+
 					Process gridlabdProcess = null;
 					Process fncsProcess = null;
 					Process fncsBridgeProcess = null;
 					Process vvoAppProcess = null;
 					InitializedTracker isInitialized = new InitializedTracker();
 					try{
-						
+
 						File defaultLogDir = simulationFile.getParentFile();
-					
+
 						//Start FNCS
 						//TODO, verify no errors on this
-						
-						
+
+
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 							//copy zipload_schedule.player file
@@ -166,8 +166,8 @@ public class SimulationManagerImpl implements SimulationManager{
 								log.warn("Could not copy player file to working directory");
 							}
 						}
-						
-						
+
+
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
@@ -176,17 +176,17 @@ public class SimulationManagerImpl implements SimulationManager{
 						// Watch the process
 						watch(fncsProcess, "FNCS");
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
-						
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()), 
-								"FNCS Co-Simulator started", 
-								LogLevel.INFO, 
-								ProcessStatus.RUNNING, 
+
+						logManager.log(new LogMessage(Integer.toString(simulationId),
+								new Long(new Date().getTime()),
+								"FNCS Co-Simulator started",
+								LogLevel.INFO,
+								ProcessStatus.RUNNING,
 								true));
-						
-						
+
+
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
-						
+
 						//Start GridLAB-D
 						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
@@ -197,16 +197,16 @@ public class SimulationManagerImpl implements SimulationManager{
 						gridlabdProcess = gridlabDBuilder.start();
 						// Watch the process
 						watch(gridlabdProcess, "GridLABD");
-						
-						
+
+
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()), 
-								"GridLAB-D started", 
-								LogLevel.INFO, 
-								ProcessStatus.RUNNING, 
+						logManager.log(new LogMessage(Integer.toString(simulationId),
+								new Long(new Date().getTime()),
+								"GridLAB-D started",
+								LogLevel.INFO,
+								ProcessStatus.RUNNING,
 								true));
-						
+
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
 							//copy zipload_schedule.player file
@@ -216,24 +216,24 @@ public class SimulationManagerImpl implements SimulationManager{
 								log.warn("Could not copy player file to working directory");
 							}
 						}
-												
+
 						//Start VVO Application
 						//TODO filname really should be constant
 						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.VVO_APP_PATH)+" "+simulationId+" "+vvoInputFile);
-						ProcessBuilder vvoAppBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.VVO_APP_PATH), ""+simulationId, vvoInputFile);
+						ProcessBuilder vvoAppBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.VVO_APP_PATH), "-f",vvoInputFile, ""+simulationId);
 						vvoAppBuilder.redirectErrorStream(true);
 						vvoAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"vvo_app.log"));
 						vvoAppProcess = vvoAppBuilder.start();
 						// Watch the process
 						watch(vvoAppProcess, "VVO Application");
-						
+
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()), 
-								"FNCS-GOSS Bridge started", 
-								LogLevel.INFO, 
-								ProcessStatus.RUNNING, 
+						logManager.log(new LogMessage(Integer.toString(simulationId),
+								new Long(new Date().getTime()),
+								"FNCS-GOSS Bridge started",
+								LogLevel.INFO,
+								ProcessStatus.RUNNING,
 								true));
 
 						//Start GOSS-FNCS Bridge
@@ -244,19 +244,19 @@ public class SimulationManagerImpl implements SimulationManager{
 						fncsBridgeProcess = fncsBridgeBuilder.start();
 						// Watch the process
 						watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-						
+
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()), 
-								"FNCS-GOSS Bridge started", 
-								LogLevel.INFO, 
-								ProcessStatus.RUNNING, 
+						logManager.log(new LogMessage(Integer.toString(simulationId),
+								new Long(new Date().getTime()),
+								"FNCS-GOSS Bridge started",
+								LogLevel.INFO,
+								ProcessStatus.RUNNING,
 								true));
 
-						
+
 						//Subscribe to fncs-goss-bridge output topic
 						client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(logManager, isInitialized, simulationId));
-						
+
 						int initAttempts = 0;
 						while(!isInitialized.isInited && initAttempts<MAX_INIT_ATTEMPTS){
 							//Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
@@ -266,47 +266,47 @@ public class SimulationManagerImpl implements SimulationManager{
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
 							initAttempts++;
 							Thread.sleep(1000);
-							
+
 						}
-						
+
 						if(initAttempts<MAX_INIT_ATTEMPTS){
-							logManager.log(new LogMessage(Integer.toString(simulationId), 
-									new Long(new Date().getTime()), 
-									"FNCS Initialized", 
-									LogLevel.INFO, 
-									ProcessStatus.RUNNING, 
+							logManager.log(new LogMessage(Integer.toString(simulationId),
+									new Long(new Date().getTime()),
+									"FNCS Initialized",
+									LogLevel.INFO,
+									ProcessStatus.RUNNING,
 									true));
-							
+
 
 							//Send the timesteps by second for the amount of time specified in the simulation config
-	                        sendTimesteps(simulationConfig, simulationId); 
+	                        sendTimesteps(simulationConfig, simulationId);
 						} else {
-							logManager.log(new LogMessage(Integer.toString(simulationId), 
-									new Long(new Date().getTime()), 
-									"FNCS Initialization Failed", 
-									LogLevel.ERROR, 
-									ProcessStatus.ERROR, 
+							logManager.log(new LogMessage(Integer.toString(simulationId),
+									new Long(new Date().getTime()),
+									"FNCS Initialization Failed",
+									LogLevel.ERROR,
+									ProcessStatus.ERROR,
 									true));
-							
+
 						}
-                        
+
                         //call to stop the fncs broker
 					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
-					    logManager.log(new LogMessage(Integer.toString(simulationId), 
-								new Long(new Date().getTime()), 
-								"Simulation "+simulationId+" complete", 
-								LogLevel.INFO, 
-								ProcessStatus.STOPPED, 
+					    logManager.log(new LogMessage(Integer.toString(simulationId),
+								new Long(new Date().getTime()),
+								"Simulation "+simulationId+" complete",
+								LogLevel.INFO,
+								ProcessStatus.STOPPED,
 								true));
 					}
 					catch(Exception e){
 							log.error("Error during simulation",e);
 							try {
-								logManager.log(new LogMessage(Integer.toString(simulationId), 
-										new Long(new Date().getTime()), 
+								logManager.log(new LogMessage(Integer.toString(simulationId),
+										new Long(new Date().getTime()),
 										"Simulation error: "+e.getMessage(),
-										LogLevel.ERROR, 
-										ProcessStatus.ERROR, 
+										LogLevel.ERROR,
+										ProcessStatus.ERROR,
 										true));
 							} catch (Exception e1) {
 								log.error("Error while reporting error status", e);
@@ -325,16 +325,16 @@ public class SimulationManagerImpl implements SimulationManager{
 					}
 				}
 			});
-			
+
 			thread.start();
 	}
-	
-	
+
+
     class InitializedTracker {
     	public boolean isInited = false;
-    }	
+    }
 
-    
+
     class GossFncsResponseEvent implements GossResponseEvent{
 		InitializedTracker initializedTracker;
 		LogManager logManager;
@@ -344,20 +344,20 @@ public class SimulationManagerImpl implements SimulationManager{
 			initializedTracker = initialized;
 			simulationId = id;
 		}
-		 
-		 
+
+
 		@Override
 		public void onMessage(Serializable response) {
 			try{
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
-				logManager.log(new LogMessage(Integer.toString(simulationId), 
-						new Long(new Date().getTime()), 
-						 "FNCS-GOSS Bridge response:"+response, 
-						LogLevel.INFO, 
-						ProcessStatus.RUNNING, 
+				logManager.log(new LogMessage(Integer.toString(simulationId),
+						new Long(new Date().getTime()),
+						 "FNCS-GOSS Bridge response:"+response,
+						LogLevel.INFO,
+						ProcessStatus.RUNNING,
 						true));
-				
+
 				Gson  gson = new Gson();
 				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
 				log.debug("FNCS output message: "+responseJson);
@@ -371,42 +371,42 @@ public class SimulationManagerImpl implements SimulationManager{
 					//System.out.println("RESPONSE COMMAND "+responseJson.command);
 					//??
 				}
-				
-				
-				
+
+
+
 			}catch (Exception e){
 				e.printStackTrace();
 			}
 		}
 	}
-    
-	
+
+
 	private void sendTimesteps(SimulationConfig simulationConfig, int simulationId) throws Exception{
 		// Send fncs timestep updates for the specified duration.
-		
+
 		String startTimeStr = simulationConfig.getStart_time();
 		Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(startTimeStr);
 		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
 		while(currentTime < endTime){
-			//send next timestep to fncs bridge 
-			logManager.log(new LogMessage(Integer.toString(simulationId), 
-					new Long(new Date().getTime()), 
-					"Sending timestep "+seconds, 
-					LogLevel.INFO, 
-					ProcessStatus.RUNNING, 
+			//send next timestep to fncs bridge
+			logManager.log(new LogMessage(Integer.toString(simulationId),
+					new Long(new Date().getTime()),
+					"Sending timestep "+seconds,
+					LogLevel.INFO,
+					ProcessStatus.RUNNING,
 					true));
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(simulationConfig.timestep_frequency);
-			
+
 			seconds++;
 			currentTime += simulationConfig.timestep_increment;
 		}
 	}
 
-	
+
 	private String getPath(String key){
 		String path = configurationManager.getConfigurationProperty(key);
 		if(path==null){
@@ -415,14 +415,14 @@ public class SimulationManagerImpl implements SimulationManager{
 		}
 		return path;
 	}
-	
-	
-	
+
+
+
 	private void watch(final Process process, String processName) {
 	    new Thread() {
 	        public void run() {
 	            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
-	            String line = null; 
+	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                    log.info(processName+": "+line);
@@ -432,5 +432,5 @@ public class SimulationManagerImpl implements SimulationManager{
 	            }
 	        }
 	    }.start();
-	}	
+	}
 }
