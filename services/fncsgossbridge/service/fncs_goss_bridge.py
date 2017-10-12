@@ -429,15 +429,16 @@ def _keep_alive():
     while 1:
         time.sleep(0.1)
          
-def _main(simulation_id):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570'):
     
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
-    _register_with_fncs_broker('tcp://localhost:5570')
+    _register_with_fncs_broker(simulation_broker_location)
     _keep_alive()
         
 if __name__ == "__main__":
     #TODO: send simulation_id, fncsBrokerLocation, gossLocation, 
     #stomp_port, username and password as commmand line arguments
     simulation_id = sys.argv[1]
-    _main(simulation_id) 
+    sim_broker_location = sys.argv[2]
+    _main(simulation_id, sim_broker_location) 
     

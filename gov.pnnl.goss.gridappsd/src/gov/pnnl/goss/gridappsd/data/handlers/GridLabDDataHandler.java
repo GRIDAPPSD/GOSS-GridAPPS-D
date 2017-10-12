@@ -292,7 +292,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				PrintWriter startupFileWriter = new PrintWriter(startupFile);
 				//add an include reference to the base glm 
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
-
+				String brokerLocation = dataRequest.getSimulation_config().getSimulation_broker_location();
+				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
 				Calendar c = Calendar.getInstance();
 				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
@@ -324,7 +325,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("     name "+simulationName+";");
 				startupFileWriter.println("     message_type JSON;");
 				startupFileWriter.println("     configure configfile.json;");
-				startupFileWriter.println("     option \"transport:hostname localhost, port 5570\";");
+				startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
 				startupFileWriter.println("}");
 				startupFileWriter.println("object recorder {");
 				startupFileWriter.println("     parent "+simulationName+";");

@@ -51,9 +51,12 @@ import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Hashtable;
+import java.util.Random;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.jena.sparql.engine.index.HashIndexTable;
 
 import pnnl.goss.core.DataResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -75,10 +78,11 @@ public class ProcessNewSimulationRequest {
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, StatusReporter statusReporter,
-			int simulationId, DataResponse event, Serializable message) {
+			int simulationId, DataResponse event, Serializable message, int simulationPort) {
 
 		try {
 			RequestSimulation config = RequestSimulation.parse(message.toString());
+			config.simulation_config.setSimulation_broker_port(simulationPort);
 			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Parsed config " + config, LogLevel.INFO, ProcessStatus.RUNNING, false));
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {
@@ -124,5 +128,4 @@ public class ProcessNewSimulationRequest {
 			}
 		}
 	}
-
 }
