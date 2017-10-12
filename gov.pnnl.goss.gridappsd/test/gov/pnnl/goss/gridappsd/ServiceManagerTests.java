@@ -1,17 +1,17 @@
 package gov.pnnl.goss.gridappsd;
 
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
+
+import java.io.File;
 import java.util.Hashtable;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 import pnnl.goss.core.ClientFactory;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -29,8 +29,14 @@ public class ServiceManagerTests {
 	public void beforeTests(){
 		serviceManager = new ServiceManagerImpl(logManager, clientFactory);
 		
+		//use directory relative to current running directory
+		File f = new File("");
+		File currentDir = new File(f.getAbsolutePath());
+		File parentDir = currentDir.getParentFile();
+		
 		Hashtable<String, String> props = new Hashtable<String, String>();
-		props.put("services.path", "C:/Users/shar064/git/GOSS-GridAPPS-D/services");
+		props.put("applications.path", parentDir.getAbsolutePath()+File.separator+"applications");
+		props.put("services.path", parentDir.getAbsolutePath()+File.separator+"services");
 		serviceManager.updated(props);
 		
 		serviceManager.start();

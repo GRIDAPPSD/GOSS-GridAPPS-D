@@ -57,7 +57,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()), 
+				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
@@ -66,7 +66,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		scanForServices();
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Long(new Date().getTime()), 
+				new Date().getTime(), 
 				String.format("Found %s servicelications", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
@@ -94,7 +94,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		}
 	}
 	
-	protected File getServiceConfigDirectory(){
+	public File getServiceConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.SERVICES_PATH);
 		if (configDirStr==null){
 			configDirStr = "services";
@@ -179,6 +179,25 @@ public class ServiceManagerImpl implements ServiceManager{
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(serviceInfo.getExecution_path());
+			//TODO add other options
+			
+			
+			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+			processServiceBuilder.redirectErrorStream(true);
+			processServiceBuilder.redirectOutput();
+			
+//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
+//		fncsBridgeBuilder.redirectErrorStream(true);
+//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
+//		fncsBridgeProcess = fncsBridgeBuilder.start();
+//		// Watch the process
+//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
+		//during watch, send stderr/out to logmanager
+			
+		} else if(serviceInfo.getType().equals(ServiceType.EXE)){
+			List<String> commands = new ArrayList<String>();
+			commands.add(serviceInfo.getExecution_path());
+			commands.add(runtimeOptions);
 			//TODO add other options
 			
 			

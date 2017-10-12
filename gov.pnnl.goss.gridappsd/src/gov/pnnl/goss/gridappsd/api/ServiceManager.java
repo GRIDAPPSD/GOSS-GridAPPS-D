@@ -1,9 +1,9 @@
 package gov.pnnl.goss.gridappsd.api;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.List;
 
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
 
@@ -29,4 +29,5 @@ public interface ServiceManager {
 
 	void stopServiceInstance(String instanceId);
 	
+	File getServiceConfigDirectory();
 }

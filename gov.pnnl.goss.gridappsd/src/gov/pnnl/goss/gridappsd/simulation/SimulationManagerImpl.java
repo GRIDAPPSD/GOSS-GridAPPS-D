@@ -58,13 +58,13 @@ import com.google.gson.Gson;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -97,6 +97,9 @@ public class SimulationManagerImpl implements SimulationManager{
 	private volatile ConfigurationManager configurationManager;
 
 	@ServiceDependency
+	private volatile ServiceManager serviceManager;
+	
+	@ServiceDependency
 	LogManager logManager;
 
 	public SimulationManagerImpl(){ }
@@ -128,11 +131,11 @@ public class SimulationManagerImpl implements SimulationManager{
 	public void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig){
 
 			try {
-				logManager.log(new LogMessage(Integer.toString(simulationId),
-						new Long(new Date().getTime()),
-						"Starting simulation "+simulationId,
-						LogLevel.INFO,
-						ProcessStatus.STARTING,
+				logManager.log(new LogMessage(Integer.toString(simulationId), 
+						new Date().getTime(), 
+						"Starting simulation "+simulationId, 
+						LogLevel.INFO, 
+						ProcessStatus.STARTING, 
 						true));
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
@@ -156,12 +159,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start FNCS
 						//TODO, verify no errors on this
 
-
+						
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
+							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
-								RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+								RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
@@ -177,11 +180,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						watch(fncsProcess, "FNCS");
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
 
-						logManager.log(new LogMessage(Integer.toString(simulationId),
-								new Long(new Date().getTime()),
-								"FNCS Co-Simulator started",
-								LogLevel.INFO,
-								ProcessStatus.RUNNING,
+						
+						logManager.log(new LogMessage(Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"FNCS Co-Simulator started", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 
 
@@ -200,23 +204,15 @@ public class SimulationManagerImpl implements SimulationManager{
 
 
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId),
-								new Long(new Date().getTime()),
-								"GridLAB-D started",
-								LogLevel.INFO,
-								ProcessStatus.RUNNING,
+
+						logManager.log(new LogMessage(Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"GridLAB-D started", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
-
-						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
-							//copy zipload_schedule.player file
-							try{
-								RunCommandLine.runCommand("cp "+bridgeCmd.getParentFile().getAbsolutePath()+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
-							}catch(Exception e){
-								log.warn("Could not copy player file to working directory");
-							}
-						}
-
+						
+												
 						//Start VVO Application
 						//TODO filname really should be constant
 						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
@@ -229,11 +225,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						watch(vvoAppProcess, "VVO Application");
 
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId),
-								new Long(new Date().getTime()),
-								"FNCS-GOSS Bridge started",
-								LogLevel.INFO,
-								ProcessStatus.RUNNING,
+
+						logManager.log(new LogMessage(Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"FNCS-GOSS Bridge started", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 
 						//Start GOSS-FNCS Bridge
@@ -246,11 +243,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						watch(fncsBridgeProcess, "FNCS GOSS Bridge");
 
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
-						logManager.log(new LogMessage(Integer.toString(simulationId),
-								new Long(new Date().getTime()),
-								"FNCS-GOSS Bridge started",
-								LogLevel.INFO,
-								ProcessStatus.RUNNING,
+
+						logManager.log(new LogMessage(Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"FNCS-GOSS Bridge started", 
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
 								true));
 
 
@@ -270,42 +268,42 @@ public class SimulationManagerImpl implements SimulationManager{
 						}
 
 						if(initAttempts<MAX_INIT_ATTEMPTS){
-							logManager.log(new LogMessage(Integer.toString(simulationId),
-									new Long(new Date().getTime()),
-									"FNCS Initialized",
-									LogLevel.INFO,
-									ProcessStatus.RUNNING,
+							logManager.log(new LogMessage(Integer.toString(simulationId), 
+									new Date().getTime(), 
+									"FNCS Initialized", 
+									LogLevel.INFO, 
+									ProcessStatus.RUNNING, 
 									true));
 
 
 							//Send the timesteps by second for the amount of time specified in the simulation config
 	                        sendTimesteps(simulationConfig, simulationId);
 						} else {
-							logManager.log(new LogMessage(Integer.toString(simulationId),
-									new Long(new Date().getTime()),
-									"FNCS Initialization Failed",
-									LogLevel.ERROR,
-									ProcessStatus.ERROR,
+							logManager.log(new LogMessage(Integer.toString(simulationId), 
+									new Date().getTime(), 
+									"FNCS Initialization Failed", 
+									LogLevel.ERROR, 
+									ProcessStatus.ERROR,  
 									true));
 
 						}
 
                         //call to stop the fncs broker
 					    client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
-					    logManager.log(new LogMessage(Integer.toString(simulationId),
-								new Long(new Date().getTime()),
-								"Simulation "+simulationId+" complete",
-								LogLevel.INFO,
-								ProcessStatus.STOPPED,
+					    logManager.log(new LogMessage(Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"Simulation "+simulationId+" complete", 
+								LogLevel.INFO, 
+								ProcessStatus.COMPLETE,
 								true));
 					}
 					catch(Exception e){
 							log.error("Error during simulation",e);
 							try {
-								logManager.log(new LogMessage(Integer.toString(simulationId),
-										new Long(new Date().getTime()),
+								logManager.log(new LogMessage(Integer.toString(simulationId), 
+										new Date().getTime(), 
 										"Simulation error: "+e.getMessage(),
-										LogLevel.ERROR,
+										LogLevel.ERROR, 
 										ProcessStatus.ERROR,
 										true));
 							} catch (Exception e1) {
@@ -351,11 +349,11 @@ public class SimulationManagerImpl implements SimulationManager{
 			try{
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
-				logManager.log(new LogMessage(Integer.toString(simulationId),
-						new Long(new Date().getTime()),
-						 "FNCS-GOSS Bridge response:"+response,
-						LogLevel.INFO,
-						ProcessStatus.RUNNING,
+				logManager.log(new LogMessage(Integer.toString(simulationId), 
+						new Date().getTime(), 
+						 "FNCS-GOSS Bridge response:"+response, 
+							LogLevel.INFO, 
+							ProcessStatus.RUNNING,
 						true));
 
 				Gson  gson = new Gson();
@@ -390,12 +388,12 @@ public class SimulationManagerImpl implements SimulationManager{
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
 		while(currentTime < endTime){
-			//send next timestep to fncs bridge
-			logManager.log(new LogMessage(Integer.toString(simulationId),
-					new Long(new Date().getTime()),
-					"Sending timestep "+seconds,
-					LogLevel.INFO,
-					ProcessStatus.RUNNING,
+			//send next timestep to fncs bridge 
+			logManager.log(new LogMessage(Integer.toString(simulationId), 
+					new Date().getTime(), 
+					"Sending timestep "+seconds, 
+					LogLevel.INFO, 
+					ProcessStatus.RUNNING, 
 					true));
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
