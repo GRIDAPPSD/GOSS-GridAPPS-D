@@ -44,6 +44,7 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 
 public class SimulationConfig  implements Serializable {
+	public static final int DEFAULT_SIMULATION_BROKER_PORT = 5570;
 	
 	//eg, forward backward sweeper
 	public String power_flow_solver_method;
@@ -67,7 +68,7 @@ public class SimulationConfig  implements Serializable {
 	
 	public ModelCreationConfig model_creation_config = new ModelCreationConfig(); 
 	//the port number that the fncs_broker will be operating under
-	public int simulation_broker_port = 5570;
+	public int simulation_broker_port = DEFAULT_SIMULATION_BROKER_PORT;
 	//the ip location for the fncs_broker
 	public String simulation_broker_location = "localhost";
 	
