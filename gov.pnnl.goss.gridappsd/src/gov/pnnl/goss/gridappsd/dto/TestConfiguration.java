@@ -81,13 +81,13 @@ public class TestConfiguration implements Serializable {
 	}
 	
 	public String getPowerSystemConfiguration(){
-            return power_system_configuration;		
+		return power_system_configuration;		
 	}
 
 	@Override
 	public String toString() {
-	    Gson  gson = new Gson();
-	    return gson.toJson(this);
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
 	public static TestConfiguration parse(String jsonString){
