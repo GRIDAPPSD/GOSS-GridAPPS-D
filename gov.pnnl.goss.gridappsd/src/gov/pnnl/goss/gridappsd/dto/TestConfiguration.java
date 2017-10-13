@@ -81,21 +81,21 @@ public class TestConfiguration implements Serializable {
 	}
 	
 	public String getPowerSystemConfiguration(){
-		return power_system_configuration;		
+            return power_system_configuration;		
 	}
 
 	@Override
 	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
+	    Gson  gson = new Gson();
+	    return gson.toJson(this);
 	}
 	
 	public static TestConfiguration parse(String jsonString){
-		Gson  gson = new Gson();
-		TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
-		if(obj.power_system_configuration==null)
-			throw new RuntimeException("Expected attribute power_system_configuration not found");
-		return obj;
+	    Gson  gson = new Gson();
+	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
+	    if(obj.power_system_configuration==null)
+	        throw new RuntimeException("Expected attribute power_system_configuration not found");
+	    return obj;
 	}
 
 }
