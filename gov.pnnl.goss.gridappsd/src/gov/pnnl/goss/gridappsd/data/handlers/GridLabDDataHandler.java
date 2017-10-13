@@ -294,6 +294,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
 				String brokerLocation = dataRequest.getSimulation_config().getSimulation_broker_location();
 				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
+				
+				//TODO remove once FNCS can be started with the correct port
+				brokerLocation = "localhost";
+				brokerPort = "5570";
 				Calendar c = Calendar.getInstance();
 				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);

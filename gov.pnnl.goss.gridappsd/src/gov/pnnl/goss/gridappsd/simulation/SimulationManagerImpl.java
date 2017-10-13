@@ -160,7 +160,8 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO, verify no errors on this
 						String broker_location = "tcp://localhost:5570";
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
+							//TODO commented this out FNCS can be started with the correct port
+							//broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
 							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
