@@ -14,3 +14,9 @@ docs/source/api_docs/packages.rst
 docs/source/api_docs/pnnl/
 .pydevproject
 env/
+cnf/release/gov.pnnl.goss.gridappsd.gridappsd.api/gov.pnnl.goss.gridappsd.gridappsd.api-1.0.0.jar
+cnf/release/gov.pnnl.goss.gridappsd.gridappsd/gov.pnnl.goss.gridappsd.gridappsd-0.0.1.jar
+cnf/release/index.xml.sha
+cnf/release/index.xml
+cnf/Local/index.xml.sha
+cnf/Local/index.xml

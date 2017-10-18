@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright � 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS �AS IS� AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -318,15 +318,24 @@ public class CompareResults {
 	
 	
 	public static void main(String[] args) {
-		CompareResults tm = new CompareResults();
-		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/sim_output_object.json";
-		SimulationOutput simOutProperties = tm.getOutputProperties(path);
-		tm.getProp(simOutProperties);
+		String path = "./applications/python/sim_output_object.json";
+		String sim_output = "./applications/python/sim_output.json";
+		String expected_output = "./applications/python/expected_output.json";
+		if(args.length == 3){
+			path=args[0];
+			sim_output=args[1];
+			expected_output=args[2];
+			System.out.println("Arguments are: " + path + " " + sim_output + " " + expected_output);
+		} else{
+			System.out.println("Command line usage: CompareResults.java simulation_output_object_path sim_output_path expected_output_path");
+			System.out.println("Using defaults: " + path + " " + sim_output + " " + expected_output);
+		}
 		
-		
-		String sim_output = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/sim_output.json";
-		String expected_output = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/expected_output.json";
-		tm.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+		CompareResults compareResults = new CompareResults();
+
+		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
+		compareResults.getProp(simOutProperties);
+		compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
 	}
 
 
