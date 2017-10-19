@@ -19,7 +19,9 @@ deployment and application development was highlighted.
 
 In response to these needs, DOE-OE has established an ADMS program with 
 this project specifically tasked with developing an open-source, standards 
-based ADMS application development platform; GridAPPS-D. 
+based ADMS application development platform - GridAPPS-D.
+
+.. include:: conceptual_design_summary.rst
 
 .. include:: architecture.rst
 

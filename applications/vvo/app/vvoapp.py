@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Copyright 2017, Battelle Memorial Institute All rights reserved.
+# Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
 # Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -66,11 +66,11 @@ logger_location = os.path.join(user_home, "var/log/" + logger_name + ".log")
 if not os.path.exists(os.path.dirname(logger_location)):
     os.makedirs(os.path.dirname(logger_location))
 
-write_topic = '/topic/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
-write_queue = '/queue/goss/gridappsd/fncs/input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_topic = '/topic/goss.gridappsd.fncs.input'  # this should match GridAppsDConstants.topic_FNCS_input
+write_queue = '/queue/goss.gridappsd.fncs.input'  # this should match GridAppsDConstants.topic_FNCS_input
 
-read_topic = '/topic/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
-read_queue = '/queue/goss/gridappsd/fncs/output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_topic = '/topic/goss.gridappsd.fncs.output'  # this should match GridAppsDConstants.topic_FNCS_output
+read_queue = '/queue/goss.gridappsd.fncs.output'  # this should match GridAppsDConstants.topic_FNCS_output
 goss_connection = None
 is_initialized = False
 # Number 

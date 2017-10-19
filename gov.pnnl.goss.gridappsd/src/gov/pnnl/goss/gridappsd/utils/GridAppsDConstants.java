@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -78,23 +78,23 @@ public class GridAppsDConstants {
 	public static final String topic_log_app = topic_log_prefix+".app";
 	
 	//Configuration Manager topics
-	public static final String topic_configuration = topic_prefix+"/configuration";
-	public static final String topic_configuration_powergrid = topic_configuration+"/powergrid";
-	public static final String topic_configuration_simulation = topic_configuration+"/simulation";
+	public static final String topic_configuration = topic_prefix+".configuration";
+	public static final String topic_configuration_powergrid = topic_configuration+".powergrid";
+	public static final String topic_configuration_simulation = topic_configuration+".simulation";
 	
 	//Simulation Manager Topics
-	public static final String topic_simulation = topic_prefix+"/simulation";
-	public static final String topic_simulationOutput = topic_simulation+"/output/";
-	public static final String topic_simulationStatus = topic_simulation+"/status/";
+	public static final String topic_simulation = topic_prefix+".simulation";
+	public static final String topic_simulationOutput = topic_simulation+".output";
+	public static final String topic_simulationStatus = topic_simulation+".status.";
 	
 	//Data Manager Topics
-	public static final String topic_getDataFilesLocation = topic_prefix+"/data/filesLocation";
-	public static final String topic_getDataContent = topic_prefix+"/data/content";
+	public static final String topic_getDataFilesLocation = topic_prefix+".data.filesLocation";
+	public static final String topic_getDataContent = topic_prefix+".data.content";
 	
 	//FNCS GOSS Bridge Topics
-	public static final String topic_FNCS = topic_prefix+"/fncs";
-	public static final String topic_FNCS_input = topic_FNCS+"/input";
-	public static final String topic_FNCS_output = topic_FNCS+"/output";
+	public static final String topic_FNCS = topic_prefix+".fncs";
+	public static final String topic_FNCS_input = topic_FNCS+".input";
+	public static final String topic_FNCS_output = topic_FNCS+".output";
 	
 	
 	public static final String FNCS_PATH = "fncs.path";
@@ -104,7 +104,8 @@ public class GridAppsDConstants {
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
-	
+	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
+
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	

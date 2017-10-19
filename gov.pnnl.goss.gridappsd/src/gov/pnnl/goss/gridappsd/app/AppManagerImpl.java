@@ -189,7 +189,9 @@ public class AppManagerImpl implements AppManager{
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
 			//TODO publish instance id
-//			client.publish(replyDestination, instanceId);
+			System.out.println("SENDING APP INSTANCE MESSAGE ON "+replyDestination);
+
+			client.publish(replyDestination, instanceId);
 			System.out.println("STARTED APP "+instanceId);
 
 		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
@@ -211,7 +213,6 @@ public class AppManagerImpl implements AppManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		System.out.println("STARTING APP MGR");
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
@@ -243,7 +244,6 @@ public class AppManagerImpl implements AppManager{
 		for(File appConfigFile: appConfigFiles){
 			AppInfo appInfo = parseAppInfo(appConfigFile);
 			apps.put(appInfo.getId(), appInfo);
-			System.out.println("FOUND APP "+appInfo.getId());
 
 		}
 	}
@@ -519,7 +519,7 @@ public class AppManagerImpl implements AppManager{
 	}
 
 	
-	protected File getAppConfigDirectory(){
+	public File getAppConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.APPLICATIONS_PATH);
 		if (configDirStr==null){
 			configDirStr = "applications";

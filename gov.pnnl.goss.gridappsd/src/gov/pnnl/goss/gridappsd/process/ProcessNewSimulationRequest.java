@@ -47,16 +47,14 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Random;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.jena.sparql.engine.index.HashIndexTable;
 
 import pnnl.goss.core.DataResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -76,6 +74,12 @@ public class ProcessNewSimulationRequest {
 	private volatile LogManager logManager;
 	
 
+	public void process(ConfigurationManager configurationManager,
+			SimulationManager simulationManager, StatusReporter statusReporter,
+			int simulationId, DataResponse event, Serializable message) {
+		process(configurationManager, simulationManager, statusReporter, simulationId, event, message, SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT);
+	}
+	
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, StatusReporter statusReporter,
 			int simulationId, DataResponse event, Serializable message, int simulationPort) {
@@ -115,6 +119,7 @@ public class ProcessNewSimulationRequest {
 			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			try {
 				statusReporter.reportStatus(
 						GridAppsDConstants.topic_simulationStatus

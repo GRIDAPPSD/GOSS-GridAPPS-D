@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright � 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS �AS IS� AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -46,7 +46,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.sql.Connection;
+//import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -62,6 +62,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+//import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
@@ -73,7 +77,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
-import pnnl.goss.core.server.DataSourcePooledJdbc;
+//import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -87,6 +91,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 
 	@ServiceDependency
 	private volatile DataManager dataManager;
+	
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
 	 
     private Logger log = LoggerFactory.getLogger(getClass());
     private final String datasourceName = "gridappsd";
@@ -149,12 +156,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		
 		Map<String, DataSourceType> datasources = datasourceRegistry.getAvailable();
 		
-		DataSourcePooledJdbc jdbcPool = (DataSourcePooledJdbc)datasourceRegistry.get(datasourceName);
-		if(jdbcPool!=null){
+//		DataSourcePooledJdbc jdbcPool = (DataSourcePooledJdbc)datasourceRegistry.get(datasourceName);
+//		if(jdbcPool!=null){
 			BufferedWriter rdfWriter = null;
 			FileWriter rdfOut = null;
 			try {
-				Connection conn = jdbcPool.getConnection();
+//				Connection conn = jdbcPool.getConnection();
 				
 				//[SubGeographicalRegion_name = "
 				//+ SubGeographicalRegion_name + ", GeographicalRegion_name = "
@@ -173,12 +180,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				}
 				
 				
-				File rdfFile = new File(tempDataPath+"rdfOut"+new Date().getTime()+".rdf");
-				rdfOut = new FileWriter(rdfFile);
-				rdfWriter = new BufferedWriter(rdfOut);
-				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
-				sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
-				rdfWriter.flush();
+//				File rdfFile = new File(tempDataPath+"rdfOut"+new Date().getTime()+".rdf");
+//				rdfOut = new FileWriter(rdfFile);
+//				rdfWriter = new BufferedWriter(rdfOut);
+//				CIMDataSQLtoRDF sqlToRDF = new CIMDataSQLtoRDF();
+//				sqlToRDF.outputModel(dataRequest.getPower_system_config().Line_name, rdfWriter, conn);
+//				rdfWriter.flush();
 				
 				String simulationName = dataRequest.getSimulation_config().simulation_name;
 				//call cim to glm
@@ -191,35 +198,64 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				//generate simulation base file
 				//-l=0.2 -t=y -e=u -f=60 -v=1 -s=1 -q=y ieee8500.xml ieee8500
 //				String[] args = {"-l=0.2", "-t=y", "-e=u", "-f=60", "-v=1", "-s=1", "-q=y", "-n=zipload_schedule", "-z=0.3", "-i=0.3", "-p=0.4",
+				
+				String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+				if(bgHost==null || bgHost.trim().length()==0){
+					bgHost = "http://localhost:9999";
+				}
+				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
+				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
+				boolean bWantSched = false;
+				boolean bWantZip = false;
+				String outBaseFile = tempDataPathDir.getAbsolutePath()+File.separator+simulationName+"_base.glm";
+				String fXY = tempDataPathDir.getAbsolutePath()+File.separator+simulationName+"_symbols.json";
+				
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					double zFraction = modelConfig.z_fraction;
-					if(zFraction==0)
+					if(zFraction==0) {
 						zFraction = 0;
+						bWantZip = true;
+					}
 					double iFraction = modelConfig.i_fraction;
-					if(iFraction==0)
+					if(iFraction==0){
 						iFraction = 1;
+						bWantZip = true;
+					}
 					double pFraction = modelConfig.p_fraction; 
-					if(pFraction==0)
+					if(pFraction==0){
 						pFraction = 0;
+						bWantZip = true;
+					}
+					if(modelConfig.schedule_name!=null){
+						bWantSched = true;
+					}
 					
 					
-					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
-										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
-										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
-										rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
-					log.debug("Generating GLM file with args "+args);
-					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
-					rdfToGLM.process(args);
+					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+//					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+//										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
+//										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
+//										rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+//					log.debug("Generating GLM file with args "+args);
+//					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+//					rdfToGLM.process(args);
+					
+					
 				
 				} else {
 					//Generate GLM, no zipload
-					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
-							"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names,		
-						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
-					log.debug("Generating GLM file with args "+args);
-					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
-					rdfToGLM.process(args);
+//					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
+//							"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names,		
+//						rdfFile.getAbsolutePath(), tempDataPath+simulationName};  //13 args
+//					log.debug("Generating GLM file with args "+args);
+//					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
+//					rdfToGLM.process(args);
+					
+					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0, fXY);
 				
 				}
 				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD base file generated");
@@ -258,6 +294,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String baseGLM = tempDataPath+simulationName+"_base.glm";
 				String brokerLocation = dataRequest.getSimulation_config().getSimulation_broker_location();
 				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
+				
+				//TODO remove once FNCS can be started with the correct port
+				brokerLocation = "localhost";
+				brokerPort = "5570";
 				Calendar c = Calendar.getInstance();
 				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
@@ -344,9 +384,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				}
 				
 			}
-		} else {
-			throw new Exception("No jdbc pool avialable for "+datasourceName);
-		}
+//		} else {
+//			throw new Exception("No jdbc pool avialable for "+datasourceName);
+//		}
 		
 		
 	}
