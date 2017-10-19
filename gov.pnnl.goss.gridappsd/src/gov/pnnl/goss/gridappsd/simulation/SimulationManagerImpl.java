@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -155,7 +156,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					
 						//Start FNCS
 						//TODO, verify no errors on this
-						String broker_location = "tcp://localhost:5570";
+						String broker_location = "tcp://*:5570";
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
 							broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
 							File bridgeCmd = new File(getPath(GridAppsDConstants.FNCS_BRIDGE_PATH));
@@ -167,11 +168,12 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 						}
 						
-						//TODO, need to execute broker as follows FNCS_BROKER=broker_location fncs_broker 2
 						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
 						fncsBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs.log"));
+						Map<String, String> fncsEnvironment = fncsBuilder.environment();
+						fncsEnvironment.put("FNCS_BROKER", broker_location);
 						fncsProcess = fncsBuilder.start();
 						// Watch the process
 						watch(fncsProcess, "FNCS");
