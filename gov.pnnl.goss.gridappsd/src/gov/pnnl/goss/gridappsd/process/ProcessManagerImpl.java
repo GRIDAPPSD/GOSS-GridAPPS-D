@@ -231,6 +231,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			}
 			simulationPorts.put(simIdKey, tempPortObj);
 			return tempPortObj.get();
+			//TODO: test host:port is available
 		} else {
 			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
 					+ "simulation in progress.");

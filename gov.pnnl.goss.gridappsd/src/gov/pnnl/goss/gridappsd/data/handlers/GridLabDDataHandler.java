@@ -295,9 +295,6 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String brokerLocation = dataRequest.getSimulation_config().getSimulation_broker_location();
 				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
 				
-				//TODO remove once FNCS can be started with the correct port
-				brokerLocation = "localhost";
-				brokerPort = "5570";
 				Calendar c = Calendar.getInstance();
 				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
 				c.setTime(startTime);
@@ -314,8 +311,6 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");
 				startupFileWriter.println("#set profiler=1");
-				//startupFileWriter.println("#set double_format=%+.12lg");
-				//startupFileWriter.println("#set complex_format=%+.12lg%+.12lg%c");
 				startupFileWriter.println("#set minimum_timestep=0.1");
 				
 				startupFileWriter.println("module connection;");
