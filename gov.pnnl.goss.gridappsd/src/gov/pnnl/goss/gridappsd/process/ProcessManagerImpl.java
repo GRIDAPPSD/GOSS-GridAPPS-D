@@ -50,7 +50,9 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.Socket;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Random;
@@ -219,22 +221,48 @@ public class ProcessManagerImpl implements ProcessManager {
 		return Math.abs(new Random().nextInt());
 	}
 	
-
+	/**
+	 * Generates and returns the port for a co-simulation designated by simulationId to run on.
+	 * @param simulationId
+	 * @return the port number
+	 * @throws Exception
+	 */
 	public int assignSimulationPort(int simulationId) throws Exception {
 		Integer simIdKey = new Integer(simulationId);
+		boolean portIsAvailable = false;
+		int tempPort = 0;
+		AtomicInteger tempPortObj = null;
+		Socket testSocket = null;
 		if (!simulationPorts.containsKey(simIdKey)) {
-			int tempPort = 49152 + randPort.nextInt(16384);
-			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
-			while (simulationPorts.containsValue(tempPortObj)) {
-				int newTempPort = 49152 + randPort.nextInt(16384);
-				tempPortObj.set(newTempPort);
+			while (!portIsAvailable) {
+				tempPort = 49152 + randPort.nextInt(16384);
+				tempPortObj = new AtomicInteger(tempPort);
+				while (simulationPorts.containsValue(tempPortObj)) {
+					tempPort = 49152 + randPort.nextInt(16384);
+					tempPortObj.set(tempPort);
+				}
+				try {
+					testSocket = new Socket("localhost", tempPort);
+					portIsAvailable = false;
+				} catch (IOException e) {
+					portIsAvailable = true;
+				} finally {
+					if (testSocket != null) {
+						try {
+							testSocket.close();
+						} catch (IOException e1) {
+							throw new Exception("While testing that the port was available for co-simulation it was "
+									+ "found out that the port was already in use but the test socket connection "
+									+ "created couldn't be closed.");
+						}
+					}
+				}
 			}
 			simulationPorts.put(simIdKey, tempPortObj);
 			return tempPortObj.get();
-			//TODO: test host:port is available
 		} else {
 			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
-					+ "simulation in progress.");
+					+ " simulation in progress.");
 		}
 	}
 	
