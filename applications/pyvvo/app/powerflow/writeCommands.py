@@ -38,6 +38,8 @@ TRIPLEX_LOAD_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_load\b')
 TRIPLEX_METER_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_meter\b')
 OBJEND_REGEX = re.compile(r'(\s*)}(\s*)(;*)$')
 VOLTDUMP_REGEX = re.compile(r'\bobject\b(\s+)\bvoltdump\b')
+HOUSE_REGEX = re.compile(r'\bobject\b(\s+)\bhouse\b')
+GROUP_RECORDER_REGEX = re.compile(r'\bobject\b(\s+)\bgroup_recorder\b')
 OBJY_BY_NAME = r'\bname\b(\s+)("?){}("?)(\s*);'
 # Expression below doesn't work since it can match multiple objects at once...
 # OBJ_BY_TYPE_NAME = r'\bobject\b(\s+)\b{}\b(.+?)\bname\b(\s+)("?){}("?)(\s*);' # Use with re.DOTALL
@@ -56,7 +58,7 @@ class writeCommands:
             mysql connection, swing recorder
     """
     
-    def __init__(self, strModel, pathModelOut='', pathModelIn=''):
+    def __init__(self, strModel='', pathModelOut='', pathModelIn=''):
         """"Initialize class with input/output GridLAB-D models
         
         strModel should be a string representing a GridLAB-D model.
@@ -66,8 +68,12 @@ class writeCommands:
         pathModelOut is the path to the new output model.
         """
 
-        # Set properties.
-        self.strModel = strModel
+        # If strModel is defined, simply set it. Otherwise, read the path in.
+        if strModel:
+            self.strModel = strModel
+        else:
+            self.strModel = readModel(pathModelIn)
+            
         self.pathModelIn = pathModelIn
         self.pathModelOut = pathModelOut
         
@@ -167,7 +173,11 @@ class writeCommands:
                     state = 'prevState'
                 
                 propDict['switch' + p] = cap[c]['phases'][p][state]
-                
+            
+            # If we're given a control mode, use it. 
+            if 'control' in cap[c]:
+                propDict['control'] = cap[c]['control']
+                  
             # Modify the object's properties.
             d['obj'] = self.modObjProps(objStr=d['obj'], propDict=propDict)
             
@@ -186,13 +196,16 @@ class writeCommands:
             
             NOTE: Timezones can be included in start and stop.
         """
+        # I don't think the stuff below is needed...
+        '''
         # Extract a timezone string.
         # TODO: this is AWFUL hard-coding.
         if timezone:
             tzStr = ' ' + timezone[-3:]
         else:
             tzStr = ''
-            
+        '''
+        
         # Build the clock string.
         clockStr = "clock {\n"
         
@@ -201,10 +214,12 @@ class writeCommands:
             clockStr += "  timezone {};\n".format(timezone)
             
         if starttime:
-            clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
+            #clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
+            clockStr += "  starttime '{}';\n".format(starttime)
             
         if stoptime:
-            clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
+            #clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
+            clockStr += "  stoptime '{}';\n".format(stoptime)
             
         clockStr += "}\n"
             
@@ -244,9 +259,8 @@ class writeCommands:
             if lu_solver:
                 propDict['lu_solver'] = lu_solver
                 
-            pf['obj'] = self.modObjProps(pf['obj'],
-                                         {'solver_method': solver_method,
-                                          'line_capacitance': line_capacitance}
+            pf['obj'] = self.modObjProps(objStr=pf['obj'],
+                                         propDict=propDict
                                          )
             # Splice in new powerflow object
             self.replaceObject(pf)
@@ -874,7 +888,7 @@ class writeCommands:
     def setupModel(self, starttime=None, stoptime=None, timezone=None,
                    vSource=69715.065, playerFile=None, dbFlag=True,
                    tz_offset=0, profiler=0, triplexGroup=None,
-                   voltdump=None):
+                   voltdump=None, powerflowFlag=False):
         """Function to add the basics to get a running model. Designed with 
         the output from Tom McDermott's CIM exporter in mind.
         
@@ -884,8 +898,10 @@ class writeCommands:
         TODO: Document inputs when this is done. Database inputs are going to
             need to be added.
         """
+        
         # Add definition of source voltage
-        self.addLine(line='#define VSOURCE={}'.format(vSource))
+        if vSource:
+            self.addLine(line='#define VSOURCE={}'.format(vSource))
         
         # Add player details.
         if playerFile:
@@ -910,11 +926,14 @@ class writeCommands:
             self.addModule('mysql')
             
         # Update powerflow (add if it doesn't exist).
-        self.updatePowerflow()
+        if powerflowFlag:
+            self.updatePowerflow()
+            
         # Ensure we're suppressing messages.
         self.repeatMessages()
         # Set profiler.
         self.toggleProfile(profiler)
+        
         # Update the clock (add if it doesn't exist).
         if starttime or stoptime or timezone:
             self.updateClock(starttime=starttime, stoptime=stoptime,
@@ -1059,6 +1078,41 @@ class writeCommands:
             # Get the next match, offsetting by length of new object.
             m = VOLTDUMP_REGEX.search(self.strModel,
                                           m.span()[0] + len(obj['obj']))
+            
+    def removeObjectsByType(self, typeList=[], objStr='object'):
+        """Function to simply remove objects by type.
+        
+        INPUTS:
+            typeList: list of strings containing object types to remove
+        """
+        
+        # Loop over each type
+        for t in typeList:
+            # Construct regular expression to find the beginning of this type
+            exp = re.compile(r'\b' + objStr + r'\b(\s+)\b' + t + r'\b')
+            
+            # Find the first object
+            m = exp.search(self.strModel)
+            
+            # Loop over all matches and eliminate the objects.
+            while m:
+                # Extract the object
+                obj = self.extractObject(objMatch=m)
+                
+                # Replace the object string with the empty string
+                obj['obj'] = ''
+                
+                # Check to see if the object ends with a semi-colon. If so,
+                # make sure it's included for removal
+                if self.strModel[obj['end']] == ';':
+                    # Increment ending index so semi-colon gets removed.
+                    obj['end'] += 1
+                
+                # Eliminate the object from the model
+                self.replaceObject(obj)
+                
+                # Find the next match
+                m = exp.search(self.strModel)
         
 class Error(Exception):
     """"Base class for exceptions in this module"""
