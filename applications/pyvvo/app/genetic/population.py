@@ -214,11 +214,11 @@ class population:
         """
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
         for n in range(len(individual.CAPSTATUS)):
-            for peg in individual.REGPEG:
-                self.individualsList.append(\
+            for regFlag in range(2):
+                self.addIndividual(individual=\
                     individual.individual(uid=self.nextUID,
                                           reg=copy.deepcopy(self.reg),
-                                          peg=peg,
+                                          regFlag=regFlag,
                                           cap=copy.deepcopy(self.cap),
                                           capFlag=n,
                                           starttime=self.starttime,
@@ -226,40 +226,43 @@ class population:
                                           voltdumpFiles=self.voltdumpFiles
                                           )
                                             )
-                self.nextUID += 1
                 
-        # Create individuals with biased regulator positions, but leave
-        # capacitors the same.
+        # Create individuals with biased regulator and capacitor positions
         # TODO: Stop hard-coding the number.
         for _ in range(4):
-            self.individualsList.append(\
+            self.addIndividual(individual=\
                 individual.individual(uid=self.nextUID,
                                       reg=copy.deepcopy(self.reg),
-                                      regBias=True,
+                                      regFlag=2,
                                       cap=copy.deepcopy(self.cap),
-                                      capFlag=3, 
+                                      capFlag=2, 
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
                                       voltdumpFiles=self.voltdumpFiles
                                      )
                                         )
-            self.nextUID += 1
         
         # Randomly create the rest of the individuals.
         while len(self.individualsList) < self.numInd:
             # Initialize individual.
-            self.individualsList.append(\
+            self.addIndividual(individual=\
                 individual.individual(uid=self.nextUID,
                                       reg=copy.deepcopy(self.reg), 
                                       cap=copy.deepcopy(self.cap),
-                                      capFlag=2,
+                                      regFlag=5,
+                                      capFlag=5,
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
                                       voltdumpFiles=self.voltdumpFiles
                                       )
                                         )
-            self.nextUID += 1
             
+    def addIndividual(self, individual):
+        """Simple function to add an individual to the population.
+        """
+        # Add individual to list, increment uid counter
+        self.individualsList.append(individual)
+        self.nextUID += 1
         
     def ga(self):
         """Main function to run the genetic algorithm.
@@ -463,10 +466,8 @@ class population:
                                           voltdumpFiles=self.voltdumpFiles
                                           )
                 # Put individual in the list and the queue.
-                self.individualsList.append(ind)
+                self.addIndividual(individual=ind)
                 self.addToModelQueue(individual=ind)
-                # Increment UID
-                self.nextUID += 1
         
         """
         # Sort the chooseCount by number of occurences

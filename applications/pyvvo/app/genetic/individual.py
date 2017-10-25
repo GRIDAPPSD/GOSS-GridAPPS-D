@@ -14,16 +14,20 @@ import os
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
-REGPEG = ['max', 'min']
 # Define the percentage of the tap range which sigma should be for drawing
 # tap settings. Recall the 68-95-99.7 rule for normal distributions -
 # 1 std dev, 2 std dev, 3 std dev probabilities
 TAPSIGMAPCT = 0.1
+# Define mode of triangular distribution for biasing capacitors. NOTE: By
+# making the mode greater than 0.5, we're more likely to draw a number which
+# rounds to one. Therefore, we should maintain the previous state if the draw
+# rounds to one.
+CAPTRIANGULARMODE = 0.8
  
 class individual:
     
     def __init__(self, uid, starttime, stoptime, voltdumpFiles, reg=None,
-                 regBias=False, peg=None, cap=None, capFlag=2, regChrom=None, 
+                 regFlag=5, cap=None, capFlag=5, regChrom=None, 
                  capChrom=None, parents=None):
         """An individual contains information about Volt/VAR control devices
         
@@ -43,7 +47,19 @@ class individual:
             reg: Dictionary as described in the docstring for the gld module.
             
                 Note possible tap positions be in interval [-(lower_taps - 1),
-                raise_taps]. 
+                raise_taps].
+            
+            regFlag: Flag for special handling of regulators.
+                0: All regulator taps set to their minimum tap position
+                1: All regulator taps set to their maximum tap position
+                2: Regulator tap positions will be biased (via a Gaussian 
+                    distribution and the TAPSIGMAPCT constant) toward the
+                    previous tap positions
+                3: Regulator state unchanged - simply reflects what's in the 
+                    reg input's 'prevState'
+                4: Regulator state given in reg input's 'newState' - just need
+                    to generate chromosome and count tap changes
+                5: Regulator tap positions will be determined randomly 
                     
             cap: Dictionary describing capacitors as described in the docstring
                 for the gld module.
@@ -51,9 +67,14 @@ class individual:
             capFlag: Flag for special handling of capacitors.
                 0: All capacitors set to CAPSTATUS[0] (OPEN)
                 1: All capacitors set to CAPSTATUS[1] (CLOSED)
-                2: Capacitor state randomly determined
+                2: Capacitor states will be biased (via a triangular
+                    distribution with the mode at CAPTRIANGULARMODE) toward the
+                    previous states
                 3: Capacitor state unchanged - simply reflects what's in the
-                    'cap' input.
+                    'cap' input's 'prevState'.
+                4: Capacitor state given in cap input's 'newState' - just need
+                    to generate chromosome and count switching events
+                5: Capacitor positions will be determined randomly.
                 
             uid: Unique ID of individual. Should be an int.
             
@@ -92,7 +113,7 @@ class individual:
         # If not given a regChrom or capChrom, generate them.
         if (regChrom is None) and (capChrom is None):
             # Generate regulator chromosome:
-            self.genRegChrom(regBias=regBias, peg=peg)
+            self.genRegChrom(flag=regFlag)
             # Generate capacitor chromosome:
             self.genCapChrom(flag=capFlag)
             # TODO: DERs
@@ -175,33 +196,22 @@ class individual:
         
         return s
         
-    def genRegChrom(self, regBias, peg):
+    def genRegChrom(self, flag):
         """Method to randomly generate an individual's regulator chromosome
         
         INPUTS:
-            regBias: Flag, True or False. True indicates that tap positions
-                for this individual will be biased (via a Gaussian 
-                distribution and the TAPSIGMAPCT constant) toward the previous
-                tap positions, while False indicates taps will be chosen purely
-                randomly.
-            peg: None, 'max', or 'min.' If 'None' is provided, input has no 
-                affect. 'max' will put all regulator taps at maximum position,
-                and 'min' will put all regulator taps at minimum position.
-                
-        OUTPUTS:
-            sets self.regChrom and modifies self.reg
-            
-        NOTES:
-            If the peg input is not None, regBias must be False.
-            
-        TODO: track tap changes. 
+            flag: dictates how regulator tap positions are created.
+                0: All regulator taps set to their minimum tap position
+                1: All regulator taps set to their maximum tap position
+                2: Regulator tap positions will be biased (via a Gaussian 
+                    distribution and the TAPSIGMAPCT constant) toward the
+                    previous tap positions
+                3: Regulator state unchanged - simply reflects what's in the 
+                    reg input's 'prevState'
+                4: Regulator state given in reg input's 'newState' - just need
+                    to generate chromosome and count tap changes
+                5: Regulator tap positions will be determined randomly 
         """
-        # Make sure inputs aren't incompatible.
-        if peg:
-            assert (not regBias), ("If 'peg' is not None, "
-                                    "'regBias' must be False.")
-            assert peg in REGPEG
-        
         # Initialize chromosome for regulator and dict to store list indices.
         self.regChrom = ()
          
@@ -218,22 +228,27 @@ class individual:
             # Compute the needed field width to represent the upper tap bound
             width = math.ceil(math.log(tb, 2))
             
-            # If we're pegging, set the position high or low.
-            if peg:
-                if peg == 'max':
-                    newState = tb
-                elif peg == 'min':
-                    newState = 0
-            elif regBias:
+            # Define variables as needed based on the flag. I started to try to
+            # make micro-optimizations for code factoring, but let's go for
+            # readable instead.
+            if flag== 0:
+                newState = 0
+            elif flag == 1:
+                newState = tb
+            elif flag == 2:
                 # If we're biasing from the previous position, get a sigma for
                 # the Gaussian distribution.
                 tapSigma = round(TAPSIGMAPCT * (tb + 1))
+            elif flag == 3:
+                state = 'prevState'
+            elif flag == 4:
+                state = 'newState'
             
             # Loop through the phases
             for phase, phaseData in v['phases'].items():
                 
                 # If we're biasing new positions based on previous positions:
-                if regBias:
+                if flag == 2:
                     # Randomly draw tap position from gaussian distribution.
                     
                     # Translate previous position to integer on interval [0,tb]
@@ -252,9 +267,14 @@ class individual:
                         # Here oure 'mu' is the previous value
                         newState = round(random.gauss(prevState, tapSigma))
                         
-                elif not peg:
-                    # If we made it here, we aren't implementing a previous 
-                    # bias or 'pegging' the taps. Randomly draw.
+                elif (flag == 3) or (flag == 4):
+                    # Translate position to integer on interval [0, tb]
+                    newState = \
+                        util.gld.inverseTranslateTaps(lowerTaps=v['lower_taps'],
+                                                      pos=phaseData[state])
+                        
+                elif flag == 5:
+                    # Randomly draw.
                     newState = random.randint(0, tb)
                 
                 # Express tap setting as binary list with consistent width.
@@ -289,9 +309,15 @@ class individual:
             flag:
                 0: All capacitors set to CAPSTATUS[0] (OPEN)
                 1: All capacitors set to CAPSTATUS[1] (CLOSED)
-                2: Capacitor state randomly determined
+                2: Capacitor states will be biased (via a triangular
+                    distribution with the mode at CAPTRIANGULARMODE) toward the
+                    previous states
                 3: Capacitor state unchanged - simply reflects what's in the
-                    'cap' input.
+                    'cap' input's 'prevState'.
+                4: Capacitor state given in cap input's 'newState' - just need
+                    to generate chromosome and count switching events
+                5: Capacitor positions will be determined randomly.
+                
                 
         OUTPUTS:
             modifies self.cap, sets self.capChrom
@@ -301,6 +327,10 @@ class individual:
         if flag < 2:
             capBinary = flag
             capStatus = CAPSTATUS[flag]
+        elif flag == 3:
+            state = 'prevState'
+        elif flag == 4:
+            state = 'newState'
         
         # Initialize chromosome for capacitors and dict to store list indices.
         self.capChrom = ()
@@ -314,14 +344,33 @@ class individual:
             # Loop through the phases and randomly decide state
             for phase in capData['phases']:
                 
-                # Randomly determine capacitor status if flag is 2
+                # Take action based on flag.
                 if flag == 2:
+                    # Use triangular distribution to bias choice
+                    draw = round(random.triangular(mode=CAPTRIANGULARMODE))
+                    
+                    # Extract the previous state
+                    prevState = self.cap[c]['phases'][phase]['prevState']
+                    
+                    # If the draw rounded to one, use the previous state.
+                    # If the draw rounded to zero, use the opposite state
+                    if draw:
+                        capStatus = prevState
+                        capBinary = CAPSTATUS.index(capStatus)
+                    else:
+                        # Flip the bit
+                        capBinary = 1 - CAPSTATUS.index(prevState) 
+                        capStatus = CAPSTATUS[capBinary]
+                        
+                elif (flag == 3) or (flag == 4):
+                    # Use either 'prevState' or 'newState' for this state
+                    capStatus = self.cap[c]['phases'][phase][state]
+                    capBinary = CAPSTATUS.index(capStatus)
+                elif flag == 5:
+                    # Randomly determine state
                     capBinary = round(random.random())
                     capStatus = CAPSTATUS[capBinary]
-                elif flag == 3:
-                    capStatus = self.cap[c]['phases'][phase]['prevState']
-                    capBinary = CAPSTATUS.index(capStatus)
-                
+                    
                 # Assign to the capacitor
                 self.capChrom += (capBinary,)
                 self.cap[c]['phases'][phase]['newState'] = capStatus

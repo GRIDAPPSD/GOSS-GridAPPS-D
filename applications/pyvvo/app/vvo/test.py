@@ -5,6 +5,7 @@ Created on Aug 30, 2017
 '''
 from powerflow import writeCommands
 from genetic import population
+from genetic import individual
 import time
 import util.gld
 import util.db
@@ -23,7 +24,7 @@ def main(populationInputs={}):
     # Stuff to start
     timezone= "EST+5EDT"
     tz_offset = 10800
-    starttime= "2009-07-21 12:00:00"
+    starttime= "2009-07-21 00:00:00"
     tFmt = util.gld.DATE_FMT
     tRec = 60 # recording interval
     tInt = 60 * 15 # model runtime
@@ -33,9 +34,9 @@ def main(populationInputs={}):
     playerFile = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/zipload_schedule.player"
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output"
     tLoad = 'tLoad' # triplex load group.
-    numInd = 80 # Best if this is a multiple of num cores.
+    numInd = 80 # Best if this is a multiple of num cores
     numGen = 5
-    numIntervals = 32
+    numIntervals = 24 * 4
     costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
     # Results file
     f = open(outDir + '/results/'
@@ -124,7 +125,8 @@ def main(populationInputs={}):
     dumpFiles = writeBench.setupModel(vSource=69715.065, playerFile=playerFile, 
                                       tz_offset=tz_offset, triplexGroup=tLoad,
                                       voltdump={'num': round(tInt/tRec) + 1,
-                                                'group': tLoad}
+                                                'group': tLoad},
+                                      powerflowFlag=True
                                       )
     
     # Make a copy of the writeCommands object for use in the genetic algorithm.
@@ -256,11 +258,24 @@ def main(populationInputs={}):
                            phaseCols=capTableStatusCols, t=stoptime,
                            nameCol='name', tCol='t')
         
+        # Create an individual with the final settings given by the benchmark
+        # model, and add to the population.
+        # TODO: Since this individual is added externally, it screws up the
+        # number of individuals in the population.
+        benchIndividual = individual.individual(uid=popObj.nextUID,
+                                                reg=copy.deepcopy(regBench),
+                                                cap=copy.deepcopy(capBench),
+                                                regFlag=4, capFlag=4,
+                                                starttime=popObj.starttime,
+                                                stoptime=popObj.stoptime,
+                                                voltdumpFiles=popObj.voltdumpFiles
+                                               )
+        popObj.addIndividual(individual=benchIndividual)
+        
         # Get string representation of benchmark run and write to file.
         s = util.helper.getSummaryStr(costs=benchScores, reg=regBench,
                                       cap=capBench)
         print(s, file=f, flush=True)
-        
         
         # Rotate the 'newState' to 'oldState'
         regBench, capBench = util.helper.rotateVVODicts(reg=regBench,
