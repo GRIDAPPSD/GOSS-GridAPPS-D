@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright � 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS �AS IS� AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -72,6 +73,7 @@ import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -193,9 +195,53 @@ public class TestManagerImpl implements TestManager {
 				}
 
 			});
+			
+	client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+				
+				@Override
+				public void onMessage(Serializable message) {
+					DataResponse event = (DataResponse)message;
+					logMessageObj.setTimestamp(new Date().getTime());
+					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+					logManager.log(logMessageObj);
+					
+					String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
+					String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
+					String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
+//					/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json
+					
+					CompareResults compareResults = new CompareResults();
+					
+					JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
+
+					SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
+					compareResults.getProp(simOutProperties);
+					TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+				
+					logMessageObj.setTimestamp(new Date().getTime());
+					logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
+					logManager.log(logMessageObj);
+					
+					
+					logMessageObj.setTimestamp(new Date().getTime());
+					logMessageObj.setLog_message("TestManager number of conflicts: "+ tr.getNumberOfConflicts());
+					logManager.log(logMessageObj);
+					
+//					try {
+//
+//
+//						
+//					} catch (JMSException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+					
+				}
+
+			});
 		}
 		catch(Exception e){
-			log.error("Error in process manager",e);
+			log.error("Error in test manager",e);
 		}	
 	}
 	
