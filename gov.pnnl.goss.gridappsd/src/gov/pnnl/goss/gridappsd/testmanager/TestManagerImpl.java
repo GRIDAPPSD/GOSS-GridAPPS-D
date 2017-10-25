@@ -44,6 +44,9 @@ import java.io.FileReader;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.jms.JMSException;
 
@@ -57,6 +60,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 
@@ -74,6 +78,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -196,7 +201,7 @@ public class TestManagerImpl implements TestManager {
 
 			});
 			
-	client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
 				
 				@Override
 				public void onMessage(Serializable message) {
@@ -212,12 +217,20 @@ public class TestManagerImpl implements TestManager {
 					
 					CompareResults compareResults = new CompareResults();
 					
+					
+					// TODO check that type is Sim output and not null!
 					JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
 
 					SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 					compareResults.getProp(simOutProperties);
-					TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+//					TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
 				
+					Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap(expected_output);
+
+					Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+							.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+					TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
+					
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
 					logManager.log(logMessageObj);
