@@ -28,7 +28,7 @@ class individual:
     
     def __init__(self, uid, starttime, stoptime, voltdumpFiles, reg=None,
                  regFlag=5, cap=None, capFlag=5, regChrom=None, 
-                 capChrom=None, parents=None):
+                 capChrom=None, parents=None, controlFlag=0):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -86,13 +86,38 @@ class individual:
                 
             parents: Tuple of UIDs of parents that created this individual.
                 None if individual was randomly created at population init.
+                
+            controlFlag: Flag to determine the control scheme used in an 
+                individual's model. This will also affect how evaluation is
+                performed. For example, a model with volt_var_control has to
+                calculate it's tap changes and capacitor switching events after
+                a model has been run, while a manual control scheme computes
+                tap changing/switching before running its model.
+                Possible inputs (more to come later, maybe):
+                0: Manual control of regulators and capacitors
+                1: Output voltage control of regulators and capacitors
+                2: Output voltage control of regulators, VAR control of
+                    capacitors
+                3: Output voltage control of regulators, VARVOLT control of
+                    capacitors
+                4: volt_var_control of regulators and capacitors
+                
+            NOTE: If the controlFlag is not 0, the regFlag and capFlag must
+                be set to 3. 
             
         TODO: add controllable DERs
                 
         """
+        # Ensure flags are compatible.
+        if controlFlag:
+            assert capFlag == regFlag == 3
+        
         # Initialize some attributes that also need reset when re-using an
         # individual.
         self.prep(starttime=starttime, stoptime=stoptime)
+                    
+        # Set the control flag
+        self.controlFlag = controlFlag
         
         # Assign voltdumpFiles
         self.voltdumpFiles = voltdumpFiles
@@ -140,9 +165,9 @@ class individual:
         # Full path to output model.
         self.model = None
         # Table information
-        self.swingTable = None
-        self.swingColumns = None
-        self.swingInterval = None
+        self.swingData = None
+        self.regData = None
+        self.capData = None
         
         # When the model is run, output will be saved.
         self.modelOutput = None
@@ -435,7 +460,7 @@ class individual:
         INPUTS:
             self: constructed individual
             strModel: string of .glm file found at inPath
-            inPath: path to model to modify volt control settings
+            inPath: path to model to modify control settings
             outDir: directory to write new model to. Filename will be inferred
                 from the inPath, and the individuals uid preceded by an
                 underscore will be added
@@ -469,9 +494,7 @@ class individual:
         # Update the swing node to a meter and get it writing power to a table
         # TODO: swing table won't be the only table.
         o = writeObj.recordSwing(suffix=self.uid)
-        self.swingTable = o['table']
-        self.swingColumns = o['columns']
-        self.swingInterval = o['interval']
+        self.swingData = o
         
         # TODO: Uncomment when ready
         '''
@@ -481,14 +504,72 @@ class individual:
         self.triplexColumns = o['columns']
         self.triplexInterval = o['interval']
         ''' 
-        # Set regulator and capacitor control schemes to manual.
-        for r in self.reg:
-            self.reg[r]['Control'] = 'MANUAL'
-            
-        for c in self.cap:
-            self.cap[c]['control'] = 'MANUAL'
         
-        # Change capacitor and regulator statuses/positions.
+        # Take control specific actions.
+        if self.controlFlag == 0:
+            regControl = 'MANUAL'
+            capControl = 'MANUAL'
+        elif (self.controlFlag > 0):
+            regControl = 'OUTPUT_VOLTAGE' 
+            # Get the model runtime - we only need to record regulator tap 
+            # changes and capacitor changes at the end of simulation.
+            interval = util.helper.timeDiff(t1=self.starttime,
+                                            t2=self.stoptime,
+                                            fmt=util.gld.DATE_FMT)
+            
+            # Need to record regulators and capacitors to track state changes
+            # and ending positions. Define necessary data.
+            self.capData = {'table': 'cap_' + str(self.uid),
+                            'changeColumns': util.gld.CAP_CHANGE_PROPS,
+                            'stateColumns': util.gld.CAP_STATE_PROPS,
+                            'interval': interval}
+            
+            self.regData = {'table': 'reg_' + str(self.uid),
+                            'changeColumns': util.gld.REG_CHANGE_PROPS,
+                            'stateColumns': util.gld.REG_STATE_PROPS,
+                            'interval': interval}
+            
+            if self.controlFlag == 1:
+                capControl = 'VOLT'
+            elif self.controlFlag == 2:
+                capControl = 'VAR'
+            elif self.controlFlag == 3:
+                capControl = 'VARVOLT'
+            elif self.controlFlag == 4:
+                # If we're looking at a VVO scheme, we need to add a VVO
+                # object.
+                # TODO: This is SUPER HARD-CODED to only work for the
+                # R2-12-47-2 feeder. Eventually, this needs made more flexible.
+                capControl = 'VOLT'
+                writeObj.addVVO()
+            
+        # Set regulator and capacitor control schemes, and add recorders if
+        # necessary.
+        for r in self.reg:
+            # Modify control setting
+            self.reg[r]['Control'] = regControl
+            
+            # Add recorders if needed
+            if self.controlFlag > 0:
+                writeObj.addMySQLRecorder(parent=r,
+                                          table=self.regData['table'],
+                                          properties=(self.regData['changeColumns']
+                                                      + self.regData['stateColumns']),
+                                          interval=self.regData['interval'])
+                
+        for c in self.cap:
+            # Modify control settings
+            self.cap[c]['control'] = capControl
+            
+            # Add recorders if needed
+            if self.controlFlag > 0:
+                writeObj.addMySQLRecorder(parent=c,
+                                          table=self.capData['table'],
+                                          properties=(self.capData['changeColumns']
+                                                      + self.capData['stateColumns']),
+                                          interval=self.capData['interval'])
+            
+        # Change capacitor and regulator statuses/positions and control.
         writeObj.commandRegulators(reg=self.reg)
         writeObj.commandCapacitors(cap=self.cap)
         
@@ -499,46 +580,116 @@ class individual:
         """Function to run GridLAB-D model.
         """
         self.modelOutput = util.gld.runModel((self.outDir + '/' + self.model))
+        # If a model failed to run, print to the console.
+        if self.modelOutput.returncode:
+            print("FAILURE! Individual {}'s model gave non-zero returncode.".format(self.uid))
+        
+    def update(self, cursor):
+        """Function to update regulator tap operations and positions, and 
+        capacitor switch operations and states. This function should be called
+        after running a model (runModel), and before evaluating fitness
+        (evalFitness)
+        
+        NOTE: This function does nothing if the individual's controlFlag is 0,
+            since these updates occur before running a model.
+            
+        INPUTS:
+            cursor: database cursor from connection.
+        """
+        # Do nothing is the controlFlag is 0
+        if self.controlFlag == 0:
+            return
+        
+        # For other control schemes, we need to get the state change and state
+        # information from the database.
+        # Update the regulator tap change count.
+        # NOTE: passing stoptime for both times to ensure we ONLY read the 
+        # change count at the end - otherwise we might double count.
+        self.tapChangeCount = util.db.sumMatrix(cursor=cursor,
+                                                table=self.regData['table'],
+                                                cols=self.regData['changeColumns'],
+                                                starttime=self.stoptime,
+                                                stoptime=self.stoptime)
+        # Update the capacitor switch count
+        self.capSwitchCount = util.db.sumMatrix(cursor=cursor,
+                                                table=self.capData['table'],
+                                                cols=self.capData['changeColumns'],
+                                                starttime=self.stoptime,
+                                                stoptime=self.stoptime)
+        
+        # The 'newState' properties of 'reg' and 'cap' need updated.
+        self.reg = util.db.updateStatus(inDict=self.reg, dictType='reg',
+                                        cursor=cursor,
+                                        table=self.regData['table'],
+                                        phaseCols=self.regData['stateColumns'],
+                                        t=self.stoptime)
+        
+        self.cap = util.db.updateStatus(inDict=self.cap, dictType='cap',
+                                        cursor=cursor,
+                                        table=self.capData['table'],
+                                        phaseCols=self.capData['stateColumns'],
+                                        t=self.stoptime)
                             
-    def evalFitness(self, cursor, energyPrice, tapChangeCost, capSwitchCost,
-                    voltCost, tCol='t'):
+    def evalFitness(self, cursor, costs, tCol='t'):
         """Function to evaluate fitness of individual. This is essentially a
             wrapper to call util.gld.computeCosts
         
-        TODO: Add more evaluators of fitness like voltage violations, etc.
+        TODO: Add more evaluators of fitness like power factor
         
         INPUTS:
-            cursor: pyodbc cursor from pyodbc connection 
-            energyPrice: price of energy
-            tapChangeCost: cost changing regulator taps
-            capSwitchCost: cost of switching a capacitor
-            voltCost: cost of voltage violations.
+            cursor: database cursor from connection
+            costs: dict with the following fields:
+                energy: price of energy
+                tapChange: cost changing regulator taps
+                capSwitch: cost of switching a capacitor
+                volt: cost of voltage violations.
             tCol: name of time column(s)
-            starttime: starting time to evaluate
-            stoptime: ending time to evaluate
         """
         self.costs = util.gld.computeCosts(cursor=cursor,
-                                            powerTable=self.swingTable,
-                                            powerColumns=self.swingColumns,
-                                            powerInterval=self.swingInterval,
-                                            energyPrice=energyPrice,
+                                            swingData=self.swingData,
+                                            costs=costs,
                                             starttime=self.starttime,
                                             stoptime=self.stoptime,
                                             tCol=tCol,
-                                            tapChangeCost=tapChangeCost,
-                                            capSwitchCost=capSwitchCost,
                                             tapChangeCount=self.tapChangeCount,
                                             capSwitchCount=self.capSwitchCount,
-                                            voltCost=voltCost,
                                             voltdumpDir=self.outDir,
                                             voltdumpFiles=self.voltdumpFiles
                                             )
+    
+    def writeRunUpdateEval(self, strModel, inPath, outDir, cursor, costs):
+        """Function to write and run model, update individual, and evaluate
+        the individual's fitness.
+        
+        INPUTS:
+            strModel: see writeModel()
+            inPath: see writeModel()
+            outDir: see writeModel()
+            cursor: database cursor
+            costs: costs for fitness evaluation. See evalFitness
+        """
+        # Write the model.
+        self.writeModel(strModel=strModel, inPath=inPath, outDir=outDir)
+        # Run the model.
+        self.runModel()
+        # Update tap/cap states and change counts if necessary.
+        self.update(cursor=cursor)
+        # Evaluate costs.
+        self.evalFitness(cursor=cursor, costs=costs)
         
     def buildCleanupDict(self, truncateFlag=False):
         """Function to build dictionary to be passed to the 'cleanupQueue' of 
         the 'cleanup' method.
         """
-        d = {'tables': [self.swingTable], 'files': list(self.voltdumpFiles),
+        # Initialize list of tables to clean up.
+        tables = [self.swingData['table']]
+        # If we're not in manual control, there are more tables to clean.
+        if self.controlFlag:
+            tables.append(self.capData['table'])
+            tables.append(self.regData['table'])
+            
+        d = {'tables': tables,
+             'files': list(self.voltdumpFiles),
              'dir': self.outDir}
         # Add the model file to the file list.
         d['files'].append(self.model)

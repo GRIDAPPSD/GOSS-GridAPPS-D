@@ -34,9 +34,9 @@ def main(populationInputs={}):
     playerFile = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/zipload_schedule.player"
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output"
     tLoad = 'tLoad' # triplex load group.
-    numInd = 80 # Best if this is a multiple of num cores
-    numGen = 5
-    numIntervals = 24 * 4
+    numInd = 16 # Best if this is a multiple of num cores
+    numGen = 3
+    numIntervals = 2
     costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
     # Results file
     f = open(outDir + '/results/'
@@ -50,6 +50,8 @@ def main(populationInputs={}):
     f.write('Voltage violation cost: {}\n'.format(costs['volt']))
     f.write('Model is CONSTANT CURRENT.\n')
     f.write('*'*80 + '\n')
+    # Define database inputs
+    database = {'tz_offset': tz_offset}
     # Drop all tables in the database
     cnxn = util.db.connect()
     util.db.dropAllTables(cnxn)
@@ -89,8 +91,6 @@ def main(populationInputs={}):
                                    }
                             },
          }
-    # Get copy for benchmark to modify
-    regBench = copy.deepcopy(reg)
     
     cap={
         'cap_capbank2a': {'phases': {'A': {'prevState': 'CLOSED'}}},
@@ -105,70 +105,24 @@ def main(populationInputs={}):
         # cap_capbank3 appears to be not controllable.
         #'cap_capbank3': ['switchA', 'switchB', 'switchC']
     }
-    # Get copy for benchmark to modify
-    capBench = copy.deepcopy(cap)
     #******************************************************************************
     # Modify model. NOTE: Things will be in reverse order intentionally.
     # Read the base model as a string.
     with open(inPath, 'r') as f1:
         strModel = f1.read()
-    
-    # Get filename of benchmark file
-    benchFile = writeCommands.writeCommands.addFileSuffix(inPath=inPath,
-                                                          suffix='benchmark',
-                                                          outDir=outDir)
+
     # Get a writeCommands object for the benchmark
-    writeBench = writeCommands.writeCommands(strModel = strModel,
-                                           pathModelOut=benchFile)
+    writeObj = writeCommands.writeCommands(strModel = strModel)
 
     # Setup the model
-    dumpFiles = writeBench.setupModel(vSource=69715.065, playerFile=playerFile, 
-                                      tz_offset=tz_offset, triplexGroup=tLoad,
+    dumpFiles = writeObj.setupModel(vSource=69715.065, playerFile=playerFile, 
+                                      database=database, triplexGroup=tLoad,
                                       voltdump={'num': round(tInt/tRec) + 1,
                                                 'group': tLoad},
                                       powerflowFlag=True
                                       )
     
-    # Make a copy of the writeCommands object for use in the genetic algorithm.
-    # At time of writing, the writeCommands object only has string properties,
-    # so no need for a deepcopy
-    writeGenetic = copy.copy(writeBench)
     #******************************************************************************
-    # Benchmark model:
-    # Switch control strategy to commented version.
-    writeBench.switchControl()
-    # Record the swing node.
-    swingDat = writeBench.recordSwing(suffix='benchmark', interval=tRec)
-    # Record capacitor switching.
-    capTable = 'capCount_benchmark'
-    # In order to get capacitor table to initialize correctly, we need to 
-    # have all capacitors record all phases even if they aren't connected.
-    capTableChangeCols = ['cap_A_switch_count', 'cap_B_switch_count',
-                          'cap_C_switch_count']
-    capTableStatusCols = ['switchA', 'switchB', 'switchC']
-    allCapCols = []
-    allCapCols.extend(capTableChangeCols)
-    allCapCols.extend(capTableStatusCols)
-    for c in capBench:
-        # Create recorder for this capacitor
-        writeBench.addMySQLRecorder(parent=c, table=capTable,
-                                    properties=allCapCols, interval=tInt)
-    
-    # Record regulator tap changing
-    regTable = 'regCount_benchmark'
-    # In order to have capacitor table initialize correctly, we need to 
-    # have all regulators record all phases even if they aren't connected.
-    regTableChangeCols = ['tap_A_change_count', 'tap_B_change_count',
-                          'tap_C_change_count']
-    regTableStatusCols = ['tap_A', 'tap_B', 'tap_C']
-    allRegCols = []
-    allRegCols.extend(regTableChangeCols)
-    allRegCols.extend(regTableStatusCols)
-    for r in regBench:        
-        # Create recorder for this regulator.    
-        writeBench.addMySQLRecorder(parent=r, table=regTable,
-                                    properties=allRegCols, interval=tInt)
-        
     # TODO: uncomment when ready, maybe
     '''
     # Record the triplex voltages.
@@ -183,25 +137,24 @@ def main(populationInputs={}):
     writeBench.addMetricsCollectors()
     '''
     # Update write objects.
-    updateModel(writeObj=writeBench, starttime=starttime, stoptime=stoptime,
+    updateModel(writeObj=writeObj, starttime=starttime, stoptime=stoptime,
                 timezone=timezone, tRec=tRec)
-    updateModel(writeObj=writeGenetic, starttime=starttime, stoptime=stoptime,
-                timezone=timezone, tRec=tRec)
-    # Initialize the population
+    # Initialize the population. Include an output voltage baseline individual.
     popObj = population.population(starttime=starttime, stoptime=stoptime,
                                    inPath=inPath,
-                                   strModel=writeGenetic.strModel,
+                                   strModel=writeObj.strModel,
                                    numInd=numInd, numGen=numGen,
                                    reg=reg,
                                    cap=cap,
                                    outDir=outDir,
                                    costs=costs,
                                    voltdumpFiles=dumpFiles,
+                                   baseControlFlag=2,
                                    **populationInputs
                                   )
         
     # Loop over the number of time intervals
-    benchTotal = 0
+    baselineTotal = 0
     geneticTotal = 0 
     for _ in range(numIntervals): 
         # Write to file
@@ -212,84 +165,6 @@ def main(populationInputs={}):
         print('Running for {} through {}'.format(starttime, stoptime),
               file=f, flush=True)
 
-        
-        # Command the benchmark regulators and capacitors
-        writeBench.commandCapacitors(cap=capBench)
-        writeBench.commandRegulators(reg=regBench)
-        # Write benchmark model
-        writeBench.writeModel()
-        # Run the model
-        t0 = time.time()
-        result = util.gld.runModel(writeBench.pathModelOut)
-        t1 = time.time()
-        print('Benchmark model run in {:.2f} seconds.'.format(t1-t0), file=f,
-              flush=True)
-        
-        # Evaluate model.
-        cnxn = util.db.connect()
-        cursor = cnxn.cursor()
-        benchScores = util.gld.computeCosts(cursor=cursor,
-                                          powerTable=swingDat['table'],
-                                          powerColumns=swingDat['columns'],
-                                          powerInterval=swingDat['interval'],
-                                          energyPrice=costs['energy'],
-                                          starttime=starttime, stoptime=stoptime,
-                                          tapChangeCost=costs['tapChange'],
-                                          capSwitchCost=costs['capSwitch'],
-                                          tapChangeTable=regTable,
-                                          tapChangeColumns=regTableChangeCols,
-                                          capSwitchTable=capTable,
-                                          capSwitchColumns=capTableChangeCols,
-                                          voltCost=costs['volt'],
-                                          voltdumpDir=outDir,
-                                          voltdumpFiles=dumpFiles
-                                          )
-
-        # Increment benchmark grand total
-        benchTotal += benchScores['total']
-        #**********************************************************************
-        # Set bench settings for next iteration.
-        regBench = util.db.updateStatus(inDict=regBench, dictType='reg',
-                                   cursor=cursor, table=regTable,
-                                   phaseCols=regTableStatusCols, t=stoptime,
-                                   nameCol='name', tCol='t')
-        capBench = util.db.updateStatus(inDict=capBench, dictType='cap',
-                           cursor=cursor, table=capTable,
-                           phaseCols=capTableStatusCols, t=stoptime,
-                           nameCol='name', tCol='t')
-        
-        # Create an individual with the final settings given by the benchmark
-        # model, and add to the population.
-        # TODO: Since this individual is added externally, it screws up the
-        # number of individuals in the population.
-        benchIndividual = individual.individual(uid=popObj.nextUID,
-                                                reg=copy.deepcopy(regBench),
-                                                cap=copy.deepcopy(capBench),
-                                                regFlag=4, capFlag=4,
-                                                starttime=popObj.starttime,
-                                                stoptime=popObj.stoptime,
-                                                voltdumpFiles=popObj.voltdumpFiles
-                                               )
-        popObj.addIndividual(individual=benchIndividual)
-        
-        # Get string representation of benchmark run and write to file.
-        s = util.helper.getSummaryStr(costs=benchScores, reg=regBench,
-                                      cap=capBench)
-        print(s, file=f, flush=True)
-        
-        # Rotate the 'newState' to 'oldState'
-        regBench, capBench = util.helper.rotateVVODicts(reg=regBench,
-                                                        cap=capBench,
-                                                        deleteFlag=True)
-        
-        # Cleanup by truncating the tables.
-        util.db.truncateTable(cursor=cursor, table=regTable)
-        util.db.truncateTable(cursor=cursor, table=capTable)
-        util.db.truncateTable(cursor=cursor, table=swingDat['table'])
-        
-        # Close database cursor and connection.
-        cursor.close()
-        cnxn.close()
         #******************************************************************************
         # Run genetic algorithm.
         # print('Initializing population...', flush=True)
@@ -298,13 +173,15 @@ def main(populationInputs={}):
         # print('Beginning genetic algorithm...', flush=True)
         bestIndividual = popObj.ga()
         t1 = time.time()
-        # print('Genetic algorithm complete.',flush=True)
+        # Write baseline information to file and increment score
+        print('Baseline score:', file=f,flush=True)
+        print(popObj.baselineData['str'], file=f, flush=True)
+        # increment baseline total
+        baselineTotal += popObj.baselineData['costs']['total']
         # Update 'reg' and 'cap' based on the most fit individual.
         reg = copy.deepcopy(bestIndividual.reg)
         cap = copy.deepcopy(bestIndividual.cap)
         reg, cap = util.helper.rotateVVODicts(reg=reg, cap=cap, deleteFlag=True)
-        # print('Printing results to file...', flush=True)
-        # print('The time is {}'.format(time.ctime(), flush=True))
         print('{} individuals per {} generations'.format(numInd, numGen),
               file=f, flush=True)
         print('Runtime: {:.0f} s'.format(t1-t0), file=f, flush=True)
@@ -326,26 +203,21 @@ def main(populationInputs={}):
         stoptime = util.helper.incrementTime(t=stoptime, fmt=tFmt,
                                               interval=tInt)
         
-        # Update the write objects
-        updateModel(writeObj=writeBench, starttime=starttime,
-                    stoptime=stoptime,
-                    timezone=timezone, tRec=tRec)
-        updateModel(writeObj=writeGenetic, starttime=starttime,
+        # Update the write object
+        updateModel(writeObj=writeObj, starttime=starttime,
                     stoptime=stoptime,
                     timezone=timezone, tRec=tRec)
         
         print('Time updated, moving to next timestep.', flush=True)
         # Prep the population for the next run.
         popObj.prep(starttime=starttime, stoptime=stoptime,
-                    strModel=writeGenetic.strModel, cap=cap, reg=reg,
+                    strModel=writeObj.strModel, cap=cap, reg=reg,
                     keep=0.1)
-        
-        # Cleanup the bench
           
     # Shut down population object threads
     popObj.stopThreads()
     print('*'*80, file=f, flush=True)
-    print('Benchmark grand total: {:.5g}'.format(benchTotal), file=f)
+    print('Benchmark grand total: {:.5g}'.format(baselineTotal), file=f)
     print('Genetic grand total: {:.5g}'.format(geneticTotal), file=f)  
     print('Results printed to file. All done.', flush=True)
     f.close()

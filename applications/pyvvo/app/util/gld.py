@@ -65,6 +65,14 @@ import os
 # GridLAB-D should get dates in this format.
 DATE_FMT = "%Y-%m-%d %H:%M:%S"
 
+# definitions for regulator and capacitor properties
+REG_CHANGE_PROPS = ['tap_A_change_count', 'tap_B_change_count',
+                    'tap_C_change_count']
+REG_STATE_PROPS = ['tap_A', 'tap_B', 'tap_C']
+CAP_CHANGE_PROPS = ['cap_A_switch_count', 'cap_B_switch_count',
+                    'cap_C_switch_count']
+CAP_STATE_PROPS = ['switchA', 'switchB', 'switchC']
+
 def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
     """Function to run GridLAB-D model.
     
@@ -104,12 +112,11 @@ def inverseTranslateTaps(lowerTaps, pos):
     posOut = pos + lowerTaps - 1
     return posOut
 
-def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
-                 starttime, stoptime, tapChangeCost, capSwitchCost, voltCost,
-                 voltdumpDir, voltdumpFiles, tCol='t',
-                 tapChangeCount=None, tapChangeTable=None,
-                 tapChangeColumns=None, capSwitchCount=None,
-                 capSwitchTable=None, capSwitchColumns=None
+def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
+                 voltdumpFiles, tCol='t', tapChangeCount=None,
+                 tapChangeTable=None, tapChangeColumns=None,
+                 capSwitchCount=None, capSwitchTable=None,
+                 capSwitchColumns=None
                  ):
     """Method to compute VVO costs for a given time interval. This includes
     cost of energy, capacitor switching, and regulator tap changing. Later this
@@ -117,12 +124,16 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     
     INPUTS:
         cursor: database connection cursor
-        powerTable: name of table which records total system power. This is
-            likely the swing table.
-        powerColumns: name of the columns corresponding to the powerTable.
-            These will vary depending on node-type (substation vs. meter, etc)
-        powerInterval: recording interval (seconds) of the powerTable
-        energyPrice: price of energy in $/VAh
+        swingData: dict with the following fields:
+            table: name of table for getting swing node power.
+            columns: name of the columns corresponding to the swing table.
+                These will vary depending on node-type (substation vs. meter)
+            interval: recording interval (seconds) of the swing table
+        costs: dictionary with the following fields:
+            energy: price of energy in $/VAh
+            tapChange: cost ($) of changing one regulator tap one position.
+            capSwitch: cost ($) of switching a single capacitor
+            volt: cost of a voltage violation
         starttime: starting timestamp (yyyy-mm-dd HH:MM:SS) of interval in
             question.
         stoptime: stopping ""
@@ -130,8 +141,6 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
         voltdumpFiles: list of voltdump files (without the path 'head')
         tCol: name of time column. Assumed to be the same for tap/cap tables.
             Only include if a table is given.
-        tapChangeCost: cost ($) of changing one regulator tap one position.
-        capSwitchCost: cost ($) of switching a single capacitor
         tapChangeCount: total number of all tap changes. Don't include this 
             input if tapChangeTable and tapChangeColumns are included.
         tapChangeTable: table for recording regulator tap changes. Don't
@@ -154,15 +163,15 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
     # ENERGY COST
     
     # Sum the total three-phase complex power over the given interval.
-    powerSum = util.db.sumComplexPower(cursor=cursor, table=powerTable, 
-                                  cols=powerColumns, starttime=starttime,
-                                  stoptime=stoptime)
+    powerSum = util.db.sumComplexPower(cursor=cursor, table=swingData['table'], 
+                                  cols=swingData['columns'],
+                                  starttime=starttime, stoptime=stoptime)
     
     # Perform 'integration' by multiplying each measurement by its time
     # duration (convert seconds to hours), then multiply this area (energy in 
     # VAh) by price to get cost.
-    energyCost = ((powerSum['sum'].__abs__() * (powerInterval / 3600))
-                  * energyPrice)
+    energyCost = ((powerSum['sum'].__abs__() * (swingData['interval'] / 3600))
+                  * costs['energy'])
     
     # *************************************************************************
     # TAP CHANGING COST
@@ -178,7 +187,7 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
                        " tapChangeColumns must be specified!")
         
     # Simply multiply cost by number of operations.   
-    tapCost = tapChangeCost * tapChangeCount
+    tapCost = costs['tapChange'] * tapChangeCount
     
     # *************************************************************************
     # CAP SWITCHING COST
@@ -194,15 +203,15 @@ def computeCosts(cursor, powerTable, powerColumns, powerInterval, energyPrice,
                        " capSwitchColumns must be specified!")
         
     # Simply multiply cost by number of operations.   
-    capCost = capSwitchCost * capSwitchCount
+    capCost = costs['capSwitch'] * capSwitchCount
     
     # *************************************************************************
     # VOLTAGE VIOLATION COSTS
     
     # Get all voltage violations. Use default voltages and tolerances for now.
     v = sumVoltViolations(fileDir=voltdumpDir, files=voltdumpFiles)
-    overvoltage = v['high'] * voltCost
-    undervoltage = v['low'] * voltCost
+    overvoltage = v['high'] * costs['volt']
+    undervoltage = v['low'] * costs['volt']
     
     # TODO: uncomment when ready
     '''

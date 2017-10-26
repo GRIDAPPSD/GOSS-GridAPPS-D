@@ -886,8 +886,8 @@ class writeCommands:
         return outPath
     
     def setupModel(self, starttime=None, stoptime=None, timezone=None,
-                   vSource=69715.065, playerFile=None, dbFlag=True,
-                   tz_offset=0, profiler=0, triplexGroup=None,
+                   vSource=69715.065, playerFile=None, database=None,
+                   profiler=0, triplexGroup=None,
                    voltdump=None, powerflowFlag=False):
         """Function to add the basics to get a running model. Designed with 
         the output from Tom McDermott's CIM exporter in mind.
@@ -920,8 +920,8 @@ class writeCommands:
             self.addModule('tape')
         
         # TODO: Get database inputs rather than just using the default.
-        if dbFlag:
-            self.addDatabase(tz_offset=tz_offset)
+        if database:
+            self.addDatabase(**database)
             # Add mysql modules
             self.addModule('mysql')
             
@@ -1020,7 +1020,7 @@ class writeCommands:
             m = TRIPLEX_METER_REGEX.search(self.strModel,
                                           m.span()[0] + len(tObj['obj']))
             
-    def addVoltDumps(self, num, group, mode='polar'):
+    def addVoltDumps(self, num, group, mode='polar', outDir=None):
         """Function to add voltage dumps for a given group, times, and interval
         
         NOTE: There's an important assumption here - models will be run in
@@ -1032,7 +1032,12 @@ class writeCommands:
         n = []
         c = 0
         for _ in range(num):
-            n.append('vDump_' + str(c) + '.csv')
+            f = 'vDump_' + str(c) + '.csv'
+            # If outDir is specified, add it to filename
+            if outDir:
+                f = os.path.join(outDir, f).replace("\\", "/")
+            # Add the file to the list.    
+            n.append(f)
             self.addObject(objType='voltdump',
                            properties={'group': group,
                                        'filename': '"{}"'.format(n[-1]),
@@ -1113,7 +1118,39 @@ class writeCommands:
                 
                 # Find the next match
                 m = exp.search(self.strModel)
+                
+    def addVVO(self):
+        """Very hard-coded function to add a volt_var_control object to the 
+        R2-12-47-2 feeder. Values from SGIG analysis, using technology 1 (t1)
         
+        TODO: make modular
+        """
+        
+        # Create dictionary of properties
+        propDict = {
+            'name': 'volt_var_control',
+            'control_method': 'ACTIVE',
+            'capacitor_delay': 60.0,
+            'regulator_delay': 60.0,
+            'desired_pf': 0.99,
+            'd_max': 0.8,
+            'd_min': 0.1,
+            'substation_link': '"substation_transformer"',
+            'regulator_list': '"R2-12-47-2_reg_1,R2-12-47-2_reg_2"',
+            'capacitor_list': '"R2-12-47-2_cap_1,R2-12-47-2_cap_2,R2-12-47-2_cap_3,R2-12-47-2_cap_4"',
+            'voltage_measurements': '"R2-12-47-2_node_146_2,1,R2-12-47-2_node_240,2,R2-12-47-2_node_103,2,R2-12-47-2_node_242,2"',
+            'maximum_voltages': 9000.00,
+            'minimum_voltages': 5000.00,
+            'max_vdrop': 50,
+            'high_load_deadband': 60.00,
+            'desired_voltages': 7080.00,
+            'low_load_deadband': 60.00
+            }
+        
+        # Add the object to the end of the model.
+        self.addObject(objType='volt_var_control', properties=propDict,
+                           place='end')
+            
 class Error(Exception):
     """"Base class for exceptions in this module"""
     pass

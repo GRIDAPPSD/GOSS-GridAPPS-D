@@ -22,7 +22,8 @@ class population:
                           'volt': 0.05},
                  probabilities = {'top': 0.2, 'weak': 0.2, 'mutate': 0.2,
                                   'cross': 0.7, 'capMutate': 0.1,
-                                  'regMutate': 0.05}
+                                  'regMutate': 0.05},
+                 baseControlFlag=None
                  ):
         """Initialize a population of individuals.
         
@@ -63,7 +64,8 @@ class population:
                     mutated.
                 regMutate: probability each regulator chromosome gene gets
                     mutated.
-            
+            baseControlFlag: control flag for baseline individual. See inputs
+                to an individual's constructor for details.
             
         """
         # TODO: rather than being input, reg and cap should be read from the
@@ -94,6 +96,9 @@ class population:
         # Set inPath and outDir
         self.inPath = inPath
         self.outDir = outDir
+        
+        # Track the baseControlFlag
+        self.baseControlFlag = baseControlFlag
         
         # Initialize queues and threads for running GLD models in parallel and
         # cleaning up models we're done with.
@@ -161,6 +166,11 @@ class population:
         self.reg = reg
         self.cap = cap
         
+        # If the population includes a 'baseline' model, we need to track it.
+        # TODO: May want to update this to track multiple baseline individuals
+        self.baselineIndex = None
+        self.baselineData = None
+        
         # Track the best scores for each generation.
         self.generationBest = []
         
@@ -212,6 +222,31 @@ class population:
         
         TODO: Make more flexible.
         """
+        # Create baseline individual.
+        if self.baseControlFlag is not None:
+            # Set regFlag and capFlag
+            if self.baseControlFlag:
+                # Non-zero case --> volt or volt_var control
+                regFlag = capFlag = 3
+            else:
+                # Manual control, use 'newState'
+                regFlag = capFlag = 4
+             
+            # Add a baseline individual with the given control flag   
+            self.addIndividual(individual=\
+                individual.individual(uid=self.nextUID,
+                                      reg=copy.deepcopy(self.reg),
+                                      cap=copy.deepcopy(self.cap),
+                                      regFlag=regFlag,
+                                      capFlag=capFlag,
+                                      starttime=self.starttime,
+                                      stoptime=self.stoptime,
+                                      voltdumpFiles=self.voltdumpFiles,
+                                      controlFlag=self.baseControlFlag))
+            
+            # Track the baseline individual's index.
+            self.baselineIndex = len(self.individualsList) - 1
+        
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
         for n in range(len(individual.CAPSTATUS)):
             for regFlag in range(2):
@@ -280,7 +315,24 @@ class population:
         while g < self.numGen:
             # Wait until all models have been run and evaluated.
             self.modelQueue.join()
-                
+            
+            # If this is the first generation and we're tracking a baseline, 
+            # save the requisite information.
+            if (g == 0) and (self.baselineIndex is not None):
+                # Get a reference to the individual
+                bInd = self.individualsList[self.baselineIndex]
+                # Clear the index (individual will get sorted
+                self.baselineIndex = None
+                # Save information.
+                self.baselineData = {'costs': copy.deepcopy(bInd.costs),
+                                     'cap': copy.deepcopy(bInd.cap),
+                                     'reg': copy.deepcopy(bInd.reg)}
+                # Get a well formatted string representation
+                self.baselineData['str'] = \
+                    util.helper.getSummaryStr(costs=self.baselineData['costs'],
+                                              reg=self.baselineData['reg'],
+                                              cap=self.baselineData['cap'])
+            
             # Sort the individualsList by score.
             self.individualsList.sort(key=lambda x: x.costs['total'])
             
@@ -521,7 +573,8 @@ class population:
 def writeRunEval(modelQueue, costs):
                 #, cnxnpool):
     #tEvent):
-    """Write individual's model, run the model, and evaluate costs.
+    """Write individual's model, run the model, and evaluate costs. This is
+    effectively a wrapper for individual.writeRunUpdateEval()
     
     NOTE: will take no action if an individual's model has already been
         run.
@@ -532,9 +585,6 @@ def writeRunEval(modelQueue, costs):
     NOTE: This function is specifically formatted to be run via a thread
         object which is terminated when a 'None' object is put in the 
         modelQueue.
-        
-    NOTE: This function depends on population's __init__ method setting
-        some global variables.
         
     INPUTS:
         modelQueue: queue which will have dictionaries inserted into it.
@@ -565,27 +615,19 @@ def writeRunEval(modelQueue, costs):
             cnxn = util.db.connect()
             cursor = cnxn.cursor()
             
-            # Write the individual's model.
-            inDict['individual'].writeModel(strModel=inDict['strModel'],
-                                           inPath=inDict['inPath'],
-                                           outDir=(inDict['outDir'] + '/ind_'
-                                                   + str(inDict['individual'].uid))
-                                           )
-
-            # Run the model.
-            # TODO: need gridlabd path information here
-            inDict['individual'].runModel()
-            if inDict['individual'].modelOutput.returncode:
-                print("FAILURE! Individual {}'s model gave non-zero returncode.".format(inDict['individual'].uid))
+            # Modify the input's outDir to ensure models go in their own
+            # folder. NOTE: This won't be necessary when voltage recording can
+            # take place in the MySQL database.
+            inDict['outDir'] = (inDict['outDir'] + '/ind_'
+                                + str(inDict['individual'].uid))
             
-            # Evaluate the individuals costs.
-            inDict['individual'].evalFitness(cursor,
-                                             energyPrice=costs['energy'],
-                                             tapChangeCost=costs['tapChange'],
-                                             capSwitchCost=costs['capSwitch'],
-                                             voltCost=costs['volt'],
-                                             )
-        
+            # Write, run, update, and evaluate the individaul
+            inDict['individual'].writeRunUpdateEval(strModel=inDict['strModel'],
+                                                    inPath=inDict['inPath'],
+                                                    outDir=inDict['outDir'],
+                                                    cursor=cursor,
+                                                    costs=costs)
+            
             # Denote task as complete.
             modelQueue.task_done()
             

@@ -116,6 +116,13 @@ def incrementTime(t, fmt, interval):
         tN = time.mktime(time.strptime(t, fmt)) + interval
         tOut = time.strftime(fmt, time.localtime(tN))
         return tOut
+
+def timeDiff(t1, t2, fmt):
+    """Simple function to get the difference (in seconds) of t2-t1.
+    """
+    delta = time.mktime(time.strptime(t2, fmt)) \
+        - time.mktime(time.strptime(t1, fmt))
+    return delta
     
 def getSummaryStr(costs, reg, cap, regChrom=None, capChrom=None, parents=None):
     """Helper method to create a string representation of a model.
