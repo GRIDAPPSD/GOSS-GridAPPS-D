@@ -25,7 +25,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import com.google.gson.Gson;
 import com.northconcepts.exception.SystemException;
 
-import gov.pnnl.goss.gridappsd.TestConstants;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
 import gov.pnnl.goss.gridappsd.dto.RequestAppRegister;
