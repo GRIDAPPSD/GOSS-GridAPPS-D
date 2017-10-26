@@ -137,7 +137,6 @@ public class AppManagerImpl implements AppManager{
 	
 	@Override
 	public void process(StatusReporter statusReporter, int processId, DataResponse event, Serializable message) throws Exception {
-		System.out.println("APP MANAGER PROCESS RECEIVED ");
 		if(client==null){
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -188,11 +187,8 @@ public class AppManagerImpl implements AppManager{
 			} else {
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
-			//TODO publish instance id
-			System.out.println("SENDING APP INSTANCE MESSAGE ON "+replyDestination);
 
 			client.publish(replyDestination, instanceId);
-			System.out.println("STARTED APP "+instanceId);
 
 		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
 			String appId = message.toString();
