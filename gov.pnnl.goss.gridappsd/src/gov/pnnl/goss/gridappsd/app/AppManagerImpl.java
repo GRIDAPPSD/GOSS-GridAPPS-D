@@ -137,7 +137,6 @@ public class AppManagerImpl implements AppManager{
 	
 	@Override
 	public void process(StatusReporter statusReporter, int processId, DataResponse event, Serializable message) throws Exception {
-		System.out.println("APP MANAGER PROCESS RECEIVED ");
 		if(client==null){
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -188,9 +187,8 @@ public class AppManagerImpl implements AppManager{
 			} else {
 				instanceId = startAppForSimultion(requestObj.getApp_id(),requestObj.getRuntime_options(), new Integer(processId).toString(), requestObj.getSimulation_id());
 			}
-			//TODO publish instance id
-//			client.publish(replyDestination, instanceId);
-			System.out.println("STARTED APP "+instanceId);
+
+			client.publish(replyDestination, instanceId);
 
 		} else if(destination.contains(GridAppsDConstants.topic_app_stop)){
 			String appId = message.toString();
@@ -211,7 +209,6 @@ public class AppManagerImpl implements AppManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		System.out.println("STARTING APP MGR");
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
@@ -243,7 +240,6 @@ public class AppManagerImpl implements AppManager{
 		for(File appConfigFile: appConfigFiles){
 			AppInfo appInfo = parseAppInfo(appConfigFile);
 			apps.put(appInfo.getId(), appInfo);
-			System.out.println("FOUND APP "+appInfo.getId());
 
 		}
 	}
@@ -519,7 +515,7 @@ public class AppManagerImpl implements AppManager{
 	}
 
 	
-	protected File getAppConfigDirectory(){
+	public File getAppConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.APPLICATIONS_PATH);
 		if (configDirStr==null){
 			configDirStr = "applications";

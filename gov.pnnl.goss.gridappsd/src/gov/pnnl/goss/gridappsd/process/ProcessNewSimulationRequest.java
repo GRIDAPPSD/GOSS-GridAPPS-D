@@ -47,6 +47,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 
 import java.io.File;
 import java.io.Serializable;
@@ -76,9 +77,16 @@ public class ProcessNewSimulationRequest {
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, StatusReporter statusReporter,
 			int simulationId, DataResponse event, Serializable message) {
+		process(configurationManager, simulationManager, statusReporter, simulationId, event, message, SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT);
+	}
+	
+	public void process(ConfigurationManager configurationManager,
+			SimulationManager simulationManager, StatusReporter statusReporter,
+			int simulationId, DataResponse event, Serializable message, int simulationPort) {
 
 		try {
 			RequestSimulation config = RequestSimulation.parse(message.toString());
+			config.simulation_config.setSimulation_broker_port(simulationPort);
 			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Parsed config " + config, LogLevel.INFO, ProcessStatus.RUNNING, false));
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {
@@ -111,6 +119,7 @@ public class ProcessNewSimulationRequest {
 			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false));
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			try {
 				statusReporter.reportStatus(
 						GridAppsDConstants.topic_simulationStatus
@@ -123,5 +132,4 @@ public class ProcessNewSimulationRequest {
 			}
 		}
 	}
-
 }
