@@ -28,7 +28,8 @@ class individual:
     
     def __init__(self, uid, starttime, stoptime, voltdumpFiles, reg=None,
                  regFlag=5, cap=None, capFlag=5, regChrom=None, 
-                 capChrom=None, parents=None, controlFlag=0):
+                 capChrom=None, parents=None, controlFlag=0,
+                 recordInterval=60):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -46,7 +47,7 @@ class individual:
                 evaluate voltage violations.
             reg: Dictionary as described in the docstring for the gld module.
             
-                Note possible tap positions be in interval [-(lower_taps - 1),
+                Note possible tap positions be in interval [-lower_taps,
                 raise_taps].
             
             regFlag: Flag for special handling of regulators.
@@ -131,6 +132,9 @@ class individual:
         
         # Parent tracking is useful to see how well the GA is working
         self.parents = parents
+        
+        # Recording inverval
+        self.recordInterval = recordInterval
         
         # When writing model, output directory will be saved.
         self.outDir = None
@@ -221,7 +225,7 @@ class individual:
         
         return s
         
-    def genRegChrom(self, flag):
+    def genRegChrom(self, flag, updateCount=True):
         """Method to randomly generate an individual's regulator chromosome
         
         INPUTS:
@@ -236,6 +240,12 @@ class individual:
                 4: Regulator state given in reg input's 'newState' - just need
                     to generate chromosome and count tap changes
                 5: Regulator tap positions will be determined randomly 
+            updateCount: Flag (True or False) to indicate whether or not the
+                individual's tapChangeCount should be updated. When using this
+                function to generate an individual, this should generally be
+                set to True. However, when updating a baseline model (like one
+                that uses volt_var_control) which computes its tap changes 
+                elsewhere, set updateCount to False.
         """
         # Initialize chromosome for regulator and dict to store list indices.
         self.regChrom = ()
@@ -248,7 +258,7 @@ class individual:
         for r, v in self.reg.items():
             
             # Define the upper tap bound (tb).
-            tb = v['raise_taps'] + v['lower_taps'] - 1
+            tb = v['raise_taps'] + v['lower_taps']
             
             # Compute the needed field width to represent the upper tap bound
             width = math.ceil(math.log(tb, 2))
@@ -317,9 +327,10 @@ class individual:
                     util.gld.translateTaps(lowerTaps=v['lower_taps'], pos=newState)
                     
                 # Increment the tap change counter (previous pos - this pos)
-                self.tapChangeCount += \
-                    abs(self.reg[r]['phases'][phase]['prevState']
-                        - self.reg[r]['phases'][phase]['newState'])
+                if updateCount:
+                    self.tapChangeCount += \
+                        abs(self.reg[r]['phases'][phase]['prevState']
+                            - self.reg[r]['phases'][phase]['newState'])
                 
                 # Assign indices for this phase
                 self.reg[r]['phases'][phase]['chromInd'] = (s, e)
@@ -327,7 +338,7 @@ class individual:
                 # Increment start index.
                 s += len(binTuple)
                 
-    def genCapChrom(self, flag):
+    def genCapChrom(self, flag, updateCount):
         """Method to generate an individual's capacitor chromosome.
         
         INPUTS:
@@ -342,6 +353,12 @@ class individual:
                 4: Capacitor state given in cap input's 'newState' - just need
                     to generate chromosome and count switching events
                 5: Capacitor positions will be determined randomly.
+            updateCount: Flag (True or False) to indicate whether or not the
+                individual's capSwitchCount should be updated. When using this
+                function to generate an individual, this should generally be
+                set to True. However, when updating a baseline model (like one
+                that uses volt_var_control) which computes its switch changes 
+                elsewhere, set updateCount to False.
                 
                 
         OUTPUTS:
@@ -402,8 +419,9 @@ class individual:
                 self.cap[c]['phases'][phase]['chromInd'] = ind
                 
                 # Increment the switch counter if applicable
-                if (self.cap[c]['phases'][phase]['newState'] !=
-                        self.cap[c]['phases'][phase]['prevState']):
+                if (updateCount
+                    and ((self.cap[c]['phases'][phase]['newState']
+                          != self.cap[c]['phases'][phase]['prevState']))):
                     
                     self.capSwitchCount += 1
                 
@@ -491,9 +509,14 @@ class individual:
                                                pathModelOut=(outDir + '/'
                                                              + model))
         
+        # Add runtimes to the voltdumps
+        writeObj.addRuntimeToVoltDumps(starttime=self.starttime,
+                                       stoptime=self.stoptime,
+                                       interval=self.recordInterval)
+        
         # Update the swing node to a meter and get it writing power to a table
         # TODO: swing table won't be the only table.
-        o = writeObj.recordSwing(suffix=self.uid)
+        o = writeObj.recordSwing(suffix=self.uid, interval=self.recordInterval)
         self.swingData = o
         
         # TODO: Uncomment when ready
@@ -629,6 +652,11 @@ class individual:
                                         table=self.capData['table'],
                                         phaseCols=self.capData['stateColumns'],
                                         t=self.stoptime)
+        
+        # Update the regulator and capacitor chromosomes. Note that the counts
+        # have already been updated, so set updateCount to False.
+        self.genRegChrom(flag=4, updateCount=False)
+        self.genCapChrom(flag=4, updateCount=False)
                             
     def evalFitness(self, cursor, costs, tCol='t'):
         """Function to evaluate fitness of individual. This is essentially a

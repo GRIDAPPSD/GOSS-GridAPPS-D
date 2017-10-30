@@ -5,6 +5,57 @@ Created on Sep 12, 2017
 '''
 import time
 import json
+import cmath
+import math
+import re
+
+# Compile some regular expressions for detection of complex number forms
+RECT_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*j')
+FIRST_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*')
+SECOND_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[dr]')
+    
+def getComplex(s):
+    """Function to take a string which represents a complex number and convert
+    it into a Python complex type. This is specifically intended to work with
+    output from GridLAB-D. The string can have units.
+    
+    INPTUS:
+        s: string representing the complex number. 
+            Ex: +12.34-1.2j VA
+            Ex: +15-20d V
+            Ex: +12-3.14r I
+            
+    TODO: unit test! There are some sample inputs in the __main__ section.
+    """
+    # First, strip whitespace, then split on whitespace to strip off the unit
+    t = s.strip().split()
+    
+    # Detect form and take action
+    if RECT_EXP.fullmatch(t[0]):
+        # If it's already in rectangular form, there's not much work to do
+        n = complex(t[0])
+    else:
+        # Extract the first and second terms
+        magFloat = float(FIRST_EXP.match(t[0]).group())
+        phaseStr = SECOND_EXP.search(t[0]).group()
+        # If the number doesn't fit the form, raise exception.
+        if (not magFloat) or (not phaseStr):
+            raise ValueError(('Inputs to getComplex must have a sign defined '
+                  + 'for both components.\nNo space is allowed, '
+                  + 'except between the number and the unit.\n'
+                  + 'Decimals are optional.\n'
+                  + 'Number must end in j, d, or r.'))
+        # Extract the unit and phase from the phase string
+        phaseUnit = phaseStr[-1]
+        phaseFloat = float(phaseStr[:-1])
+        # If the unit is degrees, convert to radians
+        if phaseUnit == 'd':
+            phaseFloat = math.radians(phaseFloat)
+        
+        # Convert to complex.
+        n = (magFloat * cmath.exp(1j * phaseFloat))
+        
+    return n, t[1]
 
 def bin2int(binList):
         """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
@@ -172,8 +223,23 @@ def getSummaryStr(costs, reg, cap, regChrom=None, capChrom=None, parents=None):
     return s
     
 if __name__ == '__main__':
+    """
     starttime= "2009-07-21 00:00:00"
     tFmt = "%Y-%m-%d %H:%M:%S"
     interval = 60
     s = incrementTime(t=starttime, fmt=tFmt, interval=interval)
     print(s)
+    """
+    s1 = '+348863+13.716d VA'
+    n1, u1 = getComplex(s1)
+    s2 = '-12.2+13d I'
+    n2, u2 = getComplex(s2)
+    s3 = '+3.258-2.14890r kV'
+    n3, u3 = getComplex(s3)
+    s4 = '-1+2j VAr'
+    n4, u4 = getComplex(s4)
+    s5 = '+1.2e-003+1.8e-2j d'
+    n5, u5 = getComplex(s5)
+    s6 = '-1.5e02+12d f'
+    n6, u6 = getComplex(s6)
+    print('hooray')

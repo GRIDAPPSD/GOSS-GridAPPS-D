@@ -10,10 +10,7 @@ Created on Aug 29, 2017
 '''
 import mysql.connector.pooling
 from mysql.connector import errorcode
-import re
-
-# Regular expression for parsing voltages given in form +/-mag+/-degreed V
-VMAG_REGEX = re.compile('[\+-](\d+)(\.*)(\d*)')
+from util import helper
 
 def connectPool(user='gridlabd', password='', host='localhost',
             database='gridlabd', pool_name='mypool', pool_size=1):
@@ -193,30 +190,22 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
     # Fetch the first row.
     row = cursor.fetchone()
     
-    # Initialize output, extract the units (assume all units are the same).
-    out = {'unit': row[0].split()[1]}
-    
-    # Loop over the rows and sum.
+    # Initialize total.
     t = 0+0j
+    # Loop over the rows and sum.
     while row:
         # Three phase power is simply the complex sum of the individual phases.
         for ind in range(len(cols)):
-            # Strip off the unit included with the complex number and
-            # add it to the total.
-            t += complex(row[ind].split()[0])
-        '''
-        for col in cols:
-            # Strip off the unit included with the complex number and
-            # add it to the total.
-            v = getattr(row, col)
-            t += complex(v.split()[0])
-        '''
+            # Get the complex value and its unit
+            v, u = helper.getComplex(row[ind]) 
+            # Add the value to the total.
+            t += v
+
         # Advance the cursor.    
         row = cursor.fetchone()
     
-    # Assign row count and sum to output and return.
-    out['rowCount'] = cursor.rowcount
-    out['sum'] = t
+    # Assign return. NOTE: All units assumed to be the same.
+    out = {'rowCount': cursor.rowcount, 'sum': t, 'unit': u}
     return out
 
 def sumMatrix(cursor, table, cols, tCol='t', starttime=None, stoptime=None):
@@ -296,18 +285,22 @@ def voltageViolations(cursor, table, vLow=228, vHigh=252, vCols=['voltage_12'],
     # Fetch the first row, loop until all have been consumed.
     row = cursor.fetchone()
     while row:
-        # Loop over the columns
+        # Only count one violation per object (don't count multiple times if
+        # multiple phases are out of bounds)
+        violation = False
+        # Loop over the columns (phases)
         for ind in range(len(vCols)):
-            # Parse the complex value from the string.
-            # For now, assume voltage given in +/-mag+/-degreed V
-            # TODO: check string for a 'd' or 'j' to determine how to handle.
-            n = float(VMAG_REGEX.match(row[ind]).group(0))
-            
-            # Increment counters if necessary
-            if n >= vHigh:
-                high += 1
-            elif n <= vLow:
-                low += 1
+            if not violation:
+                # Get the complex value
+                v, _ = helper.getComplex(row[ind])
+    
+                # Increment counters if necessary
+                if v.__abs__() >= vHigh:
+                    high += 1
+                    violation = True
+                elif v.__abs__() <= vLow:
+                    low += 1
+                    violation = True
         
         # Fetch next row.    
         row = cursor.fetchone()

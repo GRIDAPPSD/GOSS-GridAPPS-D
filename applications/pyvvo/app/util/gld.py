@@ -73,7 +73,7 @@ CAP_CHANGE_PROPS = ['cap_A_switch_count', 'cap_B_switch_count',
                     'cap_C_switch_count']
 CAP_STATE_PROPS = ['switchA', 'switchB', 'switchC']
 
-def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
+def runModel(modelPath, gldPath=r'C:/gridlab-d/develop'):
     """Function to run GridLAB-D model.
     
     TODO: Add support for command line inputs.
@@ -96,20 +96,20 @@ def runModel(modelPath, gldPath=r'C:/gridlabd/develop/install64'):
 
 def translateTaps(lowerTaps, pos):
     """Method to translate tap integer in range 
-    [0, lowerTaps + raiseTaps - 1] to range [-(lower_taps - 1), raise_taps]
+    [0, lowerTaps + raiseTaps] to range [-lower_taps, raise_taps]
     """
     # TODO: unit test
     # Hmmm... is it this simple? 
-    posOut = pos - lowerTaps + 1
+    posOut = pos - lowerTaps
     return posOut
 
 def inverseTranslateTaps(lowerTaps, pos):
     """Method to translate tap integer in range
-        [-(lower_taps - 1), raise_taps] to range [0, lowerTaps + raiseTaps - 1]
+        [-lower_taps, raise_taps] to range [0, lowerTaps + raiseTaps]
     """
     # TODO: unit test
     # Hmmm... is it this simle? 
-    posOut = pos + lowerTaps - 1
+    posOut = pos + lowerTaps
     return posOut
 
 def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
@@ -286,8 +286,8 @@ def sumVoltViolations(fileDir, files, vNom=120, vTol=6):
     # Loop over each file.
     for f in files:
         # Call method to cound violations.
-        v = voltViolationsFromDump(fName=fileDir + '/' + f, vNom=vNom,
-                                   vTol=vTol)
+        v = voltViolationsFromDump(fName=fileDir + '/' + os.path.basename(f),
+                                   vNom=vNom, vTol=vTol)
         # Add to the running total.
         violations['low'] += v['low']
         violations['high'] += v['high']

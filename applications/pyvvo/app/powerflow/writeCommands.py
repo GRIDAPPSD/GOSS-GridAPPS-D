@@ -668,7 +668,7 @@ class writeCommands:
             
         
     def addMySQLRecorder(self, parent, table, properties, interval,
-                    header_fieldnames='name', options=None):
+                    header_fieldnames='name', options=None, limit=-1):
         """Method to add database recorder to end of model
         
         INPUTS:
@@ -684,6 +684,7 @@ class writeCommands:
                 NOTE: Brandon found PURGE to be VERY slow experimentally for 
                 multiple recorders sharing a table. Table should be truncated
                 before use OUTSIDE of GridLAB-D. Maybe all this is true...
+            limit: Maximum number of rows. Negative means no limit.
             
         TODO: Add more properties
         """
@@ -695,10 +696,12 @@ class writeCommands:
                     '  property {properties};\n'
                     '  interval {interval};\n'
                     '  header_fieldnames "{header_fieldnames}";\n'
+                    '  limit {limit};\n'
                     ).format(parent=parent, table=table,
                              properties=('"' + ','.join(properties) + '"'),
                              interval=interval,
-                             header_fieldnames=header_fieldnames)
+                             header_fieldnames=header_fieldnames,
+                             limit=limit)
         
         # Add options if included
         if options:
