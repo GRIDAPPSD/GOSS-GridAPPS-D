@@ -3,7 +3,7 @@ Created on Aug 30, 2017
 
 @author: thay838
 '''
-from powerflow import writeCommands
+from glm import modGLM
 from genetic import population
 from genetic import individual
 import time
@@ -35,7 +35,7 @@ def main(populationInputs={}):
     outDir = "C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output"
     tLoad = 'tLoad' # triplex load group.
     numInd = 16 # Best if this is a multiple of num cores
-    numGen = 3
+    numGen = 2
     numIntervals = 2
     costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
     # Results file
@@ -111,8 +111,8 @@ def main(populationInputs={}):
     with open(inPath, 'r') as f1:
         strModel = f1.read()
 
-    # Get a writeCommands object for the benchmark
-    writeObj = writeCommands.writeCommands(strModel = strModel)
+    # Get a modGLM object for the benchmark
+    writeObj = modGLM.modGLM(strModel = strModel)
 
     # Setup the model
     dumpFiles = writeObj.setupModel(vSource=69715.065, playerFile=playerFile, 

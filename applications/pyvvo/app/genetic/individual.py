@@ -6,7 +6,7 @@ Created on Aug 9, 2017
 @author: thay838
 """
 import random
-from powerflow import writeCommands
+from glm import modGLM
 import util.gld
 import util.helper
 import math
@@ -338,7 +338,7 @@ class individual:
                 # Increment start index.
                 s += len(binTuple)
                 
-    def genCapChrom(self, flag, updateCount):
+    def genCapChrom(self, flag, updateCount=True):
         """Method to generate an individual's capacitor chromosome.
         
         INPUTS:
@@ -496,15 +496,15 @@ class individual:
         
         # Get the filename of the original model and create output path
         model = \
-            writeCommands.writeCommands.addFileSuffix(inPath=\
+            modGLM.modGLM.addFileSuffix(inPath=\
                                                         os.path.basename(inPath),
                                                       suffix=str(self.uid))
         
         # Track the output path for running the model later.
         self.model = model
         
-        # Instantiate a writeCommands object.
-        writeObj = writeCommands.writeCommands(strModel=strModel,
+        # Instantiate a modGLM object.
+        writeObj = modGLM.modGLM(strModel=strModel,
                                                pathModelIn=inPath,
                                                pathModelOut=(outDir + '/'
                                                              + model))

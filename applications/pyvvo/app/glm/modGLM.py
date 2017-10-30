@@ -51,7 +51,7 @@ def readModel(modelIn):
         s = f.read()
     return s
 
-class writeCommands:
+class modGLM:
     """"Class for reading GridLAB-D model and changing it.
     
         Some capabilities: regulator taps, capacitor switches, clock change,
@@ -714,7 +714,7 @@ class writeCommands:
         one.
         
         INPUTS: objDict: object dictionary in the format returned by 
-            writeCommands.extractObject
+            modGLM.extractObject
             
         OUTPUS: directly modifies self.strModel to replace object with new one
         """
@@ -728,7 +728,7 @@ class writeCommands:
         # Loop through the properties and modify/create them
         for prop, value in propDict.items():
             try:
-                propVal = writeCommands.extractProperties(objStr, [prop])
+                propVal = modGLM.extractProperties(objStr, [prop])
             except PropNotInObjError:
                 # If the property doesn't exist, append it to end of object
                 objStr = (objStr[0:-1] + "  " + prop + " " + str(value)
