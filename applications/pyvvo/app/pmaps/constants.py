@@ -3,6 +3,12 @@ Created on Oct 24, 2017
 
 @author: thay838
 '''
+# Costs
+COSTS = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
+# Paths
+BASE_PATH = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2'
+INCLUDE_DIR = r'E:/pmaps/experiment/include'
+MODEL = 'R2_12_47_2'
 # Define timing:
 # Define recorder intervals (s)
 RECORD_INT = 60
@@ -14,6 +20,9 @@ AMI_INTERVAL = 60 * 15
 STARTTIME = '2016-01-01 00:00:00'
 STOPTIME = '2017-01-01 00:00:00'
 TIMEZONE = 'PST+8PDT' # Pulled right from tzinfo.txt
+
+# Database for baseline.
+BASELINE_DB = {'schema': 'baseline'}
 
 # For now, we'll only measure voltages for residential meters (note that any 
 # triplex meter with the commercial designation was switched to residential)

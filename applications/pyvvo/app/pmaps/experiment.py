@@ -3,17 +3,29 @@ Created on Oct 24, 2017
 
 @author: thay838
 '''
-from powerflow import writeCommands
+from glm import modGLM
 import re
-from pmaps import constants
+from pmaps import constants as CONST
+import os
+import shutil
+import util.helper
+import util.db
+import util.gld
+from genetic import individual
+import time
 
 # Paths to input/output models.
-MODEL_POPULATED = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2\R2_12_47_2_populated.glm'
-MODEL_AMI = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2\R2_12_47_2_AMI.glm'
-MODEL_OUT_STRIPPED = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2\R2_12_47_2_stripped.glm'
-MODEL_OUT_MANUAL = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2\R2_12_47_2_manual.glm'
+partial =  CONST.BASE_PATH + '/' + CONST.MODEL
+MODEL_POPULATED = partial + r'_populated.glm'
+MODEL_AMI = partial + r'_AMI.glm'
+MODEL_STRIPPED = partial + r'_stripped.glm'
+MODEL_MANUAL = partial + r'_manual.glm'
+MODEL_VVO = partial + r'_vvo.glm'
+MODEL_BASELINE = partial + r'_baseline.glm'
+MODEL_ZIP = partial + r'_ZIP.glm'
+MODEL_ZIP_VVO = partial + r'_ZIP_VVO.glm'
 
-def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
+def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     """Function to take the full populated GridLAB-D model, and get it ready to
     run in order to generate all the data we need for load modeling.
     
@@ -24,15 +36,15 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
     After this function, the model should be ready to run.
     """
     
-    # Get a writeCommands object
-    obj = writeCommands.writeCommands(pathModelIn=MODEL_POPULATED,
+    # Get a modGLM object
+    obj = modGLM.modGLM(pathModelIn=MODEL_POPULATED,
                                       pathModelOut=MODEL_AMI)
     
     # Define the properties we want to modify for triplex_meters
     propDict = {'AMI_averaging_interval': interval, 'groupid': group}
     
     # For shorthand, get house regex
-    houseExp = writeCommands.HOUSE_REGEX
+    houseExp = modGLM.HOUSE_REGEX
     
     # Find the first house in the model
     m = houseExp.search(obj.strModel)
@@ -57,7 +69,7 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
         if name not in triplexList:
             triplexList.append(name)
             parent = obj.extractObjectByNameAndType(name=name,
-                                                    objRegEx=writeCommands.TRIPLEX_METER_REGEX)
+                                                    objRegEx=modGLM.TRIPLEX_METER_REGEX)
             
             # Modify the parent object and splice it in.
             parent['obj'] = obj.modObjProps(objStr=parent['obj'],
@@ -86,8 +98,8 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
                                                                    len(triplexList)))
     
     # Update the clock
-    obj.updateClock(starttime=constants.STARTTIME, stoptime=constants.STOPTIME,
-                    timezone=constants.TIMEZONE)
+    obj.updateClock(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
+                    timezone=CONST.TIMEZONE)
     print('Clock updated.')
     
     # Update powerflow (add KLU solver)
@@ -102,12 +114,12 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
     # interval and in/out times. 
     # NOTE: We could also just eliminate all group_recorders and explicitely
     # add new ones.
-    gr_exp = writeCommands.GROUP_RECORDER_REGEX
+    gr_exp = modGLM.GROUP_RECORDER_REGEX
     m = gr_exp.search(obj.strModel)
-    propDict = {'interval': constants.AMI_INTERVAL,
-                'in': '"{}"'.format(constants.STARTTIME),
-                'out': '"{}"'.format(constants.STOPTIME),
-                'group': '"groupid={}"'.format(constants.TRIPLEX_GROUP)
+    propDict = {'interval': CONST.AMI_INTERVAL,
+                'in': '"{}"'.format(CONST.STARTTIME),
+                'out': '"{}"'.format(CONST.STOPTIME),
+                'group': '"groupid={}"'.format(CONST.TRIPLEX_GROUP)
                }
     
     # Loop over group recorders:
@@ -123,21 +135,21 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
     print('group_recorders modified.')
     # Add a voltage magnitude group_recorder for the triplex_meters
     propDict = {'property': 'AMI_average_voltage12',
-                'interval': constants.AMI_INTERVAL,
-                'group': '"groupid={}"'.format(constants.TRIPLEX_GROUP),
+                'interval': CONST.AMI_INTERVAL,
+                'group': '"groupid={}"'.format(CONST.TRIPLEX_GROUP),
                 'file': 'output/R2_12_47_2_AMI_residential_phase12_mag_voltage.csv',
-                'in': "{}".format(constants.STARTTIME),
-                'out': "{}".format(constants.STOPTIME),
+                'in': "{}".format(CONST.STARTTIME),
+                'out': "{}".format(CONST.STOPTIME),
                 'complex_part': 'MAG'}
     obj.addObject(objType='group_recorder', properties=propDict, place='end')
     print('voltage magnitude group_recorder added.')
     
     # Add the climate recorder back in
-    propDict = {'property': 'temperature', 'interval': constants.RECORD_INT,
+    propDict = {'property': 'temperature', 'interval': CONST.RECORD_INT,
                 'parent': 'ClimateWeather',
                 'file': 'output/R2_12_47_2_climate.csv', 
-                'in': '"{}"'.format(constants.STARTTIME),
-                'out': '"{}"'.format(constants.STOPTIME)}
+                'in': '"{}"'.format(CONST.STARTTIME),
+                'out': '"{}"'.format(CONST.STOPTIME)}
     obj.addObject(objType='recorder', properties=propDict, place='end')
     print('climate recorder added.')
     
@@ -145,7 +157,7 @@ def populatedToAMI(interval=900, group=constants.TRIPLEX_GROUP):
     obj.writeModel()
     print('AMI model written.')
     
-def stripModel():
+def stripModel(fIn=MODEL_AMI, fOut=MODEL_STRIPPED):
     """Function to take the full populated GridLAB-D model, and strip out the
     pieces that aren't needed for the genetic algorithm.
     
@@ -154,9 +166,9 @@ def stripModel():
     no need to over-optimize.
     """
     
-    # Create writeCommands object
-    obj = writeCommands.writeCommands(pathModelIn=MODEL_AMI,
-                                      pathModelOut=MODEL_OUT_STRIPPED)
+    # Create modGLM object
+    obj = modGLM.modGLM(pathModelIn=fIn,
+                                      pathModelOut=fOut)
     
     # Strip out objects we don't need. NOTE: May need climate later
     # TODO: Do we want to vary the SWING voltage or just let it be constant?
@@ -173,82 +185,178 @@ def stripModel():
     obj.removeObjectsByType(typeList=['market', 'residential', 'climate'],
                             objStr='module')
     
-    # Remove AMI_averaging_interval lines
-    obj.strModel = re.sub(r'(\t)*(AMI_averaging_interval)(.)+\n', '',
-                          obj.strModel)
-    
     # Remove the include lines - no need for schedules in the stripped model
     obj.strModel = re.sub(r'#(\s*)include(.)+\n', '', obj.strModel)
     
-    # Remove the stylesheet line
-    obj.strModel = re.sub(r'#(\s*)define(.)+\n', '', obj.strModel)
+    # Tidy up the model
+    obj = tidyModel(writeObj=obj)
     
-    # Eliminate any double newlines
-    obj.strModel = re.sub(r'\n\s*\n', '\n', obj.strModel)
-    
-    # Eliminate lines which now only have comments
-    obj.strModel = re.sub(r'//\s*\n', '', obj.strModel)
-    
-    # Replace player objects with tape.player objects
-    obj.strModel = re.sub(r'object(\s+)player(\s*){', 'object tape.player {',
-                          obj.strModel)
-    
-    # Return the writeCommands object - we'll want to do further tweaks
+    # Return the modGLM object - we'll want to do further tweaks
     return obj
-
-def manualControl(fIn=MODEL_OUT_STRIPPED, fOut=MODEL_OUT_MANUAL):
-    """Function to switch regulator and capacitor control to MANUAL. This is 
-    what the genetic algorithm uses.
     
-    INPUTS: fIn is a full path to a .glm to read, fOut is a path to write the
-    new .glm to.
+def baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE):
+    """Function to build baseline model. In short, remove collectors,
+    recorders, and group recorders and clean up the model (see tidyModel fn).
+    
+    NOTE: Replaces tmy2 weather with tmy3 so we aren't using the training data
+    for evaluation. Since we aren't modeling temperature dependence, this may
+    not go well.
+    
+    Baseline models will also need recorders added, voltdumps added, etc. This
+    should happen by constructing an individual.
     """
     
-    # Initialize a writeCommands object
-    obj = writeCommands.writeCommands(pathModelIn=fIn, pathModelOut=fOut)
+    # Get a write object.
+    writeObj = modGLM.modGLM(pathModelIn=fIn, pathModelOut=fOut)
     
-    # Loop over the regulators from the constants file.
-    reg = {}
-    for r in constants.REG:
-        reg[r] = {}
-        reg[r]['Control'] = 'MANUAL'
-        # We need to define phases even if they're empty.
-        reg[r]['phases'] = []
+    # Strip off all collectors, recorders, and group_recorders
+    writeObj.removeObjectsByType(typeList=['collector', 'recorder',
+                                           'group_recorder'])
     
-    # Loop over the capacitors from the constants file.
-    cap = {}
-    for c in constants.CAP:
-        cap[c] = {}
-        cap[c]['control'] = 'MANUAL'
-        # We need to define phases even if they're empty.
-        cap[c]['phases'] = []
+    # Tidy things up
+    writeObj = tidyModel(writeObj=writeObj)
+    
+    # Replace IL-Chicago.tmy2 with IL-Chicago-Ohare
+    writeObj.strModel = writeObj.strModel.replace('IL-Chicago.tmy2', 
+                                                  'IL-Chicago-Ohare.tmy3')
+    
+    # Return the write object
+    return writeObj
+    
+def tidyModel(writeObj):
+    """Simple helper function to do some model cleanup:
+    1) Remove AMI_averaging_interval lines
+    2) Remove stylesheet line
+    3) Eliminate double newlines (make model more compact)
+    4) Eliminate lines which only have comments
+    5) Replace player objects with tape.player --> avoid issues with using tape
+        and mysql modules at the same time.
+    6) Replace relative include paths with full include paths.
+    """
+    # Remove AMI_averaging_interval lines
+    writeObj.strModel = re.sub(r'(\t)*(AMI_averaging_interval)(.)+\n', '',
+                               writeObj.strModel)
+    
+    # Remove the stylesheet line
+    writeObj.strModel = re.sub(r'#(\s*)define(.)+\n', '', writeObj.strModel)
+    
+    # Eliminate any double newlines
+    writeObj.strModel = re.sub(r'\n\s*\n', '\n', writeObj.strModel)
+    
+    # Eliminate lines which now only have comments
+    writeObj.strModel = re.sub(r'//\s*\n', '', writeObj.strModel)
+    
+    # Replace player objects with tape.player objects
+    writeObj.strModel = re.sub(r'object(\s+)player(\s*){', 'object tape.player {',
+                          writeObj.strModel)
+    
+    # Replace relative include paths with full include paths
+    writeObj.strModel = writeObj.strModel.replace('../include',
+                                                  CONST.INCLUDE_DIR)
+    
+    # No need to actually return here, but may as well be explicit
+    return writeObj
+
+def writeRunEvalModel(outDir, starttime, stoptime, fIn, fOut):
+    """Function to write, run, and evaluate the baseline model.
+    """
+    # If directory exists, delete it first (start fresh).
+    if os.path.isdir(outDir):
+        print('Output directory exists, deleting ')
+        shutil.rmtree(outDir)
         
-    # Command regulators and capacitors.
-    obj.commandRegulators(reg=reg)
-    obj.commandCapacitors(cap=cap)
+    # Create directory.
+    os.mkdir(outDir)
     
-    # Write new model.
-    obj.writeModel()
+    # Connect to database and drop tables.
+    cnxn = util.db.connect(database=CONST.BASELINE_DB['schema'])
+    util.db.dropAllTables(cnxn=cnxn)
+    # Get a modGLM object for the model.
+    writeObj = baselineModel(fIn=fIn, fOut=fOut)
+    
+    # Get the model runtime in seconds.
+    t = util.helper.timeDiff(t1=starttime, t2=stoptime, fmt=util.gld.DATE_FMT)
+    # Define voltdump input.
+    voltdump = {'num': round(t/CONST.RECORD_INT) + 1,
+                'group': CONST.TRIPLEX_GROUP,
+                'outDir': outDir}
+    
+    # Setup the model.
+    dumpFiles = writeObj.setupModel(starttime=starttime, stoptime=stoptime,
+                                    timezone=CONST.TIMEZONE,
+                                    database=CONST.BASELINE_DB,
+                                    voltdump=voltdump, vSource=None)
+    
+    print('Voltdumps added.')
+    
+    # Instantiate an individual - while we don't need all the bells and 
+    # whistles of an individual, it has the capability to add recorders, run
+    # its own model, evaluate it's own model, etc.
+    baseInd = individual.individual(starttime=starttime, stoptime=stoptime,
+                                    voltdumpFiles=dumpFiles, reg=CONST.REG,
+                                    cap=CONST.CAP, regFlag=3, capFlag=3,
+                                    controlFlag=4, uid=0)
+    print('Individual created.')
+    print('Writing, running, and evaluating baseline...')
+    # Get database cursor
+    cursor = cnxn.cursor()
+    baseInd.writeRunUpdateEval(strModel=writeObj.strModel,
+                               inPath=fOut, outDir=outDir,
+                               cursor=cursor, costs=CONST.COSTS)
+    print('Run complete.')
+    print(baseInd)
+    
+    return baseInd
     
 if __name__ == '__main__':
+
     # Get the popluated model ready to run.
-    # populatedToAMI()
+    populatedToAMI()
 
     # Strip the full model.
     writeObj = stripModel()
     print('Full model stripped down.')
     # Define voltdump input:
-    voltdump = {'num': round(constants.MODEL_RUNTIME/constants.RECORD_INT) + 1,
-                'group': constants.TRIPLEX_GROUP}
+    voltdump = {'num': round(CONST.MODEL_RUNTIME/CONST.RECORD_INT) + 1,
+                'group': CONST.TRIPLEX_GROUP}
+    """
+    # NOTE: We only want to setup the model for the genetic algorithm. NOT to
+    # run the writeRunEval function.
     # Setup the model (add voltdumps, database, etc.)
     writeObj.setupModel(voltdump=voltdump, vSource=None)
     print('Voltdumps and database stuff added.')
+    """
     # Save the new model
     writeObj.writeModel()
     print('Stripped model written.')
-    
-    # TODO: General model setup (database, etc.)
-    # TODO: Add ZIP models
-    # Create variant with MANUAL control.
-    manualControl()
-    print('Manual control model variant created.')
+
+    s = '2016-02-19 00:00:00'
+    e = '2016-02-19 01:00:00'
+
+    zipDir = 'E:/ami/ZIP-Constrained'
+    writeObj = modGLM.modGLM(pathModelOut=MODEL_ZIP,
+                             pathModelIn=MODEL_STRIPPED) 
+    # Add zip models
+    writeObj.addZIP(zipDir=zipDir, starttime=s, stoptime=e)
+    writeObj.writeModel()
+    print('ZIP models added.')
+
+    """
+    # These times are near to the hottest days
+    s = '2016-07-19 14:00:00'
+    e = '2016-07-19 15:00:00'
+    """
+    outDirBase = r'E:/pmaps/experiment/R2_12_47_2/baselineOut'
+    outDirZIP = r'E:/pmaps/experiment/R2_12_47_2/zipOut'
+    # Run populated baseline model
+    t0 = time.time()
+    baseline = writeRunEvalModel(outDir=outDirBase, starttime=s, stoptime=e,
+                                 fIn=MODEL_AMI, fOut=MODEL_BASELINE)
+    t1 = time.time()
+    print('Base model run in {:.2f}s'.format(t1-t0))
+    t0 = time.time()
+    zip = writeRunEvalModel(outDir=outDirZIP, starttime=s, stoptime=e,
+                                 fIn=MODEL_ZIP, fOut=MODEL_ZIP_VVO)
+    t1 = time.time()
+    print('ZIP model run in {:.2f}s'.format(t1-t0))
+    print('all done. Need to add threading...')
