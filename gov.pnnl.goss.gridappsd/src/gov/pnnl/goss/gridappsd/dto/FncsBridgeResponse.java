@@ -42,12 +42,18 @@ package gov.pnnl.goss.gridappsd.dto;
 import com.google.gson.Gson;
 
 public class FncsBridgeResponse {
+	public long timestamp;
 	public String command;
 	public String response;
 	public String output;
 	
 	
-	
+	public long getTimestamp() {
+		return timestamp;
+	}
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
+	}
 	public String getCommand() {
 		return command;
 	}
