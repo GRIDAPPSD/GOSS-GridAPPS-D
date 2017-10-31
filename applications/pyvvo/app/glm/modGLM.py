@@ -14,6 +14,8 @@ import re
 import os
 import time
 import util.gld
+import util.helper
+import csv
 
 # Time formatting:
 TIME_FMT = "%Y-%m-%d %H:%M:%S"
@@ -408,6 +410,10 @@ class modGLM:
         
         INPUTS: see recorder in GridLAB-D Wiki. prop short for property -->
             (Python reserverd keyword)
+            
+        TODO: this should leverage addObject, since this only adds to the
+        beginning of the file, which makes it all too easy to get GridLAB-D
+        errors if tape isn't defined yet.
         """
         # Build string
         s = (
@@ -1122,17 +1128,31 @@ class modGLM:
                 # Find the next match
                 m = exp.search(self.strModel)
                 
-    def addVVO(self):
+    def addVVO(self, starttime):
         """Very hard-coded function to add a volt_var_control object to the 
         R2-12-47-2 feeder. Values from SGIG analysis, using technology 1 (t1)
+        
+        NOTE: In order to ensure tap counting is correct, we need to hack 
+        things to include a player, which switches the control to 'ACTIVE'
+        after one second of simulation. Be careful - we're starting the 
+        control_method at STANDBY. If player stuff fails, this thing will do
+        absolutely nothing.
         
         TODO: make modular
         """
         
+        # Since we have to add a player, we need a defined output model so we
+        # can write a player to that directory.
+        if not self.pathModelOut:
+            # Poor error handling, but oh well
+            raise Exception(('modGLM object does not have pathModelOut '
+                             'defined! This is necessary for addVVO.'))
+            
+        name = 'volt_var_control'
         # Create dictionary of properties
         propDict = {
-            'name': 'volt_var_control',
-            'control_method': 'ACTIVE',
+            'name': name,
+            'control_method': 'STANDBY',
             'capacitor_delay': 60.0,
             'regulator_delay': 60.0,
             'desired_pf': 0.99,
@@ -1153,6 +1173,111 @@ class modGLM:
         # Add the object to the end of the model.
         self.addObject(objType='volt_var_control', properties=propDict,
                            place='end')
+        
+        # Check for the tape module. If it doesn't exist, we need to add it.
+        t = self.checkForModule(module='tape')
+        if t is None:
+            # Add tape module
+            self.addModule(module='tape')
+            
+        # Now we have to do the gross dirty work of writing a player file and
+        # creating a player
+        file = 'volt_var_control.player'
+        propDict = {'parent': name, 'property': 'control_method',
+                    'file': file}
+        self.addObject(objType='tape.player', properties=propDict,
+                       place='end')
+        
+        # Create string for player file
+        s = '{}, STANDBY\n+1s, ACTIVE'.format(starttime)
+        
+        # Create full path to player file, using output model's directory
+        fullfile = (os.path.dirname(self.pathModelOut).replace('\\', '/')
+                    + '/' + file)
+        
+        # Write string to file
+        with open(fullfile, 'w') as f:
+            f.write(s)
+            
+    def addZIP(self, zipDir, starttime, stoptime):
+        """Function to read the correct zip model file and apply zip loads to
+        meters. 
+        
+        NOTE: At the moment, this will only work for triplex_meters. Plenty
+        of hard-coding in here.
+        
+        NOTE: For the R2-12-47-2 experiment (and any other populated feeders), 
+        the triplex_meter objects must be REPLACED with triplex_load objects.
+        It doesn't work to parent a triplex_load to these triplex_meters - it 
+        creates grandchildren which isn't allowed in GridLAB-D at the moment.
+        Another option would be to trace up the tree and add the triplex_load
+        further up, but that 
+        """
+        # First, get time information. This function will error if interval
+        # isn't proper. Pretty rudiemntary for now, but hey, it'll work :)
+        t = util.helper.timeInfoForZIP(starttime=starttime, stoptime=stoptime,
+                                       fmt=util.gld.DATE_FMT)
+        
+        # Craft the filename
+        file = (zipDir.replace('\\', '/') + '/' + 'ZIP_S' + str(t['season'])
+                + '_' + t['wday'] + '_' + str(t['hour']) + '.csv')
+        
+        # Hard code phase information
+        phase = '_12'
+        
+        # Get a .csv reader
+        with open(file, newline='') as f:
+            r = csv.reader(f, delimiter=',')
+            # Discard the first three rows (description, time of run, nominal
+            # voltage)
+            for _ in range(3):
+                r.__next__()
+            
+            # Extract the headers.
+            headers = r.__next__()
+            
+            # TODO: should we use a DictReader? Would the be more efficient?
+            # We're building our own dict each time here...
+            
+            # Loop over each row
+            for row in r:
+                # HARD-CODING: extract the meter name
+                name = row[0].lstrip()
+                
+                # Initialize property dictionary
+                propDict = {}
+                
+                # Loop over the rest of the data and add to dictionary
+                for ind in range(1, len(headers)):
+                    propDict[(headers[ind].lstrip() + phase)] = \
+                        row[ind].lstrip()
+                    
+                # Extract the triplex_meter object by name
+                tObj = \
+                    self.extractObjectByNameAndType(name=name,
+                                                    objRegEx=TRIPLEX_METER_REGEX)
+                    
+                # Replace the object's type
+                tObj['obj'] = re.sub(TRIPLEX_METER_REGEX,
+                                     'object triplex_load', tObj['obj'])
+                
+                # Add the ZIP properties
+                tObj['obj'] = self.modObjProps(objStr=tObj['obj'],
+                                               propDict=propDict)
+                
+                # Splice in the new object
+                self.replaceObject(objDict=tObj)
+        
+    def checkForModule(self, module):
+        """Simple function to check if a module is in a model. Returns None if
+        the module doesn't exist, returns a regular expression match if the
+        module does exist
+        """
+        # Build regular expression
+        s = r'\bmodule\b(\s+){}'.format(module) + r'(\s*)[{;]'
+        # Search model and return
+        out = re.search(s, self.strModel)
+        return out
             
 class Error(Exception):
     """"Base class for exceptions in this module"""
@@ -1202,3 +1327,10 @@ class UnexpectedSwingType(Error):
         
     def __str__(self):
         return(repr(self.message))
+    
+if __name__ == '__main__':
+    obj = modGLM(pathModelIn='E:/pmaps/experiment/R2_12_47_2/R2_12_47_2_populated.glm')
+    s = '2013-02-01 01:00:00'
+    e = '2013-02-01 02:00:00'
+    zipDir = 'E:/pmaps/experiment/zip'
+    obj.addZIP(zipDir=zipDir, starttime=s, stoptime=e)

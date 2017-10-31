@@ -101,7 +101,9 @@ class individual:
                     capacitors
                 3: Output voltage control of regulators, VARVOLT control of
                     capacitors
-                4: volt_var_control of regulators and capacitors
+                4: volt_var_control of regulators and capacitors. This will
+                    create a volt_var_control object, and set regs and caps to
+                    MANUAL to avoid letting them switch at initialization
                 
             NOTE: If the controlFlag is not 0, the regFlag and capFlag must
                 be set to 3. 
@@ -533,7 +535,6 @@ class individual:
             regControl = 'MANUAL'
             capControl = 'MANUAL'
         elif (self.controlFlag > 0):
-            regControl = 'OUTPUT_VOLTAGE' 
             # Get the model runtime - we only need to record regulator tap 
             # changes and capacitor changes at the end of simulation.
             interval = util.helper.timeDiff(t1=self.starttime,
@@ -553,18 +554,26 @@ class individual:
                             'interval': interval}
             
             if self.controlFlag == 1:
+                regControl = 'OUTPUT_VOLTAGE' 
                 capControl = 'VOLT'
             elif self.controlFlag == 2:
+                regControl = 'OUTPUT_VOLTAGE' 
                 capControl = 'VAR'
             elif self.controlFlag == 3:
+                regControl = 'OUTPUT_VOLTAGE' 
                 capControl = 'VARVOLT'
             elif self.controlFlag == 4:
                 # If we're looking at a VVO scheme, we need to add a VVO
                 # object.
                 # TODO: This is SUPER HARD-CODED to only work for the
                 # R2-12-47-2 feeder. Eventually, this needs made more flexible.
-                capControl = 'VOLT'
-                writeObj.addVVO()
+                
+                # Set controls to MANUAL to avoid devices switching on
+                # initialization.
+                regControl = 'MANUAL'
+                capControl = 'MANUAL'
+                # NOTE: this method creates a player file... annoying.
+                writeObj.addVVO(starttime=self.starttime)
             
         # Set regulator and capacitor control schemes, and add recorders if
         # necessary.

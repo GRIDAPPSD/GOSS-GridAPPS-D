@@ -174,6 +174,52 @@ def timeDiff(t1, t2, fmt):
     delta = time.mktime(time.strptime(t2, fmt)) \
         - time.mktime(time.strptime(t1, fmt))
     return delta
+
+def timeInfoForZIP(starttime, stoptime, fmt):
+    """Function to extract the necessary time information to layer ZIP models.
+    """
+    # Ensure times are within the same ZIP modeling window. For now, hard-code
+    # interval to same hour.
+    # TODO: Make the 'delta' an input? or a constant? Anyways, don't hide it
+    # here
+    delta = timeDiff(starttime, stoptime, fmt)
+    assert delta <= 3600
+    
+    # Get times as struct_times
+    ts = time.strptime(starttime, fmt)
+    te = time.strptime(stoptime, fmt)
+    
+    # Again, hard-coding an hour check. Make sure the end time doesn't run into
+    # the next hour
+    if ts.tm_hour != te.tm_hour:
+        assert (te.tm_min == 0) and (te.tm_sec == 0)
+        
+    # If we've made it here, our dates are valid and usable. Get the info.
+    # Start by extracting season. For now, this is hard-coded to be 3 month
+    # chunks. While we could do fancy math, may as well be explicit and do
+    # stacked if/else
+    if (ts.tm_mon >= 1) and (ts.tm_mon <= 3):
+        season = 1
+    elif (ts.tm_mon >= 4) and (ts.tm_mon <= 6):
+        season = 2
+    elif (ts.tm_mon >= 7) and (ts.tm_mon <= 9):
+        season = 3
+    elif (ts.tm_mon >= 10) and (ts.tm_mon <= 12):
+        season = 4
+        
+    # Get the hour
+    hour = ts.tm_hour
+    
+    # Get weekday vs weekend
+    if ts.tm_wday <= 4:
+        wday = 'day'
+    else:
+        wday = 'end'
+        
+    # Return
+    out = {'season': season, 'hour': hour, 'wday': wday}
+    return out
+    
     
 def getSummaryStr(costs, reg, cap, regChrom=None, capChrom=None, parents=None):
     """Helper method to create a string representation of a model.
