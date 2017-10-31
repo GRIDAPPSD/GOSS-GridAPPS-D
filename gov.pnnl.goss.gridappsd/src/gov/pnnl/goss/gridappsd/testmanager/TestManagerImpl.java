@@ -217,9 +217,25 @@ public class TestManagerImpl implements TestManager {
 					
 					CompareResults compareResults = new CompareResults();
 					
-					
+					// check that type is Sim output and not null!
+					if (message == null){
+//						logMessageObj.setTimestamp(new Date().getTime());
+//						logMessageObj.setLog_message("TestManager fncs : null");
+//						logManager.log(logMessageObj);
+						return;
+					}
 					// TODO check that type is Sim output and not null!
+
 					JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
+//					jsonObject.get("output")
+					if( ! jsonObject.get("output").isJsonObject()){
+						logMessageObj.setTimestamp(new Date().getTime());
+						logMessageObj.setLog_message("TestManager fncs : not output" + jsonObject.get("output").toString());
+						logManager.log(logMessageObj);
+						return;					
+					}
+					
+
 
 					SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 					compareResults.getProp(simOutProperties);
