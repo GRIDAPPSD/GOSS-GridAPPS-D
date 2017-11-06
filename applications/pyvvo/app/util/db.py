@@ -149,7 +149,8 @@ def dropAllTables(cnxn):
     delCursor.commit()
     '''
     
-def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None):
+def sumComplexPower(cursor, cols, table, tCol='t', starttime=None,
+                    stoptime=None):
     """Sum complex power in table.
     
     INPUTS:
@@ -166,7 +167,7 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
     
     IMPORTANT NOTE: All units in table are assumed to be the same.
     
-    OUTPUT: tuple in form (sum, unit)
+    OUTPUT: Dictionary with 'rowSums' and 'unit' fields. 'rowSums' is a list
     """
     
     # Prepare query.
@@ -190,22 +191,23 @@ def sumComplexPower(cursor, cols, table, tCol='t', starttime=None, stoptime=None
     # Fetch the first row.
     row = cursor.fetchone()
     
-    # Initialize total.
-    t = 0+0j
+    # Initialize rows
+    rowSum = [] 
     # Loop over the rows and sum.
     while row:
         # Three phase power is simply the complex sum of the individual phases.
+        rowSum.append(0+0j)
         for ind in range(len(cols)):
             # Get the complex value and its unit
             v, u = helper.getComplex(row[ind]) 
             # Add the value to the total.
-            t += v
+            rowSum[-1] += v
 
         # Advance the cursor.    
         row = cursor.fetchone()
     
     # Assign return. NOTE: All units assumed to be the same.
-    out = {'rowCount': cursor.rowcount, 'sum': t, 'unit': u}
+    out = {'rowSums': rowSum, 'unit': u}
     return out
 
 def sumMatrix(cursor, table, cols, tCol='t', starttime=None, stoptime=None):
@@ -233,6 +235,27 @@ def sumMatrix(cursor, table, cols, tCol='t', starttime=None, stoptime=None):
     cursor.execute(q)
     r = cursor.fetchone()
     return r[0]
+
+def fetchAll(cursor, table, cols, tCol='t', starttime=None, stoptime=None):
+    """Function to read a table from the database. Returns a list of tuples.
+    WARNING: If the table is huge, you're going to create a memory problem.
+        Since this function is returning a dict, it's going to use fetchall
+        rather than fetchone
+        
+    TODO: Maybe include time in results later?
+    """
+    # Create comma seperated list of columns
+    colStr = ','.join(cols)
+    
+    # Create query
+    q = "SELECT {} FROM {}".format(colStr, table)
+    q += timeWhere(tCol=tCol, starttime=starttime, stoptime=stoptime)
+    
+    # Execute the query
+    cursor.execute(q)
+    # Get all results
+    rows = cursor.fetchall()
+    return rows
     
 def timeWhere(tCol, starttime, stoptime):
     """Helper function to get WHERE clause for time-based query. Both times 

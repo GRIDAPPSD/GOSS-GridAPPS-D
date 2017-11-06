@@ -57,6 +57,21 @@ def getComplex(s):
         
     return n, t[1]
 
+def powerFactor(n):
+    """Function to compute power factor given a complex power value
+    TODO: unit test! Will this work if we're exporting power? I think so...
+    """
+    # Real divided by apparent
+    pf = n.real / n.__abs__()
+    # Determine lagging vs leading (negative).
+    # NOTE: cmath.phase returns counter-clockwise angle on interval [-pi, pi],
+    # so checking sign should be reliable for determining lead vs. lag 
+    p = cmath.phase(n)
+    if p < 0:
+        return (pf, 'lead')
+    else:
+        return (pf, 'lag')
+    
 def bin2int(binList):
         """Take list representing binary number (ex: [0, 1, 0, 0, 1]) and 
         convert to an integer
@@ -175,7 +190,7 @@ def timeDiff(t1, t2, fmt):
         - time.mktime(time.strptime(t1, fmt))
     return delta
 
-def timeInfoForZIP(starttime, stoptime, fmt):
+def timeInfoForZIP(starttime, stoptime, fmt, zipInterval=3600):
     """Function to extract the necessary time information to layer ZIP models.
     """
     # Ensure times are within the same ZIP modeling window. For now, hard-code
@@ -183,7 +198,7 @@ def timeInfoForZIP(starttime, stoptime, fmt):
     # TODO: Make the 'delta' an input? or a constant? Anyways, don't hide it
     # here
     delta = timeDiff(starttime, stoptime, fmt)
-    assert delta <= 3600
+    assert delta <= zipInterval
     
     # Get times as struct_times
     ts = time.strptime(starttime, fmt)
@@ -276,6 +291,8 @@ if __name__ == '__main__':
     s = incrementTime(t=starttime, fmt=tFmt, interval=interval)
     print(s)
     """
+    
+    """
     s1 = '+348863+13.716d VA'
     n1, u1 = getComplex(s1)
     s2 = '-12.2+13d I'
@@ -288,4 +305,15 @@ if __name__ == '__main__':
     n5, u5 = getComplex(s5)
     s6 = '-1.5e02+12d f'
     n6, u6 = getComplex(s6)
+    print('hooray')
+    """
+    
+    c1 = 1+1j
+    r1 = powerFactor(c1)
+    c2 = 1-1j
+    r2 = powerFactor(c2)
+    c3 = -1+1j
+    r3 = powerFactor(c3)
+    c4 = -1-1j
+    r4 = powerFactor(c4)
     print('hooray')

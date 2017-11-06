@@ -37,7 +37,10 @@ def main(populationInputs={}):
     numInd = 16 # Best if this is a multiple of num cores
     numGen = 2
     numIntervals = 2
-    costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
+    costs = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00008, 
+             'tapChange': 0.5, 'capSwitch': 2, 'undervoltage': 0.05,
+             'overvoltage': 0.05, 'powerFactorLag': {'limit': 0.99, 'cost': 1},
+             'powerFactorLead': {'limit': 0.99, 'cost': 1}}
     # Results file
     f = open(outDir + '/results/'
              + time.strftime('%m-%d_%H-%M', time.localtime()) + '.txt', 'w')

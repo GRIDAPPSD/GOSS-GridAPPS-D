@@ -11,6 +11,7 @@ import util.gld
 import util.helper
 import math
 import os
+import copy
 
 # Define cap status, to be accessed by binary indices.
 CAPSTATUS = ['OPEN', 'CLOSED']
@@ -125,9 +126,10 @@ class individual:
         # Assign voltdumpFiles
         self.voltdumpFiles = voltdumpFiles
         
-        # Assign reg and cap dicts
-        self.reg = reg
-        self.cap = cap
+        # Assign reg and cap dicts. Perform a deepcopy, since an individual
+        # will modify its own copy of the given reg and cap definitions.
+        self.reg = copy.deepcopy(reg)
+        self.cap = copy.deepcopy(cap)
         
         # Assign the unique identifier.
         self.uid = uid
@@ -489,6 +491,11 @@ class individual:
         OUTPUTS:
             Path to new model after it's created
         """
+        # Get the model runtime - we only need to record regulator tap 
+        # changes and capacitor changes at the end of simulation.
+        modelRuntime = util.helper.timeDiff(t1=self.starttime, t2=self.stoptime,
+                                            fmt=util.gld.DATE_FMT)
+            
         # Check if directory exists - if not, create it.
         if not os.path.isdir(outDir):
             os.mkdir(outDir)
@@ -498,18 +505,15 @@ class individual:
         
         # Get the filename of the original model and create output path
         model = \
-            modGLM.modGLM.addFileSuffix(inPath=\
-                                                        os.path.basename(inPath),
-                                                      suffix=str(self.uid))
+            modGLM.modGLM.addFileSuffix(inPath= os.path.basename(inPath),
+                                            suffix=str(self.uid))
         
         # Track the output path for running the model later.
         self.model = model
         
         # Instantiate a modGLM object.
-        writeObj = modGLM.modGLM(strModel=strModel,
-                                               pathModelIn=inPath,
-                                               pathModelOut=(outDir + '/'
-                                                             + model))
+        writeObj = modGLM.modGLM(strModel=strModel, pathModelIn=inPath,
+                                pathModelOut=(outDir + '/' + model))
         
         # Add runtimes to the voltdumps
         writeObj.addRuntimeToVoltDumps(starttime=self.starttime,
@@ -518,7 +522,10 @@ class individual:
         
         # Update the swing node to a meter and get it writing power to a table
         # TODO: swing table won't be the only table.
-        o = writeObj.recordSwing(suffix=self.uid, interval=self.recordInterval)
+        # Compute
+        o = writeObj.recordSwing(suffix=self.uid,
+                                 powerInterval=self.recordInterval,
+                                 energyInterval=modelRuntime)
         self.swingData = o
         
         # TODO: Uncomment when ready
@@ -535,23 +542,17 @@ class individual:
             regControl = 'MANUAL'
             capControl = 'MANUAL'
         elif (self.controlFlag > 0):
-            # Get the model runtime - we only need to record regulator tap 
-            # changes and capacitor changes at the end of simulation.
-            interval = util.helper.timeDiff(t1=self.starttime,
-                                            t2=self.stoptime,
-                                            fmt=util.gld.DATE_FMT)
-            
             # Need to record regulators and capacitors to track state changes
             # and ending positions. Define necessary data.
             self.capData = {'table': 'cap_' + str(self.uid),
                             'changeColumns': util.gld.CAP_CHANGE_PROPS,
                             'stateColumns': util.gld.CAP_STATE_PROPS,
-                            'interval': interval}
+                            'interval': modelRuntime}
             
             self.regData = {'table': 'reg_' + str(self.uid),
                             'changeColumns': util.gld.REG_CHANGE_PROPS,
                             'stateColumns': util.gld.REG_STATE_PROPS,
-                            'interval': interval}
+                            'interval': modelRuntime}
             
             if self.controlFlag == 1:
                 regControl = 'OUTPUT_VOLTAGE' 
@@ -573,7 +574,7 @@ class individual:
                 regControl = 'MANUAL'
                 capControl = 'MANUAL'
                 # NOTE: this method creates a player file... annoying.
-                writeObj.addVVO(starttime=self.starttime)
+                self.vvoPlayer = writeObj.addVVO(starttime=self.starttime)
             
         # Set regulator and capacitor control schemes, and add recorders if
         # necessary.
@@ -679,19 +680,20 @@ class individual:
                 energy: price of energy
                 tapChange: cost changing regulator taps
                 capSwitch: cost of switching a capacitor
-                volt: cost of voltage violations.
+                undervoltage: cost of under voltage violations.
+                overvoltage: cost of overvoltage violations
             tCol: name of time column(s)
         """
         self.costs = util.gld.computeCosts(cursor=cursor,
-                                            swingData=self.swingData,
-                                            costs=costs,
-                                            starttime=self.starttime,
-                                            stoptime=self.stoptime,
-                                            tCol=tCol,
-                                            tapChangeCount=self.tapChangeCount,
-                                            capSwitchCount=self.capSwitchCount,
-                                            voltdumpDir=self.outDir,
-                                            voltdumpFiles=self.voltdumpFiles
+                                           swingData=self.swingData,
+                                           costs=costs,
+                                           starttime=self.starttime,
+                                           stoptime=self.stoptime,
+                                           tCol=tCol,
+                                           tapChangeCount=self.tapChangeCount,
+                                           capSwitchCount=self.capSwitchCount,
+                                           voltdumpDir=self.outDir,
+                                           voltdumpFiles=self.voltdumpFiles
                                             )
     
     def writeRunUpdateEval(self, strModel, inPath, outDir, cursor, costs):
@@ -719,7 +721,8 @@ class individual:
         the 'cleanup' method.
         """
         # Initialize list of tables to clean up.
-        tables = [self.swingData['table']]
+        tables = [self.swingData['power']['table'],
+                  self.swingData['energy']['table']]
         # If we're not in manual control, there are more tables to clean.
         if self.controlFlag:
             tables.append(self.capData['table'])
@@ -731,13 +734,19 @@ class individual:
         # Add the model file to the file list.
         d['files'].append(self.model)
         
+        # If we have a vvo player, add it to the list
+        try:
+            d['files'].append(self.vvoPlayer)
+        except:
+            pass
+        
         # Set flag for table truncation (rather than deletion)
         d['truncateFlag'] = truncateFlag
         
         # Return.
         return d
 
-def cleanup(cleanupQueue):
+def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
     """Method to cleanup (delete) an individuals files, tables, etc. 
     
     As the genetic algorithm grows in sophistication, more output is 
@@ -763,7 +772,7 @@ def cleanup(cleanupQueue):
             break
         
         # Connect to the database.
-        cnxn = util.db.connect()
+        cnxn = util.db.connect(**database)
         cursor = cnxn.cursor()
         
         # Drop or truncate all tables.
@@ -776,11 +785,28 @@ def cleanup(cleanupQueue):
             
         # Delete all files.
         for f in inDict['files']:
-            os.remove(inDict['dir'] + '/' + f)
+            try:
+                os.remove(inDict['dir'] + '/' + f)
+            except PermissionError:
+                # We don't want a permission error spoiling a long run...
+                # Note that all files should get overwritten by either this
+                # program or GridLAB-D anyways...
+                pass
             
-        # Delete the directory. This will error if the directory isn't empty -
-        # this is good, it'll prevent us from forgetting to clean up.
-        os.rmdir(inDict['dir'])
+        # Delete the directory if it's empty.
+        c = os.listdir(inDict['dir'])
+        if c:
+            try:
+                raise UserWarning(('The directory {} is not empty.\n'
+                                   + 'It still contains {}'.format(inDict['dir'],
+                                                                   c)))
+            except UserWarning as w:
+                print(type(w)) # the exception instance
+                print(w.args) # arguments stored in .args
+                print(w) # may be repetitive
+                
+        else:
+            os.rmdir(inDict['dir'])
         
         # Cleanup complete.
         cleanupQueue.task_done()

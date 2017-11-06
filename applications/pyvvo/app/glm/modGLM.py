@@ -38,11 +38,13 @@ CONTROL_REGEX = re.compile(r'(?<=(c|C)ontrol(\s))(\s*)(m|M)(a|A)(n|N)(u|U)(a|A)(
 COMMENT_REGEX = re.compile(r'(\S+);')
 TRIPLEX_LOAD_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_load\b')
 TRIPLEX_METER_REGEX = re.compile(r'\bobject\b(\s+)\btriplex_meter\b')
+TRIPLEX_LOAD_OR_METER = re.compile(r'\bobject\b(\s+)((\btriplex_load\b)|(\btriplex_meter\b))')
 OBJEND_REGEX = re.compile(r'(\s*)}(\s*)(;*)$')
 VOLTDUMP_REGEX = re.compile(r'\bobject\b(\s+)\bvoltdump\b')
 HOUSE_REGEX = re.compile(r'\bobject\b(\s+)\bhouse\b')
 GROUP_RECORDER_REGEX = re.compile(r'\bobject\b(\s+)\bgroup_recorder\b')
 OBJY_BY_NAME = r'\bname\b(\s+)("?){}("?)(\s*);'
+VOLT_VAR_REGEX = re.compile(r'\bobject\b(\s+)\bvolt_var_control\b')
 # Expression below doesn't work since it can match multiple objects at once...
 # OBJ_BY_TYPE_NAME = r'\bobject\b(\s+)\b{}\b(.+?)\bname\b(\s+)("?){}("?)(\s*);' # Use with re.DOTALL
 
@@ -81,7 +83,6 @@ class modGLM:
         
     def writeModel(self):
         """"Simple method to write strModel to file"""
-        
         with open(self.pathModelOut, 'w') as f:
             f.write(self.strModel)
     
@@ -532,7 +533,7 @@ class modGLM:
         return {'name': sName['name']['prop'], 'start': sInd, 'end': eInd,
                 'obj': self.strModel[sInd:eInd]}
     
-    def recordSwing(self, interval=60, suffix=0):
+    def recordSwing(self, energyInterval, powerInterval=60, suffix=0):
         """Add recorder to model to record the power flow on the swing.
         
         NOTE: swing will be changed from node to meter if it's a node
@@ -563,29 +564,53 @@ class modGLM:
             
             # Splice in the new object
             self.replaceObject(swing)
+            recorderParent = swing['name']
             
-        # 
-        if (nodeMatch is not None) or (meterMatch is not None):
-            swingColumns = ['measured_power_A', 'measured_power_B',
-                               'measured_power_C']
         elif substationMatch is not None:
-            swingColumns = ['distribution_power_A', 'distribution_power_B',
-                               'distribution_power_C']
+            # Add a meter to track the substation.
+            # Extract the phase and nominal voltage properties
+            props = self.extractProperties(objString=swing['obj'],
+                                           props=['phases', 'nominal_voltage'])
+            
+            # Get the properties into a usable dictionary
+            propDict = {}
+            for p in props:
+                propDict[p] = props[p]['prop']
+                
+            # Add 'parent' and 'name'
+            propDict['parent'] = swing['name']
+            propDict['name'] = 'swing_recorder'
+            recorderParent = propDict['name']
+            
+            # Add a meter object
+            self.addObject(objType='meter', properties=propDict, place='end')
+            
+        elif meterMatch is not None:
+            recorderParent = swing['name']
         else:
             # Raise error
             raise UnexpectedSwingType()
         
-        # Define table to use.
-        table = 'swing_' + str(suffix)
+        # Define swing tables to use
+        powerTable = 'swing_power_' + str(suffix)
+        energyTable = 'swing_energy_' + str(suffix)
         
-        # Create recorder.
-        self.addMySQLRecorder(parent=swing['name'], table=table,
-                         properties=swingColumns,
-                         interval=interval)
+        # Create recorders. Power first
+        self.addMySQLRecorder(parent=recorderParent, table=powerTable,
+                         properties=util.gld.MEASURED_POWER,
+                         interval=powerInterval)
+        # Now energy
+        self.addMySQLRecorder(parent=recorderParent, table=energyTable,
+                              properties=util.gld.MEASURED_ENERGY,
+                              interval=energyInterval)
         
         # Return the name of the table and powerProperties
-        out = {'table': table, 'columns': swingColumns, 'interval': interval}
-        return out
+        p = {'table': powerTable, 'columns': util.gld.MEASURED_POWER,
+             'interval': powerInterval}
+        e = {'table': energyTable, 'columns': util.gld.MEASURED_ENERGY,
+             'interval': energyInterval}
+        
+        return {'power': p, 'energy': e}
     
     def addGroupToObjects(self, objectRegex, groupName):
         """Method to add a groupid to a given type of object.
@@ -1139,6 +1164,9 @@ class modGLM:
         absolutely nothing.
         
         TODO: make modular
+        
+        KEY ASSUMPTION: If a volt_var_control object already exists, the only
+        necessary task is to write a new player file.
         """
         
         # Since we have to add a player, we need a defined output model so we
@@ -1147,45 +1175,48 @@ class modGLM:
             # Poor error handling, but oh well
             raise Exception(('modGLM object does not have pathModelOut '
                              'defined! This is necessary for addVVO.'))
-            
-        name = 'volt_var_control'
-        # Create dictionary of properties
-        propDict = {
-            'name': name,
-            'control_method': 'STANDBY',
-            'capacitor_delay': 60.0,
-            'regulator_delay': 60.0,
-            'desired_pf': 0.99,
-            'd_max': 0.8,
-            'd_min': 0.1,
-            'substation_link': '"substation_transformer"',
-            'regulator_list': '"R2-12-47-2_reg_1,R2-12-47-2_reg_2"',
-            'capacitor_list': '"R2-12-47-2_cap_1,R2-12-47-2_cap_2,R2-12-47-2_cap_3,R2-12-47-2_cap_4"',
-            'voltage_measurements': '"R2-12-47-2_node_146_2,1,R2-12-47-2_node_240,2,R2-12-47-2_node_103,2,R2-12-47-2_node_242,2"',
-            'maximum_voltages': 9000.00,
-            'minimum_voltages': 5000.00,
-            'max_vdrop': 50,
-            'high_load_deadband': 60.00,
-            'desired_voltages': 7080.00,
-            'low_load_deadband': 60.00
-            }
         
-        # Add the object to the end of the model.
-        self.addObject(objType='volt_var_control', properties=propDict,
-                           place='end')
-        
-        # Check for the tape module. If it doesn't exist, we need to add it.
-        t = self.checkForModule(module='tape')
-        if t is None:
-            # Add tape module
-            self.addModule(module='tape')
+        m = VOLT_VAR_REGEX.search(self.strModel)
+        if not m:
+            name = 'volt_var_control'
+            # Create dictionary of properties
+            propDict = {
+                'name': name,
+                'control_method': 'STANDBY',
+                'capacitor_delay': 60.0,
+                'regulator_delay': 60.0,
+                'desired_pf': 0.99,
+                'pf_phase': 'ABC',
+                'd_max': 0.8,
+                'd_min': 0.1,
+                'substation_link': '"substation_transformer"',
+                'regulator_list': '"R2-12-47-2_reg_1,R2-12-47-2_reg_2"',
+                'capacitor_list': '"R2-12-47-2_cap_1,R2-12-47-2_cap_2,R2-12-47-2_cap_3,R2-12-47-2_cap_4"',
+                'voltage_measurements': '"R2-12-47-2_node_146_2,1,R2-12-47-2_node_240,2,R2-12-47-2_node_103,2,R2-12-47-2_node_242,2"',
+                'maximum_voltages': 9000.00,
+                'minimum_voltages': 5000.00,
+                'max_vdrop': 50,
+                'high_load_deadband': 60.00,
+                'desired_voltages': 7080.00,
+                'low_load_deadband': 60.00
+                }
             
-        # Now we have to do the gross dirty work of writing a player file and
-        # creating a player
-        file = 'volt_var_control.player'
-        propDict = {'parent': name, 'property': 'control_method',
-                    'file': file}
-        self.addObject(objType='tape.player', properties=propDict,
+            # Add the object to the end of the model.
+            self.addObject(objType='volt_var_control', properties=propDict,
+                               place='end')
+            
+            # Check for the tape module. If it doesn't exist, add it.
+            t = self.checkForModule(module='tape')
+            if t is None:
+                # Add tape module
+                self.addModule(module='tape')
+                
+            # Now we have to do the gross dirty work of writing a player file
+            # and creating a player
+            file = 'volt_var_control.player'
+            propDict = {'parent': name, 'property': 'control_method',
+                        'file': file}
+            self.addObject(objType='tape.player', properties=propDict,
                        place='end')
         
         # Create string for player file
@@ -1199,6 +1230,8 @@ class modGLM:
         with open(fullfile, 'w') as f:
             f.write(s)
             
+        return os.path.basename(fullfile)
+            
     def addZIP(self, zipDir, starttime, stoptime):
         """Function to read the correct zip model file and apply zip loads to
         meters. 
@@ -1211,7 +1244,7 @@ class modGLM:
         It doesn't work to parent a triplex_load to these triplex_meters - it 
         creates grandchildren which isn't allowed in GridLAB-D at the moment.
         Another option would be to trace up the tree and add the triplex_load
-        further up, but that 
+        further up, but I don't see a point to that now.
         """
         # First, get time information. This function will error if interval
         # isn't proper. Pretty rudiemntary for now, but hey, it'll work :)
@@ -1255,7 +1288,7 @@ class modGLM:
                 # Extract the triplex_meter object by name
                 tObj = \
                     self.extractObjectByNameAndType(name=name,
-                                                    objRegEx=TRIPLEX_METER_REGEX)
+                                                    objRegEx=TRIPLEX_LOAD_OR_METER)
                     
                 # Replace the object's type
                 tObj['obj'] = re.sub(TRIPLEX_METER_REGEX,

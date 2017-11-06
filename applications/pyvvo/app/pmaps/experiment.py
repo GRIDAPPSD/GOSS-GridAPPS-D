@@ -13,17 +13,23 @@ import util.db
 import util.gld
 from genetic import individual
 import time
+from genetic import population
+import threading
+from queue import Queue
+import csv
 
 # Paths to input/output models.
 partial =  CONST.BASE_PATH + '/' + CONST.MODEL
 MODEL_POPULATED = partial + r'_populated.glm'
 MODEL_AMI = partial + r'_AMI.glm'
 MODEL_STRIPPED = partial + r'_stripped.glm'
+MODEL_STRIPPED_VVO = partial + r'_stripped_vvo.glm'
 MODEL_MANUAL = partial + r'_manual.glm'
 MODEL_VVO = partial + r'_vvo.glm'
-MODEL_BASELINE = partial + r'_baseline.glm'
+MODEL_BASELINE_2 = partial + r'_baseline_2.glm'
+MODEL_BASELINE_3 = partial + r'_baseline_3.glm'
 MODEL_ZIP = partial + r'_ZIP.glm'
-MODEL_ZIP_VVO = partial + r'_ZIP_VVO.glm'
+MODEL_STRIPPED_DUMP = partial + r'_stripped_dump.glm'
 
 def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     """Function to take the full populated GridLAB-D model, and get it ready to
@@ -167,8 +173,7 @@ def stripModel(fIn=MODEL_AMI, fOut=MODEL_STRIPPED):
     """
     
     # Create modGLM object
-    obj = modGLM.modGLM(pathModelIn=fIn,
-                                      pathModelOut=fOut)
+    obj = modGLM.modGLM(pathModelIn=fIn, pathModelOut=fOut)
     
     # Strip out objects we don't need. NOTE: May need climate later
     # TODO: Do we want to vary the SWING voltage or just let it be constant?
@@ -194,7 +199,7 @@ def stripModel(fIn=MODEL_AMI, fOut=MODEL_STRIPPED):
     # Return the modGLM object - we'll want to do further tweaks
     return obj
     
-def baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE):
+def baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_3, replaceClimate=True):
     """Function to build baseline model. In short, remove collectors,
     recorders, and group recorders and clean up the model (see tidyModel fn).
     
@@ -213,12 +218,16 @@ def baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE):
     writeObj.removeObjectsByType(typeList=['collector', 'recorder',
                                            'group_recorder'])
     
+    # Remove the market module - it isn't needed
+    writeObj.removeObjectsByType(typeList=['market'], objStr='module')
+    
     # Tidy things up
     writeObj = tidyModel(writeObj=writeObj)
     
     # Replace IL-Chicago.tmy2 with IL-Chicago-Ohare
-    writeObj.strModel = writeObj.strModel.replace('IL-Chicago.tmy2', 
-                                                  'IL-Chicago-Ohare.tmy3')
+    if replaceClimate:
+        writeObj.strModel = writeObj.strModel.replace('IL-Chicago.tmy2', 
+                                                      'IL-Chicago-Ohare.tmy3')
     
     # Return the write object
     return writeObj
@@ -307,29 +316,302 @@ def writeRunEvalModel(outDir, starttime, stoptime, fIn, fOut):
     print(baseInd)
     
     return baseInd
+
+def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
+                logFile='log'):
+    """Function to run the populated baseline model and the ZIP baseline model,
+    and write output data to file. 
+    """
+    # Setup the models. Note this depends on the existence of MODEL_AMI and 
+    # MODEL_STRIPPED. If they don't exist:
+    '''
+    populatedToAMI()
+    writeObj = stripModel()
+    writeObj.writeModel()
+    '''
+    # Connect to database and drop tables.
+    cnxn = util.db.connect(database=CONST.BASELINE_DB['schema'])
+    util.db.dropAllTables(cnxn=cnxn)
+    
+    # If the output directory doesn't exist, make it
+    if not os.path.isdir(CONST.COMPARE_OUT):
+        os.mkdir(CONST.COMPARE_OUT)
+    
+    # Open the results files
+    fBase2 = open(CONST.COMPARE_OUT + '/' + resultsFile + '_base_2.csv',
+                 newline='', mode='w')
+    fBase3 = open(CONST.COMPARE_OUT + '/' + resultsFile + '_base_3.csv',
+                 newline='', mode='w')
+    fZIP = open(CONST.COMPARE_OUT + '/' + resultsFile + '_ZIP.csv', newline='',
+                mode='w')
+    
+    # Open the log files
+    logBase2 = open(CONST.COMPARE_OUT + '/' + logFile + '_2.txt',
+                    newline='', mode='w')
+    logBase3 = open(CONST.COMPARE_OUT + '/' + logFile + '_3.txt',
+                    newline='', mode='w')
+    logZIP = open(CONST.COMPARE_OUT + '/' + logFile + '_ZIP.txt',
+                  newline='', mode='w')
+    
+    # Get the cost fields, and write them to the file as headers.
+    # HARD-CODE total field in
+    costList = ['time', 'total'] + list(CONST.COSTS.keys())
+    
+    # Initialize csv writers and write headers
+    csvBase2 = csv.DictWriter(f=fBase2, fieldnames=costList,
+                              quoting=csv.QUOTE_NONNUMERIC)
+    csvBase2.writeheader()
+    csvBase3 = csv.DictWriter(f=fBase3, fieldnames=costList,
+                              quoting=csv.QUOTE_NONNUMERIC)
+    csvBase3.writeheader()
+    csvZIP = csv.DictWriter(f=fZIP, fieldnames=costList,
+                            quoting=csv.QUOTE_NONNUMERIC) 
+    csvZIP.writeheader()
+    
+    # Initialize queues for running and cleaning up models
+    modelQueue = Queue()
+    cleanupQueue = Queue()
+    
+    # Define database input
+    database={'database': CONST.BASELINE_DB['schema']}
+    
+    # Start threads for running models and cleaning them up
+    modelThreads = []
+    cleanupThreads = []
+    
+    for _ in range(3):
+        # Initialize threads
+        tRun = threading.Thread(target=population.writeRunEval,
+                                args=(modelQueue, CONST.COSTS, database))
+        tClean = threading.Thread(target=individual.cleanup,
+                                  args=(cleanupQueue, database))
+        
+        # Add to thread lists
+        modelThreads.append(tRun)
+        cleanupThreads.append(tClean)
+        
+        # Start threads
+        tRun.start()
+        tClean.start()
+        
+    print('Model and cleanup threads started.')
+    
+    # Note defaults for setting up models assumes ZIP files are for each hour
+    dumpfiles = setupBaseAndBaseZIP()
+    print('Baseline and stripped models setup.')
+    
+    # Get write objects
+    writeZIP = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_DUMP)
+    writeBase2 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_2)
+    writeBase3 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_3)
+    
+    # Get our times ready
+    s = starttime
+    e = util.helper.incrementTime(t=starttime, fmt=util.gld.DATE_FMT,
+                                  interval=runInterval)
+    
+    # Use different ID's for the individuals
+    bID2 = 0
+    bID3 = 1
+    zID = 2
+    
+    # Instantiate individuals - while we don't need all the bells and 
+    # whistles of an individual, it has the capability to add recorders, run
+    # its own model, evaluate it's own model, etc.
+    # NOTE: We could consider using copy.deepcopy and then modifying UID.
+    baseInd2 = individual.individual(starttime=s, stoptime=e,
+                                     voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                     cap=CONST.CAP, regFlag=3, capFlag=3,
+                                     controlFlag=4, uid=bID2)
+    
+    baseInd3 = individual.individual(starttime=s, stoptime=e,
+                                     voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                     cap=CONST.CAP, regFlag=3, capFlag=3,
+                                     controlFlag=4, uid=bID3)
+    
+    ZIPInd = individual.individual(starttime=s, stoptime=e,
+                                   voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                   cap=CONST.CAP, regFlag=3, capFlag=3,
+                                   controlFlag=4, uid=zID)
+    
+    # Initialize dictionaries for threading use
+    baseDict2 = {'outDir': CONST.COMPARE_OUT,
+                 'individual': baseInd2,
+                 'inPath': MODEL_BASELINE_2,
+                 'strModel': ''}
+    baseDict3 = {'outDir': CONST.COMPARE_OUT,
+                 'individual': baseInd3,
+                 'inPath': MODEL_BASELINE_3,
+                 'strModel': ''}
+    ZIPDict = {'outDir': CONST.COMPARE_OUT,
+               'individual': ZIPInd,
+               'inPath': MODEL_ZIP,
+               'strModel': ''}
+    
+    # Loop over time until we've hit the stoptime
+    while util.helper.timeDiff(t1=e, t2=stoptime, fmt=util.gld.DATE_FMT) >= 0:
+        print('Running for {} through {}'.format(s, e), flush=True)
+        
+        # *********************************************************************
+        # Get the base model ready to run, put it in the queue.
+        baseInd2.prep(starttime=s, stoptime=e)
+        writeBase2.updateClock(starttime=s, stoptime=e)
+        writeBase2.addRuntimeToVoltDumps(starttime=s, stoptime=e,
+                                        interval=CONST.RECORD_INT)
+        baseDict2['strModel'] = writeBase2.strModel
+        modelQueue.put_nowait(baseDict2)
+        
+        baseInd3.prep(starttime=s, stoptime=e)
+        writeBase3.updateClock(starttime=s, stoptime=e)
+        writeBase3.addRuntimeToVoltDumps(starttime=s, stoptime=e,
+                                        interval=CONST.RECORD_INT)
+        baseDict3['strModel'] = writeBase3.strModel
+        modelQueue.put_nowait(baseDict3)
+
+        # *********************************************************************
+        # Get ZIP model ready.
+        # print('Prepping ZIP model for run.', flush=True)
+        ZIPInd.prep(starttime=s, stoptime=e)
+        writeZIP.updateClock(starttime=s, stoptime=e)
+        writeZIP.addRuntimeToVoltDumps(starttime=s, stoptime=e,
+                                       interval=CONST.RECORD_INT)
+
+        # Add ZIP models to the ZIP object
+        writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=s,
+                        stoptime=e)
+        # print('ZIP models added.', flush=True)
+        
+        # Put the updated models in the dictionaries
+        ZIPDict['strModel'] = writeZIP.strModel
+        # Add the individuals to the modelQueue
+        modelQueue.put_nowait(ZIPDict)
+        # print('ZIP model running for {} through {}'.format(s, e), flush=True)
+        
+        # Wait for the models to run
+        modelQueue.join()
+        # print('Models run and evaluated.')
+        
+        # Build cleanup dictionaries for the individuals
+        baseClean2 = baseInd2.buildCleanupDict(truncateFlag=True)
+        baseClean3 = baseInd3.buildCleanupDict(truncateFlag=True)
+        ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
+        
+        # Write to csv, log, cleanup, and rotate dictionaries
+        for g in [(baseInd2, logBase2, csvBase2, baseClean2),
+                  (baseInd3, logBase3, csvBase3, baseClean3),
+                  (ZIPInd, logZIP, csvZIP, ZIPClean)]:
+            
+            # Cleanup
+            cleanupQueue.put_nowait(g[3])
+            
+            # Write to csv
+            g[2].writerow({'time': s, **g[0].costs})
+            
+            # Log file
+            print('*'*80, file=g[1])
+            print(s, file=g[1])
+            print(g[0], file=g[1])
+            
+            # Rotate dictionaries
+            g[0].reg, g[0].cap = util.helper.rotateVVODicts(reg=g[0].reg,
+                                                            cap=g[0].cap)
+        
+        # Increment the times
+        s = util.helper.incrementTime(t=s, fmt=util.gld.DATE_FMT,
+                                      interval=runInterval)
+        e = util.helper.incrementTime(t=e, fmt=util.gld.DATE_FMT,
+                                      interval=runInterval)
+        
+        # Ensure cleanup is complete before moving on
+        cleanupQueue.join()
+        
+    # Shut down the threads and close the file
+    for _ in modelThreads: modelQueue.put_nowait(None)
+    for _ in cleanupThreads: cleanupQueue.put_nowait(None)
+    for t in modelThreads: t.join(timeout=10)
+    for t in cleanupThreads: t.join(timeout=10)
+    
+    # Close the files
+    fBase2.close()
+    fBase3.close()
+    fZIP.close()
+    logBase2.close()
+    logBase3.close()
+    logZIP.close()
+    
+    print('Threads stopped and files closed. All done.')
+    
+    
+def setupBaseAndBaseZIP(tZIP=CONST.ZIP_INTERVAL, starttime=CONST.STARTTIME,
+                        stoptime=CONST.STOPTIME):
+    """Function to craft the two baseline models so they can be compared. They
+    will then need to be run in a loop.
+    """
+    # Get a modGLM object for the populated baseline
+    writePop2 = baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_2,
+                              replaceClimate=False)
+    writePop3 = baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_3,
+                              replaceClimate=True)
+    writeZIP = baselineModel(fIn=MODEL_STRIPPED, fOut=MODEL_STRIPPED_DUMP)
+    # Get a modGLM object for the zip baseline
+    
+    # Define voltdump input.
+    voltdump = {'num': round(tZIP/CONST.RECORD_INT) + 1,
+                'group': CONST.TRIPLEX_GROUP,
+                'outDir': None}
+    
+    # Setup the models. NOTE: with no outDir defined, these dump file outputs
+    # should be exactly the same. 
+    dumpPop = writePop2.setupModel(starttime=starttime, stoptime=stoptime,
+                                   timezone=CONST.TIMEZONE,
+                                   database=CONST.BASELINE_DB,
+                                   voltdump=voltdump, vSource=None)
+    
+    _ = writePop3.setupModel(starttime=starttime, stoptime=stoptime,
+                             timezone=CONST.TIMEZONE,
+                             database=CONST.BASELINE_DB,
+                             voltdump=voltdump, vSource=None)
+    
+    _ = writeZIP.setupModel(starttime=starttime, stoptime=stoptime,
+                                  timezone=CONST.TIMEZONE,
+                                  database=CONST.BASELINE_DB,
+                                  voltdump=voltdump, vSource=None)
+    
+    # Write the models
+    writePop2.writeModel()
+    writePop3.writeModel()
+    writeZIP.writeModel()
+    
+    return dumpPop
     
 if __name__ == '__main__':
-
+    """
     # Get the popluated model ready to run.
     populatedToAMI()
 
     # Strip the full model.
     writeObj = stripModel()
     print('Full model stripped down.')
+    """
+    
+    """
     # Define voltdump input:
     voltdump = {'num': round(CONST.MODEL_RUNTIME/CONST.RECORD_INT) + 1,
                 'group': CONST.TRIPLEX_GROUP}
-    """
     # NOTE: We only want to setup the model for the genetic algorithm. NOT to
     # run the writeRunEval function.
     # Setup the model (add voltdumps, database, etc.)
     writeObj.setupModel(voltdump=voltdump, vSource=None)
     print('Voltdumps and database stuff added.')
     """
+    
+    """
     # Save the new model
     writeObj.writeModel()
     print('Stripped model written.')
-
+    """
+    
+    """
     s = '2016-02-19 00:00:00'
     e = '2016-02-19 01:00:00'
 
@@ -341,11 +623,6 @@ if __name__ == '__main__':
     writeObj.writeModel()
     print('ZIP models added.')
 
-    """
-    # These times are near to the hottest days
-    s = '2016-07-19 14:00:00'
-    e = '2016-07-19 15:00:00'
-    """
     outDirBase = r'E:/pmaps/experiment/R2_12_47_2/baselineOut'
     outDirZIP = r'E:/pmaps/experiment/R2_12_47_2/zipOut'
     # Run populated baseline model
@@ -356,7 +633,17 @@ if __name__ == '__main__':
     print('Base model run in {:.2f}s'.format(t1-t0))
     t0 = time.time()
     zip = writeRunEvalModel(outDir=outDirZIP, starttime=s, stoptime=e,
-                                 fIn=MODEL_ZIP, fOut=MODEL_ZIP_VVO)
+                                 fIn=MODEL_ZIP, fOut=MODEL_STRIPPED_DUMP)
     t1 = time.time()
     print('ZIP model run in {:.2f}s'.format(t1-t0))
     print('all done. Need to add threading...')
+    """
+    
+    """
+    # These times are near to the hottest days
+    s = '2016-07-19 14:00:00'
+    e = '2016-07-19 15:00:00'
+    """
+    s = '2016-01-01 00:00:00'
+    e = '2016-01-01 03:00:00'
+    evaluateZIP(starttime=s, stoptime=e, runInterval=CONST.ZIP_INTERVAL)

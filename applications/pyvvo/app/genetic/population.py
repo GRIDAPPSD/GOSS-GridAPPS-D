@@ -19,7 +19,7 @@ class population:
                  starttime, stoptime, voltdumpFiles,
                  numModelThreads=os.cpu_count(),
                  costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2,
-                          'volt': 0.05},
+                          'undervoltage': 0.05, 'overvoltage': 0.05},
                  probabilities = {'top': 0.2, 'weak': 0.2, 'mutate': 0.2,
                                   'cross': 0.7, 'capMutate': 0.1,
                                   'regMutate': 0.05},
@@ -46,8 +46,8 @@ class population:
                 energy: price of energy, $/Wh
                 tapChange: cost to move one tap one position, $
                 capSwitch: cost to switch a single capacitor phase, $
-                volt: cost of voltage violations, $. For more details on how
-                    this is used, see gld.computeCosts
+                undervoltage: cost of undervoltage violations, $.
+                overvoltage: cost of overvoltage violations, $.
                     
             probabilities: Dictionary describing various probabilities
                 associated with the genetic algorithm.
@@ -162,9 +162,10 @@ class population:
         # Set population base model
         self.strModel = strModel
         
-        # Set regulators and capacitors as property
-        self.reg = reg
-        self.cap = cap
+        # Set regulators and capacitors as property. Since the population
+        # object will modify reg and cap, make deep copies.
+        self.reg = copy.deepcopy(reg)
+        self.cap = copy.deepcopy(cap)
         
         # If the population includes a 'baseline' model, we need to track it.
         # TODO: May want to update this to track multiple baseline individuals
@@ -235,8 +236,8 @@ class population:
             # Add a baseline individual with the given control flag   
             self.addIndividual(individual=\
                 individual.individual(uid=self.nextUID,
-                                      reg=copy.deepcopy(self.reg),
-                                      cap=copy.deepcopy(self.cap),
+                                      reg=self.reg,
+                                      cap=self.cap,
                                       regFlag=regFlag,
                                       capFlag=capFlag,
                                       starttime=self.starttime,
@@ -252,9 +253,9 @@ class population:
             for regFlag in range(2):
                 self.addIndividual(individual=\
                     individual.individual(uid=self.nextUID,
-                                          reg=copy.deepcopy(self.reg),
+                                          reg=self.reg,
                                           regFlag=regFlag,
-                                          cap=copy.deepcopy(self.cap),
+                                          cap=self.cap,
                                           capFlag=n,
                                           starttime=self.starttime,
                                           stoptime=self.stoptime,
@@ -267,9 +268,9 @@ class population:
         for _ in range(4):
             self.addIndividual(individual=\
                 individual.individual(uid=self.nextUID,
-                                      reg=copy.deepcopy(self.reg),
+                                      reg=self.reg,
                                       regFlag=2,
-                                      cap=copy.deepcopy(self.cap),
+                                      cap=self.cap,
                                       capFlag=2, 
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
@@ -282,8 +283,8 @@ class population:
             # Initialize individual.
             self.addIndividual(individual=\
                 individual.individual(uid=self.nextUID,
-                                      reg=copy.deepcopy(self.reg), 
-                                      cap=copy.deepcopy(self.cap),
+                                      reg=self.reg, 
+                                      cap=self.cap,
                                       regFlag=5,
                                       capFlag=5,
                                       starttime=self.starttime,
@@ -508,14 +509,12 @@ class population:
                 ind = individual.individual(uid=self.nextUID, 
                                             regChrom=regChroms[i],
                                             capChrom=capChroms[i],
-                                            reg=copy.deepcopy(
-                                                _individualsList[0].reg),
-                                            cap=copy.deepcopy(
-                                                _individualsList[0].cap),
-                                          parents=parents,
-                                          starttime=self.starttime,
-                                          stoptime=self.stoptime,
-                                          voltdumpFiles=self.voltdumpFiles
+                                            reg=_individualsList[0].reg,
+                                            cap=_individualsList[0].cap,
+                                            parents=parents,
+                                            starttime=self.starttime,
+                                            stoptime=self.stoptime,
+                                            voltdumpFiles=self.voltdumpFiles
                                           )
                 # Put individual in the list and the queue.
                 self.addIndividual(individual=ind)
@@ -570,7 +569,8 @@ class population:
         for t in self.cleanupThreads: t.join(timeout=timeout)
         #print('Threads terminated.', flush=True)
     
-def writeRunEval(modelQueue, costs):
+def writeRunEval(modelQueue, costs,
+                 database={'database': 'gridlabd'}):
                 #, cnxnpool):
     #tEvent):
     """Write individual's model, run the model, and evaluate costs. This is
@@ -612,19 +612,19 @@ def writeRunEval(modelQueue, costs):
             # problem...
             #cnxn = cnxnpool.get_connection()
             # TODO: database inputs should be provided in inDict.
-            cnxn = util.db.connect()
+            cnxn = util.db.connect(**database)
             cursor = cnxn.cursor()
             
             # Modify the input's outDir to ensure models go in their own
             # folder. NOTE: This won't be necessary when voltage recording can
             # take place in the MySQL database.
-            inDict['outDir'] = (inDict['outDir'] + '/ind_'
-                                + str(inDict['individual'].uid))
+            outDir = (inDict['outDir'] + '/ind_'
+                      + str(inDict['individual'].uid))
             
             # Write, run, update, and evaluate the individaul
             inDict['individual'].writeRunUpdateEval(strModel=inDict['strModel'],
                                                     inPath=inDict['inPath'],
-                                                    outDir=inDict['outDir'],
+                                                    outDir=outDir,
                                                     cursor=cursor,
                                                     costs=costs)
             

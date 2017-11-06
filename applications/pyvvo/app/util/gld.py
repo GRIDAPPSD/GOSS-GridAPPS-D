@@ -72,6 +72,10 @@ REG_STATE_PROPS = ['tap_A', 'tap_B', 'tap_C']
 CAP_CHANGE_PROPS = ['cap_A_switch_count', 'cap_B_switch_count',
                     'cap_C_switch_count']
 CAP_STATE_PROPS = ['switchA', 'switchB', 'switchC']
+MEASURED_POWER = ['measured_power_A', 'measured_power_B', 'measured_power_C']
+MEASURED_ENERGY = ['measured_real_energy', 'measured_reactive_energy']
+REAL_IND = 0
+REACTIVE_IND = 1
 
 def runModel(modelPath, gldPath=r'C:/gridlab-d/develop'):
     """Function to run GridLAB-D model.
@@ -130,10 +134,18 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
                 These will vary depending on node-type (substation vs. meter)
             interval: recording interval (seconds) of the swing table
         costs: dictionary with the following fields:
-            energy: price of energy in $/VAh
+            realEnergy: price of energy in $/Wh
+            reactiveEnergy: price of energy in $/VAr
             tapChange: cost ($) of changing one regulator tap one position.
             capSwitch: cost ($) of switching a single capacitor
-            volt: cost of a voltage violation
+            undervoltage: cost of an undervoltage violation
+            overvoltage: cost of an overvoltage violation
+            powerFactorLead: dict with two fields:
+                limit: minimum tolerable leading powerfactor
+                cost: cost of a 0.01 pf deviation from the lead limit
+            powerFactorLag: dict with two fields:
+                limit: minimum tolerable lagging powerfactor
+                cost: cost of a 0.01 pf deviation from the lag limit
         starttime: starting timestamp (yyyy-mm-dd HH:MM:SS) of interval in
             question.
         stoptime: stopping ""
@@ -159,19 +171,64 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
     cost. If desired later, it wouldn't be too taxing to break that cost down
     by piece of equipment.
     """
+    # Initialize dictionary
+    costDict = {}
     # *************************************************************************
     # ENERGY COST
-    
+    """
+    # IMPORTANT NOTE: The code below won't exactly work now that
+    # sumComplexPower has been modified to return a list of row sums
     # Sum the total three-phase complex power over the given interval.
-    powerSum = util.db.sumComplexPower(cursor=cursor, table=swingData['table'], 
-                                  cols=swingData['columns'],
-                                  starttime=starttime, stoptime=stoptime)
+    powerSum = util.db.sumComplexPower(cursor=cursor,
+                                       table=swingData['power']['table'], 
+                                       cols=swingData['power']['columns'],
+                                       starttime=starttime, stoptime=stoptime)
     
     # Perform 'integration' by multiplying each measurement by its time
     # duration (convert seconds to hours), then multiply this area (energy in 
     # VAh) by price to get cost.
-    energyCost = ((powerSum['sum'].__abs__() * (swingData['interval'] / 3600))
+    energyCost = ((powerSum['sum'].__abs__()
+                   * (swingData['power']['interval'] / 3600))
                   * costs['energy'])
+    """
+    
+    # Read energy database. Note times - this should return a single row only.
+    energyRows = util.db.fetchAll(cursor=cursor,
+                                  table=swingData['energy']['table'],
+                                  cols=swingData['energy']['columns'],
+                                  starttime=stoptime, stoptime=stoptime)
+    assert len(energyRows) == 1
+    # Compute the costs
+    costDict['realEnergy'] = energyRows[0][REAL_IND] * costs['realEnergy']
+    costDict['reactiveEnergy'] = (energyRows[0][REACTIVE_IND]
+                                  * costs['reactiveEnergy'])
+    #**************************************************************************
+    # POWER FACTOR COST
+    # Initialize costs
+    costDict['powerFactorLead'] = 0
+    costDict['powerFactorLag'] = 0
+    
+    # Get list of sums of rows (sum three phase power) from the database
+    power = util.db.sumComplexPower(cursor=cursor,
+                                    table=swingData['power']['table'],
+                                    cols=swingData['power']['columns'],
+                                    starttime=starttime, stoptime=stoptime)
+    
+    # Loop over each row, compute power factor, and assign cost
+    for p in power['rowSums']:
+        pf, direction = util.helper.powerFactor(p)
+        # Determine field to use based on whether pf is leading or lagging
+        if direction == 'lag':
+            field = 'powerFactorLag'
+        elif direction == 'lead':
+            field = 'powerFactorLead'
+        
+        # If the pf is below the limit, add to the relevant cost 
+        if pf < costs[field]['limit']:
+            # Cost represents cost of a 0.01 deviation, so multiple violation
+            # by 100 before multiplying by the cost.
+            costDict[field] += ((costs[field]['limit'] - pf) * 100
+                                * costs[field]['cost'])
     
     # *************************************************************************
     # TAP CHANGING COST
@@ -187,7 +244,7 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
                        " tapChangeColumns must be specified!")
         
     # Simply multiply cost by number of operations.   
-    tapCost = costs['tapChange'] * tapChangeCount
+    costDict['tapChange'] = costs['tapChange'] * tapChangeCount
     
     # *************************************************************************
     # CAP SWITCHING COST
@@ -203,15 +260,15 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
                        " capSwitchColumns must be specified!")
         
     # Simply multiply cost by number of operations.   
-    capCost = costs['capSwitch'] * capSwitchCount
+    costDict['capSwitch'] = costs['capSwitch'] * capSwitchCount
     
     # *************************************************************************
     # VOLTAGE VIOLATION COSTS
     
     # Get all voltage violations. Use default voltages and tolerances for now.
     v = sumVoltViolations(fileDir=voltdumpDir, files=voltdumpFiles)
-    overvoltage = v['high'] * costs['volt']
-    undervoltage = v['low'] * costs['volt']
+    costDict['overvoltage'] = v['high'] * costs['overvoltage']
+    costDict['undervoltage'] = v['low'] * costs['undervoltage']
     
     # TODO: uncomment when ready
     '''
@@ -226,11 +283,13 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
     # TODO
     
     # *************************************************************************
-    # RETURN
-    return {'total': energyCost + tapCost + capCost + overvoltage
-            + undervoltage, 'energy': energyCost, 
-            'tap': tapCost, 'cap': capCost, 'overvoltage': overvoltage,
-            'undervoltage': undervoltage}
+    # TOTAL AND RETURN
+    t = 0
+    for _, v in costDict.items():
+        t += v
+    
+    costDict['total'] = t   
+    return costDict
     
 def voltViolationsFromDump(fName, vNom=120, vTol=6):
     """Method to read a voltdump file which is recording triplex loads/meters

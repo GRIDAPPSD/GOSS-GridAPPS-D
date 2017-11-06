@@ -4,18 +4,29 @@ Created on Oct 24, 2017
 @author: thay838
 '''
 # Costs
-COSTS = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2, 'volt': 0.05}
+# .25 per tap
+# cap --> cheaper
+# Maybe $1 per violation?
+# Because we used ZIP, influence penalties 
+COSTS = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00001,
+         'powerFactorLead': {'limit': 0.99, 'cost': 1},
+         'powerFactorLag': {'limit': 0.99, 'cost': 1},
+         'tapChange': 0.5, 'capSwitch': 2, 'undervoltage': 0.05, 'overvoltage': 0.05}
 # Paths
-BASE_PATH = r'\\pnl\projects\VVO-GridAPPS-D\pmaps\experiment\R2_12_47_2'
-INCLUDE_DIR = r'E:/pmaps/experiment/include'
+BASE_PATH = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/R2_12_47_2'
+INCLUDE_DIR = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/include'
+ZIP_DIR = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/zip'
+COMPARE_OUT = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/R2_12_47_2/compare'
 MODEL = 'R2_12_47_2'
 # Define timing:
 # Define recorder intervals (s)
 RECORD_INT = 60
-# Define model runtime (s)
+# Define model runtime for genetic algorithm (s)
 MODEL_RUNTIME = 60 * 15
 # Define AMI_averaging_interval (s)
 AMI_INTERVAL = 60 * 15
+# Define the ZIP modeling interval (s)
+ZIP_INTERVAL = 60 * 60
 # Define start/stop times for running the full model. Recent times just because
 STARTTIME = '2016-01-01 00:00:00'
 STOPTIME = '2017-01-01 00:00:00'
@@ -29,21 +40,22 @@ BASELINE_DB = {'schema': 'baseline'}
 TRIPLEX_GROUP = 'AMI_group'
 
 # Definition of regulators. 
-# NOTE: Initial state not defined in original model
+# NOTE: Initial states come from running the baseline model (tmy2) from
+# '2016-01-01 00:00:00' to '2016-01-01 01:00:00' and getting the final setpoints
 REG={'R2-12-47-2_reg_1': {
                           'raise_taps': 16, 
                           'lower_taps': 16,
-                          'phases': {'A': {'prevState': 0},
-                                     'B': {'prevState': 0},
-                                     'C': {'prevState': 0}
+                          'phases': {'A': {'prevState': -10},
+                                     'B': {'prevState': -15},
+                                     'C': {'prevState': -13}
                                     },
                          },
      'R2-12-47-2_reg_2': {
                           'raise_taps': 16, 
                           'lower_taps': 16,
-                          'phases': {'A': {'prevState': 0},
-                                     'B': {'prevState': 0},
-                                     'C': {'prevState': 0}
+                          'phases': {'A': {'prevState': -1},
+                                     'B': {'prevState': -1},
+                                     'C': {'prevState': -2}
                                     },
                          },
      }
@@ -69,3 +81,10 @@ CAP={
                                     'B': {'prevState': 'OPEN'},
                                     'C': {'prevState': 'OPEN'}}},
     }
+
+if __name__ == '__main__':
+    try:
+        raise UserWarning('warning!')
+    except UserWarning as w:
+        print(w)
+        print('2 + 2 = {}'.format(2+2))
