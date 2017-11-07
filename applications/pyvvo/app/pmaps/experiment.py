@@ -3,10 +3,16 @@ Created on Oct 24, 2017
 
 @author: thay838
 '''
+# Add one directory up to the python path. This seems hacky, and I'm sure there's a better way.
+import os
+import sys
+upDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if upDir not in sys.path:
+    sys.path.append(upDir)
+
 from glm import modGLM
 import re
 from pmaps import constants as CONST
-import os
 import shutil
 import util.helper
 import util.db
@@ -334,39 +340,29 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
     util.db.dropAllTables(cnxn=cnxn)
     
     # If the output directory doesn't exist, make it
-    if not os.path.isdir(CONST.COMPARE_OUT):
-        os.mkdir(CONST.COMPARE_OUT)
+    if not os.path.isdir(CONST.OUTPUT_DIR):
+        os.mkdir(CONST.OUTPUT_DIR)
     
     # Open the results files
-    fBase2 = open(CONST.COMPARE_OUT + '/' + resultsFile + '_base_2.csv',
-                 newline='', mode='w')
-    fBase3 = open(CONST.COMPARE_OUT + '/' + resultsFile + '_base_3.csv',
-                 newline='', mode='w')
-    fZIP = open(CONST.COMPARE_OUT + '/' + resultsFile + '_ZIP.csv', newline='',
-                mode='w')
+    fCSV = open(CONST.OUTPUT_DIR + '/' + resultsFile + '.csv', newline='',
+                  mode='w')
     
     # Open the log files
-    logBase2 = open(CONST.COMPARE_OUT + '/' + logFile + '_2.txt',
+    logBase2 = open(CONST.OUTPUT_DIR + '/' + logFile + '_2.txt',
                     newline='', mode='w')
-    logBase3 = open(CONST.COMPARE_OUT + '/' + logFile + '_3.txt',
+    logBase3 = open(CONST.OUTPUT_DIR + '/' + logFile + '_3.txt',
                     newline='', mode='w')
-    logZIP = open(CONST.COMPARE_OUT + '/' + logFile + '_ZIP.txt',
+    logZIP = open(CONST.OUTPUT_DIR + '/' + logFile + '_ZIP.txt',
                   newline='', mode='w')
     
     # Get the cost fields, and write them to the file as headers.
     # HARD-CODE total field in
-    costList = ['time', 'total'] + list(CONST.COSTS.keys())
+    costList = ['time', 'model', 'total'] + list(CONST.COSTS.keys())
     
-    # Initialize csv writers and write headers
-    csvBase2 = csv.DictWriter(f=fBase2, fieldnames=costList,
-                              quoting=csv.QUOTE_NONNUMERIC)
-    csvBase2.writeheader()
-    csvBase3 = csv.DictWriter(f=fBase3, fieldnames=costList,
-                              quoting=csv.QUOTE_NONNUMERIC)
-    csvBase3.writeheader()
-    csvZIP = csv.DictWriter(f=fZIP, fieldnames=costList,
-                            quoting=csv.QUOTE_NONNUMERIC) 
-    csvZIP.writeheader()
+    # Initialize csv writer and write headers
+    csvObj = csv.DictWriter(f=fCSV, fieldnames=costList,
+                            quoting=csv.QUOTE_NONNUMERIC)
+    csvObj.writeheader()
     
     # Initialize queues for running and cleaning up models
     modelQueue = Queue()
@@ -435,15 +431,15 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
                                    controlFlag=4, uid=zID)
     
     # Initialize dictionaries for threading use
-    baseDict2 = {'outDir': CONST.COMPARE_OUT,
+    baseDict2 = {'outDir': CONST.OUTPUT_DIR,
                  'individual': baseInd2,
                  'inPath': MODEL_BASELINE_2,
                  'strModel': ''}
-    baseDict3 = {'outDir': CONST.COMPARE_OUT,
+    baseDict3 = {'outDir': CONST.OUTPUT_DIR,
                  'individual': baseInd3,
                  'inPath': MODEL_BASELINE_3,
                  'strModel': ''}
-    ZIPDict = {'outDir': CONST.COMPARE_OUT,
+    ZIPDict = {'outDir': CONST.OUTPUT_DIR,
                'individual': ZIPInd,
                'inPath': MODEL_ZIP,
                'strModel': ''}
@@ -497,15 +493,15 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
         
         # Write to csv, log, cleanup, and rotate dictionaries
-        for g in [(baseInd2, logBase2, csvBase2, baseClean2),
-                  (baseInd3, logBase3, csvBase3, baseClean3),
-                  (ZIPInd, logZIP, csvZIP, ZIPClean)]:
+        for g in [(baseInd2, logBase2, baseClean2, 'base_2'),
+                  (baseInd3, logBase3, baseClean3, 'base_3'),
+                  (ZIPInd, logZIP, ZIPClean, 'ZIP')]:
             
             # Cleanup
-            cleanupQueue.put_nowait(g[3])
+            cleanupQueue.put_nowait(g[2])
             
             # Write to csv
-            g[2].writerow({'time': s, **g[0].costs})
+            csvObj.writerow({'time': s, 'model': g[3], **g[0].costs})
             
             # Log file
             print('*'*80, file=g[1])
@@ -532,9 +528,7 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
     for t in cleanupThreads: t.join(timeout=10)
     
     # Close the files
-    fBase2.close()
-    fBase3.close()
-    fZIP.close()
+    fCSV.close()
     logBase2.close()
     logBase3.close()
     logZIP.close()
@@ -614,7 +608,8 @@ if __name__ == '__main__':
     """
     s = '2016-02-19 00:00:00'
     e = '2016-02-19 01:00:00'
-
+    """
+    """
     zipDir = 'E:/ami/ZIP-Constrained'
     writeObj = modGLM.modGLM(pathModelOut=MODEL_ZIP,
                              pathModelIn=MODEL_STRIPPED) 

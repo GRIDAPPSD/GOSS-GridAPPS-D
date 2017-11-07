@@ -1,0 +1,3 @@
+This is where pmaps experiment output should be written. It might be wise to not constantly upload
+and reupload results to the repo, but it'd be good to have a backup...
+Anyways, I might add a .gitignore later.

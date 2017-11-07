@@ -7,16 +7,18 @@ Created on Oct 24, 2017
 # .25 per tap
 # cap --> cheaper
 # Maybe $1 per violation?
-# Because we used ZIP, influence penalties 
+# Because we used ZIP, influence penalties based on what we know about loss of
+# fidelity 
 COSTS = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00001,
-         'powerFactorLead': {'limit': 0.99, 'cost': 1},
-         'powerFactorLag': {'limit': 0.99, 'cost': 1},
-         'tapChange': 0.5, 'capSwitch': 2, 'undervoltage': 0.05, 'overvoltage': 0.05}
+         'powerFactorLead': {'limit': 0.99, 'cost': 0.1},
+         'powerFactorLag': {'limit': 0.99, 'cost': 0.1},
+         'tapChange': 0.5, 'capSwitch': 2, 'undervoltage': 0.05,
+         'overvoltage': 0.05}
 # Paths
-BASE_PATH = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/R2_12_47_2'
-INCLUDE_DIR = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/include'
-ZIP_DIR = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/zip'
-COMPARE_OUT = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/pmaps/R2_12_47_2/compare'
+BASE_PATH = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
+INCLUDE_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
+ZIP_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
+OUTPUT_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
 MODEL = 'R2_12_47_2'
 # Define timing:
 # Define recorder intervals (s)

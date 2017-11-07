@@ -1,0 +1,5 @@
+# Ignore all .glm files
+*.glm
+
+# But don't ignore R2_12_47_2_populated.glm
+!R2_12_47_2_populated.glm

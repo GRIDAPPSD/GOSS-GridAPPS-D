@@ -77,12 +77,23 @@ MEASURED_ENERGY = ['measured_real_energy', 'measured_reactive_energy']
 REAL_IND = 0
 REACTIVE_IND = 1
 
-def runModel(modelPath, gldPath=r'C:/gridlab-d/develop'):
+def runModel(modelPath):
+    #, gldPath=r'C:/gridlab-d/develop'):
     """Function to run GridLAB-D model.
+    
+    IMPORTANT NOTE: the gridlabd path is assumed to be setup.
+    See http://gridlab-d.shoutwiki.com/wiki/MinGW/Eclipse_Installation#Linux_Installation
+    and do a search for 'Environment Setup'
+    In short, assuming build is in gridlab-d/develop:
+        PATH must contain gridlab-d/develop/bin
+        GLPATH must contain gridlab-d/develop/lib/gridlabd and gridlab-d/develop/share/gridlabd
+        CXXFLAGS must be set to include gridlab-d/develop/share/gridlabd
+    
     
     TODO: Add support for command line inputs.
     """
     cwd, model = os.path.split(modelPath)
+    """
     # Set up the gridlabd path, run model
     # TODO: Get this adapated for Unix.
     # NOTE: On Windows, spaces between the '&&'s causes everything to break...
@@ -91,6 +102,10 @@ def runModel(modelPath, gldPath=r'C:/gridlab-d/develop'):
     cmd += r'&&set CXXFLAGS=-I{}/share/gridlabd'.format(gldPath)
     cmd += r'&&gridlabd'
     cmd += r' ' + model
+    """
+    # Formulate the command.
+    cmd = 'gridlabd ' + model
+    
     # Run command. Note with check=True exception will be thrown on failure.
     # TODO: rather than using check=True, handle the event of a GridLAB-D error
     output = subprocess.run(cmd, stdout=subprocess.PIPE,

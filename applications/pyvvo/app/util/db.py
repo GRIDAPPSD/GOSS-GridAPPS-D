@@ -13,7 +13,7 @@ from mysql.connector import errorcode
 from util import helper
 
 def connectPool(user='gridlabd', password='', host='localhost',
-            database='gridlabd', pool_name='mypool', pool_size=1):
+                database='gridlabd', pool_name='mypool', pool_size=1):
             #use_pure = False
             # It would appear that 'use_pure' doesn't work for pools.
     """Method to create and return mysql connection pool. This is threadsafe.
