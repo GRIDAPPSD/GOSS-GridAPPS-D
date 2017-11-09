@@ -187,7 +187,8 @@ class modGLM:
             # Splice in the modified object.
             self.replaceObject(d)
             
-    def updateClock(self, starttime=None, stoptime=None, timezone=None):
+    def updateClock(self, starttime=None, stoptime=None, timezone=None,
+                    tzFlag=False):
         """Function to set model time. If there's no clock object, it will be
             created.
         
@@ -196,6 +197,10 @@ class modGLM:
                 surrounded in single quotes, and be in the format
                 'yyyy-mm-dd HH:MM:SS'
             stop: simulation stop time (stoptime in GLD). Same format as start.
+            timezone: simulation time zone, specified like it is in GridLAB-D's
+                tzinfo.txt file.
+            tzFlag: If true, times will have timezone/DST specifiers added to
+                them
             
             NOTE: Timezones can be included in start and stop.
         """
@@ -208,37 +213,63 @@ class modGLM:
         else:
             tzStr = ''
         '''
-        
-        # Build the clock string.
-        clockStr = "clock {\n"
-        
-        # Add defined properties.
-        if timezone:
-            clockStr += "  timezone {};\n".format(timezone)
-            
-        if starttime:
-            #clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
-            clockStr += "  starttime '{}';\n".format(starttime)
-            
-        if stoptime:
-            #clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
-            clockStr += "  stoptime '{}';\n".format(stoptime)
-            
-        clockStr += "}\n"
-            
+        # If desired, add timezone/DST specifiers to times
+        if tzFlag:
+            if starttime:
+                starttime = util.helper.incrementTime(t=starttime,
+                                                      fmt=util.gld.DATE_FMT,
+                                                      interval=0,
+                                                      tzFlag=True,
+                                                      replaceFlag=True)
+                
+            if stoptime:
+                stoptime = util.helper.incrementTime(t=stoptime,
+                                                     fmt=util.gld.DATE_FMT,
+                                                     interval=0,
+                                                     tzFlag=True,
+                                                     replaceFlag=True)
         # Look for clock object
         clockMatch = CLOCK_REGEX.search(self.strModel)
         if clockMatch is not None:
             # If clock object exists, extract it.
             clock = self.extractObject(objMatch=clockMatch)
             
-            # Replace the string with the clockStr
-            clock['obj'] = clockStr
+            # Build a dictionary of properties
+            propDict = {}
+            if starttime:
+                propDict['starttime'] = "'{}'".format(starttime)
+                
+            if stoptime:
+                propDict['stoptime'] = "'{}'".format(stoptime)
+                
+            if timezone:
+                propDict['timezone'] = timezone
+            
+            # Modify properties.
+            clock['obj'] = self.modObjProps(objStr=clock['obj'],
+                                            propDict=propDict)
             
             # Splice in new clock object
             self.replaceObject(clock)
         else:
-            # If clock doesn't exist, create it.
+            # Build the clock string.
+            clockStr = "clock {\n"
+            
+            # Add defined properties.
+            if timezone:
+                clockStr += "  timezone {};\n".format(timezone)
+                
+            if starttime:
+                #clockStr += "  starttime '{}{}';\n".format(starttime,tzStr)
+                clockStr += "  starttime '{}';\n".format(starttime)
+                
+            if stoptime:
+                #clockStr += "  stoptime '{}{}';\n".format(stoptime,tzStr)
+                clockStr += "  stoptime '{}';\n".format(stoptime)
+                
+            clockStr += "}\n"
+            
+            # Add clock to the beginning of the model.
             self.strModel = clockStr + self.strModel
             
     def updatePowerflow(self, solver_method='NR', line_capacitance='TRUE',
@@ -328,6 +359,8 @@ class modGLM:
         TODO: Add the rest of the options for the database object:
             clientflags, options, on_init, on_sync, on_term, sync_interval,
             tz_offset, uses_dst
+            
+        NOTE: On Brandon's VM, socket location is /var/run/mysqld/mysqld.sock
         """
         # Construct the beginning of the necessary string
         dbStr = (
@@ -342,7 +375,7 @@ class modGLM:
                      port=port, tz_offset=tz_offset)
         # If we're on Mac or Linux, need to include the sockenamae
         if os.name == 'posix':
-            dbStr = (dbStr + 'socketname "{sock}";\n').format(sock=socketname)
+            dbStr += 'socketname "{sock}";\n'.format(sock=socketname)
             
         self.strModel = dbStr + '}\n' + self.strModel
         
@@ -1091,6 +1124,13 @@ class modGLM:
         s = time.mktime(time.strptime(starttime, util.gld.DATE_FMT))
         e = time.mktime(time.strptime(stoptime, util.gld.DATE_FMT))
         
+        # Add a timezone and DST qualifier to starttime
+        starttime = util.helper.incrementTime(t=starttime,
+                                              fmt=util.gld.DATE_FMT,
+                                              tzFlag=True,
+                                              replaceFlag=True,
+                                              interval=0)
+        
         # Find a voltdump object.
         m = VOLTDUMP_REGEX.search(self.strModel)
         
@@ -1100,19 +1140,22 @@ class modGLM:
             obj = self.extractObject(objMatch=m)
             
             # Add the runtime.
-            # Note use of localtime to avoid Python converting local to UTC
             obj['obj'] = self.modObjProps(obj['obj'],
-                                            {'runtime': "'{}'".format(\
-                                            time.strftime(util.gld.DATE_FMT,
-                                                          time.localtime(s))),
-                                             }
-                                          )
+                                          {'runtime': "'{}'".format(starttime),
+                                          }
+                                         )
             
             # Replace the previous object with the new one.
             self.replaceObject(obj)
             
             # Increment the time.
             s += interval
+            starttime = util.helper.incrementTime(t=starttime,
+                                                  fmt=(util.gld.DATE_FMT
+                                                       + ' %Z'),
+                                                  tzFlag=True,
+                                                  replaceFlag=True,
+                                                  interval=interval)
             
             # Get the next match, offsetting by length of new object.
             m = VOLTDUMP_REGEX.search(self.strModel,

@@ -8,11 +8,13 @@ import json
 import cmath
 import math
 import re
+import os
 
 # Compile some regular expressions for detection of complex number forms
 RECT_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*j')
 FIRST_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*')
 SECOND_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[dr]')
+TZ_EXP = re.compile('[PMCE][SD]T')
     
 def getComplex(s):
     """Function to take a string which represents a complex number and convert
@@ -166,22 +168,104 @@ def updateVVODicts(regOld, capOld, regNew, capNew):
     return {'reg': regOld, 'cap': capOld, 'tapChangeCount': tapChangeCount,
             'capSwitchCount': capSwitchCount}
 
-def incrementTime(t, fmt, interval):
+def incrementTime(t, fmt, interval, tzFlag=False, replaceFlag=False):
         """Simple function to increment a time string by a specified amount.
         
         INPTUS: 
             t: string representation of a time, in the format given by 'fmt'
             fmt: Python time string format corresponding to 't'
             interval: interval in seconds to increment t by.
+            tzFlag: If True, fmt will have a ' %Z' added, and thus the returned
+                string will have a timezone designation
+            replaceFlag: If True, stupid Windows timezone/DST specifier will be
+                replaced with posix variant. NOTE: replaceFlag does nothing if
+                tzFlag is false.
             
         TODO: unit test
         TODO: daylight savings safe?
         """
         # TODO: Daylight savings problems?
         # TODO: We're running an extra minute of simulation each run.
+        
+        # If we're given a fmt with %Z in it, make sure it works for this
+        # platform:
+        if '%Z' in fmt:
+            t = tzFmtConvert(t)
+        
         tN = time.mktime(time.strptime(t, fmt)) + interval
+        
+        # Update the format
+        if tzFlag and ('%Z' not in fmt):
+            fmt += ' %Z'
+            
         tOut = time.strftime(fmt, time.localtime(tN))
+        
+        # If we're on stupid Windows, fix the timezone/DST designation
+        if replaceFlag and (os.name != 'posix'):
+            tOut = tzFmtConvert(t=tOut)
+             
         return tOut
+    
+def tzFmtConvert(t):
+    """Hard-coded function to convert stupid Windows time zones to Posix time
+    zones and vice versa.
+    
+    Input time should be a string, formatted as util.gld.DATE_FMT, but also
+    with a timezone specified (%Z in Python) 
+    
+    NOTE: hard-coded for continental US only.
+    NOTE: This will likely break for places that don't do DST like AZ
+    """
+    # Begin stupid hard-coding.
+    s = ''
+    r = ''
+    
+    # If we're going from posix to Windows, the specifier should be at the end.
+    # NOTE: if we're going the other way, this should either return 'Time' or
+    # the time as a string. So the hard-coded character checks by position
+    # should be safe (not cause false hits)
+    e = t.strip().split()[-1].strip()
+    
+    # Start with locale
+    if ('Pacific' in t) or (e[0] == 'P'):
+        s += 'P'
+        r += 'Pacific'
+    elif ('Mountain' in t) or (e[0] == 'M'):
+        s += 'M'
+        r += 'Mountain'
+    elif ('Central' in t) or (e[0] == 'C'):
+        s += 'C'
+        r += 'Central'
+    elif ('Eastern' in t) or (e[0] == 'E'):
+        s += 'E'
+        r += 'Eastern'
+    else:
+        raise ValueError(('Only Pacific, Mountain, Central, and Eastern times'
+                          + ' are supported.'))
+      
+    # Add space to replacement string
+    r += ' '  
+        
+    # Standard vs. Daylight
+    if ('Standard' in t) or (e[1] == 'S'):
+        s += 'S'
+        r += 'Standard'
+    elif ('Daylight' in t) or (e[1] == 'D'):
+        s += 'D'
+        r += 'Daylight'
+    else:
+        raise ValueError('Time must have "Standard" or "Daylight" specified!')
+        
+    # Because of course we need to specify 'time'
+    s += 'T'
+    r += ' Time'
+    
+    # Perform replacement and return
+    if TZ_EXP.match(e):
+        out = t.replace(e, r)
+    else:
+        out = t.replace(r, s)
+    return out
 
 def timeDiff(t1, t2, fmt):
     """Simple function to get the difference (in seconds) of t2-t1.
@@ -308,6 +392,7 @@ if __name__ == '__main__':
     print('hooray')
     """
     
+    """
     c1 = 1+1j
     r1 = powerFactor(c1)
     c2 = 1-1j
@@ -316,4 +401,10 @@ if __name__ == '__main__':
     r3 = powerFactor(c3)
     c4 = -1-1j
     r4 = powerFactor(c4)
+    """
+    from util import gld
+    t1 = '2016-03-13 01:00:00 Pacific Daylight Time'
+    t2 = '2016-03-13 02:00:00 Pacific Daylight Time'
+    fmt = gld.DATE_FMT
+    o = timeInfoForZIP(starttime=t1, stoptime=t2, fmt=(fmt + ' %Z'))
     print('hooray')

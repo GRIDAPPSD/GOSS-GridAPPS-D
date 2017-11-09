@@ -445,20 +445,22 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
                'strModel': ''}
     
     # Loop over time until we've hit the stoptime
-    while util.helper.timeDiff(t1=e, t2=stoptime, fmt=util.gld.DATE_FMT) >= 0:
+    while util.helper.timeDiff(t1=e, t2=stoptime,
+                               fmt=util.gld.DATE_FMT) >= 0:
+        
         print('Running for {} through {}'.format(s, e), flush=True)
         
         # *********************************************************************
         # Get the base model ready to run, put it in the queue.
         baseInd2.prep(starttime=s, stoptime=e)
-        writeBase2.updateClock(starttime=s, stoptime=e)
+        writeBase2.updateClock(starttime=s, stoptime=e, tzFlag=True)
         writeBase2.addRuntimeToVoltDumps(starttime=s, stoptime=e,
                                         interval=CONST.RECORD_INT)
         baseDict2['strModel'] = writeBase2.strModel
         modelQueue.put_nowait(baseDict2)
         
         baseInd3.prep(starttime=s, stoptime=e)
-        writeBase3.updateClock(starttime=s, stoptime=e)
+        writeBase3.updateClock(starttime=s, stoptime=e, tzFlag=True)
         writeBase3.addRuntimeToVoltDumps(starttime=s, stoptime=e,
                                         interval=CONST.RECORD_INT)
         baseDict3['strModel'] = writeBase3.strModel
@@ -468,7 +470,7 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
         # Get ZIP model ready.
         # print('Prepping ZIP model for run.', flush=True)
         ZIPInd.prep(starttime=s, stoptime=e)
-        writeZIP.updateClock(starttime=s, stoptime=e)
+        writeZIP.updateClock(starttime=s, stoptime=e, tzFlag=True)
         writeZIP.addRuntimeToVoltDumps(starttime=s, stoptime=e,
                                        interval=CONST.RECORD_INT)
 
@@ -640,5 +642,5 @@ if __name__ == '__main__':
     e = '2016-07-19 15:00:00'
     """
     s = '2016-01-01 00:00:00'
-    e = '2016-01-01 03:00:00'
+    e = '2017-01-01 00:00:00'
     evaluateZIP(starttime=s, stoptime=e, runInterval=CONST.ZIP_INTERVAL)
