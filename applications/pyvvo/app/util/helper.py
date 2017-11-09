@@ -189,7 +189,7 @@ def incrementTime(t, fmt, interval, tzFlag=False, replaceFlag=False):
         
         # If we're given a fmt with %Z in it, make sure it works for this
         # platform:
-        if '%Z' in fmt:
+        if '%Z' in fmt and (os.name != 'posix'):
             t = tzFmtConvert(t)
         
         tN = time.mktime(time.strptime(t, fmt)) + interval
@@ -216,6 +216,10 @@ def tzFmtConvert(t):
     NOTE: hard-coded for continental US only.
     NOTE: This will likely break for places that don't do DST like AZ
     """
+    # WE DON'T HAVE TO MESS WITH THIS ON LINUX!
+    if os.name == 'posix':
+        return t
+    
     # Begin stupid hard-coding.
     s = ''
     r = ''
