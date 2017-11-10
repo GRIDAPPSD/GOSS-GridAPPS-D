@@ -9,8 +9,7 @@ For developing application for GridAPPS-D platform see :ref:`using` .
 
 Developing Applications using GridAPPS-D
 ----------------------------------------
-
-This section is under development. Not available for current release of the platform.
+.. include:: Developing_Apps.rst
        
 Eclipse IDE Setup
 -----------------
