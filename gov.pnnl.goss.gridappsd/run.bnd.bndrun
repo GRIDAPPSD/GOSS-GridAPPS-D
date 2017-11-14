@@ -75,7 +75,8 @@
 	org.apache.commons.cli,\
 	httpcore,\
 	httpclient,\
-	xml-apis
+	xml-apis,\
+	blazegraph.cim2glm
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\

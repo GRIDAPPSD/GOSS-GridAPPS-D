@@ -333,7 +333,7 @@ public class ProcessManagerComponentTests {
 		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
 
 
-		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(), argCaptorSerializable.capture());
+		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(), argCaptorSerializable.capture(), Mockito.anyInt());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));

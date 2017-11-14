@@ -23,6 +23,10 @@ and displayed alongside tables with current values for capacitor status
 PNNL Applications (Release Cycle 2)
 -----------------------------------
 
+.. include:: StateEstimator/StateEstimatorDocumentation.rst
+
+.. include:: ModelValidator/ModelValidatorDocumentation.rst
+
 .. include:: PNNL_Applications.rst
 
 NREL Applications (Release Cycle 2)
