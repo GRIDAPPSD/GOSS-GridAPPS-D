@@ -62,6 +62,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -203,69 +204,87 @@ public class TestManagerImpl implements TestManager {
 			
 		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
 				
-				@Override
-				public void onMessage(Serializable message) {
-					DataResponse event = (DataResponse)message;
-					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj);
-					
-					String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
-					String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
-					String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
-//					/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json
-					
-					CompareResults compareResults = new CompareResults();
-					
-					// check that type is Sim output and not null!
-					if (message == null){
-//						logMessageObj.setTimestamp(new Date().getTime());
-//						logMessageObj.setLog_message("TestManager fncs : null");
-//						logManager.log(logMessageObj);
-						return;
-					}
-					// TODO check that type is Sim output and not null!
-
-					JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
-//					jsonObject.get("output")
-					if( ! jsonObject.get("output").isJsonObject()){
-						logMessageObj.setTimestamp(new Date().getTime());
-						logMessageObj.setLog_message("TestManager fncs : not output" + jsonObject.get("output").toString());
-						logManager.log(logMessageObj);
-						return;					
-					}
-					
-
-
-					SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
-					compareResults.getProp(simOutProperties);
-//					TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+			public void onMessage(Serializable message) {
+				DataResponse event = (DataResponse)message;
+				logMessageObj.setTimestamp(new Date().getTime());
+				logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+				logManager.log(logMessageObj);
 				
-					Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap(expected_output);
-
-					Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-							.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-					TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
-					
-					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
-					logManager.log(logMessageObj);
-					
-					
-					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("TestManager number of conflicts: "+ tr.getNumberOfConflicts());
-					logManager.log(logMessageObj);
-					
-//					try {
-//
-//
-//						
-//					} catch (JMSException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-					
+				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
+//				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
+				String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
+//				/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json
+				
+				
+				logMessageObj.setTimestamp(new Date().getTime());
+				logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
+				logManager.log(logMessageObj);
+				
+				CompareResults compareResults = new CompareResults();
+				
+				// check that type is Sim output and not null!
+				if (message == null){
+//					logMessageObj.setTimestamp(new Date().getTime());
+//					logMessageObj.setLog_message("TestManager fncs : null");
+//					logManager.log(logMessageObj);
+					return;
 				}
+				JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
+//				{"output": null, "command": "isInitialized", "response": "False"}
+				if( jsonObject.get("output").isJsonNull() || jsonObject.get("output") == null){
+					logMessageObj.setTimestamp(new Date().getTime());
+					logMessageObj.setLog_message("TestManager fncs : null output " + jsonObject.get("output").toString());
+					logManager.log(logMessageObj);
+					return;	
+				}
+				
+				
+//				gridappsd_project/builds/log/karaf.log.1:TestManager fncs : not outputtruefalse{"ieee8500":{"cap_capbank0a":{"capacitor_A":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":100.0,"phases":"AN","phases_connected":"NA","pt_phase":"A","switchA":"CLOSED"},"cap_capbank0b":{"capacitor_B":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":101.0,"phases":"BN","phases_connected":"NB","pt_phase":"B","switchB":"CLOSED"},"cap_capbank0c":{"capacit
+//				if( ! jsonObject.get("output").isJsonObject()){
+//				JsonParser parser = new JsonParser();
+//				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
+//				logMessageObj.setTimestamp(new Date().getTime());
+//				logMessageObj.setLog_message("TestManager fncs : not output" + simOutputObject.isJsonObject() + simOutputObject.isJsonPrimitive() +simOutputObject.getAsJsonObject().get("ieee8500"));
+//				logManager.log(logMessageObj);
+//				simOutputObject.getAsJsonObject().get("cap_capbank0a");				
+//			}
+			// The output is a string not s JSON object
+				
+				JsonParser parser = new JsonParser();
+				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
+
+				SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
+				compareResults.getProp(simOutProperties);
+//				TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+			
+				Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap(expected_output);
+
+				Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+						.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+				
+				
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(expectedOutputMap, propMap,simOutputObject.getAsJsonObject());
+//				TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
+				
+//				TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
+				
+
+				
+				
+				logMessageObj.setTimestamp(new Date().getTime());
+				logMessageObj.setLog_message("TestManager number of conflicts: "+ tr.getNumberOfConflicts());
+				logManager.log(logMessageObj);
+				
+//				try {
+//
+//
+//					
+//				} catch (JMSException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+				
+			}
 
 			});
 		}
@@ -439,11 +458,11 @@ public class TestManagerImpl implements TestManager {
 	
 	
 	public static void main(String[] args) {
-		TestManagerImpl tm = new TestManagerImpl();
-		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-		TestConfiguration testConf = tm.loadTestConfig(path);
-		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-		TestScript testScript = tm.loadTestScript(path);
+//		TestManagerImpl tm = new TestManagerImpl();
+//		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
+//		TestConfiguration testConf = tm.loadTestConfig(path);
+//		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
+//		TestScript testScript = tm.loadTestScript(path);
 		
 //		Credentials credentials = new UsernamePasswordCredentials(
 //				GridAppsDConstants.username, GridAppsDConstants.password);
