@@ -273,7 +273,8 @@ class individual:
             tb = v['raise_taps'] + v['lower_taps']
             
             # Compute the needed field width to represent the upper tap bound
-            width = math.ceil(math.log(tb, 2))
+            # Use + 1 to account for 2^0
+            width = math.ceil(math.log(tb, 2)) + 1
             
             # Define variables as needed based on the flag. I started to try to
             # make micro-optimizations for code factoring, but let's go for
