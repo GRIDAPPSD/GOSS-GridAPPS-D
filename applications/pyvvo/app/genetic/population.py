@@ -16,14 +16,14 @@ import copy
 class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
-                 starttime, stoptime, voltdumpFiles,
+                 starttime, stoptime, timezone, voltdumpFiles,
                  numModelThreads=os.cpu_count(),
                  costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2,
                           'undervoltage': 0.05, 'overvoltage': 0.05},
                  probabilities = {'top': 0.2, 'weak': 0.2, 'mutate': 0.2,
                                   'cross': 0.7, 'capMutate': 0.1,
                                   'regMutate': 0.05},
-                 baseControlFlag=None
+                 baseControlFlag=None, nextUID = 0
                  ):
         """Initialize a population of individuals.
         
@@ -35,8 +35,9 @@ class population:
             outDir: Directory for new models to be written.
             reg: Dictionary as described in gld.py docstring
             cap: Dictionary as described in gld.py docstring
-            starttime: simulation starttime
-            stoptime: simulation stoptime
+            starttime: datetime object representing start of simulation
+            stoptime: "..." end "..."
+            timezone: timezone string
             voltdumpFiles: listing of voltdump file names
             numModelThreads: number of threads for running models. Since the
                 threads start subprocesses, this corresponds to number of
@@ -66,8 +67,11 @@ class population:
                     mutated.
             baseControlFlag: control flag for baseline individual. See inputs
                 to an individual's constructor for details.
+            nextUID: Starting place for the population's UIDs.
             
         """
+        # Set timezone
+        self.timezone = timezone
         # TODO: rather than being input, reg and cap should be read from the
         # CIM.
         
@@ -75,7 +79,7 @@ class population:
         self.individualsList = []
         
         # To ensure all individual uid's are unique, track uids.
-        self.nextUID = 0
+        self.nextUID = nextUID
         
         # Set voltdumpFile.
         self.voltdumpFiles = voltdumpFiles
@@ -242,6 +246,7 @@ class population:
                                       capFlag=capFlag,
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
+                                      timezone=self.timezone,
                                       voltdumpFiles=self.voltdumpFiles,
                                       controlFlag=self.baseControlFlag))
             
@@ -259,6 +264,7 @@ class population:
                                           capFlag=n,
                                           starttime=self.starttime,
                                           stoptime=self.stoptime,
+                                          timezone=self.timezone,
                                           voltdumpFiles=self.voltdumpFiles
                                           )
                                             )
@@ -274,6 +280,7 @@ class population:
                                       capFlag=2, 
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
+                                      timezone=self.timezone,
                                       voltdumpFiles=self.voltdumpFiles
                                      )
                                         )
@@ -289,6 +296,7 @@ class population:
                                       capFlag=5,
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
+                                      timezone=self.timezone,
                                       voltdumpFiles=self.voltdumpFiles
                                       )
                                         )
@@ -514,6 +522,7 @@ class population:
                                             parents=parents,
                                             starttime=self.starttime,
                                             stoptime=self.stoptime,
+                                            timezone=self.timezone,
                                             voltdumpFiles=self.voltdumpFiles
                                           )
                 # Put individual in the list and the queue.
@@ -569,8 +578,7 @@ class population:
         for t in self.cleanupThreads: t.join(timeout=timeout)
         #print('Threads terminated.', flush=True)
     
-def writeRunEval(modelQueue, costs,
-                 database={'database': 'gridlabd'}):
+def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
                 #, cnxnpool):
     #tEvent):
     """Write individual's model, run the model, and evaluate costs. This is

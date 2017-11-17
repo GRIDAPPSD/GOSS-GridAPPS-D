@@ -10,6 +10,7 @@ import re
 import datetime
 import pytz
 import util.constants
+import copy
 
 # Compile some regular expressions for detection of complex number forms
 RECT_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*j')
@@ -91,12 +92,14 @@ def bin2int(binList):
 def rotateVVODicts(reg, cap, deleteFlag=False):
     """Helper function to take in the 'control' dictionaries (described in
     docstring of gld module) and shift 'new' positions/statuses to 'old' 
+    
+    NOTE: copy's of the inputs are made so as not to modify them elsewhere.
     """
     # Rotate the reg and cap dictionaries.
-    reg = _rotate(reg, deleteFlag)
-    cap = _rotate(cap, deleteFlag)
+    regOut = _rotate(d=copy.deepcopy(reg), deleteFlag=deleteFlag)
+    capOut = _rotate(d=copy.deepcopy(cap), deleteFlag=deleteFlag)
     
-    return reg, cap
+    return regOut, capOut
 
 def _rotate(d, deleteFlag):
     """Function called by rotateVVODicts - it parses a dictionary in the format

@@ -22,6 +22,7 @@ import threading
 from queue import Queue
 import csv
 import datetime
+import time
 
 # Paths to input/output models.
 partial =  CONST.BASE_PATH + '/' + CONST.MODEL
@@ -219,9 +220,9 @@ def baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_3, replaceClimate=True):
     # Get a write object.
     writeObj = modGLM.modGLM(pathModelIn=fIn, pathModelOut=fOut)
     
-    # Strip off all collectors, recorders, and group_recorders
+    # Strip off all collectors, recorders, group_recorders, and voltdumps
     writeObj.removeObjectsByType(typeList=['collector', 'recorder',
-                                           'group_recorder'])
+                                           'group_recorder', 'voltdump'])
     
     # Remove the market module - it isn't needed
     writeObj.removeObjectsByType(typeList=['market'], objStr='module')
@@ -579,6 +580,184 @@ def setupBaseAndBaseZIP(tZIP=CONST.ZIP_INTERVAL, starttime=CONST.STARTTIME,
     writeZIP.writeModel()
     
     return dumpPop
+
+def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
+                runInterval=CONST.ZIP_INTERVAL, resultsFile='results',
+                logFile='log_GA'):
+    """Function to run the genetic algorithm with the ZIP models, and also
+    command a populated baseline model.
+    """
+    # Connect to database and drop tables.
+    cnxn = util.db.connect()
+    util.db.dropAllTables(cnxn=cnxn)
+    
+    # Initialize queues for running and cleaning up baseline model
+    modelQueue = Queue()
+    cleanupQueue = Queue()
+    
+    # Start threads for running and cleaning up baseline model
+    # Initialize threads
+    tRun = threading.Thread(target=population.writeRunEval,
+                                args=(modelQueue, CONST.COSTS))
+    tClean = threading.Thread(target=individual.cleanup,
+                                  args=(cleanupQueue,))
+    tRun.start()
+    tClean.start()
+    
+    # If the output directory doesn't exist, make it
+    try:
+        os.mkdir(CONST.OUTPUT_GA)
+    except:
+        pass
+    
+    # Open the results files
+    resultsGA = open(CONST.OUTPUT_GA + '/' + resultsFile + '_GA.csv',
+                      newline='', mode='w')
+    resultsBase = open(CONST.OUTPUT_GA + '/' + resultsFile + '_base.csv',
+                        newline='', mode='w')
+    
+    # Open the log file, write preliminary information
+    log = open(CONST.OUTPUT_GA + '/' + logFile + '.txt', newline='', mode='w')
+    log.write('Number of individuals per generation: {}\n'.format(CONST.NUM_IND))
+    log.write('Number of generations per run: {}\n'.format(CONST.NUM_GEN))
+    log.write('Costs: {}'.format(CONST.COSTS))
+    
+    # Get the cost fields, and write them to the file as headers.
+    # HARD-CODE total field in
+    costList = ['time', 'total'] + list(CONST.COSTS.keys())
+    
+    # Initialize csv writer and write headers
+    csvGA = csv.DictWriter(f=resultsGA, fieldnames=costList,
+                           quoting=csv.QUOTE_NONNUMERIC)
+    csvBase = csv.DictWriter(f=resultsBase, fieldnames=costList,
+                             quoting=csv.QUOTE_NONNUMERIC)
+    csvGA.writeheader()
+    csvBase.writeheader()
+    
+    # Setup model, get dump files (NOTE: this is inefficient, but oh well)
+    dumpfiles = setupBaseAndBaseZIP()
+    
+    # Get write objects
+    writeGA = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_DUMP)
+    writeBase = modGLM.modGLM(pathModelIn=MODEL_BASELINE_2)
+    
+    # Hard-code replace database
+    writeGA.strModel = writeGA.strModel.replace('schema "baseline";',
+                                                'schema "gridlabd";')
+    writeBase.strModel = writeBase.strModel.replace('schema "baseline";',
+                                                    'schema "gridlabd";')
+    
+    # Get our times ready. First, get UTC times.
+    start_utc = util.helper.toUTC(starttime, CONST.TIMEZONE)
+    stop_utc = start_utc + datetime.timedelta(seconds=runInterval)
+    final_utc = util.helper.toUTC(stoptime, CONST.TIMEZONE)
+    # Get times in their timezones
+    start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+    stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
+    
+    # Initialize the population. Include a VVO baseline individual.
+    # NOTE: start uids at 1, so we can reserve 0 for the baseline representing
+    # 'reality'
+    popObj = population.population(starttime=start_dt, stoptime=stop_dt,
+                                   timezone=CONST.TIMEZONE,
+                                   inPath=writeGA.pathModelIn,
+                                   strModel=writeGA.strModel,
+                                   numInd=CONST.NUM_IND, numGen=CONST.NUM_GEN,
+                                   reg=CONST.REG, cap=CONST.CAP,
+                                   outDir=CONST.OUTPUT_GA, costs=CONST.COSTS,
+                                   voltdumpFiles=dumpfiles, baseControlFlag=4,
+                                   nextUID=1)
+    
+    # Initialize dictionaries for threading use
+    baseDict = {'outDir': CONST.OUTPUT_GA,
+                'individual': None,
+                'inPath': MODEL_BASELINE_2,
+                'strModel': writeBase.strModel}
+    # Prep loop
+    baseInd = None
+    start_str = None # This is just to get pydev/eclipse to not complain.
+    # Loop over time until we've hit the stoptime
+    while stop_utc <= final_utc:
+        # Time the run
+        t0 = time.time()
+        bestInd = popObj.ga()
+        t1 = time.time()
+        
+        # If we aren't in the first loop:
+        if baseInd:
+            # Wait for the model to finish
+            modelQueue.join()
+            # Build cleanup dictionary and put it in the queue
+            cleanDict = baseInd.buildCleanupDict(truncateFlag=True)
+            cleanupQueue.put_nowait(cleanDict)
+            # Write cost data to the csv
+            csvBase.writerow({'time': start_str, **baseInd.costs})
+            cleanupQueue.join()
+        
+        # Create baseline individual, using cap and reg from the bestInd
+        # Note regFlag, capFlag, and controlFlag combination for control.
+        # NOTE: While this is inefficient, we only have to do this since we 
+        # don't have the GridAPPS-D platform. We're trying to represent sending
+        # setpoints to the 'real' system here
+        baseInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
+                                        timezone=CONST.TIMEZONE,
+                                        voltdumpFiles=dumpfiles,
+                                        reg=bestInd.reg, cap=bestInd.cap,
+                                        regFlag=4, capFlag=4, controlFlag=0,
+                                        uid=0)
+        
+        # Assign individual to dictionary, and put in the queue to run
+        baseDict['individual'] = baseInd
+        modelQueue.put_nowait(baseDict)
+        
+        # While the baseline model is running....
+        # Write to log and csv for population:
+        log.write(('*'*72 + '\n'))
+        start_str = start_dt.strftime(util.constants.DATE_TZ_FMT)
+        end_str = stop_dt.strftime(util.constants.DATE_TZ_FMT)
+        print('Genetic run for {} through {} complete.'.format(start_str,
+                                                               end_str))
+        log.write('Results for {} through {}:\n'.format(start_str, end_str))
+        log.write('GA runtime: {:.0f} s\n'.format(t1-t0))
+        log.write('Generation scores: ')
+        for ind in range(len(popObj.generationBest)):
+            log.write('{:.4g}'.format(popObj.generationBest[ind]))
+            if ind < (len(popObj.generationBest) - 1):
+                log.write(', ')
+            log.write('\n')
+        # Write to csv
+        csvGA.writerow({'time': start_str, **bestInd.costs})
+        
+        # Update 'reg' and 'cap' based on the most fit individual.
+        reg, cap = util.helper.rotateVVODicts(reg=bestInd.reg, cap=bestInd.cap,
+                                              deleteFlag=True)
+        
+        # Increment the times
+        start_utc += datetime.timedelta(seconds=runInterval)
+        stop_utc += datetime.timedelta(seconds=runInterval)
+        # Get times in their timezones
+        start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+        stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
+        
+        # Prep the population for the next run
+        popObj.prep(starttime=start_dt, stoptime=stop_dt,
+                    strModel=writeGA.strModel, reg=reg, cap=cap, keep=0.1)
+    
+    # Write the last of the baseline data to file (don't bother cleaning up)
+    csvBase.writerow({'time': start_str, **baseInd.costs})
+    
+    # Shut down population threads
+    popObj.stopThreads()
+    # Stop baseline threads
+    modelQueue.put_nowait(None)
+    cleanupQueue.put_nowait(None)
+    tRun.join()
+    tClean.join()
+    # Close the files
+    resultsGA.close()
+    resultsBase.close()
+    log.close()
+    print('All done!')
     
 if __name__ == '__main__':
     """
@@ -643,5 +822,6 @@ if __name__ == '__main__':
     """
     s = '2016-03-13 00:00:00'
     e = '2016-03-13 04:00:00'
-    evaluateZIP(starttime=s, stoptime=e)
+    runGA(starttime=s, stoptime=e)
+    #evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()
