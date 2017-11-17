@@ -89,13 +89,13 @@ public class LogManagerTests {
 		message.setStoreToDB(true);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
 		
-		logManager.log(message);
+		logManager.log(message,GridAppsDConstants.username);
 		
 		
 		
-		Mockito.verify(logDataManager).store(argCaptor.capture(), argCaptor.capture(),
+		Mockito.verify(logDataManager).store(argCaptor.capture(), 
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
 		assertEquals(3, allStringValues.size());
@@ -121,14 +121,14 @@ public class LogManagerTests {
 				+ "\"log_message\":\"Testing LogManager\","
 				+ "\"timestamp\": "+GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()+"}";
 		
-		logManager.log(LogMessage.parse(message));
+		logManager.log(LogMessage.parse(message),GridAppsDConstants.username);
 		
 		
 		
 		
-		Mockito.verify(logDataManager).store(argCaptor.capture(), argCaptor.capture(),
+		Mockito.verify(logDataManager).store(argCaptor.capture(), 
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
 		assertEquals(3, allStringValues.size());

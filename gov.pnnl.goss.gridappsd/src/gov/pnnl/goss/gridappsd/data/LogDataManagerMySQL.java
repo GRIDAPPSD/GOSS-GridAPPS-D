@@ -39,25 +39,64 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.Start;
-
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+
 
 @Component
-public class LogDataManagerImpl implements LogDataManager {
+public class LogDataManagerMySQL implements LogDataManager {
+	
+	@ServiceDependency
+	GridAppsDataSources dataSources;
+	private Connection connection;
+	private PreparedStatement preparedStatement;;
 	
 	@Start
 	public void start(){
+		
+		try {
+			connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 	@Override
-	public void store(String process_id, String username, long timestamp, String log_message, LogLevel log_level,
-			ProcessStatus process_status) {
-		// TODO Auto-generated method stub
+	public void store(String process_id, long timestamp,
+			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
+		
+		try {
+			
+			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?)");
+			preparedStatement.setString(1, process_id);
+			preparedStatement.setDate(2, new Date(timestamp));
+			preparedStatement.setString(3, log_message);
+			preparedStatement.setString(4, log_level.toString());
+			preparedStatement.setString(5, process_status.toString());
+			preparedStatement.setString(6, username);
+			
+			preparedStatement.executeUpdate();
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		
+		
 
 	}
 
@@ -66,5 +105,6 @@ public class LogDataManagerImpl implements LogDataManager {
 		// TODO Auto-generated method stub
 
 	}
+
 
 }

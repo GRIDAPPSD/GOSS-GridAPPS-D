@@ -39,9 +39,13 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.io.Serializable;
+
 import com.google.gson.Gson;
 
-public class LogMessage {
+public class LogMessage implements Serializable {
+	
+	private static final long serialVersionUID = 3528865632052617983L;
 	
 	public enum LogLevel {
 		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
@@ -51,13 +55,11 @@ public class LogMessage {
 	}
 	
 	String process_id;
-	String parent_process_id;
-
 	long timestamp;
 	String log_message;
 	LogLevel log_level;
 	ProcessStatus process_status;
-	Boolean storeToDB = true;
+	Boolean store_to_db = true;
 	
 	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
 	
@@ -68,7 +70,7 @@ public class LogMessage {
 		this.log_level = log_level;
 		this.log_message = log_message;
 		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+		this.store_to_db = storeToDB;
 	}
 	
 	public String getProcess_id() {
@@ -76,12 +78,6 @@ public class LogMessage {
 	}
 	public void setProcess_id(String process_id) {
 		this.process_id = process_id;
-	}
-	public String getParent_process_id() {
-		return parent_process_id;
-	}
-	public void setParent_process_id(String parent_process_id) {
-		this.parent_process_id = parent_process_id;
 	}
 	public long getTimestamp() {
 		return timestamp;
@@ -108,10 +104,10 @@ public class LogMessage {
 		this.process_status = process_status;
 	}
 	public Boolean getStoreToDB() {
-		return storeToDB;
+		return store_to_db;
 	}
 	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
+		this.store_to_db = storeToDB;
 	}
 	
 	
@@ -122,6 +118,7 @@ public class LogMessage {
 			throw new RuntimeException("Expected attribute log_message not found");
 		return obj;
 	}
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();

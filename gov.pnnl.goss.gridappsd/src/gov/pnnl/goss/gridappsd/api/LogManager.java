@@ -44,7 +44,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 public interface LogManager {
 
 	
-	void log(LogMessage message);
+	void log(LogMessage message, String username);
 	
 	
 	void get(LogMessage message);

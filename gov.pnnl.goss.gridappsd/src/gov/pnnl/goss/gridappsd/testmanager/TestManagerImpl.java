@@ -135,7 +135,7 @@ public class TestManagerImpl implements TestManager {
 			LogMessage logMessageObj = createLogMessage();
 			
 			logMessageObj.setLog_message("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj);
+			logManager.log(logMessageObj,GridAppsDConstants.username);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -175,7 +175,7 @@ public class TestManagerImpl implements TestManager {
 					DataResponse event = (DataResponse)message;
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj);
+					logManager.log(logMessageObj,GridAppsDConstants.username);
 					
 					RequestTest reqTest = RequestTest.parse(message.toString());
 					
@@ -213,7 +213,7 @@ public class TestManagerImpl implements TestManager {
 	public TestConfiguration loadTestConfig(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLog_message("Loading TestCofiguration from:" + path);
-		logManager.log(logMessageObj);
+		logManager.log(logMessageObj,GridAppsDConstants.username);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
@@ -243,7 +243,7 @@ public class TestManagerImpl implements TestManager {
 //			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Error" + e.getMessage());
-			logManager.log(logMessageObj);
+			logManager.log(logMessageObj,GridAppsDConstants.username);
 		}
 		return testConfig;
 	}
@@ -251,7 +251,7 @@ public class TestManagerImpl implements TestManager {
 	public TestScript loadTestScript(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLog_message("Loading TestScript from:" + path);
-		logManager.log(logMessageObj);
+		logManager.log(logMessageObj,GridAppsDConstants.username);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
 		TestScript testScript = null;
@@ -265,7 +265,7 @@ public class TestManagerImpl implements TestManager {
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Error" + e.getMessage());
-			logManager.log(logMessageObj);
+			logManager.log(logMessageObj,GridAppsDConstants.username);
 		}
 		return testScript;
 	}

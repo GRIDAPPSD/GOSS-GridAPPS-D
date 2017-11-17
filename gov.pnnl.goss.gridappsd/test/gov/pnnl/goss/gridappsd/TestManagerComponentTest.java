@@ -26,6 +26,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -76,7 +77,7 @@ public class TestManagerComponentTest {
 											statusReporter,logManager);
 		testManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 

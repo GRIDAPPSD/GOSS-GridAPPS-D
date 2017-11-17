@@ -137,7 +137,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						"Starting simulation "+simulationId, 
 						LogLevel.INFO, 
 						ProcessStatus.STARTING, 
-						true));
+						true),GridAppsDConstants.username);
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
 			}
@@ -188,7 +188,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								"FNCS Co-Simulator started", 
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
-								true));
+								true),GridAppsDConstants.username);
 
 
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
@@ -212,7 +212,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								"GridLAB-D started", 
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
-								true));
+								true),GridAppsDConstants.username);
 						
 												
 						//Start VVO Application
@@ -233,7 +233,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								"FNCS-GOSS Bridge started", 
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
-								true));
+								true),GridAppsDConstants.username);
 
 						//Start GOSS-FNCS Bridge
 						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
@@ -251,7 +251,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								"FNCS-GOSS Bridge started", 
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
-								true));
+								true),GridAppsDConstants.username);
 
 
 						//Subscribe to fncs-goss-bridge output topic
@@ -275,7 +275,7 @@ public class SimulationManagerImpl implements SimulationManager{
 									"FNCS Initialized", 
 									LogLevel.INFO, 
 									ProcessStatus.RUNNING, 
-									true));
+									true),GridAppsDConstants.username);
 
 
 							//Send the timesteps by second for the amount of time specified in the simulation config
@@ -286,7 +286,7 @@ public class SimulationManagerImpl implements SimulationManager{
 									"FNCS Initialization Failed", 
 									LogLevel.ERROR, 
 									ProcessStatus.ERROR,  
-									true));
+									true),GridAppsDConstants.username);
 
 						}
 
@@ -297,7 +297,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								"Simulation "+simulationId+" complete", 
 								LogLevel.INFO, 
 								ProcessStatus.COMPLETE,
-								true));
+								true),GridAppsDConstants.username);
 					}
 					catch(Exception e){
 							log.error("Error during simulation",e);
@@ -307,7 +307,7 @@ public class SimulationManagerImpl implements SimulationManager{
 										"Simulation error: "+e.getMessage(),
 										LogLevel.ERROR, 
 										ProcessStatus.ERROR,
-										true));
+										true),GridAppsDConstants.username);
 							} catch (Exception e1) {
 								log.error("Error while reporting error status", e);
 							}
@@ -356,7 +356,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						 "FNCS-GOSS Bridge response:"+response, 
 							LogLevel.INFO, 
 							ProcessStatus.RUNNING,
-						true));
+						true),GridAppsDConstants.username);
 
 				Gson  gson = new Gson();
 				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
@@ -396,7 +396,7 @@ public class SimulationManagerImpl implements SimulationManager{
 					"Sending timestep "+seconds, 
 					LogLevel.INFO, 
 					ProcessStatus.RUNNING, 
-					true));
+					true),GridAppsDConstants.username);
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
 			Thread.sleep(simulationConfig.timestep_frequency);

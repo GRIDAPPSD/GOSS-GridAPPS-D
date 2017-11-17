@@ -138,7 +138,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_message("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj);
+			logManager.log(logMessageObj, GridAppsDConstants.username);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -147,11 +147,17 @@ public class ProcessManagerImpl implements ProcessManager {
 //			client.subscribe(GridAppsDConstants.topic_process_prefix+"", new GossResponseEvent() {
 				@Override
 				public void onMessage(Serializable message) {
+					
+					
 					DataResponse event = (DataResponse)message;
+					//TODO:Get username from message's metadata e.g. event.getUserName()
+					String username  = GridAppsDConstants.username;
+					
 					
 					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj);
+					logMessageObj.setLog_message("Received message: "+ event.getData() +" on topic "+event.getDestination());
+					logManager.log(logMessageObj, GridAppsDConstants.username);
+					
 					
 					
 					//TODO: create registry mapping between request topics and request handlers.
@@ -161,28 +167,28 @@ public class ProcessManagerImpl implements ProcessManager {
 						try {
 							int simPort = assignSimulationPort(simulationId);
 							client.publish(event.getReplyDestination(), simulationId);
-							newSimulationProcess.process(configurationManager, simulationManager, statusReporter, simulationId, event, message, simPort);
+							newSimulationProcess.process(configurationManager, simulationManager, simulationId, message, simPort);
 						} catch (Exception e) {
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());
 							logMessageObj.setLog_level(LogLevel.ERROR);
 							logMessageObj.setLog_message(e.getMessage());
-							logManager.log(logMessageObj);
+							logManager.log(logMessageObj, username);
 						}
 					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 						int processId = generateSimulationId();
 						try{
-							appManager.process(statusReporter, processId, event, message);
+							appManager.process(processId, event, message);
 						}
 						catch(Exception e){
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());
 							logMessageObj.setLog_level(LogLevel.ERROR);
 							logMessageObj.setLog_message(e.getMessage());
-							logManager.log(logMessageObj);
+							logManager.log(logMessageObj, username);
 						}
 					} else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
-						logManager.log(LogMessage.parse(message.toString()));
+						logManager.log(LogMessage.parse(message.toString()), username);
 					}
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
@@ -194,7 +200,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLog_level(LogLevel.ERROR);
 			logMessageObj.setLog_message(e.getMessage());
-			logManager.log(logMessageObj);
+			logManager.log(logMessageObj, GridAppsDConstants.username);
 		}
 		
 	}
