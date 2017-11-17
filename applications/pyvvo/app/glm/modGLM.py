@@ -12,8 +12,9 @@ Created on Jul 27, 2017
 
 import re
 import os
-import time
+import datetime
 import util.gld
+import util.constants
 import util.helper
 import csv
 
@@ -187,47 +188,19 @@ class modGLM:
             # Splice in the modified object.
             self.replaceObject(d)
             
-    def updateClock(self, starttime=None, stoptime=None, timezone=None,
-                    tzFlag=False):
+    def updateClock(self, starttime=None, stoptime=None, timezone=None):
         """Function to set model time. If there's no clock object, it will be
             created.
         
         INPUTS:
-            start: simulation start time (starttime in GLD). Should be
-                surrounded in single quotes, and be in the format
-                'yyyy-mm-dd HH:MM:SS'
+            start: simulation start time
             stop: simulation stop time (stoptime in GLD). Same format as start.
             timezone: simulation time zone, specified like it is in GridLAB-D's
                 tzinfo.txt file.
-            tzFlag: If true, times will have timezone/DST specifiers added to
-                them
             
             NOTE: Timezones can be included in start and stop.
         """
-        # I don't think the stuff below is needed...
-        '''
-        # Extract a timezone string.
-        # TODO: this is AWFUL hard-coding.
-        if timezone:
-            tzStr = ' ' + timezone[-3:]
-        else:
-            tzStr = ''
-        '''
-        # If desired, add timezone/DST specifiers to times
-        if tzFlag:
-            if starttime:
-                starttime = util.helper.incrementTime(t=starttime,
-                                                      fmt=util.gld.DATE_FMT,
-                                                      interval=0,
-                                                      tzFlag=True,
-                                                      replaceFlag=True)
-                
-            if stoptime:
-                stoptime = util.helper.incrementTime(t=stoptime,
-                                                     fmt=util.gld.DATE_FMT,
-                                                     interval=0,
-                                                     tzFlag=True,
-                                                     replaceFlag=True)
+
         # Look for clock object
         clockMatch = CLOCK_REGEX.search(self.strModel)
         if clockMatch is not None:
@@ -342,8 +315,8 @@ class modGLM:
                                  + self.strModel[tapeObj['end']+1:])
                 
     def addDatabase(self, hostname='localhost', username='gridlabd',
-                 password='', schema='gridlabd', port='3306',
-                 socketname='/tmp/mysql.sock', tz_offset=0):
+                 password='gridlabd', schema='gridlabd', port='3306',
+                 socketname='/var/run/mysqld/mysqld.sock', tz_offset=0):
         """Method to add mysql database connection to model
         
         For now, it will simply be added to the beginning of the model.
@@ -360,8 +333,13 @@ class modGLM:
             clientflags, options, on_init, on_sync, on_term, sync_interval,
             tz_offset, uses_dst
             
-        NOTE: On Brandon's VM, socket location is /var/run/mysqld/mysqld.sock
+        NOTE: On Brandon's VM, socket location is /var/run/mysqld/mysqld.sock,
+        but the 'default' location is /tmp/mysql.sock
         """
+        # TODO: Compute tz_offset from a given timezone, assuming the mysql
+        # server is running on local time.
+        
+        
         # Construct the beginning of the necessary string
         dbStr = (
             "object database {{\n"
@@ -1117,31 +1095,20 @@ class modGLM:
     
     def addRuntimeToVoltDumps(self, starttime, stoptime, interval=60):
         """Function to add runtimes to existing voltage dump objects.
-        
-        NOTE: Given dates HAD BETTER BE in the format defined in gld.DATE_FMT
         """
-        # Get times as seconds since epoch. s -> start, e -> end.
-        s = time.mktime(time.strptime(starttime, util.gld.DATE_FMT))
-        e = time.mktime(time.strptime(stoptime, util.gld.DATE_FMT))
-        
-        # Add a timezone and DST qualifier to starttime
-        starttime = util.helper.incrementTime(t=starttime,
-                                              fmt=util.gld.DATE_FMT,
-                                              tzFlag=True,
-                                              replaceFlag=True,
-                                              interval=0)
         
         # Find a voltdump object.
         m = VOLTDUMP_REGEX.search(self.strModel)
         
         # Loop over all the matches to add runtimes.
-        while m and (s <= e):
+        while m and (starttime <= stoptime):
             # Extract the object
             obj = self.extractObject(objMatch=m)
             
             # Add the runtime.
+            start_str = starttime.strftime(util.constants.DATE_TZ_FMT)
             obj['obj'] = self.modObjProps(obj['obj'],
-                                          {'runtime': "'{}'".format(starttime),
+                                          {'runtime': "'{}'".format(start_str),
                                           }
                                          )
             
@@ -1149,13 +1116,9 @@ class modGLM:
             self.replaceObject(obj)
             
             # Increment the time.
-            s += interval
-            starttime = util.helper.incrementTime(t=starttime,
-                                                  fmt=(util.gld.DATE_FMT
-                                                       + ' %Z'),
-                                                  tzFlag=True,
-                                                  replaceFlag=True,
-                                                  interval=interval)
+            # NOTE: This sucks. But fortunately, GridLAB-D will correct bad 
+            # times. Like 2am PST turns to 3am PDT. It works for fall back too.
+            starttime += datetime.timedelta(seconds=interval)
             
             # Get the next match, offsetting by length of new object.
             m = VOLTDUMP_REGEX.search(self.strModel,
@@ -1291,8 +1254,7 @@ class modGLM:
         """
         # First, get time information. This function will error if interval
         # isn't proper. Pretty rudiemntary for now, but hey, it'll work :)
-        t = util.helper.timeInfoForZIP(starttime=starttime, stoptime=stoptime,
-                                       fmt=util.gld.DATE_FMT)
+        t = util.helper.timeInfoForZIP(starttime=starttime, stoptime=stoptime)
         
         # Craft the filename
         file = (zipDir.replace('\\', '/') + '/' + 'ZIP_S' + str(t['season'])

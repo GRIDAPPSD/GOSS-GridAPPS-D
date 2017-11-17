@@ -9,6 +9,7 @@ import random
 from glm import modGLM
 import util.gld
 import util.helper
+import util.constants
 import math
 import os
 import copy
@@ -27,8 +28,8 @@ CAPTRIANGULARMODE = 0.8
  
 class individual:
     
-    def __init__(self, uid, starttime, stoptime, voltdumpFiles, reg=None,
-                 regFlag=5, cap=None, capFlag=5, regChrom=None, 
+    def __init__(self, uid, starttime, stoptime, timezone, voltdumpFiles,
+                 reg=None, regFlag=5, cap=None, capFlag=5, regChrom=None, 
                  capChrom=None, parents=None, controlFlag=0,
                  recordInterval=60):
         """An individual contains information about Volt/VAR control devices
@@ -42,7 +43,7 @@ class individual:
             result. Use this chromosome to update reg and cap
         
         INPUTS:
-            starttime: date/time str in format of gld.DATE_FMT for model start.
+            starttime: datetime object for model start
             stoptime: "..." end 
             voltdumpFiles: list of filenames of voltdump files. Used to
                 evaluate voltage violations.
@@ -119,7 +120,12 @@ class individual:
         # Initialize some attributes that also need reset when re-using an
         # individual.
         self.prep(starttime=starttime, stoptime=stoptime)
-                    
+        
+        # Set the timezone (this isn't done in prep function as it's assumed
+        # to never change for an individual - feeders don't get up and move, 
+        # and timezones don't often change.
+        self.timezone = timezone
+             
         # Set the control flag
         self.controlFlag = controlFlag
         
@@ -169,7 +175,9 @@ class individual:
         """
         # Assing times.
         self.starttime = starttime
+        self.start_str = starttime.strftime(util.constants.DATE_TZ_FMT)
         self.stoptime = stoptime
+        self.stop_str = stoptime.strftime(util.constants.DATE_TZ_FMT)
         # Full path to output model.
         self.model = None
         # Table information
@@ -493,8 +501,8 @@ class individual:
         """
         # Get the model runtime - we only need to record regulator tap 
         # changes and capacitor changes at the end of simulation.
-        modelRuntime = util.helper.timeDiff(t1=self.starttime, t2=self.stoptime,
-                                            fmt=util.gld.DATE_FMT)
+        modelDelta = self.stoptime - self.starttime
+        modelRuntime = modelDelta.total_seconds()
             
         # Check if directory exists - if not, create it.
         if not os.path.isdir(outDir):
@@ -514,6 +522,10 @@ class individual:
         # Instantiate a modGLM object.
         writeObj = modGLM.modGLM(strModel=strModel, pathModelIn=inPath,
                                 pathModelOut=(outDir + '/' + model))
+        
+        # Update the clock
+        writeObj.updateClock(starttime=self.start_str, stoptime=self.stop_str,
+                             timezone=self.timezone)
         
         # Add runtimes to the voltdumps
         writeObj.addRuntimeToVoltDumps(starttime=self.starttime,
@@ -574,7 +586,7 @@ class individual:
                 regControl = 'MANUAL'
                 capControl = 'MANUAL'
                 # NOTE: this method creates a player file... annoying.
-                self.vvoPlayer = writeObj.addVVO(starttime=self.starttime)
+                self.vvoPlayer = writeObj.addVVO(starttime=self.start_str)
             
         # Set regulator and capacitor control schemes, and add recorders if
         # necessary.
@@ -794,7 +806,13 @@ def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
                 pass
             
         # Delete the directory if it's empty.
+        try:
+            os.rmdir(inDict['dir'])
+        except:
+            pass
+        """
         c = os.listdir(inDict['dir'])
+        
         if c:
             try:
                 raise UserWarning(('The directory {} is not empty.\n'
@@ -807,6 +825,8 @@ def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
                 
         else:
             os.rmdir(inDict['dir'])
+        """
+
         
         # Cleanup complete.
         cleanupQueue.task_done()

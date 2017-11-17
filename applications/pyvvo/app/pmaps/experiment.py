@@ -13,16 +13,15 @@ if upDir not in sys.path:
 from glm import modGLM
 import re
 from pmaps import constants as CONST
-import shutil
 import util.helper
 import util.db
-import util.gld
+import util.constants
 from genetic import individual
-import time
 from genetic import population
 import threading
 from queue import Queue
 import csv
+import datetime
 
 # Paths to input/output models.
 partial =  CONST.BASE_PATH + '/' + CONST.MODEL
@@ -272,6 +271,7 @@ def tidyModel(writeObj):
     # No need to actually return here, but may as well be explicit
     return writeObj
 
+'''
 def writeRunEvalModel(outDir, starttime, stoptime, fIn, fOut):
     """Function to write, run, and evaluate the baseline model.
     """
@@ -322,8 +322,10 @@ def writeRunEvalModel(outDir, starttime, stoptime, fIn, fOut):
     print(baseInd)
     
     return baseInd
+'''
 
-def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
+def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
+                runInterval=CONST.ZIP_INTERVAL, resultsFile='results',
                 logFile='log'):
     """Function to run the populated baseline model and the ZIP baseline model,
     and write output data to file. 
@@ -401,10 +403,13 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
     writeBase2 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_2)
     writeBase3 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_3)
     
-    # Get our times ready
-    s = starttime
-    e = util.helper.incrementTime(t=starttime, fmt=util.gld.DATE_FMT,
-                                  interval=runInterval)
+    # Get our times ready. First, get UTC times.
+    start_utc = util.helper.toUTC(starttime, CONST.TIMEZONE)
+    stop_utc = start_utc + datetime.timedelta(seconds=runInterval)
+    final_utc = util.helper.toUTC(stoptime, CONST.TIMEZONE)
+    # Get times in their timezones
+    start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+    stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
     
     # Use different ID's for the individuals
     bID2 = 0
@@ -415,17 +420,20 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
     # whistles of an individual, it has the capability to add recorders, run
     # its own model, evaluate it's own model, etc.
     # NOTE: We could consider using copy.deepcopy and then modifying UID.
-    baseInd2 = individual.individual(starttime=s, stoptime=e,
+    baseInd2 = individual.individual(starttime=start_dt, stoptime=stop_dt,
+                                     timezone=CONST.TIMEZONE,
                                      voltdumpFiles=dumpfiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=bID2)
     
-    baseInd3 = individual.individual(starttime=s, stoptime=e,
+    baseInd3 = individual.individual(starttime=start_dt, stoptime=stop_dt,
+                                     timezone=CONST.TIMEZONE,
                                      voltdumpFiles=dumpfiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=bID3)
     
-    ZIPInd = individual.individual(starttime=s, stoptime=e,
+    ZIPInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
+                                   timezone=CONST.TIMEZONE,
                                    voltdumpFiles=dumpfiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
                                    controlFlag=4, uid=zID)
@@ -445,45 +453,26 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
                'strModel': ''}
     
     # Loop over time until we've hit the stoptime
-    while util.helper.timeDiff(t1=e, t2=stoptime,
-                               fmt=util.gld.DATE_FMT) >= 0:
+    while stop_utc <= final_utc:
         
-        print('Running for {} through {}'.format(s, e), flush=True)
+        # Get start and stop times as strings
+        start_str = start_dt.strftime(util.constants.DATE_TZ_FMT)
+        stop_str = stop_dt.strftime(util.constants.DATE_TZ_FMT)
+        
+        print('Running for {} through {}'.format(start_str, stop_str),
+              flush=True)
         
         # *********************************************************************
-        # Get the base model ready to run, put it in the queue.
-        baseInd2.prep(starttime=s, stoptime=e)
-        writeBase2.updateClock(starttime=s, stoptime=e, tzFlag=True)
-        writeBase2.addRuntimeToVoltDumps(starttime=s, stoptime=e,
-                                        interval=CONST.RECORD_INT)
-        baseDict2['strModel'] = writeBase2.strModel
-        modelQueue.put_nowait(baseDict2)
-        
-        baseInd3.prep(starttime=s, stoptime=e)
-        writeBase3.updateClock(starttime=s, stoptime=e, tzFlag=True)
-        writeBase3.addRuntimeToVoltDumps(starttime=s, stoptime=e,
-                                        interval=CONST.RECORD_INT)
-        baseDict3['strModel'] = writeBase3.strModel
-        modelQueue.put_nowait(baseDict3)
-
+        # Get the base models ready to run, put it in the queue.
+        queueModel(start_dt, stop_dt, baseInd2, writeBase2, baseDict2,
+                   modelQueue)
+        queueModel(start_dt, stop_dt, baseInd3, writeBase3, baseDict3,
+                   modelQueue)
         # *********************************************************************
-        # Get ZIP model ready.
-        # print('Prepping ZIP model for run.', flush=True)
-        ZIPInd.prep(starttime=s, stoptime=e)
-        writeZIP.updateClock(starttime=s, stoptime=e, tzFlag=True)
-        writeZIP.addRuntimeToVoltDumps(starttime=s, stoptime=e,
-                                       interval=CONST.RECORD_INT)
-
-        # Add ZIP models to the ZIP object
-        writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=s,
-                        stoptime=e)
-        # print('ZIP models added.', flush=True)
-        
-        # Put the updated models in the dictionaries
-        ZIPDict['strModel'] = writeZIP.strModel
-        # Add the individuals to the modelQueue
-        modelQueue.put_nowait(ZIPDict)
-        # print('ZIP model running for {} through {}'.format(s, e), flush=True)
+        # Add ZIP models to the ZIP object and queue it.
+        writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=start_dt,
+                        stoptime=stop_dt)
+        queueModel(start_dt, stop_dt, ZIPInd, writeZIP, ZIPDict, modelQueue)
         
         # Wait for the models to run
         modelQueue.join()
@@ -503,11 +492,11 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
             cleanupQueue.put_nowait(g[2])
             
             # Write to csv
-            csvObj.writerow({'time': s, 'model': g[3], **g[0].costs})
+            csvObj.writerow({'time': start_str, 'model': g[3], **g[0].costs})
             
             # Log file
             print('*'*80, file=g[1])
-            print(s, file=g[1])
+            print(start_str, file=g[1])
             print(g[0], file=g[1])
             
             # Rotate dictionaries
@@ -515,10 +504,11 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
                                                             cap=g[0].cap)
         
         # Increment the times
-        s = util.helper.incrementTime(t=s, fmt=util.gld.DATE_FMT,
-                                      interval=runInterval)
-        e = util.helper.incrementTime(t=e, fmt=util.gld.DATE_FMT,
-                                      interval=runInterval)
+        start_utc += datetime.timedelta(seconds=runInterval)
+        stop_utc += datetime.timedelta(seconds=runInterval)
+        # Get times in their timezones
+        start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+        stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
         
         # Ensure cleanup is complete before moving on
         cleanupQueue.join()
@@ -537,6 +527,16 @@ def evaluateZIP(starttime, stoptime, runInterval, resultsFile='results',
     
     print('Threads stopped and files closed. All done.')
     
+def queueModel(start_dt, stop_dt, individual, writeObj, qDict, q):
+    """Helper function to prep an individual for a given runtime, then put
+    them in the modeling queue
+    """
+    individual.prep(starttime=start_dt, stoptime=stop_dt)
+    # writeObj.updateClock(starttime=start_str, stoptime=stop_str)
+    #writeObj.addRuntimeToVoltDumps(starttime=start_dt, stoptime=stop_dt,
+    #                               interval=CONST.RECORD_INT)
+    qDict['strModel'] = writeObj.strModel
+    q.put_nowait(qDict)
     
 def setupBaseAndBaseZIP(tZIP=CONST.ZIP_INTERVAL, starttime=CONST.STARTTIME,
                         stoptime=CONST.STOPTIME):
@@ -641,6 +641,7 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-01-01 00:00:00'
-    e = '2017-01-01 00:00:00'
-    evaluateZIP(starttime=s, stoptime=e, runInterval=CONST.ZIP_INTERVAL)
+    s = '2016-03-13 00:00:00'
+    e = '2016-03-13 04:00:00'
+    evaluateZIP(starttime=s, stoptime=e)
+    #evaluateZIP()

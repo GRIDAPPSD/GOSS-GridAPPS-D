@@ -61,9 +61,7 @@ import subprocess
 import util.db
 import csv
 import os
-
-# GridLAB-D should get dates in this format.
-DATE_FMT = "%Y-%m-%d %H:%M:%S"
+import util.constants
 
 # definitions for regulator and capacitor properties
 REG_CHANGE_PROPS = ['tap_A_change_count', 'tap_B_change_count',
@@ -212,10 +210,30 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
                                   table=swingData['energy']['table'],
                                   cols=swingData['energy']['columns'],
                                   starttime=stoptime, stoptime=stoptime)
-    assert len(energyRows) == 1
+    if len(energyRows) == 1:
+        # In every case except for 'fall back' DST transistion, we should have
+        # only one energy row returned from the query. GridLAB-D uses timestamp
+        # rather than datetime, so we get ambiguity.
+        rowInd = 0
+    else:
+        # If we're here, there's either a problem, or we're in the DST
+        # 'fall back' transition. Use assertions to be sure.
+        # Ensure we got exactly two rows
+        assert len(energyRows) == 2
+        # Ensure all values in the first energy row are 0.
+        for v in energyRows[0]:
+            assert v == 0
+        
+        # Ensure all values in the second energy row are non-zero
+        for v in energyRows[1]:
+            assert v != 0
+        
+        # Set the row index.
+        rowInd = 1
+
     # Compute the costs
-    costDict['realEnergy'] = energyRows[0][REAL_IND] * costs['realEnergy']
-    costDict['reactiveEnergy'] = (energyRows[0][REACTIVE_IND]
+    costDict['realEnergy'] = energyRows[rowInd][REAL_IND] * costs['realEnergy']
+    costDict['reactiveEnergy'] = (energyRows[rowInd][REACTIVE_IND]
                                   * costs['reactiveEnergy'])
     #**************************************************************************
     # POWER FACTOR COST

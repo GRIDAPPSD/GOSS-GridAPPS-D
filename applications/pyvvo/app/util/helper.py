@@ -3,19 +3,19 @@ Created on Sep 12, 2017
 
 @author: thay838
 '''
-import time
 import json
 import cmath
 import math
 import re
-import os
+import datetime
+import pytz
+import util.constants
 
 # Compile some regular expressions for detection of complex number forms
 RECT_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*j')
 FIRST_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*')
 SECOND_EXP = re.compile(r'[+-]([0-9])+(\.)*([0-9])*(e[+-]([0-9])+)*[dr]')
-TZ_EXP = re.compile('[PMCE][SD]T')
-    
+   
 def getComplex(s):
     """Function to take a string which represents a complex number and convert
     it into a Python complex type. This is specifically intended to work with
@@ -168,159 +168,133 @@ def updateVVODicts(regOld, capOld, regNew, capNew):
     return {'reg': regOld, 'cap': capOld, 'tapChangeCount': tapChangeCount,
             'capSwitchCount': capSwitchCount}
 
-def incrementTime(t, fmt, interval, tzFlag=False, replaceFlag=False):
-        """Simple function to increment a time string by a specified amount.
-        
-        INPTUS: 
-            t: string representation of a time, in the format given by 'fmt'
-            fmt: Python time string format corresponding to 't'
-            interval: interval in seconds to increment t by.
-            tzFlag: If True, fmt will have a ' %Z' added, and thus the returned
-                string will have a timezone designation
-            replaceFlag: If True, stupid Windows timezone/DST specifier will be
-                replaced with posix variant. NOTE: replaceFlag does nothing if
-                tzFlag is false.
-            
-        TODO: unit test
-        TODO: daylight savings safe?
-        """
-        # TODO: Daylight savings problems?
-        # TODO: We're running an extra minute of simulation each run.
-        
-        # If we're given a fmt with %Z in it, make sure it works for this
-        # platform:
-        if '%Z' in fmt and (os.name != 'posix'):
-            t = tzFmtConvert(t)
-        
-        tN = time.mktime(time.strptime(t, fmt)) + interval
-        
-        # Update the format
-        if tzFlag and ('%Z' not in fmt):
-            fmt += ' %Z'
-            
-        tOut = time.strftime(fmt, time.localtime(tN))
-        
-        # If we're on stupid Windows, fix the timezone/DST designation
-        if replaceFlag and (os.name != 'posix'):
-            tOut = tzFmtConvert(t=tOut)
-             
-        return tOut
+def toUTC(ts, timezone=None):
+    """Helper function to take a given time string, parse it into a datetime
+    object, then convert it to UTC
     
-def tzFmtConvert(t):
-    """Hard-coded function to convert stupid Windows time zones to Posix time
-    zones and vice versa.
-    
-    Input time should be a string, formatted as util.gld.DATE_FMT, but also
-    with a timezone specified (%Z in Python) 
-    
-    NOTE: hard-coded for continental US only.
-    NOTE: This will likely break for places that don't do DST like AZ
+    INPUTS:
+        ts: string representing a time. 
+        timezone: timezone string as listed in GridLAB-D's tzinfo file. It's 
+        preferred to
+        
     """
-    # WE DON'T HAVE TO MESS WITH THIS ON LINUX!
-    if os.name == 'posix':
-        return t
     
-    # Begin stupid hard-coding.
-    s = ''
-    r = ''
+    # Check if the string came with a timezone. If so, infer both timezone and
+    # daylight savings time
+    tzMatch = util.constants.TZ_EXP.search(ts)
     
-    # If we're going from posix to Windows, the specifier should be at the end.
-    # NOTE: if we're going the other way, this should either return 'Time' or
-    # the time as a string. So the hard-coded character checks by position
-    # should be safe (not cause false hits)
-    e = t.strip().split()[-1].strip()
+    # We're overdefined if the timestamp has a tz, and the timezone was given
+    if tzMatch and timezone:
+        assert False, ("Either supply a timezone string in the given timestamp"
+                       + " or give the timezone input, but not both.")
     
-    # Start with locale
-    if ('Pacific' in t) or (e[0] == 'P'):
-        s += 'P'
-        r += 'Pacific'
-    elif ('Mountain' in t) or (e[0] == 'M'):
-        s += 'M'
-        r += 'Mountain'
-    elif ('Central' in t) or (e[0] == 'C'):
-        s += 'C'
-        r += 'Central'
-    elif ('Eastern' in t) or (e[0] == 'E'):
-        s += 'E'
-        r += 'Eastern'
-    else:
-        raise ValueError(('Only Pacific, Mountain, Central, and Eastern times'
-                          + ' are supported.'))
-      
-    # Add space to replacement string
-    r += ' '  
+    if tzMatch:
+        # Extract the match
+        tzStr = tzMatch.group()
+        if tzStr[0] == 'E':
+            tz = util.constants.TZ['EST5EDT']
+        elif tzStr[0] == 'C':
+            tz = util.constants.TZ['CST6CDT']
+        elif tzStr[0] == 'M':
+            tz = util.constants.TZ['MST7MDT']
+        elif tzStr[0] == 'P':
+            tz = util.constants.TZ['PST8PDT']
+        elif tzStr[0] == 'A':
+            tz = util.constants.TZ['AST9ADT']
+        elif tzStr[0] == 'H':
+            tz = util.constants.TZ['HST10HDT']
         
-    # Standard vs. Daylight
-    if ('Standard' in t) or (e[1] == 'S'):
-        s += 'S'
-        r += 'Standard'
-    elif ('Daylight' in t) or (e[1] == 'D'):
-        s += 'D'
-        r += 'Daylight'
-    else:
-        raise ValueError('Time must have "Standard" or "Daylight" specified!')
+        # Determine if we're in daylight savings time
+        if tzStr[1] == 'D':
+            daylight = True
+        else:
+            daylight = False
         
-    # Because of course we need to specify 'time'
-    s += 'T'
-    r += ' Time'
-    
-    # Perform replacement and return
-    if TZ_EXP.match(e):
-        out = t.replace(e, r)
+        # Remove the timezone portion of the string
+        ts = util.constants.TZ_EXP.sub('', ts)
+        
     else:
-        out = t.replace(r, s)
-    return out
+        # Get timezone object
+        tz = getTZObj(timezone=timezone)
+        daylight = None
+        
+    # Create naive object
+    naive = datetime.datetime.strptime(ts, util.constants.DATE_FMT)
+        
+    # Add timezone information to the naive object
+    dt = tz.localize(naive, is_dst=daylight)
+    
+    # Convert to UTC
+    dtUTC = dt.astimezone(tz=pytz.utc)
+    
+    return dtUTC
 
-def timeDiff(t1, t2, fmt):
-    """Simple function to get the difference (in seconds) of t2-t1.
+def getTZObj(timezone):
+    """Helper function to grab a tzinfo object for a given timezone. Note that
+    there is currently only support for timezones described in GridLAB-D's 
+    tzinfo file. See util.constants.TZ
     """
-    delta = time.mktime(time.strptime(t2, fmt)) \
-        - time.mktime(time.strptime(t1, fmt))
-    return delta
-
-def timeInfoForZIP(starttime, stoptime, fmt, zipInterval=3600):
+    # Remove a '+' if present in the timezone
+    timezone = timezone.replace('+', '')
+    # The folowing will result in a key error if the given timezone is bad.
+    tz = util.constants.TZ[timezone]
+    
+    return tz
+    
+def utcToTZ(dt, timezone):
+    """Helper function to take a datetime object in UTC time and convert it
+    to a timezone. Currently only supports timezones described in GridLAB-D's
+    tzinfo file. See util.constants.TZ
+    """
+    tz = getTZObj(timezone=timezone)
+    dtNew = dt.astimezone(tz=tz)
+    return dtNew
+    
+def timeInfoForZIP(starttime, stoptime, zipInterval=3600):
     """Function to extract the necessary time information to layer ZIP models.
+    
+    NOTE: the 'hour' property needs to properly handle DST. This is done here.
+    
+    INPUTS:
+        starttime: aware datetime object
+        stoptime: aware datetime object
+        zip
     """
     # Ensure times are within the same ZIP modeling window. For now, hard-code
     # interval to same hour.
     # TODO: Make the 'delta' an input? or a constant? Anyways, don't hide it
     # here
-    delta = timeDiff(starttime, stoptime, fmt)
-    assert delta <= zipInterval
-    
-    # Get times as struct_times
-    ts = time.strptime(starttime, fmt)
-    te = time.strptime(stoptime, fmt)
+    delta = stoptime - starttime
+    assert delta.total_seconds() <= zipInterval
     
     # Again, hard-coding an hour check. Make sure the end time doesn't run into
     # the next hour
-    if ts.tm_hour != te.tm_hour:
-        assert (te.tm_min == 0) and (te.tm_sec == 0)
+    if starttime.hour != stoptime.hour:
+        assert (starttime.minute == 0) and (stoptime.minute == 0)
         
     # If we've made it here, our dates are valid and usable. Get the info.
     # Start by extracting season. For now, this is hard-coded to be 3 month
     # chunks. While we could do fancy math, may as well be explicit and do
     # stacked if/else
-    if (ts.tm_mon >= 1) and (ts.tm_mon <= 3):
+    if (starttime.month >= 1) and (starttime.month <= 3):
         season = 1
-    elif (ts.tm_mon >= 4) and (ts.tm_mon <= 6):
+    elif (starttime.month >= 4) and (starttime.month <= 6):
         season = 2
-    elif (ts.tm_mon >= 7) and (ts.tm_mon <= 9):
+    elif (starttime.month >= 7) and (starttime.month <= 9):
         season = 3
-    elif (ts.tm_mon >= 10) and (ts.tm_mon <= 12):
+    elif (starttime.month >= 10) and (starttime.month <= 12):
         season = 4
-        
-    # Get the hour
-    hour = ts.tm_hour
     
     # Get weekday vs weekend
-    if ts.tm_wday <= 4:
+    if starttime.weekday() <= 4:
         wday = 'day'
     else:
         wday = 'end'
         
     # Return
-    out = {'season': season, 'hour': hour, 'wday': wday}
+    out = {'season': season,
+           'hour': starttime.hour,
+           'wday': wday}
     return out
     
     
@@ -406,9 +380,47 @@ if __name__ == '__main__':
     c4 = -1-1j
     r4 = powerFactor(c4)
     """
+    
+    """
     from util import gld
     t1 = '2016-03-13 01:00:00 Pacific Daylight Time'
     t2 = '2016-03-13 02:00:00 Pacific Daylight Time'
     fmt = gld.DATE_FMT
     o = timeInfoForZIP(starttime=t1, stoptime=t2, fmt=(fmt + ' %Z'))
     print('hooray')
+    """
+    f = '%Y-%m-%d %H:%M:%S %Z'
+    # Look at spring forward
+    #t1 = datestrToDatetime('2016-03-13 00:00:00 PST')
+    ts = '2016-03-13 00:00:00'
+    tz = 'PST8PDT'
+    tU = toUTC(ts, tz)
+    for i in range(4):
+        tn = tU + i*datetime.timedelta(seconds=3600)
+        tP = utcToTZ(tn, tz)
+        print(tP.strftime(util.constants.DATE_FMT + ' %Z'))
+        #print('Using strftime   :', tn.strftime(f))
+        #print('With print method: ' + printDatetime(tn, f))
+        #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])
+        #print('As timezone      :', tn.date(), tn.time(), tn.tzname())
+        #print()
+    
+    print()
+    # Look at fall back
+    #t2 = datestrToDatetime('2016-11-06 00:00:00 PDT')
+    t2 = '2016-11-06 00:00:00'
+    tU = toUTC(t2, tz)
+    for i in range(4):
+        tn = tU + i*datetime.timedelta(seconds=3600)
+        tP = utcToTZ(tn, tz)
+        print(tP.strftime(util.constants.DATE_FMT + ' %Z'))
+        #print('Using strftime   :', tn.strftime(f))
+        #print('With print method: ' + printDatetime(tn, f))
+        #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])
+        #print('As timezone      :', tn.date(), tn.time(), tn.tzname())
+        #print()
+        
+    print('hooray')
+    #t2 = incrementTime(t=t1, fmt=gld.DATE_FMT + ' %Z', interval=3600)
+    #Pacific  = USTimeZone(-8, "Pacific",  "PST", "PDT")
+    

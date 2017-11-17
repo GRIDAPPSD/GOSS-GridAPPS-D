@@ -9,8 +9,10 @@ Created on Aug 29, 2017
 @author: thay838
 '''
 import mysql.connector.pooling
+import datetime
 from mysql.connector import errorcode
 from util import helper
+from util import constants
 
 def connectPool(user='gridlabd', password='', host='localhost',
                 database='gridlabd', pool_name='mypool', pool_size=1):
@@ -44,7 +46,7 @@ def connectPool(user='gridlabd', password='', host='localhost',
     else:
             return cnx 
         
-def connect(user='gridlabd', password='', host='localhost',
+def connect(user='gridlabd', password='gridlabd', host='localhost',
             database='gridlabd', use_pure=False):
     """Method to create and return a single database connection. This
         implementation allows us to use the C connector, while the pool
@@ -80,6 +82,8 @@ def _printError(err):
         print("Database does not exist")
     else:
         print(err)
+        
+    raise UserWarning('Something went wrong connecting to MySQL DB.')
 '''
 import pyodbc
 
@@ -263,19 +267,38 @@ def timeWhere(tCol, starttime, stoptime):
     
     INPUTS:
         tCol: name of time column
-        starttime: date string formatted as yyyy-mm-dd HH:MM:SS
-        stoptime: date string formatted as yyy-mm-dd HH:MM:SS
+        starttime: datetime object
+        stoptime: datetime object
     """
     if starttime and stoptime:
+        # Convert datetimes to strings. 
+        start_str = starttime.strftime(constants.DATE_FMT)
         if starttime != stoptime:
-            # Times aren't equal, use range
+            stop_str = stoptime.strftime(constants.DATE_FMT)
+            # If our times are different, but our strings are the same, we're
+            # having a DST 'fall back' problem. This is a result of GridLAB-D
+            # using the timestamp type, which contains no timezone/DST info.
+            if start_str == stop_str:
+                # Our strings are identical. We need to do some date math...
+                # Take the difference.
+                tDiff = stoptime - starttime
+                # Create a naive datetime object from the start_str (which 
+                # contains no tz/DST info)
+                dt1 = datetime.datetime.strptime(start_str, constants.DATE_FMT)
+                # Create new naive datetime by adding the difference
+                dt2 = dt1 + tDiff
+                # Create new string.
+                stop_str = dt2.strftime(constants.DATE_FMT) 
+                
+            # Create time range.
             s = (" WHERE {tCol}>='{starttime}' and "
-                 "{tCol}<='{stoptime}'").format(tCol=tCol, starttime=starttime,
-                                                  stoptime=stoptime)
+                 "{tCol}<='{stoptime}'").format(tCol=tCol,
+                                                starttime=start_str,
+                                                stoptime=stop_str)
         else:
             # Times are equal, use equality
             s = " WHERE {tCol}='{starttime}'".format(tCol=tCol,
-                                                     starttime=starttime)
+                                                     starttime=start_str)
     else:
         s = ''
         
