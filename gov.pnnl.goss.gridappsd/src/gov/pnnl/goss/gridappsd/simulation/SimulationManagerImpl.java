@@ -115,8 +115,12 @@ public class SimulationManagerImpl implements SimulationManager{
 	}
 	@Start
 	public void start() throws Exception{
-		log.info("Starting simulation manager");
-		//TODO
+		logManager.log(new LogMessage(this.getClass().getName(), 
+				new Date().getTime(), 
+				"Starting "+this.getClass().getName(), 
+				LogLevel.INFO, 
+				ProcessStatus.STARTING, 
+				true),GridAppsDConstants.username);
 		Credentials credentials = new UsernamePasswordCredentials(
 				GridAppsDConstants.username, GridAppsDConstants.password);
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);
@@ -132,7 +136,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	public void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig){
 
 			try {
-				logManager.log(new LogMessage(Integer.toString(simulationId), 
+				logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
 						new Date().getTime(), 
 						"Starting simulation "+simulationId, 
 						LogLevel.INFO, 
@@ -171,7 +175,13 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 						}
 						
-						log.info("Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2");
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2",
+								LogLevel.INFO, 
+								ProcessStatus.STARTING, 
+								true),GridAppsDConstants.username);
+						
 						ProcessBuilder fncsBuilder = new ProcessBuilder(getPath(GridAppsDConstants.FNCS_PATH), "2");
 						fncsBuilder.redirectErrorStream(true);
 						fncsBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs.log"));
@@ -183,7 +193,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
 
 						
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
 								new Date().getTime(), 
 								"FNCS Co-Simulator started", 
 								LogLevel.INFO, 
@@ -194,7 +204,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 
 						//Start GridLAB-D
-						log.info("Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile);
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile,
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
+								true),GridAppsDConstants.username);
 						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
 						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"gridlabd.log"));
@@ -207,7 +222,7 @@ public class SimulationManagerImpl implements SimulationManager{
 
 						//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
 								new Date().getTime(), 
 								"GridLAB-D started", 
 								LogLevel.INFO, 
@@ -218,7 +233,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						//Start VVO Application
 						//TODO filname really should be constant
 						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
-						log.info("Calling "+"python "+getPath(GridAppsDConstants.VVO_APP_PATH)+" "+simulationId+" "+vvoInputFile);
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId), 
+								new Date().getTime(), 
+								"Calling "+"python "+getPath(GridAppsDConstants.VVO_APP_PATH)+" "+simulationId+" "+vvoInputFile,
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
+								true),GridAppsDConstants.username);
 						ProcessBuilder vvoAppBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.VVO_APP_PATH), "-f",vvoInputFile, ""+simulationId);
 						vvoAppBuilder.redirectErrorStream(true);
 						vvoAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"vvo_app.log"));
@@ -226,9 +246,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						// Watch the process
 						watch(vvoAppProcess, "VVO Application");
 
-						//TODO: check if bridge is started correctly and send publish simulation status accordingly
-
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId),
 								new Date().getTime(), 
 								"FNCS-GOSS Bridge started", 
 								LogLevel.INFO, 
@@ -236,7 +254,13 @@ public class SimulationManagerImpl implements SimulationManager{
 								true),GridAppsDConstants.username);
 
 						//Start GOSS-FNCS Bridge
-						log.info("Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name());
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId),
+								new Date().getTime(), 
+								"Calling "+"python "+getPath(GridAppsDConstants.FNCS_BRIDGE_PATH)+" "+simulationConfig.getSimulation_name(),
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
+								true),GridAppsDConstants.username);
+						
 						ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridAppsDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name(), broker_location);
 						fncsBridgeBuilder.redirectErrorStream(true);
 						fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
@@ -246,7 +270,7 @@ public class SimulationManagerImpl implements SimulationManager{
 
 						//TODO: check if bridge is started correctly and send publish simulation status accordingly
 
-						logManager.log(new LogMessage(Integer.toString(simulationId), 
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId),
 								new Date().getTime(), 
 								"FNCS-GOSS Bridge started", 
 								LogLevel.INFO, 
@@ -262,7 +286,13 @@ public class SimulationManagerImpl implements SimulationManager{
 							//Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
 							//TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
 							//This call would return true/false for initialization and simulation output of time step 0.
-							log.debug("Checking fncs is initialized, currently "+isInitialized.isInited);
+							logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationId),
+									new Date().getTime(), 
+									"Checking fncs is initialized, currently "+isInitialized.isInited,
+									LogLevel.INFO, 
+									ProcessStatus.RUNNING, 
+									true),GridAppsDConstants.username);
+							
 							client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
 							initAttempts++;
 							Thread.sleep(1000);
