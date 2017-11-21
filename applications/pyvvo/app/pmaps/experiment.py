@@ -358,12 +358,8 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     logZIP = open(CONST.OUTPUT_DIR + '/' + logFile + '_ZIP.txt',
                   newline='', mode='w')
     
-    # Get the cost fields, and write them to the file as headers.
-    # HARD-CODE total field in
-    costList = ['time', 'model', 'total'] + list(CONST.COSTS.keys())
-    
     # Initialize csv writer and write headers
-    csvObj = csv.DictWriter(f=fCSV, fieldnames=costList,
+    csvObj = csv.DictWriter(f=fCSV, fieldnames=CONST.COLNAMES,
                             quoting=csv.QUOTE_NONNUMERIC)
     csvObj.writeheader()
     
@@ -485,9 +481,9 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
         
         # Write to csv, log, cleanup, and rotate dictionaries
-        for g in [(baseInd2, logBase2, baseClean2, 'base_2'),
-                  (baseInd3, logBase3, baseClean3, 'base_3'),
-                  (ZIPInd, logZIP, ZIPClean, 'ZIP')]:
+        for g in [(baseInd2, logBase2, baseClean2, CONST.MNAMES[0]),
+                  (baseInd3, logBase3, baseClean3, CONST.MNAMES[1]),
+                  (ZIPInd, logZIP, ZIPClean, CONST.MNAMES[2])]:
             
             # Cleanup
             cleanupQueue.put_nowait(g[2])
@@ -820,8 +816,8 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-03-13 00:00:00'
-    e = '2016-03-13 04:00:00'
-    runGA(starttime=s, stoptime=e)
+    #s = '2016-03-13 00:00:00'
+    #e = '2016-03-13 04:00:00'
+    runGA()
     #evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

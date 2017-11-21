@@ -16,7 +16,7 @@ COSTS = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00001,
          'overvoltage': 0.05}
 # Stuff for GA
 NUM_THREADS = 6
-NUM_IND = 12
+NUM_IND = 6
 NUM_GEN = 2
 # Paths
 #"""
@@ -47,6 +47,12 @@ ZIP_INTERVAL = 60 * 60
 STARTTIME = '2016-01-01 00:00:00'
 STOPTIME = '2017-01-01 00:00:00'
 TIMEZONE = 'PST+8PDT' # Pulled right from tzinfo.txt
+
+# Define names of the three models for comparing ZIP vs houses
+MNAMES = ['base_2', 'base_3', 'ZIP']
+# Define columns for .csv file for comparing ZIP vs houses
+# NOTE: 'total' is hard-coded in, and is a field inviduals track.
+COLNAMES = ['time', 'model', 'total'] + list(COSTS.keys())
 
 # Database for baseline.
 BASELINE_DB = {'schema': 'baseline'}
