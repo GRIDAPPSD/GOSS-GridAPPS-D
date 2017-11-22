@@ -28,7 +28,7 @@ CAPTRIANGULARMODE = 0.8
  
 class individual:
     
-    def __init__(self, uid, starttime, stoptime, timezone, voltdumpFiles,
+    def __init__(self, uid, starttime, stoptime, timezone, voltFiles,
                  reg=None, regFlag=5, cap=None, capFlag=5, regChrom=None, 
                  capChrom=None, parents=None, controlFlag=0,
                  recordInterval=60):
@@ -45,8 +45,9 @@ class individual:
         INPUTS:
             starttime: datetime object for model start
             stoptime: "..." end 
-            voltdumpFiles: list of filenames of voltdump files. Used to
-                evaluate voltage violations.
+            voltFiles: list of filenames of files which monitor voltage. 
+                Should be output from group_recorder. Used to evaluate voltage
+                violations.
             reg: Dictionary as described in the docstring for the gld module.
             
                 Note possible tap positions be in interval [-lower_taps,
@@ -129,8 +130,8 @@ class individual:
         # Set the control flag
         self.controlFlag = controlFlag
         
-        # Assign voltdumpFiles
-        self.voltdumpFiles = voltdumpFiles
+        # Assign voltFiles
+        self.voltFiles = voltFiles
         
         # Assign reg and cap dicts. Perform a deepcopy, since an individual
         # will modify its own copy of the given reg and cap definitions.
@@ -528,11 +529,6 @@ class individual:
         writeObj.updateClock(starttime=self.start_str, stoptime=self.stop_str,
                              timezone=self.timezone)
         
-        # Add runtimes to the voltdumps
-        writeObj.addRuntimeToVoltDumps(starttime=self.starttime,
-                                       stoptime=self.stoptime,
-                                       interval=self.recordInterval)
-        
         # Update the swing node to a meter and get it writing power to a table
         # TODO: swing table won't be the only table.
         # Compute
@@ -705,8 +701,8 @@ class individual:
                                            tCol=tCol,
                                            tapChangeCount=self.tapChangeCount,
                                            capSwitchCount=self.capSwitchCount,
-                                           voltdumpDir=self.outDir,
-                                           voltdumpFiles=self.voltdumpFiles
+                                           voltFilesDir=self.outDir,
+                                           voltFiles=self.voltFiles
                                             )
     
     def writeRunUpdateEval(self, strModel, inPath, outDir, cursor, costs):
@@ -742,7 +738,7 @@ class individual:
             tables.append(self.regData['table'])
             
         d = {'tables': tables,
-             'files': list(self.voltdumpFiles),
+             'files': list(self.voltFiles),
              'dir': self.outDir}
         # Add the model file to the file list.
         d['files'].append(self.model)

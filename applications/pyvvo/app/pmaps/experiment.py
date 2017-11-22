@@ -35,7 +35,7 @@ MODEL_VVO = partial + r'_vvo.glm'
 MODEL_BASELINE_2 = partial + r'_baseline_2.glm'
 MODEL_BASELINE_3 = partial + r'_baseline_3.glm'
 MODEL_ZIP = partial + r'_ZIP.glm'
-MODEL_STRIPPED_DUMP = partial + r'_stripped_dump.glm'
+MODEL_STRIPPED_RECORDER = partial + r'_stripped_recorder.glm'
 
 def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     """Function to take the full populated GridLAB-D model, and get it ready to
@@ -392,11 +392,11 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     print('Model and cleanup threads started.')
     
     # Note defaults for setting up models assumes ZIP files are for each hour
-    dumpfiles = setupBaseAndBaseZIP()
+    voltFiles = setupBaseAndBaseZIP()
     print('Baseline and stripped models setup.')
     
     # Get write objects
-    writeZIP = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_DUMP)
+    writeZIP = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_RECORDER)
     writeBase2 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_2)
     writeBase3 = modGLM.modGLM(pathModelIn=MODEL_BASELINE_3)
     
@@ -419,19 +419,19 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # NOTE: We could consider using copy.deepcopy and then modifying UID.
     baseInd2 = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                      timezone=CONST.TIMEZONE,
-                                     voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                     voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=bID2)
     
     baseInd3 = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                      timezone=CONST.TIMEZONE,
-                                     voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                     voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=bID3)
     
     ZIPInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                    timezone=CONST.TIMEZONE,
-                                   voltdumpFiles=dumpfiles, reg=CONST.REG,
+                                   voltFiles=voltFiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
                                    controlFlag=4, uid=zID)
     
@@ -535,47 +535,50 @@ def queueModel(start_dt, stop_dt, individual, writeObj, qDict, q):
     qDict['strModel'] = writeObj.strModel
     q.put_nowait(qDict)
     
-def setupBaseAndBaseZIP(tZIP=CONST.ZIP_INTERVAL, starttime=CONST.STARTTIME,
-                        stoptime=CONST.STOPTIME):
+def setupBaseAndBaseZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME):
     """Function to craft the two baseline models so they can be compared. They
-    will then need to be run in a loop.
+    will then need to be run or evaluated in a loop.
     """
     # Get a modGLM object for the populated baseline
     writePop2 = baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_2,
                               replaceClimate=False)
     writePop3 = baselineModel(fIn=MODEL_AMI, fOut=MODEL_BASELINE_3,
                               replaceClimate=True)
-    writeZIP = baselineModel(fIn=MODEL_STRIPPED, fOut=MODEL_STRIPPED_DUMP)
-    # Get a modGLM object for the zip baseline
+    writeZIP = baselineModel(fIn=MODEL_STRIPPED, fOut=MODEL_STRIPPED_RECORDER)
     
-    # Define voltdump input.
-    voltdump = {'num': round(tZIP/CONST.RECORD_INT) + 1,
-                'group': CONST.TRIPLEX_GROUP,
-                'outDir': None}
+    # We're going to use tape group_recorders to measure voltage at the
+    # loads/meters. Define the necessary input to 'setup_model'
+    triplex_group_recorder = {'group': CONST.TRIPLEX_GROUP,
+                              'interval': CONST.RECORD_INT,
+                              'limit': -1,
+                              'complex_part': 'MAG'}
     
     # Setup the models. NOTE: with no outDir defined, these dump file outputs
     # should be exactly the same. 
-    dumpPop = writePop2.setupModel(starttime=starttime, stoptime=stoptime,
-                                   timezone=CONST.TIMEZONE,
-                                   database=CONST.BASELINE_DB,
-                                   voltdump=voltdump, vSource=None)
+    files = writePop2.setupModel(starttime=starttime, stoptime=stoptime,
+                                 timezone=CONST.TIMEZONE,
+                                 database=CONST.BASELINE_DB,
+                                 triplex_group_recorder=triplex_group_recorder,
+                                 vSource=None)
     
     _ = writePop3.setupModel(starttime=starttime, stoptime=stoptime,
                              timezone=CONST.TIMEZONE,
                              database=CONST.BASELINE_DB,
-                             voltdump=voltdump, vSource=None)
+                             triplex_group_recorder=triplex_group_recorder,
+                             vSource=None)
     
     _ = writeZIP.setupModel(starttime=starttime, stoptime=stoptime,
                                   timezone=CONST.TIMEZONE,
                                   database=CONST.BASELINE_DB,
-                                  voltdump=voltdump, vSource=None)
+                                  triplex_group_recorder=triplex_group_recorder,
+                                  vSource=None)
     
     # Write the models
     writePop2.writeModel()
     writePop3.writeModel()
     writeZIP.writeModel()
     
-    return dumpPop
+    return files
 
 def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                 runInterval=CONST.ZIP_INTERVAL, resultsFile='results',
@@ -631,10 +634,10 @@ def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     csvBase.writeheader()
     
     # Setup model, get dump files (NOTE: this is inefficient, but oh well)
-    dumpfiles = setupBaseAndBaseZIP()
+    voltFiles = setupBaseAndBaseZIP()
     
     # Get write objects
-    writeGA = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_DUMP)
+    writeGA = modGLM.modGLM(pathModelIn=MODEL_STRIPPED_RECORDER)
     writeBase = modGLM.modGLM(pathModelIn=MODEL_BASELINE_2)
     
     # Hard-code replace database
@@ -661,7 +664,7 @@ def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                                    numInd=CONST.NUM_IND, numGen=CONST.NUM_GEN,
                                    reg=CONST.REG, cap=CONST.CAP,
                                    outDir=CONST.OUTPUT_GA, costs=CONST.COSTS,
-                                   voltdumpFiles=dumpfiles, baseControlFlag=4,
+                                   voltFiles=voltFiles, baseControlFlag=4,
                                    nextUID=1)
     
     # Initialize dictionaries for threading use
@@ -697,7 +700,7 @@ def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         # setpoints to the 'real' system here
         baseInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                         timezone=CONST.TIMEZONE,
-                                        voltdumpFiles=dumpfiles,
+                                        voltFiles=voltFiles,
                                         reg=bestInd.reg, cap=bestInd.cap,
                                         regFlag=4, capFlag=4, controlFlag=0,
                                         uid=0)
@@ -805,7 +808,7 @@ if __name__ == '__main__':
     print('Base model run in {:.2f}s'.format(t1-t0))
     t0 = time.time()
     zip = writeRunEvalModel(outDir=outDirZIP, starttime=s, stoptime=e,
-                                 fIn=MODEL_ZIP, fOut=MODEL_STRIPPED_DUMP)
+                                 fIn=MODEL_ZIP, fOut=MODEL_STRIPPED_RECORDER)
     t1 = time.time()
     print('ZIP model run in {:.2f}s'.format(t1-t0))
     print('all done. Need to add threading...')
@@ -816,8 +819,8 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    #s = '2016-03-13 00:00:00'
-    #e = '2016-03-13 04:00:00'
-    runGA()
-    #evaluateZIP(starttime=s, stoptime=e)
+    s = '2016-01-01 00:00:00'
+    e = '2016-01-01 04:00:00'
+    #runGA()
+    evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

@@ -12,6 +12,7 @@ import re
 # there are multiple rows with the same time - be sure to truncate tables.
 DATE_FMT = '%Y-%m-%d %H:%M:%S'
 DATE_TZ_FMT = DATE_FMT + ' %Z'
+GLD_TIMESTAMP = '# timestamp'
 
 # Map Posix timezones to pytz timezones. NOTE: No '+' here.
 TZ = {'EST5EDT':    pytz.timezone('US/Eastern'),

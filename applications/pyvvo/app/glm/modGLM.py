@@ -750,6 +750,38 @@ class modGLM:
             recorder += '  options {options};\n'.format(options=options)
             
         self.strModel = self.strModel + recorder + '}'
+        
+    def addTapeGroup_Recorder(self, group, prop, interval, file,
+                              limit=-1, complex_part=None):
+        """Method to add a group_recorder object from the tape module.
+        
+        INPUTS:
+            group: groupid of the objects to record. NOTE: GridLAB-D can do 
+                things like "class=meter", but this method will be hard-coded
+                to use "groupid=..."
+            prop: property to measure (property is reserved built-in)
+            interval: interval to record (s)
+            file: name of output file
+            complex_part: If desired, complex part of imaginary value to record
+            limit: Maximum number of rows. Negative means no limit.
+        """
+        # Create first part of string
+        recorder = ('\n'
+                    'object tape.group_recorder {{\n'
+                    '  group "groupid={group}";\n'
+                    '  property {prop};\n'
+                    '  interval {interval};\n'
+                    '  file "{file}";\n'
+                    '  limit {limit};\n'
+                    ).format(group=group, prop=prop, interval=interval,
+                             file=file, limit=limit)
+        
+        # Add optional pieces
+        if complex_part is not None:
+            recorder += '  complex_part "{complex_part}";\n'.format(complex_part=complex_part)
+            
+        # Add to the model
+        self.strModel += recorder + '}'
             
     def replaceObject(self, objDict):
         """Function to replace object in the model string with a modified
@@ -933,7 +965,7 @@ class modGLM:
     def setupModel(self, starttime=None, stoptime=None, timezone=None,
                    vSource=69715.065, playerFile=None, database=None,
                    profiler=0, triplexGroup=None,
-                   voltdump=None, powerflowFlag=False):
+                   triplex_group_recorder=None, powerflowFlag=False):
         """Function to add the basics to get a running model. Designed with 
         the output from Tom McDermott's CIM exporter in mind.
         
@@ -988,14 +1020,28 @@ class modGLM:
         if triplexGroup:
             self.addGroupToObjects(objectRegex=TRIPLEX_LOAD_REGEX,
                                    groupName=triplexGroup)
-            
-        # Add voltdump objects
-        if voltdump:
-            dumpfiles = self.addVoltDumps(**voltdump)
+        
+        # Add group_recorders for triplex group. Note that we have to create
+        # two recorders - one for phase 1, one for phase 2. We'll assume
+        # there's no need to monitor neutral currents here.
+        if triplex_group_recorder:
+            phases = ['voltage_1', 'voltage_2']
+            prop = ['measured_' + s for s in phases]
+            files = [s + '.csv' for s in phases]
+            # Loop over the phases 
+            for ind in range(len(phases)):
+                # Add a group recorder
+                self.addTapeGroup_Recorder(group=triplex_group_recorder['group'],
+                                           prop=prop[ind],
+                                           interval=triplex_group_recorder['interval'],
+                                           file=files[ind],
+                                           limit=triplex_group_recorder['limit'],
+                                           complex_part=triplex_group_recorder['complex_part'])
+                
         else:
-            dumpfiles = None
-            
-        return dumpfiles
+            files = None
+        
+        return files
         
     def switchControl(self):
         """If file has commented out control options, use them instead.

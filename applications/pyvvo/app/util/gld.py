@@ -129,8 +129,8 @@ def inverseTranslateTaps(lowerTaps, pos):
     posOut = pos + lowerTaps
     return posOut
 
-def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
-                 voltdumpFiles, tCol='t', tapChangeCount=None,
+def computeCosts(cursor, swingData, costs, starttime, stoptime, voltFilesDir,
+                 voltFiles, tCol='t', tapChangeCount=None,
                  tapChangeTable=None, tapChangeColumns=None,
                  capSwitchCount=None, capSwitchTable=None,
                  capSwitchColumns=None
@@ -162,8 +162,10 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
         starttime: starting timestamp (yyyy-mm-dd HH:MM:SS) of interval in
             question.
         stoptime: stopping ""
-        voltdumpDir: Directory of voltdump files
-        voltdumpFiles: list of voltdump files (without the path 'head')
+        voltFilesDir: Directory of files to be read to determine voltage 
+            violations
+        voltFiles: list of voltFiles (without the path 'head'). Note that files
+            are assumed to monitor the same nodes, just different phases.
         tCol: name of time column. Assumed to be the same for tap/cap tables.
             Only include if a table is given.
         tapChangeCount: total number of all tap changes. Don't include this 
@@ -299,9 +301,9 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
     # VOLTAGE VIOLATION COSTS
     
     # Get all voltage violations. Use default voltages and tolerances for now.
-    v = sumVoltViolations(fileDir=voltdumpDir, files=voltdumpFiles)
-    costDict['overvoltage'] = v['high'] * costs['overvoltage']
-    costDict['undervoltage'] = v['low'] * costs['undervoltage']
+    v = violationsFromRecorderFiles(fileDir=voltFilesDir, files=voltFiles)
+    costDict['overvoltage'] = sum(v['high']) * costs['overvoltage']
+    costDict['undervoltage'] = sum(v['low']) * costs['undervoltage']
     
     # TODO: uncomment when ready
     '''
@@ -323,7 +325,108 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltdumpDir,
     
     costDict['total'] = t   
     return costDict
+
+def violationsFromRecorderFiles(fileDir, files, vNom=120, vTol=6):
+    """Function to read GridLAB-D group_recorder output files and compute
+    voltage violations. All files are assumed to have voltages for the same
+    nodes, just on different phases.
     
+    NOTE: Files should have voltage magnitude only.
+    """
+    # Open all the files, put in list. Get csv reader
+    openFiles = []
+    readers = []
+    for file in files:
+        openFiles.append(open(fileDir + '/' + file, newline=''))
+        readers.append(csv.reader(openFiles[-1]))
+    
+    # Read each file up to the headers.
+    # Loop through the files and advance the lines.
+    headers = []
+    for r in readers:
+        done = False
+        while not done:
+            line = next(r)
+            # If we're not yet at the row which starts with timestamp, move on
+            if (line[0].strip().startswith('#')) and \
+            (not line[0].strip().startswith(util.constants.GLD_TIMESTAMP)):
+                pass
+            elif line[0].strip().startswith(util.constants.GLD_TIMESTAMP):
+                # The row starts with '# timestamp' --> this is the header row
+                headers.append(line)
+                done = True
+            else:
+                raise ValueError('File had unexpected format!')
+            
+    # Ensure all headers are the same. If not, raise an error.
+    sameHeaders = True
+    for readerIndex in range(1, len(files)):
+        sameHeaders = sameHeaders and (headers[0] == headers[readerIndex])
+        
+    if not sameHeaders:
+        raise ValueError('Files do not have identical header rows!')
+    
+    # Initialize return.
+    violations = {'time': [], 'low': [], 'high': []}
+    # Compute low and high voltages once.
+    lowV = vNom - vTol
+    highV = vNom + vTol
+    
+    # Read all files line by line and check for voltage violations.
+    while True:
+        # Get the next line for each reader
+        # NOTE: The code below BUILDS IN THE ASSUMPTION that the files are of
+        # the same length. If one iterator declares itself done, we leave the
+        # loop without checking the others. We could use recursion to address
+        # this, but meh. Not worth it.
+        try:
+            lines = [next(r) for r in readers]
+        except StopIteration:
+            break
+            
+        # Ensure all files have the same timestamp (first element in row) for
+        # the given line.
+        sameTime = True
+        for readerIndex in range(1, len(files)):
+            sameTime = sameTime and (lines[0][0] == lines[readerIndex][0])
+            
+        if not sameTime:
+            raise ValueError('There was a timestamp mismatch!')
+        
+        # Add the time to the output, start violations for this time at 0
+        violations['time'].append(lines[0][0])
+        violations['low'].append(0)
+        violations['high'].append(0)
+        
+        # Loop over each element in the row. Since headers are the same, assume
+        # lengths are the same. Note range starts at 1 to avoid the timestamp
+        for colIndex in range(1, len(lines[0])):
+            # Loop over each file, and check for voltage violations.
+            # Don't double count - move on if a violation is found. This means
+            # that if all phases are undervoltage, we count 1 violation. If 1
+            # phase is overvoltage, we count 1 violation.
+            lowFlag = False
+            highFlag = False
+            for line in lines:
+                # If we've incremented both violations, break the loop to move
+                # on to the next column (object)
+                if lowFlag and highFlag:
+                    break
+                # Check for low voltage
+                elif (not lowFlag) and  (float(line[colIndex]) < lowV):
+                    violations['low'][-1] += 1
+                    lowFlag = True
+                elif (not highFlag) and (float(line[colIndex]) > highV):
+                    violations['high'][-1] += 1
+                    highFlag = True
+                
+    # Close all the files
+    for file in openFiles:
+        file.close()
+        
+    return violations
+
+'''      
 def voltViolationsFromDump(fName, vNom=120, vTol=6):
     """Method to read a voltdump file which is recording triplex loads/meters
     and count high and low voltage violations.
@@ -385,6 +488,7 @@ def sumVoltViolations(fileDir, files, vNom=120, vTol=6):
         violations['high'] += v['high']
         
     return violations
+'''
     
 if __name__ == '__main__':
     """
@@ -402,7 +506,12 @@ if __name__ == '__main__':
     print('ERROR:')
     print(output.stderr.decode('utf-8'))
     """
+    """
     output = runModel(modelPath='C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output/ieee8500_base_benchmark.glm')
     print(output.stdout.decode('utf-8'))
     print(output.stderr.decode('utf-8'))
+    """
+    violations = violationsFromRecorderFiles(fileDir=r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output\ind_0'.replace('\\', '/'),
+                                             files=['voltage_1.csv', 'voltage_2.csv'],
+                                             )
     print('yay')

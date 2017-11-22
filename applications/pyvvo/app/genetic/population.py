@@ -16,7 +16,7 @@ import copy
 class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
-                 starttime, stoptime, timezone, voltdumpFiles,
+                 starttime, stoptime, timezone, voltFiles,
                  numModelThreads=os.cpu_count(),
                  costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2,
                           'undervoltage': 0.05, 'overvoltage': 0.05},
@@ -38,7 +38,7 @@ class population:
             starttime: datetime object representing start of simulation
             stoptime: "..." end "..."
             timezone: timezone string
-            voltdumpFiles: listing of voltdump file names
+            voltFiles: listing of file names for determining voltage violations
             numModelThreads: number of threads for running models. Since the
                 threads start subprocesses, this corresponds to number of
                 cores used for simulation.
@@ -82,7 +82,7 @@ class population:
         self.nextUID = nextUID
         
         # Set voltdumpFile.
-        self.voltdumpFiles = voltdumpFiles
+        self.voltFiles = voltFiles
         
         # Assign costs.
         self.costs = costs
@@ -247,7 +247,7 @@ class population:
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
                                       timezone=self.timezone,
-                                      voltdumpFiles=self.voltdumpFiles,
+                                      voltFiles=self.voltFiles,
                                       controlFlag=self.baseControlFlag))
             
             # Track the baseline individual's index.
@@ -265,7 +265,7 @@ class population:
                                           starttime=self.starttime,
                                           stoptime=self.stoptime,
                                           timezone=self.timezone,
-                                          voltdumpFiles=self.voltdumpFiles
+                                          voltFiles=self.voltFiles
                                           )
                                             )
                 
@@ -281,7 +281,7 @@ class population:
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
                                       timezone=self.timezone,
-                                      voltdumpFiles=self.voltdumpFiles
+                                      voltFiles=self.voltFiles
                                      )
                                         )
         
@@ -297,7 +297,7 @@ class population:
                                       starttime=self.starttime,
                                       stoptime=self.stoptime,
                                       timezone=self.timezone,
-                                      voltdumpFiles=self.voltdumpFiles
+                                      voltFiles=self.voltFiles
                                       )
                                         )
             
@@ -523,7 +523,7 @@ class population:
                                             starttime=self.starttime,
                                             stoptime=self.stoptime,
                                             timezone=self.timezone,
-                                            voltdumpFiles=self.voltdumpFiles
+                                            voltFiles=self.voltFiles
                                           )
                 # Put individual in the list and the queue.
                 self.addIndividual(individual=ind)
