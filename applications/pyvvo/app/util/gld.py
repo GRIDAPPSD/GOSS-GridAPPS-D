@@ -129,8 +129,9 @@ def inverseTranslateTaps(lowerTaps, pos):
     posOut = pos + lowerTaps
     return posOut
 
-def computeCosts(cursor, swingData, costs, starttime, stoptime, voltFilesDir,
-                 voltFiles, tCol='t', tapChangeCount=None,
+def computeCosts(cursor, swingData, costs, starttime, stoptime,
+                 voltFilesDir=None,
+                 voltFiles=None, tCol='t', tapChangeCount=None,
                  tapChangeTable=None, tapChangeColumns=None,
                  capSwitchCount=None, capSwitchTable=None,
                  capSwitchColumns=None
@@ -299,11 +300,12 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime, voltFilesDir,
     
     # *************************************************************************
     # VOLTAGE VIOLATION COSTS
-    
-    # Get all voltage violations. Use default voltages and tolerances for now.
-    v = violationsFromRecorderFiles(fileDir=voltFilesDir, files=voltFiles)
-    costDict['overvoltage'] = sum(v['high']) * costs['overvoltage']
-    costDict['undervoltage'] = sum(v['low']) * costs['undervoltage']
+    if voltFilesDir and voltFiles:
+        # Get all voltage violations. Use default voltages and tolerances for
+        # now.
+        v = violationsFromRecorderFiles(fileDir=voltFilesDir, files=voltFiles)
+        costDict['overvoltage'] = sum(v['high']) * costs['overvoltage']
+        costDict['undervoltage'] = sum(v['low']) * costs['undervoltage']
     
     # TODO: uncomment when ready
     '''

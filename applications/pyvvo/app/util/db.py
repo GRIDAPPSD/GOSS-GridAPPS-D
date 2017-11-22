@@ -69,9 +69,22 @@ def connect(user='gridlabd', password='gridlabd', host='localhost',
         return cnx
     
 def truncateTable(cursor, table):
-    """Method to truncate a given table.
+    """Method to truncate a given table. 
+    
+    An alternative to truncation is included in the comments. found on 
+        stackoverflow: https://stackoverflow.com/questions/17762361/truncate-table-taking-very-long-time-is-it-normal
+    Note that instead of 3 executions, one could be performed by doing
+        execute(q, multi=True)
     """
     cursor.execute('TRUNCATE TABLE {}'.format(table))
+    '''
+    q1 = 'RENAME TABLE {} TO temp123'.format(table)
+    cursor.execute(q1)
+    q2 = 'CREATE TABLE {} LIKE temp123'.format(table)
+    cursor.execute(q2)
+    q3='DROP TABLE temp123'
+    cursor.execute(q3)\
+    '''
     
 def _printError(err):
     """Print a connection error.

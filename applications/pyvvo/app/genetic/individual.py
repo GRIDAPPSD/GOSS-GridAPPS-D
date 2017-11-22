@@ -28,7 +28,7 @@ CAPTRIANGULARMODE = 0.8
  
 class individual:
     
-    def __init__(self, uid, starttime, stoptime, timezone, voltFiles,
+    def __init__(self, uid, starttime, stoptime, timezone, database, voltFiles,
                  reg=None, regFlag=5, cap=None, capFlag=5, regChrom=None, 
                  capChrom=None, parents=None, controlFlag=0,
                  recordInterval=60):
@@ -45,6 +45,10 @@ class individual:
         INPUTS:
             starttime: datetime object for model start
             stoptime: "..." end 
+            timezone: string representing timezone, as it would appear in 
+                GridLAB-D's tzinfo.txt. Example: 'PST+8PDT'
+            database: dictionary of inputs for database, used to call 
+                util.db.connect. To use defaults, pass an empty dictionary.
             voltFiles: list of filenames of files which monitor voltage. 
                 Should be output from group_recorder. Used to evaluate voltage
                 violations.
@@ -126,7 +130,9 @@ class individual:
         # to never change for an individual - feeders don't get up and move, 
         # and timezones don't often change.
         self.timezone = timezone
-             
+        
+        # set database
+        self.database = database
         # Set the control flag
         self.controlFlag = controlFlag
         
@@ -484,7 +490,7 @@ class individual:
                     
                     self.capSwitchCount += 1
                 
-    def writeModel(self, strModel, inPath, outDir):
+    def writeModel(self, strModel, inPath, outDir, recordInterval=None):
         """Create a GridLAB-D .glm file for the given individual by modifying
         setpoints for controllable devices (capacitors, regulators, eventually
         DERs)
@@ -497,14 +503,19 @@ class individual:
                 from the inPath, and the individuals uid preceded by an
                 underscore will be added
             dumpGroup: Name of group used for triplex_loads.
+            recordInterval: Interval to record things like energy, tapchange,
+                capswitch, etc. which typically only need recorded once per
+                model. If None, the difference between stoptime and starttime
+                will be used (so we only record once)
                 
         OUTPUTS:
             Path to new model after it's created
         """
-        # Get the model runtime - we only need to record regulator tap 
-        # changes and capacitor changes at the end of simulation.
-        modelDelta = self.stoptime - self.starttime
-        modelRuntime = modelDelta.total_seconds()
+        if not recordInterval:
+            # Get the model runtime - we only need to record regulator tap 
+            # changes and capacitor changes at the end of simulation.
+            modelDelta = self.stoptime - self.starttime
+            recordInterval = modelDelta.total_seconds()
             
         # Check if directory exists - if not, create it.
         if not os.path.isdir(outDir):
@@ -534,7 +545,7 @@ class individual:
         # Compute
         o = writeObj.recordSwing(suffix=self.uid,
                                  powerInterval=self.recordInterval,
-                                 energyInterval=modelRuntime)
+                                 energyInterval=recordInterval)
         self.swingData = o
         
         # TODO: Uncomment when ready
@@ -556,12 +567,12 @@ class individual:
             self.capData = {'table': 'cap_' + str(self.uid),
                             'changeColumns': util.gld.CAP_CHANGE_PROPS,
                             'stateColumns': util.gld.CAP_STATE_PROPS,
-                            'interval': modelRuntime}
+                            'interval': recordInterval}
             
             self.regData = {'table': 'reg_' + str(self.uid),
                             'changeColumns': util.gld.REG_CHANGE_PROPS,
                             'stateColumns': util.gld.REG_STATE_PROPS,
-                            'interval': modelRuntime}
+                            'interval': recordInterval}
             
             if self.controlFlag == 1:
                 regControl = 'OUTPUT_VOLTAGE' 
@@ -626,7 +637,7 @@ class individual:
         if self.modelOutput.returncode:
             print("FAILURE! Individual {}'s model gave non-zero returncode.".format(self.uid))
         
-    def update(self, cursor):
+    def update(self, stoptime=None):
         """Function to update regulator tap operations and positions, and 
         capacitor switch operations and states. This function should be called
         after running a model (runModel), and before evaluating fitness
@@ -636,11 +647,19 @@ class individual:
             since these updates occur before running a model.
             
         INPUTS:
-            cursor: database cursor from connection.
+            stoptime: Provide if you dont' want to use self.stoptime
         """
         # Do nothing is the controlFlag is 0
         if self.controlFlag == 0:
             return
+        
+        # Determine times
+        if not stoptime:
+            stoptime=self.stoptime
+        
+        # Connect to the database, get cursor.
+        cnxn = util.db.connect(**self.database)
+        cursor = cnxn.cursor()
         
         # For other control schemes, we need to get the state change and state
         # information from the database.
@@ -650,41 +669,45 @@ class individual:
         self.tapChangeCount = util.db.sumMatrix(cursor=cursor,
                                                 table=self.regData['table'],
                                                 cols=self.regData['changeColumns'],
-                                                starttime=self.stoptime,
-                                                stoptime=self.stoptime)
+                                                starttime=stoptime,
+                                                stoptime=stoptime)
         # Update the capacitor switch count
         self.capSwitchCount = util.db.sumMatrix(cursor=cursor,
                                                 table=self.capData['table'],
                                                 cols=self.capData['changeColumns'],
-                                                starttime=self.stoptime,
-                                                stoptime=self.stoptime)
+                                                starttime=stoptime,
+                                                stoptime=stoptime)
         
         # The 'newState' properties of 'reg' and 'cap' need updated.
         self.reg = util.db.updateStatus(inDict=self.reg, dictType='reg',
                                         cursor=cursor,
                                         table=self.regData['table'],
                                         phaseCols=self.regData['stateColumns'],
-                                        t=self.stoptime)
+                                        t=stoptime)
         
         self.cap = util.db.updateStatus(inDict=self.cap, dictType='cap',
                                         cursor=cursor,
                                         table=self.capData['table'],
                                         phaseCols=self.capData['stateColumns'],
-                                        t=self.stoptime)
+                                        t=stoptime)
         
         # Update the regulator and capacitor chromosomes. Note that the counts
         # have already been updated, so set updateCount to False.
         self.genRegChrom(flag=4, updateCount=False)
         self.genCapChrom(flag=4, updateCount=False)
+        
+        # Close connection, cursor.
+        cursor.close()
+        cnxn.close()
                             
-    def evalFitness(self, cursor, costs, tCol='t'):
+    def evalFitness(self, costs, tCol='t', starttime=None, stoptime=None,
+                    voltFlag=True):
         """Function to evaluate fitness of individual. This is essentially a
             wrapper to call util.gld.computeCosts
         
         TODO: Add more evaluators of fitness like power factor
         
         INPUTS:
-            cursor: database cursor from connection
             costs: dict with the following fields:
                 energy: price of energy
                 tapChange: cost changing regulator taps
@@ -692,20 +715,49 @@ class individual:
                 undervoltage: cost of under voltage violations.
                 overvoltage: cost of overvoltage violations
             tCol: name of time column(s)
+            starttime: starttime to evaluate fitness for. If None, uses
+                self.starttime
+            stoptime: stoptime "..." self.stoptime
+            voltFlag: Flag for whether to compute voltage violations or not.
+                This should be removed once the mysql group recorder is ready.
+                This is here to accomodate pmaps/experiment.py
         """
+        # Establish times if they aren't given explicitely
+        if starttime is None:
+            starttime = self.starttime
+            
+        if stoptime is None:
+            stoptime = self.stoptime
+            
+        # Determine voltage violation information.
+        # TODO: Remove this hack once we don't have to use files...
+        if voltFlag:
+            voltFilesDir=self.outDir
+            voltFiles=self.voltFiles
+        else:
+            voltFilesDir=None
+            voltFiles=None
+            
+        # Connect to the database, get cursor.
+        cnxn = util.db.connect(**self.database)
+        cursor = cnxn.cursor()
+        # Compute costs.
         self.costs = util.gld.computeCosts(cursor=cursor,
                                            swingData=self.swingData,
                                            costs=costs,
-                                           starttime=self.starttime,
-                                           stoptime=self.stoptime,
+                                           starttime=starttime,
+                                           stoptime=stoptime,
                                            tCol=tCol,
                                            tapChangeCount=self.tapChangeCount,
                                            capSwitchCount=self.capSwitchCount,
-                                           voltFilesDir=self.outDir,
-                                           voltFiles=self.voltFiles
+                                           voltFilesDir=voltFilesDir,
+                                           voltFiles=voltFiles
                                             )
+        # Close cursor, connection.
+        cursor.close()
+        cnxn.close()
     
-    def writeRunUpdateEval(self, strModel, inPath, outDir, cursor, costs):
+    def writeRunUpdateEval(self, strModel, inPath, outDir, costs):
         """Function to write and run model, update individual, and evaluate
         the individual's fitness.
         
@@ -713,7 +765,6 @@ class individual:
             strModel: see writeModel()
             inPath: see writeModel()
             outDir: see writeModel()
-            cursor: database cursor
             costs: costs for fitness evaluation. See evalFitness
         """
         # Write the model.
@@ -721,9 +772,9 @@ class individual:
         # Run the model.
         self.runModel()
         # Update tap/cap states and change counts if necessary.
-        self.update(cursor=cursor)
+        self.update()
         # Evaluate costs.
-        self.evalFitness(cursor=cursor, costs=costs)
+        self.evalFitness(costs=costs)
         
     def buildCleanupDict(self, truncateFlag=False):
         """Function to build dictionary to be passed to the 'cleanupQueue' of 
@@ -782,16 +833,19 @@ def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
         
         # Connect to the database.
         cnxn = util.db.connect(**database)
+        #cnxn.autocommit = True
         cursor = cnxn.cursor()
         
         # Drop or truncate all tables.
         if inDict['truncateFlag']:
             for t in inDict['tables']:
-                util.db.truncateTable(cursor=cursor, table=t)            
+                util.db.truncateTable(cursor=cursor, table=t)         
         else:
             for t in inDict['tables']:
                 util.db.dropTable(cursor=cursor, table=t)
-            
+        
+        cursor.close()
+        cnxn.close()
         # Delete all files.
         for f in inDict['files']:
             try:

@@ -326,8 +326,7 @@ def writeRunEvalModel(outDir, starttime, stoptime, fIn, fOut):
 '''
 
 def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
-                runInterval=CONST.ZIP_INTERVAL, resultsFile='results',
-                logFile='log'):
+                runInterval=CONST.ZIP_INTERVAL):
     """Function to run the populated baseline model and the ZIP baseline model,
     and write output data to file. 
     """
@@ -341,28 +340,32 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # Connect to database and drop tables.
     cnxn = util.db.connect(database=CONST.BASELINE_DB['schema'])
     util.db.dropAllTables(cnxn=cnxn)
+    cnxn.close()
+    print('All tables dropped in {}'.format(CONST.BASELINE_DB['schema']),
+          flush=True)
     
     # If the output directory doesn't exist, make it
     if not os.path.isdir(CONST.OUTPUT_DIR):
         os.mkdir(CONST.OUTPUT_DIR)
     
-    # Open the results files
-    fCSV = open(CONST.OUTPUT_DIR + '/' + resultsFile + '.csv', newline='',
-                  mode='w')
-    
-    # Open the log files
-    logBase2 = open(CONST.OUTPUT_DIR + '/' + logFile + '_2.txt',
-                    newline='', mode='w')
-    logBase3 = open(CONST.OUTPUT_DIR + '/' + logFile + '_3.txt',
-                    newline='', mode='w')
-    logZIP = open(CONST.OUTPUT_DIR + '/' + logFile + '_ZIP.txt',
-                  newline='', mode='w')
-    
-    # Initialize csv writer and write headers
-    csvObj = csv.DictWriter(f=fCSV, fieldnames=CONST.COLNAMES,
-                            quoting=csv.QUOTE_NONNUMERIC)
-    csvObj.writeheader()
-    
+    # Open the costs results files
+    fCosts = []
+    csvCosts = []
+    for c in CONST.COST_FILES:
+        fCosts.append(open(CONST.OUTPUT_DIR + '/' + c, newline='', mode='w'))
+        csvCosts.append(csv.DictWriter(fCosts[-1], fieldnames=CONST.COST_COLS,
+                                       quoting=csv.QUOTE_NONNUMERIC))
+        csvCosts[-1].writeheader()
+        
+    # Open the log results files
+    fLogs = []
+    csvLogs = []
+    for c in CONST.LOG_FILES:
+        fLogs.append(open(CONST.OUTPUT_DIR + '/' + c, newline='', mode='w'))
+        csvLogs.append(csv.DictWriter(fLogs[-1], fieldnames=CONST.LOG_COLS,
+                                      quoting=csv.QUOTE_NONNUMERIC))
+        csvLogs[-1].writeheader()
+        
     # Initialize queues for running and cleaning up models
     modelQueue = Queue()
     cleanupQueue = Queue()
@@ -372,22 +375,21 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     
     # Start threads for running models and cleaning them up
     modelThreads = []
-    cleanupThreads = []
     
-    for _ in range(3):
-        # Initialize threads
-        tRun = threading.Thread(target=population.writeRunEval,
-                                args=(modelQueue, CONST.COSTS, database))
-        tClean = threading.Thread(target=individual.cleanup,
-                                  args=(cleanupQueue, database))
+    for _ in range(2):
+        # Initialize model threads
+        tRun = threading.Thread(target=runModelsThreaded, args=(modelQueue,))
         
         # Add to thread lists
         modelThreads.append(tRun)
-        cleanupThreads.append(tClean)
         
         # Start threads
         tRun.start()
-        tClean.start()
+        
+    # Initialize cleanup thread for ZIP
+    tClean = threading.Thread(target=individual.cleanup,
+                                  args=(cleanupQueue, database))
+    tClean.start()
         
     print('Model and cleanup threads started.')
     
@@ -407,98 +409,101 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # Get times in their timezones
     start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
     stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
-    
-    # Use different ID's for the individuals
-    bID2 = 0
-    bID3 = 1
-    zID = 2
+    final_dt = util.helper.utcToTZ(final_utc, CONST.TIMEZONE)
     
     # Instantiate individuals - while we don't need all the bells and 
     # whistles of an individual, it has the capability to add recorders, run
     # its own model, evaluate it's own model, etc.
     # NOTE: We could consider using copy.deepcopy and then modifying UID.
-    baseInd2 = individual.individual(starttime=start_dt, stoptime=stop_dt,
+    baseInd2 = individual.individual(starttime=start_dt, stoptime=final_dt,
                                      timezone=CONST.TIMEZONE,
+                                     database=database,
                                      voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
-                                     controlFlag=4, uid=bID2)
+                                     controlFlag=4, uid=CONST.IND_2)
     
-    baseInd3 = individual.individual(starttime=start_dt, stoptime=stop_dt,
+    baseInd3 = individual.individual(starttime=start_dt, stoptime=final_dt,
                                      timezone=CONST.TIMEZONE,
+                                     database=database,
                                      voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
-                                     controlFlag=4, uid=bID3)
-    
+                                     controlFlag=4, uid=CONST.IND_3)
+    # Note that the ZIPInd uses stop_dt, NOT final_dt
     ZIPInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                    timezone=CONST.TIMEZONE,
+                                   database=database,
                                    voltFiles=voltFiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
-                                   controlFlag=4, uid=zID)
+                                   controlFlag=4, uid=CONST.IND_Z)
     
-    # Initialize dictionaries for threading use
-    baseDict2 = {'outDir': CONST.OUTPUT_DIR,
-                 'individual': baseInd2,
-                 'inPath': MODEL_BASELINE_2,
-                 'strModel': ''}
-    baseDict3 = {'outDir': CONST.OUTPUT_DIR,
-                 'individual': baseInd3,
-                 'inPath': MODEL_BASELINE_3,
-                 'strModel': ''}
-    ZIPDict = {'outDir': CONST.OUTPUT_DIR,
-               'individual': ZIPInd,
-               'inPath': MODEL_ZIP,
-               'strModel': ''}
+    # Write models for the 'populated' models
+    baseInd2.writeModel(strModel=writeBase2.strModel, inPath=MODEL_BASELINE_2,
+                        outDir=(CONST.OUTPUT_DIR + '/'
+                                + CONST.OUT_DIRS[CONST.IND_2]),
+                        recordInterval=CONST.ZIP_INTERVAL)
     
-    # Loop over time until we've hit the stoptime
+    baseInd3.writeModel(strModel=writeBase3.strModel, inPath=MODEL_BASELINE_3,
+                        outDir=(CONST.OUTPUT_DIR+ '/'
+                                + CONST.OUT_DIRS[CONST.IND_3]),
+                        recordInterval=CONST.ZIP_INTERVAL)
+    
+    # Run the populated models.
+    modelQueue.put_nowait(baseInd2)
+    modelQueue.put_nowait(baseInd3)
+    print('Both baseline models are running.', flush=True)
+
+    # Loop over time until we've hit the stoptime, running the ZIP model for 
+    # each hour.
     while stop_utc <= final_utc:
         
         # Get start and stop times as strings
         start_str = start_dt.strftime(util.constants.DATE_TZ_FMT)
         stop_str = stop_dt.strftime(util.constants.DATE_TZ_FMT)
         
-        print('Running for {} through {}'.format(start_str, stop_str),
+        print('Adding ZIP loads and running model for {} through {}'.format(start_str,
+                                                                            stop_str),
               flush=True)
         
-        # *********************************************************************
-        # Get the base models ready to run, put it in the queue.
-        queueModel(start_dt, stop_dt, baseInd2, writeBase2, baseDict2,
-                   modelQueue)
-        queueModel(start_dt, stop_dt, baseInd3, writeBase3, baseDict3,
-                   modelQueue)
-        # *********************************************************************
-        # Add ZIP models to the ZIP object and queue it.
+        # Add ZIP models to the ZIP object and run it it.
         writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=start_dt,
                         stoptime=stop_dt)
-        queueModel(start_dt, stop_dt, ZIPInd, writeZIP, ZIPDict, modelQueue)
         
-        # Wait for the models to run
-        modelQueue.join()
-        # print('Models run and evaluated.')
+        # Ensure cleanup is done before moving on.
+        cleanupQueue.join()
         
-        # Build cleanup dictionaries for the individuals
-        baseClean2 = baseInd2.buildCleanupDict(truncateFlag=True)
-        baseClean3 = baseInd3.buildCleanupDict(truncateFlag=True)
+        # Run the ZIP model
+        # Get a new databaes connection. Annoying.
+        zipC = util.db.connect(**database)
+        cursor=zipC.cursor()
+        ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
+                                  inPath=MODEL_STRIPPED_RECORDER,
+                                  outDir=(CONST.OUTPUT_DIR + '/'
+                                          + CONST.OUT_DIRS[CONST.IND_Z]),
+                                  costs=CONST.COSTS)
+        zipC.close()
+        cursor.close()
+        
+        # Build cleanup dictionary and put it in the queue.
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
+        cleanupQueue.put_nowait(ZIPClean)
         
-        # Write to csv, log, cleanup, and rotate dictionaries
-        for g in [(baseInd2, logBase2, baseClean2, CONST.MNAMES[0]),
-                  (baseInd3, logBase3, baseClean3, CONST.MNAMES[1]),
-                  (ZIPInd, logZIP, ZIPClean, CONST.MNAMES[2])]:
-            
-            # Cleanup
-            cleanupQueue.put_nowait(g[2])
-            
-            # Write to csv
-            csvObj.writerow({'time': start_str, 'model': g[3], **g[0].costs})
-            
-            # Log file
-            print('*'*80, file=g[1])
-            print(start_str, file=g[1])
-            print(g[0], file=g[1])
-            
-            # Rotate dictionaries
-            g[0].reg, g[0].cap = util.helper.rotateVVODicts(reg=g[0].reg,
-                                                            cap=g[0].cap)
+        # Write ZIP data to file. Costs first.
+        csvCosts[CONST.IND_Z].writerow({'time': start_str, **ZIPInd.costs})
+        # Now create dictionary and write statuses.
+        stateDict = {'time': start_str}
+        for reg, data in ZIPInd.reg.items():
+            for phase, states in data['phases'].items():
+                stateDict[(reg + '_' + phase)] = states['newState']
+                
+        for cap, data in ZIPInd.cap.items():
+            for phase, states in data['phases'].items():
+                stateDict[(cap + '_' + phase)] = states['newState']
+                
+        csvLogs[CONST.IND_Z].writerow(stateDict)
+
+        # Rotate dictionaries
+        ZIPInd.reg, ZIPInd.cap = util.helper.rotateVVODicts(reg=ZIPInd.reg,
+                                                            cap=ZIPInd.cap)
         
         # Increment the times
         start_utc += datetime.timedelta(seconds=runInterval)
@@ -507,22 +512,164 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
         stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
         
-        # Ensure cleanup is complete before moving on
-        cleanupQueue.join()
+        # Prep the ZIP model for running.
+        ZIPInd.prep(starttime=start_dt, stoptime=stop_dt)
         
-    # Shut down the threads and close the file
+        # Ensure cleanup is complete before moving on
+        #cleanupQueue.join()
+    
+    # Ensure we're all cleaned up
+    cleanupQueue.join()
+    # Ensure our baseline models are done
+    modelQueue.join()
+    
+    # Shut down the threads.
     for _ in modelThreads: modelQueue.put_nowait(None)
-    for _ in cleanupThreads: cleanupQueue.put_nowait(None)
+    cleanupQueue.put_nowait(None)
     for t in modelThreads: t.join(timeout=10)
-    for t in cleanupThreads: t.join(timeout=10)
+    tClean.join(timeout=10)
+    
+    # Now, we need to evaluate costs of the baseline model for each hour.
+    # Start by looping through the voltage files.
+    voltViolations2 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_DIR + '/' + CONST.OUT_DIRS[CONST.IND_2]),
+                                                           files=voltFiles)
+    voltViolations3 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_DIR + '/' + CONST.OUT_DIRS[CONST.IND_3]),
+                                                           files=voltFiles)
+    
+    # Get our times ready. First, get UTC times.
+    start_utc = util.helper.toUTC(starttime, CONST.TIMEZONE)
+    stop_utc = start_utc + datetime.timedelta(seconds=runInterval)
+    final_utc = util.helper.toUTC(stoptime, CONST.TIMEZONE)
+    # Get times in their timezones
+    start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+    stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
+    final_dt = util.helper.utcToTZ(final_utc, CONST.TIMEZONE)
+    
+    # Create dictionaries for holding the previous costs of costs that 
+    # accumulate so we can perform subtraction.
+    prev2 = {'realEnergy': 0, 'reactiveEnergy': 0, 'tapChange': 0,
+             'capSwitch': 0}
+    prev3 = {'realEnergy': 0, 'reactiveEnergy': 0, 'tapChange': 0,
+             'capSwitch': 0}
+    
+    # We're going to do some iffy looping here.
+    minuteInd = 0
+    while stop_utc <= final_utc:
+        # Get start and stop times as strings
+        start_str = start_dt.strftime(util.constants.DATE_TZ_FMT)
+        stop_str = stop_dt.strftime(util.constants.DATE_TZ_FMT)
+        
+        # Get two cost dictionaries
+        cost2 = {'overvoltage': 0, 'undervoltage': 0}
+        cost3 = {'overvoltage': 0, 'undervoltage': 0}
+        
+        # Loop over the minutes.
+        minute_utc = start_utc
+        while minute_utc <= stop_utc:
+            # Get overvoltage counts, multiply by costs
+            cost2['overvoltage'] += voltViolations2['high'][minuteInd] * CONST.COSTS['overvoltage']
+            cost2['undervoltage'] += voltViolations2['low'][minuteInd] * CONST.COSTS['undervoltage']
+            cost3['overvoltage'] += voltViolations3['high'][minuteInd] * CONST.COSTS['overvoltage']
+            cost3['undervoltage'] += voltViolations3['low'][minuteInd] * CONST.COSTS['undervoltage']
+            # increment the minute index
+            minuteInd += 1
+            # increment minute_utc
+            minute_utc += datetime.timedelta(seconds=CONST.RECORD_INT)
+            
+            
+        # To ensure we do the same double-counting in the ZIP case, decrement
+        # the minute index. I hate this double counting.
+        minuteInd -= 1
+        # Perform the 'update' to count tap changes and capacitor switches.
+        # This also sets 'newState' so we can use that when logging.
+        baseInd2.update(stoptime=stop_dt)
+        baseInd3.update(stoptime=stop_dt)
+        # Now compute the other costs from the individuals.
+        baseInd2.evalFitness(costs=CONST.COSTS, starttime=start_dt,
+                             stoptime=stop_dt, voltFlag=False)
+        baseInd3.evalFitness(costs=CONST.COSTS, starttime=start_dt,
+                             stoptime=stop_dt, voltFlag=False)
+        
+        # Combine costs
+        baseInd2.costs = {**baseInd2.costs, **cost2}
+        baseInd3.costs = {**baseInd3.costs, **cost3}
+        
+        # We need to adjust some costs, since some of the items in the 
+        # databaes are cumulative.
+        for k in prev2:
+            # Grab values
+            temp2 = baseInd2.costs[k]
+            temp3 = baseInd3.costs[k]
+            # Subtract
+            baseInd2.costs[k] = baseInd2.costs[k] - prev2[k]
+            baseInd3.costs[k] = baseInd3.costs[k] - prev3[k]
+            # Reset 'prev'
+            prev2[k] = temp2
+            prev3[k] = temp3
+            
+        # Recompute the 'totals'
+        baseInd2.costs['total'] = 0
+        baseInd3.costs['total'] = 0
+        for k in baseInd2.costs:
+            if k == 'total':
+                continue
+            else:
+                baseInd2.costs['total'] += baseInd2.costs[k]
+                baseInd3.costs['total'] += baseInd3.costs[k]
+                
+        # Write to file.
+        csvCosts[CONST.IND_2].writerow({'time': start_str, **baseInd2.costs})
+        csvCosts[CONST.IND_3].writerow({'time': start_str, **baseInd3.costs})
+        
+        # Get states and write to file. We've set 'newState' by calling 'update'
+        # Start with regulators.
+        state2 = {'time': stop_str}
+        state3 = {'time': stop_str}
+        for reg in baseInd2.reg:
+            for phase in baseInd2.reg[reg]['phases']:
+                state2[(reg + '_' + phase)] = baseInd2.reg[reg]['phases'][phase]['newState']
+                state3[(reg + '_' + phase)] = baseInd3.reg[reg]['phases'][phase]['newState']
+        # Now capacitors.
+        for cap in baseInd2.cap:
+            for phase in baseInd2.cap[cap]['phases']:
+                state2[(cap + '_' + phase)] = baseInd2.cap[cap]['phases'][phase]['newState']
+                state3[(cap + '_' + phase)] = baseInd3.cap[cap]['phases'][phase]['newState']
+                
+        # Write to file.
+        csvLogs[CONST.IND_2].writerow(state2)
+        csvLogs[CONST.IND_3].writerow(state3)
+        
+        # Increment the times
+        start_utc += datetime.timedelta(seconds=runInterval)
+        stop_utc += datetime.timedelta(seconds=runInterval)
+        # Get times in their timezones
+        start_dt = util.helper.utcToTZ(start_utc, CONST.TIMEZONE)
+        stop_dt = util.helper.utcToTZ(stop_utc, CONST.TIMEZONE)
     
     # Close the files
-    fCSV.close()
-    logBase2.close()
-    logBase3.close()
-    logZIP.close()
+    (f.close() for f in fCosts)
+    (f.close() for f in fLogs)
     
     print('Threads stopped and files closed. All done.')
+    
+def runModelsThreaded(modelQueue):
+    """Helper function to run the baseline models in a threaded fashion.
+    """
+    while True:
+        # Get individual from queue
+        individual = modelQueue.get()
+        
+        # Check input.
+        if individual is None:
+            # We're done.
+            modelQueue.task_done()
+            break
+        
+        # Run the model
+        individual.runModel()
+        
+        # Mark task as complete after its done.
+        modelQueue.task_done()    
     
 def queueModel(start_dt, stop_dt, individual, writeObj, qDict, q):
     """Helper function to prep an individual for a given runtime, then put
@@ -820,7 +967,7 @@ if __name__ == '__main__':
     e = '2016-07-19 15:00:00'
     """
     s = '2016-01-01 00:00:00'
-    e = '2016-01-01 04:00:00'
+    e = '2016-01-01 06:00:00'
     #runGA()
     evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

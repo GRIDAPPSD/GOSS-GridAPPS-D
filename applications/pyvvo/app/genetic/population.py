@@ -8,15 +8,15 @@ import math
 import random
 import os
 from queue import Queue
+import util.helper
 import threading
-import util.db
 import sys
 import copy
 
 class population:
 
     def __init__(self, strModel, numInd, numGen, inPath, outDir, reg, cap,
-                 starttime, stoptime, timezone, voltFiles,
+                 starttime, stoptime, timezone, database, voltFiles,
                  numModelThreads=os.cpu_count(),
                  costs = {'energy': 0.00008, 'tapChange': 0.5, 'capSwitch': 2,
                           'undervoltage': 0.05, 'overvoltage': 0.05},
@@ -38,6 +38,8 @@ class population:
             starttime: datetime object representing start of simulation
             stoptime: "..." end "..."
             timezone: timezone string
+            database: dictionary of inputs for connecting to database via
+                util.db.connect.
             voltFiles: listing of file names for determining voltage violations
             numModelThreads: number of threads for running models. Since the
                 threads start subprocesses, this corresponds to number of
@@ -72,6 +74,8 @@ class population:
         """
         # Set timezone
         self.timezone = timezone
+        # Set database
+        self.database = database
         # TODO: rather than being input, reg and cap should be read from the
         # CIM.
         
@@ -227,6 +231,11 @@ class population:
         
         TODO: Make more flexible.
         """
+        # Define some common inputs for individuals
+        inputs = {'reg': self.reg, 'cap': self.cap,
+                  'starttime': self.starttime, 'stoptime': self.stoptime,
+                  'timezone': self.timezone, 'voltFiles': self.voltFiles}
+        
         # Create baseline individual.
         if self.baseControlFlag is not None:
             # Set regFlag and capFlag
@@ -239,33 +248,25 @@ class population:
              
             # Add a baseline individual with the given control flag   
             self.addIndividual(individual=\
-                individual.individual(uid=self.nextUID,
-                                      reg=self.reg,
-                                      cap=self.cap,
+                individual.individual(**inputs,
+                                      uid=self.nextUID,
                                       regFlag=regFlag,
                                       capFlag=capFlag,
-                                      starttime=self.starttime,
-                                      stoptime=self.stoptime,
-                                      timezone=self.timezone,
-                                      voltFiles=self.voltFiles,
                                       controlFlag=self.baseControlFlag))
             
             # Track the baseline individual's index.
             self.baselineIndex = len(self.individualsList) - 1
         
         # Create 'extreme' indivuals - all caps in/out, regs maxed up/down
+        # Control flag of 0 for manual control
         for n in range(len(individual.CAPSTATUS)):
             for regFlag in range(2):
                 self.addIndividual(individual=\
-                    individual.individual(uid=self.nextUID,
-                                          reg=self.reg,
+                    individual.individual(**inputs,
+                                          uid=self.nextUID,
                                           regFlag=regFlag,
-                                          cap=self.cap,
                                           capFlag=n,
-                                          starttime=self.starttime,
-                                          stoptime=self.stoptime,
-                                          timezone=self.timezone,
-                                          voltFiles=self.voltFiles
+                                          controlFlag=0
                                           )
                                             )
                 
@@ -273,15 +274,11 @@ class population:
         # TODO: Stop hard-coding the number.
         for _ in range(4):
             self.addIndividual(individual=\
-                individual.individual(uid=self.nextUID,
-                                      reg=self.reg,
+                individual.individual(**inputs,
+                                      uid=self.nextUID,
                                       regFlag=2,
-                                      cap=self.cap,
                                       capFlag=2, 
-                                      starttime=self.starttime,
-                                      stoptime=self.stoptime,
-                                      timezone=self.timezone,
-                                      voltFiles=self.voltFiles
+                                      controlFlag=0
                                      )
                                         )
         
@@ -289,15 +286,11 @@ class population:
         while len(self.individualsList) < self.numInd:
             # Initialize individual.
             self.addIndividual(individual=\
-                individual.individual(uid=self.nextUID,
-                                      reg=self.reg, 
-                                      cap=self.cap,
+                individual.individual(**inputs,
+                                      uid=self.nextUID,
                                       regFlag=5,
                                       capFlag=5,
-                                      starttime=self.starttime,
-                                      stoptime=self.stoptime,
-                                      timezone=self.timezone,
-                                      voltFiles=self.voltFiles
+                                      controlFlag=0
                                       )
                                         )
             
@@ -613,6 +606,7 @@ def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
                 #      flush=True)
                 break
             
+            '''
             # Connect to the database. For some reason, we have to get a new
             # connection for each iteration, otherwise we'll get that nasty
             # '1412 (HY000): Table definition has changed, please retry
@@ -622,6 +616,7 @@ def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
             # TODO: database inputs should be provided in inDict.
             cnxn = util.db.connect(**database)
             cursor = cnxn.cursor()
+            '''
             
             # Modify the input's outDir to ensure models go in their own
             # folder. NOTE: This won't be necessary when voltage recording can
@@ -633,7 +628,6 @@ def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
             inDict['individual'].writeRunUpdateEval(strModel=inDict['strModel'],
                                                     inPath=inDict['inPath'],
                                                     outDir=outDir,
-                                                    cursor=cursor,
                                                     costs=costs)
             
             # Denote task as complete.
@@ -645,9 +639,6 @@ def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
             print(error_type, flush=True)
             print(error, flush=True)
             print(traceback, flush=True)
-        finally:
-            cursor.close()
-            cnxn.close()
 
 def mutateChroms(c, prob):
     """Take a chromosome and randomly mutate it.

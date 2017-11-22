@@ -18,7 +18,7 @@ COSTS = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00001,
 NUM_THREADS = 6
 NUM_IND = 6
 NUM_GEN = 2
-# Paths
+# Paths and files
 #"""
 BASE_PATH = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
 INCLUDE_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
@@ -34,6 +34,13 @@ OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output
 OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
 """
 MODEL = 'R2_12_47_2'
+COST_FILES = ['ZIP_costs.csv', 'base2_costs.csv', 'base3_costs.csv']
+LOG_FILES = ['ZIP_log.csv', 'base2_log.csv', 'base3_log.csv']
+OUT_DIRS = ['ZIP', 'base2', 'base3']
+# Hard code indices
+IND_Z = 0
+IND_2 = 1
+IND_3 = 2
 # Define timing:
 # Define recorder intervals (s)
 RECORD_INT = 60
@@ -52,7 +59,7 @@ TIMEZONE = 'PST+8PDT' # Pulled right from tzinfo.txt
 MNAMES = ['base_2', 'base_3', 'ZIP']
 # Define columns for .csv file for comparing ZIP vs houses
 # NOTE: 'total' is hard-coded in, and is a field inviduals track.
-COLNAMES = ['time', 'model', 'total'] + list(COSTS.keys())
+COST_COLS = ['time', 'total'] + list(COSTS.keys())
 
 # Database for baseline.
 BASELINE_DB = {'schema': 'baseline'}
@@ -81,6 +88,12 @@ REG={'R2-12-47-2_reg_1': {
                                     },
                          },
      }
+# Define columns for logging regulators. This will be hard-coded and gross, 
+# but oh well!
+LOG_COLS = ['time']
+for r in REG:
+    for p in ['A', 'B', 'C']:
+        LOG_COLS.append((r + '_' + p))
 
 # Definition of capacitors. 
 # NOTE: Initial state not defined in original model. GridLAB-D defaults to
@@ -103,6 +116,13 @@ CAP={
                                     'B': {'prevState': 'OPEN'},
                                     'C': {'prevState': 'OPEN'}}},
     }
+
+# Define columns for logging capacitors. This will be hard-coded and gross, 
+# but oh well!
+for c in CAP:
+    for p in ['A', 'B', 'C']:
+        LOG_COLS.append((c + '_' + p))
+        
 
 if __name__ == '__main__':
     try:
