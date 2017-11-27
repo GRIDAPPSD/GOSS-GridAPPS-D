@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.testmanager;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,6 +52,14 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.system.JenaSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -59,8 +68,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.dto.TestScript;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.ClientFactory;
 
 /**
 *
@@ -69,11 +87,28 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 */
 @Component
 public class CompareResults {
+	
+//	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
+	
+	@ServiceDependency
+	private volatile ClientFactory clientFactory;
+		
+	@ServiceDependency
+	private volatile LogManager logManager;
+	
+	public CompareResults(){}
+	public CompareResults(ClientFactory clientFactory, 
+			LogManager logManager){
+		this.clientFactory = clientFactory;
+		this.logManager = logManager;
+	}
+	
 	String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
 
 	private final static double EPSILON = 0.01;
 	
 	private final static ComplexFormat cf = new ComplexFormat("j");
+	
 
 	public static boolean equals(float a, float b){
 	    return a == b ? true : Math.abs(a - b) < EPSILON;
@@ -109,6 +144,23 @@ public class CompareResults {
 		return testScript;	
 	}
 	
+	public SimulationOutput getOutputObjects(String path) {
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+		JsonReader jsonReader;
+		SimulationOutput testScript = null;
+		try {
+			jsonReader = new JsonReader(new FileReader(path));
+			jsonReader.setLenient(true);
+			testScript = gson.fromJson(new FileReader(path),SimulationOutput.class);
+			jsonReader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return testScript;	
+	}
+
+	
 //	private Map<Object, Object> mapConfig(Map<String, Integer> input, String prefix) {
 //	    return input.entrySet().stream()
 //	            .collect(Collectors.toMap(entry -> entry.getKey().substring(subLength), entry -> AttributeType.GetByName(entry.getValue())));
@@ -122,7 +174,7 @@ public class CompareResults {
 			if(elm.isJsonObject()){
 			    JsonObject jsonObject = elm.getAsJsonObject();
 			    JsonObject output = jsonObject.get("output").getAsJsonObject();
-			    JsonObject f2 = output.get("ieee8500").getAsJsonObject();
+			    JsonObject f2 = output.get(getFeeder()).getAsJsonObject();
 	    
 			    // Turn to a Map 
 			    Map<String, JsonElement> ouputsMap = f2.entrySet().stream()
@@ -229,21 +281,73 @@ public class CompareResults {
 
 	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap,
 			Map<String, List<String>> propMap, JsonObject jsonObject) {
-
+		
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject.get("output").getAsJsonObject();
-		JsonObject simOutput = output.get("ieee8500").getAsJsonObject();
+		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
 		compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject, testResults, simOutput);
-//		return countFalse;
 		return testResults;
 	}
 	
+	public String getFeeder() {
+		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+		return qf.getFeeder();
+//		return "ieee8500";
+	}
+	
+	/**
+	 * Get the set of properties that matches the expected results
+	 * @param testScript
+	 * @param simOutProperties
+	 * @return set
+	 */
+	public HashSet<String> getMatchedProperties(TestScript testScript, SimulationOutput simOutProperties) {
+		List<SimulationOutputObject> simOutputObjects = simOutProperties.getOutputObjects();
+		Set<Entry<String, List<String>>> es = testScript.getOutputs().entrySet();
+		
+		HashSet<String> simOONames = new HashSet<String>();
+		for (SimulationOutputObject simulationOutputObject : simOutputObjects) {
+			simOONames.add(simulationOutputObject.getName());
+		}
+		
+		HashSet<String> expectedOutputNames = new HashSet<String>();
+
+		for (Entry<String, List<String>> entry : es) {
+			List<String> listOfValues = entry.getValue();
+			for (String value : listOfValues) {
+				expectedOutputNames.add(value);
+			}
+		}
+		
+//		System.out.println(Sets.intersection(listenOutputNames, sooNames).size() +" " +Sets.intersection(listenOutputNames, sooNames));
+		// Get intersection
+		expectedOutputNames.retainAll(simOONames);
+		System.out.println(expectedOutputNames.size() + " "  + expectedOutputNames);
+		return expectedOutputNames;
+		
+		
+//		int count =0;
+//		for (Entry<String, List<String>> entry : es) {
+//			List<String> listOfValues = entry.getValue();
+//			for (String value : listOfValues) {
+//				for (SimulationOutputObject simulationOutputObject : simOutputObjects) {
+//					if (simulationOutputObject.getName().equals(value)){
+//						System.out.println("Found " + simulationOutputObject.getName());
+//						count ++;
+//					}
+//				}
+//			}
+//		}
+//		System.out.println(count);
+//		System.out.println(simOutProperties.getOutputObjects().size());
+	}
+
 	public TestResults compareExpectedWithSimulationOutput(Map<String, JsonElement> expectedOutputMap,
 			Map<String, List<String>> propMap, JsonObject jsonObject) {
 
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
-		JsonObject simOutput = output.get("ieee8500").getAsJsonObject();
+		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
 		compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject, testResults, simOutput);
 		return testResults;
 	}
@@ -401,7 +505,7 @@ public class CompareResults {
 
 	public Map<String, JsonElement> getOutputMap(JsonObject output) {
 		Map<String, JsonElement> expectedOutputMap;
-		JsonObject outputs = output.get("ieee8500").getAsJsonObject();
+		JsonObject outputs = output.get(getFeeder()).getAsJsonObject();
 		expectedOutputMap = outputs.entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
 		return expectedOutputMap;
@@ -486,6 +590,14 @@ public class CompareResults {
 		compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
 		
 	}
+
+	void getProp(SimulationOutput simOut) {
+		for (SimulationOutputObject out :simOut.output_objects){
+			System.out.println(out.name);
+			out.getProperties();			
+		}
+	}
+	
 	
 	public static void main(String[] args) {
 		String path = "./applications/python/sim_output_object.json";
@@ -507,15 +619,12 @@ public class CompareResults {
 		compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
 		
 		compareResults.test();
+		
+		
+//		String testScriptPath = "./applications/python/exampleTestScript.json";
+//		TestScript testScript = loadTestScript(testScriptPath);
+
 //		SimulationOutput simOut = SimulationOutput.parse(str_out);
-	}
-
-
-	void getProp(SimulationOutput simOut) {
-		for (SimulationOutputObject out :simOut.output_objects){
-			System.out.println(out.name);
-			out.getProperties();			
-		}
 	}
 
 }

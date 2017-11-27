@@ -3,6 +3,9 @@ package gov.pnnl.goss.gridappsd;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +29,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.testmanager.TestManagerQueryFactory;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -59,7 +63,7 @@ public class TestManagerComponentTest {
 	ArgumentCaptor<LogMessage> argCaptorLogMessage;
 	
 	/**
-	 *    Succeeds when info log message is called at the start of the process manager implementation with the expected message
+	 *    Succeeds when info log message is called at the start of the test manager implementation with the expected message
 	 */
 	@Test
 	public void infoCalledWhen_processManagerStarted(){
@@ -85,6 +89,7 @@ public class TestManagerComponentTest {
 		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
+
 	}
 	
 	@Test
@@ -120,6 +125,12 @@ public class TestManagerComponentTest {
 		String path = "./applications/python/exampleTestScript.json";
 		TestScript testScript = testManager.loadTestScript(path);
 		assertEquals(testScript.name,"VVO");
+		assertEquals(testScript.getOutputs().get("substation_link").get(0), "xf_hvmv_sub");
+		assertEquals(testScript.getOutputs().get("regulator_list").get(0), "reg_FEEDER_REG");
+		
+		ArrayList<String> list = new ArrayList<String>(Arrays.asList( "reg_FEEDER_REG", "reg_VREG2", "reg_VREG3", "reg_VREG4"));
+		assertEquals(testScript.getOutputs().get("regulator_list"), list);
+
 	}
 	
 	@Test

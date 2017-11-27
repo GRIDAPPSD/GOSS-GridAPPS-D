@@ -55,6 +55,11 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,12 +70,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -214,7 +222,7 @@ public class TestManagerImpl implements TestManager {
 //				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
 				String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
 //				/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json
-				
+//				testScript.getOutputs().get("regulator_list");
 				
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
@@ -370,10 +378,12 @@ public class TestManagerImpl implements TestManager {
 			//TODO: 2 SimulationConfig simulation_config
 			//TODO: 3 Build/Set ApplicationConfig 
 		//Create Request Simulation object, you could also just pass in a json string with the configuration
+		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+		qf.getFeeder();
 		PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-		powerSystemConfig.GeographicalRegion_name = "ieee8500_Region";
-		powerSystemConfig.SubGeographicalRegion_name = "ieee8500_SubRegion";
-		powerSystemConfig.Line_name = "ieee8500";
+		powerSystemConfig.GeographicalRegion_name = qf.getGeographicalRegion(); // "ieee8500_Region";
+		powerSystemConfig.SubGeographicalRegion_name =  qf.getSubGeographicalRegion(); // "ieee8500_SubRegion";
+		powerSystemConfig.Line_name = qf.getFeeder(); // "ieee8500";
 
 		SimulationConfig simulationConfig = new SimulationConfig();
 		simulationConfig.duration = 60;
@@ -456,9 +466,14 @@ public class TestManagerImpl implements TestManager {
 		}
 	}
 	
+
 	
 	public static void main(String[] args) {
-//		TestManagerImpl tm = new TestManagerImpl();
+		TestManagerImpl tm = new TestManagerImpl();
+		TestManagerQueryFactory qf =  new TestManagerQueryFactory();
+		qf.getFeeder();
+		qf.getGeographicalRegion();
+		qf.getSubGeographicalRegion();
 //		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
 //		TestConfiguration testConf = tm.loadTestConfig(path);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
