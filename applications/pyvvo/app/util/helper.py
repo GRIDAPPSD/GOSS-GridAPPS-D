@@ -8,7 +8,7 @@ import cmath
 import math
 import re
 import datetime
-import pytz
+import dateutil.tz
 import util.constants
 import copy
 
@@ -177,9 +177,12 @@ def toUTC(ts, timezone=None):
     
     INPUTS:
         ts: string representing a time. 
-        timezone: timezone string as listed in GridLAB-D's tzinfo file. It's 
-        preferred to
+        timezone: timezone string as listed in GridLAB-D's tzinfo file.
         
+    NOTE: if ts has a timezone specifier in it (like PDT or PST), the timezone
+        input should be none. Likewise, if the timezone input is provided,
+        the ts string should NOT have a timezone specifier in it. One or the
+        other must be provided. Errors will be thrown otherwise.
     """
     
     # Check if the string came with a timezone. If so, infer both timezone and
@@ -190,6 +193,11 @@ def toUTC(ts, timezone=None):
     if tzMatch and timezone:
         assert False, ("Either supply a timezone string in the given timestamp"
                        + " or give the timezone input, but not both.")
+    elif (timezone is None) and (not tzMatch):
+        # We have no timezone information....
+        assert False, ("There was no parseable timezone string in the given "
+                       + "time string, and the timezone input was not "
+                       + "given. One or the other must be provided.")
     
     if tzMatch:
         # Extract the match
@@ -214,21 +222,39 @@ def toUTC(ts, timezone=None):
             daylight = False
         
         # Remove the timezone portion of the string
-        ts = util.constants.TZ_EXP.sub('', ts)
+        ts = util.constants.TZ_EXP.sub('', ts).strip()
         
     else:
         # Get timezone object
         tz = getTZObj(timezone=timezone)
         daylight = None
         
-    # Create naive object
+    # Create naive object.
     naive = datetime.datetime.strptime(ts, util.constants.DATE_FMT)
-        
-    # Add timezone information to the naive object
-    dt = tz.localize(naive, is_dst=daylight)
+    # Add timezone information.
+    dt = naive.replace(tzinfo=tz)
+    
+    # Ensure the time exists
+    if not dateutil.tz.datetime_exists(dt=dt, tz=tz):
+        raise ValueError('A time which does not exist was given!')
+    
+    # Check to see if it's ambiguous. If so, 'enfold' it based on 'daylight'
+    # Times are ambiguous if they happen twice - so during 'fall back'
+    # Note that during fall back we go from daylight to standard time, so fold
+    # should go from 0 to 1.
+    if tz.is_ambiguous(dt=dt):
+        if daylight is None:
+            raise ValueError('An ambiguous date was given, and daylight '
+                             + 'savings could not be determined!')
+        elif daylight:
+            # Fold should be 0.
+            dateutil.tz.enfold(dt, fold=0)
+        else:
+            # Fold should be 1.
+            dateutil.tz.enfold(dt, fold=1)
     
     # Convert to UTC
-    dtUTC = dt.astimezone(tz=pytz.utc)
+    dtUTC = dt.astimezone(dateutil.tz.tzutc())
     
     return dtUTC
 
@@ -248,6 +274,11 @@ def utcToTZ(dt, timezone):
     """Helper function to take a datetime object in UTC time and convert it
     to a timezone. Currently only supports timezones described in GridLAB-D's
     tzinfo file. See util.constants.TZ
+    
+    INPUTS:
+        dt: datetime object in UTC time
+        timezone: timezone string, as would be listed in GridLAB-D's tzinfo
+            file. Ex: 'PST+8PDT'
     """
     tz = getTZObj(timezone=timezone)
     dtNew = dt.astimezone(tz=tz)
@@ -393,10 +424,10 @@ if __name__ == '__main__':
     print('hooray')
     """
     f = '%Y-%m-%d %H:%M:%S %Z'
+    tz = 'PST+8PDT'
     # Look at spring forward
     #t1 = datestrToDatetime('2016-03-13 00:00:00 PST')
     ts = '2016-03-13 00:00:00'
-    tz = 'PST8PDT'
     tU = toUTC(ts, tz)
     for i in range(4):
         tn = tU + i*datetime.timedelta(seconds=3600)
@@ -413,10 +444,12 @@ if __name__ == '__main__':
     #t2 = datestrToDatetime('2016-11-06 00:00:00 PDT')
     t2 = '2016-11-06 00:00:00'
     tU = toUTC(t2, tz)
+    #tU = toUTC(t2)
     for i in range(4):
         tn = tU + i*datetime.timedelta(seconds=3600)
         tP = utcToTZ(tn, tz)
         print(tP.strftime(util.constants.DATE_FMT + ' %Z'))
+        print('Fold: {}'.format(tP.fold))
         #print('Using strftime   :', tn.strftime(f))
         #print('With print method: ' + printDatetime(tn, f))
         #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])
