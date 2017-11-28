@@ -94,7 +94,18 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
+	
+	CIMImporter cim2glm = new CIMImporter();
 	 
+	public GridLabDDataHandler(){}
+	public GridLabDDataHandler(DataSourceRegistry registry, DataManager dm, ConfigurationManager cm, CIMImporter cim){
+		this.datasourceRegistry = registry;
+		this.dataManager = dm;
+		this.configManager = cm;
+		cim2glm = cim;
+	}
+	
+	
     private Logger log = LoggerFactory.getLogger(getClass());
     private final String datasourceName = "gridappsd";
 	
@@ -140,9 +151,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Generating GridLABD simulation files");
 		//TODO check content in the request for validity
 		if(request instanceof String){
-			Gson  gson = new Gson();
-			request = gson.fromJson((String)request, RequestSimulation.class);
-			
+			request = RequestSimulation.parse((String)request);
 		}
 		
 		
@@ -205,7 +214,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
 				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
-				CIMImporter cim2glm = new CIMImporter();
+				
 				//Generate GLM using zipload
 				boolean bWantSched = false;
 				boolean bWantZip = false;
