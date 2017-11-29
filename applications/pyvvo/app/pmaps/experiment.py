@@ -337,11 +337,12 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     writeObj = stripModel()
     writeObj.writeModel()
     '''
-    # Connect to database and drop tables.
-    cnxn = util.db.connect(database=CONST.BASELINE_DB['schema'])
-    util.db.dropAllTables(cnxn=cnxn)
-    cnxn.close()
-    print('All tables dropped in {}'.format(CONST.BASELINE_DB['schema']),
+    # Get a database object. We'll need 3 connections for the 3 models
+    dbObj = util.db.db(**{'pool_size': 3, **CONST.BASELINE_DB})
+    # Drop all the tables
+    dbObj.dropAllTables()
+    
+    print('All tables dropped in {}'.format(CONST.BASELINE_DB['database']),
           flush=True)
     
     # If the output directory doesn't exist, make it
@@ -370,9 +371,6 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     modelQueue = Queue()
     cleanupQueue = Queue()
     
-    # Define database input
-    database={'database': CONST.BASELINE_DB['schema']}
-    
     # Start threads for running models and cleaning them up
     modelThreads = []
     
@@ -388,7 +386,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         
     # Initialize cleanup thread for ZIP
     tClean = threading.Thread(target=individual.cleanup,
-                                  args=(cleanupQueue, database))
+                                  args=(cleanupQueue, dbObj))
     tClean.start()
         
     print('Model and cleanup threads started.')
@@ -417,21 +415,21 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # NOTE: We could consider using copy.deepcopy and then modifying UID.
     baseInd2 = individual.individual(starttime=start_dt, stoptime=final_dt,
                                      timezone=CONST.TIMEZONE,
-                                     database=database,
+                                     database=CONST.BASELINE_DB,
                                      voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=CONST.IND_2)
     
     baseInd3 = individual.individual(starttime=start_dt, stoptime=final_dt,
                                      timezone=CONST.TIMEZONE,
-                                     database=database,
+                                     database=CONST.BASELINE_DB,
                                      voltFiles=voltFiles, reg=CONST.REG,
                                      cap=CONST.CAP, regFlag=3, capFlag=3,
                                      controlFlag=4, uid=CONST.IND_3)
     # Note that the ZIPInd uses stop_dt, NOT final_dt
     ZIPInd = individual.individual(starttime=start_dt, stoptime=stop_dt,
                                    timezone=CONST.TIMEZONE,
-                                   database=database,
+                                   database=CONST.BASELINE_DB,
                                    voltFiles=voltFiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
                                    controlFlag=4, uid=CONST.IND_Z)
@@ -472,16 +470,11 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         cleanupQueue.join()
         
         # Run the ZIP model
-        # Get a new databaes connection. Annoying.
-        zipC = util.db.connect(**database)
-        cursor=zipC.cursor()
         ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
                                   inPath=MODEL_STRIPPED_RECORDER,
                                   outDir=(CONST.OUTPUT_DIR + '/'
                                           + CONST.OUT_DIRS[CONST.IND_Z]),
                                   costs=CONST.COSTS)
-        zipC.close()
-        cursor.close()
         
         # Build cleanup dictionary and put it in the queue.
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
@@ -528,6 +521,8 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     cleanupQueue.put_nowait(None)
     for t in modelThreads: t.join(timeout=10)
     tClean.join(timeout=10)
+    
+    print('Done running models, moving on to packaging baseline outputs.')
     
     # Now, we need to evaluate costs of the baseline model for each hour.
     # Start by looping through the voltage files.
@@ -577,8 +572,9 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
             minute_utc += datetime.timedelta(seconds=CONST.RECORD_INT)
             
             
-        # To ensure we do the same double-counting in the ZIP case, decrement
-        # the minute index. I hate this double counting.
+        # To ensure we do the same double-counting as in the ZIP case,
+        # decrement the minute index. I hate this double counting, but it 
+        # makes sense to leave it in...
         minuteInd -= 1
         # Perform the 'update' to count tap changes and capacitor switches.
         # This also sets 'newState' so we can use that when logging.
@@ -966,8 +962,8 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-01-01 00:00:00'
-    e = '2016-01-01 06:00:00'
+    s = '2016-11-06 00:00:00'
+    e = '2016-11-06 04:00:00'
     #runGA()
     evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

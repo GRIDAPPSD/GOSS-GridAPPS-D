@@ -10,6 +10,7 @@ from glm import modGLM
 import util.gld
 import util.helper
 import util.constants
+import util.db
 import math
 import os
 import copy
@@ -47,8 +48,8 @@ class individual:
             stoptime: "..." end 
             timezone: string representing timezone, as it would appear in 
                 GridLAB-D's tzinfo.txt. Example: 'PST+8PDT'
-            database: dictionary of inputs for database, used to call 
-                util.db.connect. To use defaults, pass an empty dictionary.
+            database: Dictionary to be passed to the util/db.db class
+                constructor. NOTE: 
             voltFiles: list of filenames of files which monitor voltage. 
                 Should be output from group_recorder. Used to evaluate voltage
                 violations.
@@ -131,8 +132,9 @@ class individual:
         # and timezones don't often change.
         self.timezone = timezone
         
-        # set database
-        self.database = database
+        # set database object
+        self.dbObj = util.db.db(**database)
+        
         # Set the control flag
         self.controlFlag = controlFlag
         
@@ -514,7 +516,8 @@ class individual:
         if not recordInterval:
             # Get the model runtime - we only need to record regulator tap 
             # changes and capacitor changes at the end of simulation.
-            modelDelta = self.stoptime - self.starttime
+            modelDelta = (util.helper.dtToUTC(self.stoptime)
+                          - util.helper.dtToUTC(self.starttime))
             recordInterval = modelDelta.total_seconds()
             
         # Check if directory exists - if not, create it.
@@ -657,48 +660,36 @@ class individual:
         if not stoptime:
             stoptime=self.stoptime
         
-        # Connect to the database, get cursor.
-        cnxn = util.db.connect(**self.database)
-        cursor = cnxn.cursor()
-        
         # For other control schemes, we need to get the state change and state
         # information from the database.
         # Update the regulator tap change count.
         # NOTE: passing stoptime for both times to ensure we ONLY read the 
         # change count at the end - otherwise we might double count.
-        self.tapChangeCount = util.db.sumMatrix(cursor=cursor,
-                                                table=self.regData['table'],
-                                                cols=self.regData['changeColumns'],
-                                                starttime=stoptime,
-                                                stoptime=stoptime)
+        self.tapChangeCount = self.dbObj.sumMatrix(table=self.regData['table'],
+                                                   cols=self.regData['changeColumns'],
+                                                   starttime=stoptime,
+                                                   stoptime=stoptime)
         # Update the capacitor switch count
-        self.capSwitchCount = util.db.sumMatrix(cursor=cursor,
-                                                table=self.capData['table'],
-                                                cols=self.capData['changeColumns'],
-                                                starttime=stoptime,
-                                                stoptime=stoptime)
+        self.capSwitchCount = self.dbObj.sumMatrix(table=self.capData['table'],
+                                                   cols=self.capData['changeColumns'],
+                                                   starttime=stoptime,
+                                                   stoptime=stoptime)
         
         # The 'newState' properties of 'reg' and 'cap' need updated.
-        self.reg = util.db.updateStatus(inDict=self.reg, dictType='reg',
-                                        cursor=cursor,
-                                        table=self.regData['table'],
-                                        phaseCols=self.regData['stateColumns'],
-                                        t=stoptime)
+        self.reg = self.dbObj.updateStatus(inDict=self.reg, dictType='reg',
+                                           table=self.regData['table'],
+                                           phaseCols=self.regData['stateColumns'],
+                                           t=stoptime)
         
-        self.cap = util.db.updateStatus(inDict=self.cap, dictType='cap',
-                                        cursor=cursor,
-                                        table=self.capData['table'],
-                                        phaseCols=self.capData['stateColumns'],
-                                        t=stoptime)
+        self.cap = self.dbObj.updateStatus(inDict=self.cap, dictType='cap',
+                                           table=self.capData['table'],
+                                           phaseCols=self.capData['stateColumns'],
+                                           t=stoptime)
         
         # Update the regulator and capacitor chromosomes. Note that the counts
         # have already been updated, so set updateCount to False.
         self.genRegChrom(flag=4, updateCount=False)
         self.genCapChrom(flag=4, updateCount=False)
-        
-        # Close connection, cursor.
-        cursor.close()
-        cnxn.close()
                             
     def evalFitness(self, costs, tCol='t', starttime=None, stoptime=None,
                     voltFlag=True):
@@ -737,12 +728,9 @@ class individual:
         else:
             voltFilesDir=None
             voltFiles=None
-            
-        # Connect to the database, get cursor.
-        cnxn = util.db.connect(**self.database)
-        cursor = cnxn.cursor()
+
         # Compute costs.
-        self.costs = util.gld.computeCosts(cursor=cursor,
+        self.costs = util.gld.computeCosts(dbObj=self.dbObj,
                                            swingData=self.swingData,
                                            costs=costs,
                                            starttime=starttime,
@@ -753,9 +741,6 @@ class individual:
                                            voltFilesDir=voltFilesDir,
                                            voltFiles=voltFiles
                                             )
-        # Close cursor, connection.
-        cursor.close()
-        cnxn.close()
     
     def writeRunUpdateEval(self, strModel, inPath, outDir, costs):
         """Function to write and run model, update individual, and evaluate
@@ -806,7 +791,7 @@ class individual:
         # Return.
         return d
 
-def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
+def cleanup(cleanupQueue, dbObj):
     """Method to cleanup (delete) an individuals files, tables, etc. 
     
     As the genetic algorithm grows in sophistication, more output is 
@@ -820,6 +805,8 @@ def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
         cleanupQueue: queue which will have dictionaries inserted into it.
             Dictionaries should contain a list of tables in 'tables', a list
             of files in 'files', and a directory to find the files in 'dir'.
+        dbObj: initialized util/db.db class object for managing database
+            connections.
     """
     while True:
         # Extract inputs from the queue.
@@ -831,21 +818,14 @@ def cleanup(cleanupQueue, database={'database': 'gridlabd'}):
             cleanupQueue.task_done()
             break
         
-        # Connect to the database.
-        cnxn = util.db.connect(**database)
-        #cnxn.autocommit = True
-        cursor = cnxn.cursor()
-        
         # Drop or truncate all tables.
         if inDict['truncateFlag']:
             for t in inDict['tables']:
-                util.db.truncateTable(cursor=cursor, table=t)         
+                dbObj.truncateTable(table=t)         
         else:
             for t in inDict['tables']:
-                util.db.dropTable(cursor=cursor, table=t)
-        
-        cursor.close()
-        cnxn.close()
+                dbObj.dropTable(table=t)
+
         # Delete all files.
         for f in inDict['files']:
             try:

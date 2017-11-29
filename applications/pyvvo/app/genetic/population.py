@@ -144,9 +144,6 @@ class population:
         self.prep(starttime=starttime, stoptime=stoptime, strModel=strModel,
                   cap=cap, reg=reg)
         
-        # Get database connection pool (threadsafe)
-        # self.cnxnpool = util.db.connectPool(pool_name='popObjPool',
-        #                           pool_size=numModelThreads)
         
     def prep(self, starttime, stoptime, strModel, cap, reg, keep=0.1):
         """Method to 'prepare' a population object. This method has two uses:
@@ -234,7 +231,8 @@ class population:
         # Define some common inputs for individuals
         inputs = {'reg': self.reg, 'cap': self.cap,
                   'starttime': self.starttime, 'stoptime': self.stoptime,
-                  'timezone': self.timezone, 'voltFiles': self.voltFiles}
+                  'timezone': self.timezone, 'voltFiles': self.voltFiles,
+                  'database': self.database}
         
         # Create baseline individual.
         if self.baseControlFlag is not None:
@@ -571,7 +569,7 @@ class population:
         for t in self.cleanupThreads: t.join(timeout=timeout)
         #print('Threads terminated.', flush=True)
     
-def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
+def writeRunEval(modelQueue, costs):
                 #, cnxnpool):
     #tEvent):
     """Write individual's model, run the model, and evaluate costs. This is
@@ -635,7 +633,7 @@ def writeRunEval(modelQueue, costs, database={'database': 'gridlabd'}):
             
         except:
             print('Exception occurred!', flush=True)
-            error_type, error, traceback = sys.exc_info
+            error_type, error, traceback = sys.exc_info()
             print(error_type, flush=True)
             print(error, flush=True)
             print(traceback, flush=True)

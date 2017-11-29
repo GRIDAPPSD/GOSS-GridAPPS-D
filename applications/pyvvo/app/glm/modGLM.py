@@ -315,7 +315,7 @@ class modGLM:
                                  + self.strModel[tapeObj['end']+1:])
                 
     def addDatabase(self, hostname='localhost', username='gridlabd',
-                 password='gridlabd', schema='gridlabd', port='3306',
+                 password='gridlabd', database='gridlabd', port='3306',
                  socketname='/var/run/mysqld/mysqld.sock', tz_offset=0):
         """Method to add mysql database connection to model
         
@@ -346,11 +346,11 @@ class modGLM:
             '   hostname "{host}";\n'
             '   username "{usr}";\n'
             '   password "{pwd}";\n'
-            '   schema "{schema}";\n'
+            '   schema "{database}";\n'
             '   port {port};\n'
             '   tz_offset {tz_offset};\n'
-            ).format(host=hostname, usr=username, pwd=password, schema=schema,
-                     port=port, tz_offset=tz_offset)
+            ).format(host=hostname, usr=username, pwd=password,
+                     database=database, port=port, tz_offset=tz_offset)
         # If we're on Mac or Linux, need to include the sockenamae
         if os.name == 'posix':
             dbStr += 'socketname "{sock}";\n'.format(sock=socketname)

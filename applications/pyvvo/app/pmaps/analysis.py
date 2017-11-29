@@ -17,7 +17,7 @@ def readZIPResults():
     """
     # Get model and column names
     mn = CONST.MNAMES
-    col = CONST.COLNAMES
+    col = CONST.COST_COLS
     # Remove non-numeric columns
     col.remove('time')
     col.remove('model')
@@ -32,36 +32,28 @@ def readZIPResults():
         
     # Time the reading!
     t0 = time.time()
-    # Open and read the file. NOTE: With 3 models running each hour, it's 
+    # Open and read the files. NOTE: With 3 models running each hour, it's 
     # around 3MB, so no problem to read the whole thing into memory.
-    with open((CONST.OUTPUT_DIR +'/results.csv'), newline='') as f:
-        # Get csv reader
-        r = csv.DictReader(f, quoting=csv.QUOTE_NONNUMERIC)
-        # Read each row, and map values appropriately.
-        rowInd = 0
-        aRowInd = 0
-        for row in r:
-            # Extract the model name and find its index.
-            model = row['model']
-            modelInd = mn.index(model)
-            
-            # Loop over the column names, and assign to array a.
-            colInd = 0
-            for c in col:
-                # Put data in the appropriate slot
-                a[aRowInd, modelInd, colInd] = row[c]
-                # Increment the column index.    
-                colInd += 1
-            
-            # Check if it's time to increment the aRowInd and add the time.
-            if ((rowInd + 1) % 3) == 0:
-                # Add time. 
-                t[aRowInd] = row['time']
-                # Increment index.
-                aRowInd += 1
+    modelInd = -1
+    for m in CONST.COST_FILES:
+        modelInd += 1
+        with open((CONST.OUTPUT_DIR +'/' + m), newline='') as f:
+            # Get csv reader
+            r = csv.DictReader(f, quoting=csv.QUOTE_NONNUMERIC)
+            # Read each row, and map values appropriately.
+            rowInd = 0
+            for row in r:
+                # Loop over the column names, and assign to array a.
+                colInd = 0
+                for c in col:
+                    # Put data in the appropriate slot
+                    a[rowInd, modelInd, colInd] = row[c]
+                    # Increment the column index.    
+                    colInd += 1
                 
-            # Increment the row index.
-            rowInd += 1
+                    
+                # Increment the row index.
+                rowInd += 1
         
     # We now have all the data! Let's do stuff
     t1 = time.time()

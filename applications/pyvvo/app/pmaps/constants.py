@@ -62,7 +62,7 @@ MNAMES = ['base_2', 'base_3', 'ZIP']
 COST_COLS = ['time', 'total'] + list(COSTS.keys())
 
 # Database for baseline.
-BASELINE_DB = {'schema': 'baseline'}
+BASELINE_DB = {'database': 'baseline'}
 
 # For now, we'll only measure voltages for residential meters (note that any 
 # triplex meter with the commercial designation was switched to residential)

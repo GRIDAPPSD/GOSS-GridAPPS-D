@@ -283,6 +283,22 @@ def utcToTZ(dt, timezone):
     tz = getTZObj(timezone=timezone)
     dtNew = dt.astimezone(tz=tz)
     return dtNew
+
+def dtToUTC(dt):
+    """Helper function to take an AWARE datetime object and represent it in
+    UTC time
+    """
+    dtNew = dt.astimezone(dateutil.tz.tzutc())
+    return dtNew
+
+def isAmbiguous(dt):
+    """Helper function to check if a datetime is ambiguous. This is necessary
+    because GridLAB-D uses MySQL's timestamp datatype, which has no timezone
+    or DST information. This function strips off a datetime object's tzinfo,
+    then checks if the time would be ambiguous without that information.
+    """
+    dtNaive = dt.replace(tzinfo=None)
+    return dt.tzinfo.is_ambiguous(dtNaive)
     
 def timeInfoForZIP(starttime, stoptime, zipInterval=3600):
     """Function to extract the necessary time information to layer ZIP models.
@@ -298,7 +314,7 @@ def timeInfoForZIP(starttime, stoptime, zipInterval=3600):
     # interval to same hour.
     # TODO: Make the 'delta' an input? or a constant? Anyways, don't hide it
     # here
-    delta = stoptime - starttime
+    delta = dtToUTC(stoptime) - dtToUTC(starttime)
     assert delta.total_seconds() <= zipInterval
     
     # Again, hard-coding an hour check. Make sure the end time doesn't run into
@@ -433,6 +449,8 @@ if __name__ == '__main__':
         tn = tU + i*datetime.timedelta(seconds=3600)
         tP = utcToTZ(tn, tz)
         print(tP.strftime(util.constants.DATE_FMT + ' %Z'))
+        print('Fold: {}'.format(tP.fold))
+        print('Ambiguous: {}'.format(isAmbiguous(dt=tP)))
         #print('Using strftime   :', tn.strftime(f))
         #print('With print method: ' + printDatetime(tn, f))
         #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])
@@ -450,6 +468,7 @@ if __name__ == '__main__':
         tP = utcToTZ(tn, tz)
         print(tP.strftime(util.constants.DATE_FMT + ' %Z'))
         print('Fold: {}'.format(tP.fold))
+        print('Ambiguous: {}'.format(isAmbiguous(dt=tP)))
         #print('Using strftime   :', tn.strftime(f))
         #print('With print method: ' + printDatetime(tn, f))
         #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])

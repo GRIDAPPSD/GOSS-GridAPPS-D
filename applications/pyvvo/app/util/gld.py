@@ -58,7 +58,6 @@ Created on Aug 29, 2017
 @author: thay838
 """
 import subprocess
-import util.db
 import csv
 import os
 import util.constants
@@ -129,9 +128,9 @@ def inverseTranslateTaps(lowerTaps, pos):
     posOut = pos + lowerTaps
     return posOut
 
-def computeCosts(cursor, swingData, costs, starttime, stoptime,
+def computeCosts(dbObj, swingData, costs, starttime, stoptime,
                  voltFilesDir=None,
-                 voltFiles=None, tCol='t', tapChangeCount=None,
+                 voltFiles=None, tCol='t', idCol='id', tapChangeCount=None,
                  tapChangeTable=None, tapChangeColumns=None,
                  capSwitchCount=None, capSwitchTable=None,
                  capSwitchColumns=None
@@ -141,7 +140,7 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
     should include cost of DER engagement.
     
     INPUTS:
-        cursor: database connection cursor
+        dbObj: initialized util/db.db class object
         swingData: dict with the following fields:
             table: name of table for getting swing node power.
             columns: name of the columns corresponding to the swing table.
@@ -191,52 +190,18 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
     costDict = {}
     # *************************************************************************
     # ENERGY COST
-    """
-    # IMPORTANT NOTE: The code below won't exactly work now that
-    # sumComplexPower has been modified to return a list of row sums
-    # Sum the total three-phase complex power over the given interval.
-    powerSum = util.db.sumComplexPower(cursor=cursor,
-                                       table=swingData['power']['table'], 
-                                       cols=swingData['power']['columns'],
-                                       starttime=starttime, stoptime=stoptime)
-    
-    # Perform 'integration' by multiplying each measurement by its time
-    # duration (convert seconds to hours), then multiply this area (energy in 
-    # VAh) by price to get cost.
-    energyCost = ((powerSum['sum'].__abs__()
-                   * (swingData['power']['interval'] / 3600))
-                  * costs['energy'])
-    """
     
     # Read energy database. Note times - this should return a single row only.
-    energyRows = util.db.fetchAll(cursor=cursor,
-                                  table=swingData['energy']['table'],
-                                  cols=swingData['energy']['columns'],
-                                  starttime=stoptime, stoptime=stoptime)
-    if len(energyRows) == 1:
-        # In every case except for 'fall back' DST transistion, we should have
-        # only one energy row returned from the query. GridLAB-D uses timestamp
-        # rather than datetime, so we get ambiguity.
-        rowInd = 0
-    else:
-        # If we're here, there's either a problem, or we're in the DST
-        # 'fall back' transition. Use assertions to be sure.
-        # Ensure we got exactly two rows
-        assert len(energyRows) == 2
-        # Ensure all values in the first energy row are 0.
-        for v in energyRows[0]:
-            assert v == 0
-        
-        # Ensure all values in the second energy row are non-zero
-        for v in energyRows[1]:
-            assert v != 0
-        
-        # Set the row index.
-        rowInd = 1
+    energyRows = dbObj.fetchAll(table=swingData['energy']['table'],
+                                cols=swingData['energy']['columns'],
+                                starttime=stoptime, stoptime=stoptime)
 
+    # Due to time and ID filtering, we should get exactly one row.
+    assert len(energyRows) == 1
+    
     # Compute the costs
-    costDict['realEnergy'] = energyRows[rowInd][REAL_IND] * costs['realEnergy']
-    costDict['reactiveEnergy'] = (energyRows[rowInd][REACTIVE_IND]
+    costDict['realEnergy'] = energyRows[0][REAL_IND] * costs['realEnergy']
+    costDict['reactiveEnergy'] = (energyRows[0][REACTIVE_IND]
                                   * costs['reactiveEnergy'])
     #**************************************************************************
     # POWER FACTOR COST
@@ -245,10 +210,9 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
     costDict['powerFactorLag'] = 0
     
     # Get list of sums of rows (sum three phase power) from the database
-    power = util.db.sumComplexPower(cursor=cursor,
-                                    table=swingData['power']['table'],
-                                    cols=swingData['power']['columns'],
-                                    starttime=starttime, stoptime=stoptime)
+    power = dbObj.sumComplexPower(table=swingData['power']['table'],
+                                  cols=swingData['power']['columns'],
+                                  starttime=starttime, stoptime=stoptime)
     
     # Loop over each row, compute power factor, and assign cost
     for p in power['rowSums']:
@@ -272,9 +236,9 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
     # If tap table and columns given, compute the total count.    
     if (tapChangeTable and tapChangeColumns and tCol):
         # Sum all the tap changes.
-        tapChangeCount = util.db.sumMatrix(cursor=cursor, table=tapChangeTable,
-                                      cols=tapChangeColumns, tCol=tCol,
-                                      starttime=stoptime, stoptime=stoptime)
+        tapChangeCount = dbObj.sumMatrix(table=tapChangeTable,
+                                         cols=tapChangeColumns, tCol=tCol,
+                                         starttime=stoptime, stoptime=stoptime)
     elif (tapChangeCount is None):
         assert False, ("If tapChangeCount is not specified, tapChangeTable and"
                        " tapChangeColumns must be specified!")
@@ -288,9 +252,9 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
     # If cap table and columns given, compute the total count.
     if (capSwitchTable and capSwitchColumns and tCol):
         # Sum all the tap changes.
-        capSwitchCount = util.db.sumMatrix(cursor=cursor, table=capSwitchTable,
-                                      cols=capSwitchColumns, tCol=tCol,
-                                      starttime=stoptime, stoptime=stoptime)
+        capSwitchCount = dbObj.sumMatrix(table=capSwitchTable,
+                                         cols=capSwitchColumns, tCol=tCol,
+                                         starttime=stoptime, stoptime=stoptime)
     elif (capSwitchCount is None):
         assert False, ("If capSwitchCount is not specified, capSwitchTable and"
                        " capSwitchColumns must be specified!")
@@ -307,14 +271,6 @@ def computeCosts(cursor, swingData, costs, starttime, stoptime,
         costDict['overvoltage'] = sum(v['high']) * costs['overvoltage']
         costDict['undervoltage'] = sum(v['low']) * costs['undervoltage']
     
-    # TODO: uncomment when ready
-    '''
-    # Get the voltage violations
-    self.violations = util.db.voltageViolations(cursor=cursor,
-                                      table=self.triplexTable, 
-                                      starttime=starttime,
-                                      stoptime=stoptime)
-    '''
     # *************************************************************************
     # DER COSTS
     # TODO
