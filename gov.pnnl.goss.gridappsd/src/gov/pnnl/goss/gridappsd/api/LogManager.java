@@ -43,7 +43,13 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 
 public interface LogManager {
 
-	
+	/**
+	 * Implementation of this method should writes the message in log file. 
+	 * And calls LogDataManager to save the log  message in data store if 
+	 * store_to_db is true in  LogMessage object.  
+	 * @param message an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
+	 * @param username username of the user logging the message
+	 */
 	void log(LogMessage message, String username);
 	
 	/**
