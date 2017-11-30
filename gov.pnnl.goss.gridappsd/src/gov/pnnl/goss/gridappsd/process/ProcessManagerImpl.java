@@ -64,6 +64,8 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.mockito.internal.matchers.InstanceOf;
 
+import com.google.gson.JsonSyntaxException;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -205,9 +207,8 @@ public class ProcessManagerImpl implements ProcessManager {
 								String.valueOf(processId),
 								"log");
 						
-						if(message instanceof LogMessage)
-							logManager.get(LogMessage.parse(message.toString()), outputTopics, logTopic);
-						//TODO: else call ModelDataManager or SimulationOutputDataManager
+						logManager.get(LogMessage.parse(message.toString()), outputTopics, logTopic);
+						//TODO: catch JsonSyntaxException and call  get ModelDataManager or SimulationOutputDataManager
 						
 					} else if(event.getDestination().contains("log")){
 						logManager.log(LogMessage.parse(message.toString()), username);

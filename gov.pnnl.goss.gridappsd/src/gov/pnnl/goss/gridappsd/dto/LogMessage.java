@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class LogMessage implements Serializable {
 	
@@ -109,11 +110,11 @@ public class LogMessage implements Serializable {
 		this.storeToDb = storeToDb;
 	}
 	
-	public static LogMessage parse(String jsonString){
+	public static LogMessage parse(String jsonString) throws JsonSyntaxException {
 		Gson  gson = new Gson();
 		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
 		if(obj.logMessage==null)
-			throw new RuntimeException("Expected attribute log_message not found");
+			throw new RuntimeException("Expected attribute logMessage not found");
 		return obj;
 	}
 	
