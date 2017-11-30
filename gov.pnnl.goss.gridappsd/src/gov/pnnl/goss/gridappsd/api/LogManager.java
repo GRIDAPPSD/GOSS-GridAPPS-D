@@ -46,7 +46,10 @@ public interface LogManager {
 	
 	void log(LogMessage message, String username);
 	
-	
-	void get(LogMessage message);
+	/**
+	 * Implementation of this method should call an implementation of LogDataManager and get the log messages 
+	 * from data store based on the not null values in LogMessage object.
+	 */
+	void get(LogMessage message, String outputTopics, String LogTopic);
 	
 }

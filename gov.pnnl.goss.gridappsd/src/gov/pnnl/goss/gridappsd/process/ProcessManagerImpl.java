@@ -50,6 +50,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.awt.GridBagConstraints;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
@@ -61,6 +62,7 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.mockito.internal.matchers.InstanceOf;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -115,7 +117,6 @@ public class ProcessManagerImpl implements ProcessManager {
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
 		this.statusReporter = statusReporter;
-		this.logManager = logManager;
 		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
 	}
@@ -124,27 +125,33 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@Start
 	public void start(){
-		System.out.println("STARTING PROCESS MANAGER");
+		
 		LogMessage logMessageObj = new LogMessage();
 		
 		try{
-			if(newSimulationProcess==null)
-				newSimulationProcess = new ProcessNewSimulationRequest(logManager); 
-			
-			logMessageObj.setLog_level(LogLevel.DEBUG);
-			logMessageObj.setProcess_id(this.getClass().getName());
-			logMessageObj.setProcess_status(ProcessStatus.RUNNING);
-			logMessageObj.setStoreToDB(true);
-			
-			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLog_message("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj, GridAppsDConstants.username);
-			
+		
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new GossResponseEvent() {
-//			client.subscribe(GridAppsDConstants.topic_process_prefix+"", new GossResponseEvent() {
+		
+			logMessageObj.setLogLevel(LogLevel.DEBUG);
+			logMessageObj.setProcessId(this.getClass().getName());
+			logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
+			logMessageObj.setStoreToDb(true);
+			logMessageObj.setLogMessage("Starting "+ this.getClass().getName());
+			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
+			
+			if(newSimulationProcess==null)
+				newSimulationProcess = new ProcessNewSimulationRequest(); 
+			
+			
+			
+			logMessageObj.setTimestamp(new Date().getTime());
+			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
+			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
+			
+			
+			client.subscribe(GridAppsDConstants.topic_prefix+".>", new GossResponseEvent() {
 				@Override
 				public void onMessage(Serializable message) {
 					
@@ -152,44 +159,60 @@ public class ProcessManagerImpl implements ProcessManager {
 					DataResponse event = (DataResponse)message;
 					//TODO:Get username from message's metadata e.g. event.getUserName()
 					String username  = GridAppsDConstants.username;
-					
+					int processId = generateProcessId();
 					
 					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("Received message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj, GridAppsDConstants.username);
+					logMessageObj.setLogMessage("Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
+					client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 					
 					
 					
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 						//generate simulation id and reply to event's reply destination.
-						int simulationId = generateSimulationId();
+						
 						try {
-							int simPort = assignSimulationPort(simulationId);
-							client.publish(event.getReplyDestination(), simulationId);
-							newSimulationProcess.process(configurationManager, simulationManager, simulationId, message, simPort);
+							int simPort = assignSimulationPort(processId);
+							client.publish(event.getReplyDestination(), processId);
+							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort);
 						} catch (Exception e) {
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());
-							logMessageObj.setLog_level(LogLevel.ERROR);
-							logMessageObj.setLog_message(e.getMessage());
-							logManager.log(logMessageObj, username);
+							logMessageObj.setLogLevel(LogLevel.ERROR);
+							logMessageObj.setLogMessage(e.getMessage());
+							client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 						}
 					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
-						int processId = generateSimulationId();
 						try{
 							appManager.process(processId, event, message);
 						}
 						catch(Exception e){
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());
-							logMessageObj.setLog_level(LogLevel.ERROR);
-							logMessageObj.setLog_message(e.getMessage());
-							logManager.log(logMessageObj, username);
+							logMessageObj.setLogLevel(LogLevel.ERROR);
+							logMessageObj.setLogMessage(e.getMessage());
+							client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 						}
-					} else if(event.getDestination().contains(GridAppsDConstants.topic_log_prefix)){
+					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestData)){
+						
+						String outputTopics = String.join(".", 
+								GridAppsDConstants.topic_responseData,
+								String.valueOf(processId),
+								"output");
+						
+						String logTopic = String.join(".", 
+								GridAppsDConstants.topic_responseData,
+								String.valueOf(processId),
+								"log");
+						
+						if(message instanceof LogMessage)
+							logManager.get(LogMessage.parse(message.toString()), outputTopics, logTopic);
+						//TODO: else call ModelDataManager or SimulationOutputDataManager
+						
+					} else if(event.getDestination().contains("log")){
 						logManager.log(LogMessage.parse(message.toString()), username);
 					}
+					
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
 					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
 				}
@@ -198,34 +221,21 @@ public class ProcessManagerImpl implements ProcessManager {
 		catch(Exception e){
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLog_level(LogLevel.ERROR);
-			logMessageObj.setLog_message(e.getMessage());
+			logMessageObj.setLogLevel(LogLevel.ERROR);
+			logMessageObj.setLogMessage(e.getMessage());
 			logManager.log(logMessageObj, GridAppsDConstants.username);
 		}
 		
 	}
 	
-	
-	public void runProcess(){
-		
-	}
-	
-	
-	
 	/**
-	 * Generates and returns simulation id
-	 * @return simulation id
+	 * Generates and returns process id
+	 * @return process id
 	 */
-	static int generateSimulationId(){
-		/*
-		 * TODO: 
-		 * Get the latest simulation id from database and return +1 
-		 * Store the new id in database
-		 */
+	static int generateProcessId(){
 		return Math.abs(new Random().nextInt());
 	}
 	
-
 	public int assignSimulationPort(int simulationId) throws Exception {
 		Integer simIdKey = new Integer(simulationId);
 		if (!simulationPorts.containsKey(simIdKey)) {

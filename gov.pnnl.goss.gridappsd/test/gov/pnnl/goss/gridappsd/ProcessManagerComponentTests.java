@@ -133,9 +133,9 @@ public class ProcessManagerComponentTests {
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Starting "+ProcessManagerImpl.class.getName());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Starting "+ProcessManagerImpl.class.getName());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 				
@@ -201,17 +201,17 @@ public class ProcessManagerComponentTests {
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 				
@@ -286,17 +286,17 @@ public class ProcessManagerComponentTests {
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		

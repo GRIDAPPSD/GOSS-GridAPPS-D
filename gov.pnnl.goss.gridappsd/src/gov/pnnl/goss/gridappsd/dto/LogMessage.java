@@ -54,30 +54,29 @@ public class LogMessage implements Serializable {
 		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE
 	}
 	
-	String process_id;
+	String processId;
 	long timestamp;
-	String log_message;
-	LogLevel log_level;
-	ProcessStatus process_status;
-	Boolean store_to_db = true;
-	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
+	String logMessage;
+	LogLevel logLevel;
+	ProcessStatus processStatus;
+	Boolean storeToDb = true;
 	
 	public LogMessage(){}
-	public LogMessage(String process_id, long timestamp, String log_message, LogLevel log_level, ProcessStatus process_status, Boolean storeToDB){
-		this.process_id = process_id;
+	
+	public LogMessage(String processId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb){
+		this.processId = processId;
 		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.store_to_db = storeToDB;
+		this.logLevel = logLevel;
+		this.logMessage = logMessage;
+		this.processStatus = processStatus;
+		this.storeToDb = storeToDb;
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public String getProcessId() {
+		return processId;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
+	public void setProcessId(String processId) {
+		this.processId = processId;
 	}
 	public long getTimestamp() {
 		return timestamp;
@@ -85,36 +84,35 @@ public class LogMessage implements Serializable {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	public String getLog_message() {
-		return log_message;
+	public String getLogMessage() {
+		return logMessage;
 	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
+	public void setLogMessage(String logMessage) {
+		this.logMessage = logMessage;
 	}
-	public LogLevel getLog_level() {
-		return log_level;
+	public LogLevel getLogLevel() {
+		return logLevel;
 	}
-	public void setLog_level(LogLevel log_level) {
-		this.log_level = log_level;
+	public void setLogLevel(LogLevel logLevel) {
+		this.logLevel = logLevel;
 	}
-	public ProcessStatus getProcess_status() {
-		return process_status;
+	public ProcessStatus getProcessStatus() {
+		return processStatus;
 	}
-	public void setProcess_status(ProcessStatus process_status) {
-		this.process_status = process_status;
+	public void setProcessStatus(ProcessStatus processStatus) {
+		this.processStatus = processStatus;
 	}
-	public Boolean getStoreToDB() {
-		return store_to_db;
+	public Boolean getStoreToDb() {
+		return storeToDb;
 	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.store_to_db = storeToDB;
+	public void setStoreToDb(Boolean storeToDb) {
+		this.storeToDb = storeToDb;
 	}
-	
 	
 	public static LogMessage parse(String jsonString){
 		Gson  gson = new Gson();
 		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
-		if(obj.log_message==null)
+		if(obj.logMessage==null)
 			throw new RuntimeException("Expected attribute log_message not found");
 		return obj;
 	}

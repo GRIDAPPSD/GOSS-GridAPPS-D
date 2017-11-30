@@ -1,13 +1,13 @@
 
 Supported Application Types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Puthon
+- Python
 - Java (Jar)
 
 Registering Application With Platform
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Platform requires a config file for each application on a particular location in order to register the applications.
+Assumptions: GOSS-GridAPPS-D repository (https://github.com/GRIDAPPSD/GOSS-GridAPPS-D.git) is cloned under [ROOT_DIR]
 
 1. Create a [app_name].config file in JSON format with keys and values as described below. where app_name should be unique for the application.
 
@@ -27,9 +27,9 @@ Platform requires a config file for each application on a particular location in
 		"multiple_instances":true|false
 	}
 
-2. Put [app_name].config file under applications folder in GOSS-GridAPPS-D GitHub repo https://github.com/GRIDAPPSD/GOSS-GridAPPS-D
+2. Put [app_name].config file in applications folder under cloned repository location
 
-3. Put your application under applications/[app_name] folder on Gihub as shown below.
+3. Put your application under applications/[app_name] folder under cloned repository location as shown below.
 
 ::
 	

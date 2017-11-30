@@ -71,6 +71,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
+import riotcmd.json;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 
@@ -115,15 +116,19 @@ public class SimulationManagerImpl implements SimulationManager{
 	}
 	@Start
 	public void start() throws Exception{
-		logManager.log(new LogMessage(this.getClass().getName(), 
-				new Date().getTime(), 
-				"Starting "+this.getClass().getName(), 
-				LogLevel.INFO, 
-				ProcessStatus.STARTING, 
-				true),GridAppsDConstants.username);
+		
 		Credentials credentials = new UsernamePasswordCredentials(
 				GridAppsDConstants.username, GridAppsDConstants.password);
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);
+		client.publish("goss.gridappsd.log.platform", new LogMessage(this.getClass().getName(), 
+				new Date().getTime(), 
+				this.getClass().getName()+" Started", 
+				LogLevel.INFO, 
+				ProcessStatus.STARTED, 
+				true).toString());
+		
+		
+		
 
 	}
 

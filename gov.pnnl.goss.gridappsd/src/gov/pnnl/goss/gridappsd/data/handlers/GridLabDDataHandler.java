@@ -137,7 +137,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	@Override
 	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
-		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Generating GridLABD simulation files");
+		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
@@ -258,7 +258,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0, fXY);
 				
 				}
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD base file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
@@ -284,7 +284,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD output config file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
 
 				
 				//generate simulation config startup file
@@ -357,7 +357,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD startup file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
 
 				
 				return new DataResponse(startupFile);

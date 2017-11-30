@@ -81,9 +81,9 @@ public class TestManagerComponentTest {
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Starting "+TestManagerImpl.class.getName());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Starting "+TestManagerImpl.class.getName());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 	}
