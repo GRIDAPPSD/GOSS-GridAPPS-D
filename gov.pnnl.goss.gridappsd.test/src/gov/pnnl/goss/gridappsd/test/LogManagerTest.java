@@ -6,22 +6,36 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 import java.io.Serializable;
 
-import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
 
-import org.fusesource.stomp.jms.StompJmsConnectionFactory;
-import org.fusesource.stomp.jms.StompJmsDestination;
+import static org.junit.Assert.assertNotNull;
+
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.gson.Gson;
+import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.client.ClientServiceFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LogManagerTest {
+	
+	Client client; 
+	
+	@Before
+	public void setup() throws Exception{
+		ClientFactory clientFactory = new ClientServiceFactory();
+		Credentials credentials = new UsernamePasswordCredentials(
+						"system", "manager");
+	 	client = clientFactory.create(PROTOCOL.STOMP, credentials);
+	}
 	
 	@Test
 	public void sendLogMessage() throws JMSException{
@@ -36,29 +50,18 @@ public class LogManagerTest {
 		Boolean storeToDB = true;
 		LogMessage logMessage = new LogMessage(process_id, timestamp, log_message, log_level, process_status, storeToDB);
 		
-		sendMessage(destination, logMessage);
+		String id = client.getResponse(logMessage, destination, null).toString();
 		
-		
-	}
-	
-	
-	private void sendMessage(String destination, Serializable message) throws JMSException{
-		Gson gson = new Gson();
-		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
-		connectionFactory.setBrokerURI("tcp://localhost:61613");
-		connectionFactory.setUsername("system");
-		connectionFactory.setPassword("manager");
-		Connection connection = connectionFactory.createConnection(); 
-		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
-		TextMessage textMessage = null;
-		if(message instanceof String){
-			textMessage = session.createTextMessage(message.toString());
-		} else {
-			textMessage = session.createTextMessage(gson.toJson(message));
+		client.subscribe("goss.gridappsd.response.data."+id, new GossResponseEvent() {
 			
-		}
-		producer.send(textMessage);
+			@Override
+			public void onMessage(Serializable message) {
+				DataResponse response = (DataResponse)message;
+				assertNotNull(response.getData());
+				
+			}
+		});
+		
 	}
-
+	
 }
