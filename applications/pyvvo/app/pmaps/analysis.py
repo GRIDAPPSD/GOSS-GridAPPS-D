@@ -20,7 +20,6 @@ def readZIPResults():
     col = CONST.COST_COLS
     # Remove non-numeric columns
     col.remove('time')
-    col.remove('model')
     
     # HARD-CODE number of rows (hours in leap year, 2016)
     numRows = 8784
@@ -50,14 +49,16 @@ def readZIPResults():
                     a[rowInd, modelInd, colInd] = row[c]
                     # Increment the column index.    
                     colInd += 1
-                
                     
+                # Put in the time.
+                t[rowInd] = row['time']
+                
                 # Increment the row index.
                 rowInd += 1
         
     # We now have all the data! Let's do stuff
     t1 = time.time()
-    print('File read in {:.1f} seconds.'.format(t1-t0), flush=True)
+    print('Files read in {:.1f} seconds.'.format(t1-t0), flush=True)
     
     # Convert time to datetime.
     # WARNING: HARD-CODING stupid windows timezone stuff
@@ -66,8 +67,8 @@ def readZIPResults():
                     for x in t])
     
     # Get model indices
-    ind2 = CONST.MNAMES.index('base_2') # 'control' model
-    ind3 = CONST.MNAMES.index('base_3') # TMY3 (as opposed to 2) model
+    ind2 = CONST.MNAMES.index('base2') # 'control' model
+    ind3 = CONST.MNAMES.index('base3') # TMY3 (as opposed to 2) model
     indZ = CONST.MNAMES.index('ZIP') # ZIP model
     
     for colInd in range(len(col)):
@@ -99,20 +100,11 @@ def readZIPResults():
             
     # Plot control real energy and ZIP real energy on the same plot
     plt.figure()
-    plt.plot(tDT, a[:, ind2, col.index('realEnergy')])
-    plt.plot(tDT, a[:, indZ, col.index('realEnergy')])
+    plt.plot(tDT, a[:, ind2, col.index('realEnergy')], label='Control')
+    plt.plot(tDT, a[:, indZ, col.index('realEnergy')], label='ZIP')
     plt.xlabel('Time')
     plt.ylabel('Real Energy Cost ($)')
     plt.title('Real Energy Cost vs. Time for Control (TMY2) and ZIP')
-    plt.legend(['Control', 'ZIP'])
-    
-    # Plot control reactive energy and ZIP reactive energy on the same plot
-    plt.figure()
-    plt.plot(tDT, a[:, ind2, col.index('reactiveEnergy')])
-    plt.plot(tDT, a[:, indZ, col.index('reactiveEnergy')])
-    plt.xlabel('Time')
-    plt.ylabel('Reactive Energy Cost ($)')
-    plt.title('Reactive Energy Cost vs. Time for Control (TMY2) and ZIP')
     plt.legend(['Control', 'ZIP'])
            
     plt.show()

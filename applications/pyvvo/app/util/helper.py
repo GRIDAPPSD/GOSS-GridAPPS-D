@@ -170,10 +170,10 @@ def updateVVODicts(regOld, capOld, regNew, capNew):
     
     return {'reg': regOld, 'cap': capOld, 'tapChangeCount': tapChangeCount,
             'capSwitchCount': capSwitchCount}
-
-def toUTC(ts, timezone=None):
-    """Helper function to take a given time string, parse it into a datetime
-    object, then convert it to UTC
+    
+def tsToDT(ts, timezone=None):
+    """Helper function to take a given time string, parse it into an aware
+    datetime object (which has tzinfo)
     
     INPUTS:
         ts: string representing a time. 
@@ -184,7 +184,6 @@ def toUTC(ts, timezone=None):
         the ts string should NOT have a timezone specifier in it. One or the
         other must be provided. Errors will be thrown otherwise.
     """
-    
     # Check if the string came with a timezone. If so, infer both timezone and
     # daylight savings time
     tzMatch = util.constants.TZ_EXP.search(ts)
@@ -252,9 +251,28 @@ def toUTC(ts, timezone=None):
         else:
             # Fold should be 1.
             dateutil.tz.enfold(dt, fold=1)
+            
+    # That's all, folks.
+    return dt
+    
+def toUTC(ts, timezone=None):
+    """Helper function to take a given time string, parse it into a datetime
+    object, then convert it to UTC
+    
+    INPUTS:
+        ts: string representing a time. 
+        timezone: timezone string as listed in GridLAB-D's tzinfo file.
+        
+    NOTE: if ts has a timezone specifier in it (like PDT or PST), the timezone
+        input should be none. Likewise, if the timezone input is provided,
+        the ts string should NOT have a timezone specifier in it. One or the
+        other must be provided. Errors will be thrown otherwise.
+    """
+    
+    dt = tsToDT(ts, timezone)
     
     # Convert to UTC
-    dtUTC = dt.astimezone(dateutil.tz.tzutc())
+    dtUTC = dtToUTC(dt)
     
     return dtUTC
 
@@ -439,6 +457,7 @@ if __name__ == '__main__':
     o = timeInfoForZIP(starttime=t1, stoptime=t2, fmt=(fmt + ' %Z'))
     print('hooray')
     """
+    '''
     f = '%Y-%m-%d %H:%M:%S %Z'
     tz = 'PST+8PDT'
     # Look at spring forward
@@ -458,6 +477,8 @@ if __name__ == '__main__':
         #print()
     
     print()
+    '''
+    '''
     # Look at fall back
     #t2 = datestrToDatetime('2016-11-06 00:00:00 PDT')
     t2 = '2016-11-06 00:00:00'
@@ -474,7 +495,11 @@ if __name__ == '__main__':
         #tn2 = tn.astimezone(util.constants.TZ['PST8PDT'])
         #print('As timezone      :', tn.date(), tn.time(), tn.tzname())
         #print()
-        
+    '''
+    
+    sd = tsToDT(ts='2016-04-15 14:00:00 PDT')
+    ed = tsToDT(ts='2016-04-15 15:00:00 PDT')
+    info = timeInfoForZIP(sd, ed)
     print('hooray')
     #t2 = incrementTime(t=t1, fmt=gld.DATE_FMT + ' %Z', interval=3600)
     #Pacific  = USTimeZone(-8, "Pacific",  "PST", "PDT")

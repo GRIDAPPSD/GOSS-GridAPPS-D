@@ -542,10 +542,8 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     
     # Create dictionaries for holding the previous costs of costs that 
     # accumulate so we can perform subtraction.
-    prev2 = {'realEnergy': 0, 'reactiveEnergy': 0, 'tapChange': 0,
-             'capSwitch': 0}
-    prev3 = {'realEnergy': 0, 'reactiveEnergy': 0, 'tapChange': 0,
-             'capSwitch': 0}
+    prev2 = {'realEnergy': 0, 'tapChange': 0, 'capSwitch': 0}
+    prev3 = {'realEnergy': 0, 'tapChange': 0, 'capSwitch': 0}
     
     # We're going to do some iffy looping here.
     minuteInd = 0
@@ -962,8 +960,8 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-11-06 00:00:00'
-    e = '2016-11-06 04:00:00'
+    s = '2016-04-12 00:00:00'
+    e = '2016-04-12 04:00:00'
     #runGA()
     evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

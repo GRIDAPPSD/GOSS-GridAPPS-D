@@ -9,7 +9,7 @@ Created on Oct 24, 2017
 # Maybe $1 per violation?
 # Because we used ZIP, influence penalties based on what we know about loss of
 # fidelity 
-COSTS = {'realEnergy': 0.00008, 'reactiveEnergy': 0.00001,
+COSTS = {'realEnergy': 0.00008,
          'powerFactorLead': {'limit': 0.99, 'cost': 0.1},
          'powerFactorLag': {'limit': 0.99, 'cost': 0.1},
          'tapChange': 0.5, 'capSwitch': 2, 'undervoltage': 0.05,
@@ -34,9 +34,11 @@ OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output
 OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
 """
 MODEL = 'R2_12_47_2'
-COST_FILES = ['ZIP_costs.csv', 'base2_costs.csv', 'base3_costs.csv']
-LOG_FILES = ['ZIP_log.csv', 'base2_log.csv', 'base3_log.csv']
-OUT_DIRS = ['ZIP', 'base2', 'base3']
+# Define names of the three models for comparing ZIP vs houses
+MNAMES = ['ZIP', 'base2', 'base3']
+COST_FILES = [x + '_costs.csv' for x in MNAMES]
+LOG_FILES = [x + '_log.csv' for x in COST_FILES]
+OUT_DIRS = MNAMES
 # Hard code indices
 IND_Z = 0
 IND_2 = 1
@@ -55,8 +57,6 @@ STARTTIME = '2016-01-01 00:00:00'
 STOPTIME = '2017-01-01 00:00:00'
 TIMEZONE = 'PST+8PDT' # Pulled right from tzinfo.txt
 
-# Define names of the three models for comparing ZIP vs houses
-MNAMES = ['base_2', 'base_3', 'ZIP']
 # Define columns for .csv file for comparing ZIP vs houses
 # NOTE: 'total' is hard-coded in, and is a field inviduals track.
 COST_COLS = ['time', 'total'] + list(COSTS.keys())

@@ -70,9 +70,7 @@ CAP_CHANGE_PROPS = ['cap_A_switch_count', 'cap_B_switch_count',
                     'cap_C_switch_count']
 CAP_STATE_PROPS = ['switchA', 'switchB', 'switchC']
 MEASURED_POWER = ['measured_power_A', 'measured_power_B', 'measured_power_C']
-MEASURED_ENERGY = ['measured_real_energy', 'measured_reactive_energy']
-REAL_IND = 0
-REACTIVE_IND = 1
+MEASURED_ENERGY = ['measured_real_energy']
 
 def runModel(modelPath):
     #, gldPath=r'C:/gridlab-d/develop'):
@@ -148,7 +146,6 @@ def computeCosts(dbObj, swingData, costs, starttime, stoptime,
             interval: recording interval (seconds) of the swing table
         costs: dictionary with the following fields:
             realEnergy: price of energy in $/Wh
-            reactiveEnergy: price of energy in $/VAr
             tapChange: cost ($) of changing one regulator tap one position.
             capSwitch: cost ($) of switching a single capacitor
             undervoltage: cost of an undervoltage violation
@@ -199,10 +196,8 @@ def computeCosts(dbObj, swingData, costs, starttime, stoptime,
     # Due to time and ID filtering, we should get exactly one row.
     assert len(energyRows) == 1
     
-    # Compute the costs
-    costDict['realEnergy'] = energyRows[0][REAL_IND] * costs['realEnergy']
-    costDict['reactiveEnergy'] = (energyRows[0][REACTIVE_IND]
-                                  * costs['reactiveEnergy'])
+    # Compute the cost
+    costDict['realEnergy'] = energyRows[0][0] * costs['realEnergy']
     #**************************************************************************
     # POWER FACTOR COST
     # Initialize costs

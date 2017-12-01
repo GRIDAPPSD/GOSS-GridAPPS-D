@@ -271,9 +271,6 @@ class db:
         
         IMPORTANT NOTE: All units in table are assumed to be the same.
         
-        IMPORTANT NOTE: Table is assumed to be tracking power for a SINGLE
-            object. The 'id' filtering will FAIL otherwise.
-        
         OUTPUT: Dictionary with 'rowSums' and 'unit' fields. 'rowSums' is a list
         """
         # Prepare query.
@@ -494,14 +491,11 @@ class db:
     def timeWhere(starttime, stoptime, tCol):
         """Helper function to get WHERE clause for time-based query. Both times 
             are considered inclusive.
-            
-        CRITICAL NOTE: If a filterStr isn't provided, it is assumed that the table
-            doesn't have any duplicate timestamps except for possible DST induced
-            duplicates. 
         
         INPUTS:
             starttime: aware datetime object
             stoptime: aware datetime object
+            tCol: name of the 'time' column
         """
         if starttime and stoptime:
             # Convert starttime to a string. 
