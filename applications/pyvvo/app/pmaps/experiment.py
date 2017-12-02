@@ -367,6 +367,11 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                                       quoting=csv.QUOTE_NONNUMERIC))
         csvLogs[-1].writeheader()
         
+    # Open the model output files
+    fOutput = []
+    for c in CONST.MODEL_OUTPUT_FILES:
+        fOutput.append(open(CONST.OUTPUT_DIR + '/' + c, mode='w'))
+        
     # Initialize queues for running and cleaning up models
     modelQueue = Queue()
     cleanupQueue = Queue()
@@ -498,6 +503,10 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         ZIPInd.reg, ZIPInd.cap = util.helper.rotateVVODicts(reg=ZIPInd.reg,
                                                             cap=ZIPInd.cap)
         
+        # Write to log
+        fOutput[CONST.IND_Z].write(ZIPInd.modelOutput.stderr.decode('utf-8')
+                                   + '\n')
+        
         # Increment the times
         start_utc += datetime.timedelta(seconds=runInterval)
         stop_utc += datetime.timedelta(seconds=runInterval)
@@ -521,6 +530,10 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     cleanupQueue.put_nowait(None)
     for t in modelThreads: t.join(timeout=10)
     tClean.join(timeout=10)
+    
+    # Print baseline outputs
+    fOutput[CONST.IND_2].write(baseInd2.modelOutput.stderr.decode('utf-8'))
+    fOutput[CONST.IND_3].write(baseInd3.modelOutput.stderr.decode('utf-8'))
     
     print('Done running models, moving on to packaging baseline outputs.')
     

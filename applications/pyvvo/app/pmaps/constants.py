@@ -37,12 +37,13 @@ MODEL = 'R2_12_47_2'
 # Define names of the three models for comparing ZIP vs houses
 MNAMES = ['ZIP', 'base2', 'base3']
 COST_FILES = [x + '_costs.csv' for x in MNAMES]
-LOG_FILES = [x + '_log.csv' for x in COST_FILES]
+LOG_FILES = [x + '_log.csv' for x in MNAMES]
+MODEL_OUTPUT_FILES = [x + '_output.txt' for x in MNAMES]
 OUT_DIRS = MNAMES
 # Hard code indices
-IND_Z = 0
-IND_2 = 1
-IND_3 = 2
+IND_Z = MNAMES.index('ZIP')
+IND_2 = MNAMES.index('base2')
+IND_3 = MNAMES.index('base3')
 # Define timing:
 # Define recorder intervals (s)
 RECORD_INT = 60
