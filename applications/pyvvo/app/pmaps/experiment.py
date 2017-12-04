@@ -165,6 +165,16 @@ def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     # Update the include folder
     obj.strModel = obj.strModel.replace('../include', 'include')
     
+    # Sloppily update regulator and capacitor control to MANUAL for VVO.
+    obj.strModel = obj.strModel.replace('Control OUTPUT_VOLTAGE;',
+                                        'Control MANUAL;')
+    obj.strModel = obj.strModel.replace('control VOLT;', 'control MANUAL;')
+    
+    # Add VVO controller
+    obj.addVVO(starttime=CONST.AMI_START)
+    
+    print('Control updated, VVO added.')
+    
     # Eliminate any double newlines
     obj.strModel = re.sub(r'\n\s*\n', '\n', obj.strModel)
     
