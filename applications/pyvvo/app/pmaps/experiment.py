@@ -279,7 +279,7 @@ def tidyModel(writeObj):
                           writeObj.strModel)
     
     # Replace relative include paths with full include paths
-    writeObj.strModel = writeObj.strModel.replace('../include',
+    writeObj.strModel = writeObj.strModel.replace('include',
                                                   CONST.INCLUDE_DIR)
     
     # No need to actually return here, but may as well be explicit
