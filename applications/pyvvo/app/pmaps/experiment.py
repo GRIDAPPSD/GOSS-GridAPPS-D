@@ -110,7 +110,7 @@ def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
                                                                    len(triplexList)))
     
     # Update the clock
-    obj.updateClock(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
+    obj.updateClock(starttime=CONST.AMI_START, stoptime=CONST.STOPTIME,
                     timezone=CONST.TIMEZONE)
     print('Clock updated.')
     
@@ -118,10 +118,10 @@ def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     obj.updatePowerflow(line_capacitance='FALSE')
     print('Powerflow module updated.')
     
-    # Remove recorders and collectors
-    # TODO - if we want statistics about the model, we'll want this information
-    obj.removeObjectsByType(typeList=['collector', 'recorder'])
-    print('collectors and recorders removed.')
+    # Remove recorders, collectors, and group_recorders
+    obj.removeObjectsByType(typeList=['collector', 'recorder',
+                                      'group_recorder'])
+    print('collectors, recorders, and group_recorders removed.')
     # The remaining group_recorder objects need modified - need to update the
     # interval and in/out times. 
     # NOTE: We could also just eliminate all group_recorders and explicitely
@@ -129,41 +129,44 @@ def populatedToAMI(interval=900, group=CONST.TRIPLEX_GROUP):
     gr_exp = modGLM.GROUP_RECORDER_REGEX
     m = gr_exp.search(obj.strModel)
     propDict = {'interval': CONST.AMI_INTERVAL,
-                'in': '"{}"'.format(CONST.STARTTIME),
+                'in': '"{}"'.format(CONST.AMI_START),
                 'out': '"{}"'.format(CONST.STOPTIME),
                 'group': '"groupid={}"'.format(CONST.TRIPLEX_GROUP)
                }
     
-    # Loop over group recorders:
-    while m:
-        # Extract the object
-        gr = obj.extractObject(objMatch=m)
-        # Modify the group_recorder and splice it in
-        gr['obj'] = obj.modObjProps(gr['obj'], propDict)
-        obj.replaceObject(objDict=gr)
-        # Find the next match
-        m = gr_exp.search(obj.strModel, gr['start'] + len(gr['obj']))
+    # Make list of properties and files we want to record
+    propList = ['AMI_average_power', 'AMI_average_power',
+                'AMI_average_voltage12']
+    complexList = ['REAL', 'IMAG', 'MAG']
+    fileList = ['R2_12_47_2_AMI_residential_phase12_real_power.csv',
+                'R2_12_47_2_AMI_residential_phase12_reactive_power.csv',
+                'R2_12_47_2_AMI_residential_phase12_mag_voltage.csv']
     
-    print('group_recorders modified.')
-    # Add a voltage magnitude group_recorder for the triplex_meters
-    propDict = {'property': 'AMI_average_voltage12',
-                'interval': CONST.AMI_INTERVAL,
-                'group': '"groupid={}"'.format(CONST.TRIPLEX_GROUP),
-                'file': 'output/R2_12_47_2_AMI_residential_phase12_mag_voltage.csv',
-                'in': "{}".format(CONST.STARTTIME),
-                'out': "{}".format(CONST.STOPTIME),
-                'complex_part': 'MAG'}
-    obj.addObject(objType='group_recorder', properties=propDict, place='end')
-    print('voltage magnitude group_recorder added.')
+    for ind in range(len(propList)):
+        # Modify the propDict
+        propDict['property'] = propList[ind]
+        propDict['complex_part'] = complexList[ind]
+        propDict['file'] = 'output/' + fileList[ind]
+        # Add a group_recorder to the end of the model.
+        obj.addObject(objType='group_recorder', properties=propDict,
+                      place='end') 
+    
+    print('group_recorders for AMI data added.')
     
     # Add the climate recorder back in
     propDict = {'property': 'temperature', 'interval': CONST.RECORD_INT,
                 'parent': 'ClimateWeather',
                 'file': 'output/R2_12_47_2_climate.csv', 
-                'in': '"{}"'.format(CONST.STARTTIME),
+                'in': '"{}"'.format(CONST.AMI_START),
                 'out': '"{}"'.format(CONST.STOPTIME)}
     obj.addObject(objType='recorder', properties=propDict, place='end')
     print('climate recorder added.')
+    
+    # Update the include folder
+    obj.strModel = obj.strModel.replace('../include', 'include')
+    
+    # Eliminate any double newlines
+    obj.strModel = re.sub(r'\n\s*\n', '\n', obj.strModel)
     
     # Write the model.
     obj.writeModel()
@@ -913,14 +916,13 @@ def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     print('All done!')
     
 if __name__ == '__main__':
-    """
+
     # Get the popluated model ready to run.
     populatedToAMI()
 
     # Strip the full model.
-    writeObj = stripModel()
-    print('Full model stripped down.')
-    """
+    #writeObj = stripModel()
+    #print('Full model stripped down.')
     
     """
     # Define voltdump input:
@@ -976,5 +978,5 @@ if __name__ == '__main__':
     s = '2016-04-12 00:00:00'
     e = '2016-04-12 04:00:00'
     #runGA()
-    evaluateZIP(starttime=s, stoptime=e)
+    #evaluateZIP(starttime=s, stoptime=e)
     #evaluateZIP()

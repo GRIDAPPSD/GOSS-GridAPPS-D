@@ -57,6 +57,8 @@ ZIP_INTERVAL = 60 * 60
 STARTTIME = '2016-01-01 00:00:00'
 STOPTIME = '2017-01-01 00:00:00'
 TIMEZONE = 'PST+8PDT' # Pulled right from tzinfo.txt
+# Start 2 weeks early for rolling 2 week average.
+AMI_START = '2015-12-17 00:00:00'
 
 # Define columns for .csv file for comparing ZIP vs houses
 # NOTE: 'total' is hard-coded in, and is a field inviduals track.
