@@ -3,6 +3,7 @@ Created on Oct 24, 2017
 
 @author: thay838
 '''
+import os
 # Costs
 # .25 per tap
 # cap --> cheaper
@@ -18,21 +19,20 @@ COSTS = {'realEnergy': 0.00008,
 NUM_THREADS = 6
 NUM_IND = 6
 NUM_GEN = 2
-# Paths and files
-#"""
-BASE_PATH = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
-INCLUDE_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
-ZIP_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
-OUTPUT_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
-OUTPUT_GA = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
-#"""
-"""
-BASE_PATH = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
-INCLUDE_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
-ZIP_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
-OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
-OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
-"""
+# Paths and files, dependent on machine.
+if os.name == 'nt':
+    BASE_PATH = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
+    INCLUDE_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
+    ZIP_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
+    OUTPUT_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
+    OUTPUT_GA = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
+elif os.name == 'posix':
+    BASE_PATH = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
+    INCLUDE_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
+    ZIP_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
+    OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
+    OUTPUT_GA = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
+    
 MODEL = 'R2_12_47_2'
 # Define names of the three models for comparing ZIP vs houses
 MNAMES = ['ZIP', 'base2', 'base3']
