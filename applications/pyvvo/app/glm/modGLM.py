@@ -1228,6 +1228,10 @@ class modGLM:
             raise Exception(('modGLM object does not have pathModelOut '
                              'defined! This is necessary for addVVO.'))
         
+        # No matter what, we need to create a player file for VVO to prevent
+        # things from double-operating at model startup.    
+        file = 'volt_var_control.player'
+        
         m = VOLT_VAR_REGEX.search(self.strModel)
         if not m:
             name = 'volt_var_control'
@@ -1265,7 +1269,6 @@ class modGLM:
                 
             # Now we have to do the gross dirty work of writing a player file
             # and creating a player
-            file = 'volt_var_control.player'
             propDict = {'parent': name, 'property': 'control_method',
                         'file': file}
             self.addObject(objType='tape.player', properties=propDict,
