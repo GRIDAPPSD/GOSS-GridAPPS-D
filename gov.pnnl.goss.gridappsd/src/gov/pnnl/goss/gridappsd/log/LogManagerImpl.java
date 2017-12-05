@@ -40,19 +40,27 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
+import java.io.Serializable;
 
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import pnnl.goss.core.Client;
+import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.Client.PROTOCOL;
 
 /**
  * This class implements functionalities for Internal Function 409 Log Manager.
@@ -78,25 +86,28 @@ public class LogManagerImpl implements LogManager {
 	
 	@Start
 	public void start() {
-		System.out.println("STARTING LOG MANAGER");
-		log.debug("Starting "+this.getClass().getName());
-
+		log.info("Starting "+this.getClass().getName());
 	}
 
-	
+	/**
+	 * Writes the message in log file. Calls LogDataManager to save the log 
+	 * message in data store if store_to_db is true in  LogMessage object.  
+	 * @param message an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
+	 * @param username username of the user logging the message
+	 */
 	@Override
-	public void log(LogMessage message) {
+	public void log(LogMessage message, String username) {
 		
-		String process_id = message.getProcess_id();
+		String processId = message.getProcessId();
 		long timestamp = message.getTimestamp();
-		String log_message = message.getLog_message();
-		LogLevel log_level = message.getLog_level();
-		ProcessStatus process_status = message.getProcess_status();
-		Boolean storeToDB = message.getStoreToDB();
-		String username = "system";
-		String logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, process_id,
-				process_status, username, log_level, log_message);
-		switch(message.getLog_level()) {
+		String log_message = message.getLogMessage();
+		LogLevel logLevel = message.getLogLevel();
+		ProcessStatus processStatus = message.getProcessStatus();
+		Boolean storeToDb = message.getStoreToDb();
+		
+		String logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, processId,
+				processStatus, username, logLevel, log_message);
+		switch(message.getLogLevel()) {
 			case TRACE:	log.trace(logString);
 						break;
 			case DEBUG:	log.debug(logString);
@@ -114,33 +125,35 @@ public class LogManagerImpl implements LogManager {
 				
 		}
 		
-
-		if(storeToDB)
-			store(process_id,username,timestamp,log_message,log_level,process_status);
+		if(storeToDb)
+			store(processId,timestamp,log_message,logLevel,processStatus,username);
 		
 	}
 	
-	private void store(String process_id, String username, long timestamp,
-			String log_message, LogLevel log_level, ProcessStatus process_status) {
+	private void store(String process_id, long timestamp,
+			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 		
 		//TODO: Save log in data store using DataManager
-		logDataManager.store(process_id, username, timestamp,
-				log_message, log_level, process_status);
+		logDataManager.store(process_id, timestamp,
+				log_message, log_level, process_status, username);
 		log.debug("log saved");
 		
 
 	}
 	
-
+	/**
+	 * Calls LogDataManager to query log messages that matches the keys in LogMessage objects.
+	 * @param message an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
+	 */
 	@Override
-	public void get(LogMessage message) {
+	public void get(LogMessage message, String resultTopic, String logTopic) {
 		
-		String process_id = message.getProcess_id();
+		String process_id = message.getProcessId();
 		long timestamp = message.getTimestamp();
-		LogLevel log_level = message.getLog_level();
-		ProcessStatus process_status = message.getProcess_status();
+		LogLevel log_level = message.getLogLevel();
+		ProcessStatus process_status = message.getProcessStatus();
 		String username = "system";
-//		logDataManager.query(process_id, timestamp, log_level, process_status, username);
+		logDataManager.query(process_id, timestamp, log_level, process_status, username, resultTopic, logTopic);
 		
 	}
 

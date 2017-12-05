@@ -49,8 +49,7 @@ import pnnl.goss.core.DataResponse;
 
 public interface AppManager {
 	
-	void process(StatusReporter statusReporter,
-			int processId, DataResponse event, Serializable message) throws Exception;
+	void process(int processId, DataResponse event, Serializable message) throws Exception;
 
 	void registerApp(AppInfo appInfo, byte[] appPackage) throws Exception;
 	

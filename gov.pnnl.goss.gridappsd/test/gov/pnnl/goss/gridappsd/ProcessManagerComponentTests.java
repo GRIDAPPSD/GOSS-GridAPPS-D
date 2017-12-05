@@ -129,13 +129,13 @@ public class ProcessManagerComponentTests {
 											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Starting "+ProcessManagerImpl.class.getName());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Starting "+ProcessManagerImpl.class.getName());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 				
@@ -197,21 +197,21 @@ public class ProcessManagerComponentTests {
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
 		
-		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture());
+		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 				
@@ -282,21 +282,21 @@ public class ProcessManagerComponentTests {
 		dr.setDestination("goss.gridappsd.process.request.simulation");
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
-		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture());
+		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		
 		logMessage = argCaptorLogMessage.getAllValues().get(1);
 		
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Recevied message: "+ dr.getData() +" on topic " + dr.getDestination());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 		
@@ -333,7 +333,8 @@ public class ProcessManagerComponentTests {
 		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
 
 
-		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(), argCaptorSerializable.capture(), Mockito.anyInt());
+		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), 
+				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));
