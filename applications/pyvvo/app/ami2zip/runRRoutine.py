@@ -3,11 +3,16 @@ Created on Dec 6, 2017
 
 @author: thay838
 '''
+# Add one directory up to Python path. Seems hacky. Oh well, it works.
+import os
+import sys
+upDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if upDir not in sys.path:
+    sys.path.append(upDir)
 import util.helper
 import util.constants
 import subprocess
 import shutil
-import os
 from queue import Queue
 import dateutil.relativedelta as rd
 import threading
@@ -59,12 +64,13 @@ def runRoutine(scriptDir, script='ZIP-MA-Unconst-Batch.R'):
     That's it.
     """
     # Formulate the command. Apparently Rscript is preferred.
-    cmd = 'Rscript ' + scriptDir + '/' + script
-    
+    #cmd = 'Rscript ' + scriptDir + '/' + script
+    #print(cmd)
     # Run it.
-    output = subprocess.run(cmd, cwd=scriptDir, stdout=subprocess.PIPE,
+    output = subprocess.run(['Rscript', (scriptDir + '/' + script)],
+                            cwd=scriptDir, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-    
+
     return output
 
 def writeYear(numThreads, scriptDir, amiDir, amiFiles, zipOutDir):
@@ -151,8 +157,8 @@ def threadedRoutine(q, scriptDir, amiDir, amiFiles, zipOutDir,
              
 
 if __name__ == '__main__':
-    writeYear(numThreads=4, scriptDir=CONST.R_DIR, amiDir=CONST.AMI_IN_DIR,
-              amiFiles=CONST.AMI_FILES, zipOutDir=CONST.R_DIR)
+    writeYear(numThreads=20, scriptDir=CONST.R_DIR, amiDir=CONST.AMI_IN_DIR,
+              amiFiles=CONST.AMI_FILES, zipOutDir=CONST.ZIP_DIR)
     """
     s = '2016-01-01 00:00:00 PST'
     e = '2016-01-14 23:45:00 PST'
