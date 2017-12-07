@@ -412,6 +412,68 @@ def getSummaryStr(costs, reg, cap, regChrom=None, capChrom=None, parents=None):
     
     # That's all for now.
     return s
+
+class clock():
+    """Class to handle advancing simulation times, being careful with tz's and
+    DST.
+    """
+    def __init__(self, startStr, finalStr, interval, tzStr=None):
+        """clock constructor.
+        
+        Don't include tzStr if the given times have timezone designations
+        built in. 
+        
+        interval in seconds
+        
+        Times should be in the same timezone
+        
+        Times should be in util/constants.DATE_FMT or DATE_TZ_FMT
+        """
+        # NOTE: we could do some looping instead of writing each line three
+        # times, but do we really get any gain for something this simple? I
+        # think not.
+        
+        # store interval
+        self.interval = interval
+        
+        # convert strings to datetime
+        self.start_dt = tsToDT(startStr, tzStr)
+        self.final_dt = tsToDT(finalStr, tzStr)
+        
+        # Set timezone property.
+        assert self.start_dt.tzinfo == self.final_dt.tzinfo
+        self.tzinfo = self.start_dt.tzinfo
+        
+                                      
+        # Get UTC dates.
+        self.start_utc = self.start_dt.astimezone(dateutil.tz.tzutc())
+        self.final_utc = self.final_dt.astimezone(dateutil.tz.tzutc())
+        
+        # Get the 'stop' time as start + interval
+        self.stop_utc = self.start_utc + datetime.timedelta(seconds=interval)
+        self.stop_dt = self.stop_utc.astimezone(self.tzinfo)
+                              
+        # Get string representations
+        self.start_str = self.start_dt.strftime(util.constants.DATE_TZ_FMT)
+        self.stop_str = self.stop_dt.strftime(util.constants.DATE_TZ_FMT)
+        self.final_str = self.final_dt.strftime(util.constants.DATE_TZ_FMT)
+        
+    def advanceTime(self):
+        """Simple function to move the time forward some number of seconds
+        """
+        # Bump each utc time.
+        self.start_utc += datetime.timedelta(seconds=self.interval)
+        self.stop_utc += datetime.timedelta(seconds=self.interval)
+            
+        # Update times in their own timezones
+        self.start_dt = self.start_utc.astimezone(self.tzinfo)
+        self.stop_dt = self.stop_utc.astimezone(self.tzinfo)
+        
+        # Update the strings
+        self.start_str = self.start_dt.strftime(util.constants.DATE_TZ_FMT)
+        self.stop_str = self.stop_dt.strftime(util.constants.DATE_TZ_FMT)
+        
+    
     
 if __name__ == '__main__':
     """

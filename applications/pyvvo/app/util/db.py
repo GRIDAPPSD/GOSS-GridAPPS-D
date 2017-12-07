@@ -248,14 +248,16 @@ class db:
             cursor.execute(("SELECT table_name "
                             "FROM information_schema.tables "
                             "WHERE table_schema = '{}'").format(self.database))
-            
-            # Loop through and drop.
-            for row in cursor:
-                self.dropTable(row[0])
-
+            # Assume there aren't so many tables that we blow up memory with 
+            # a fetch all.
+            rows = cursor.fetchall()
         finally:
             # Clean up.
             self.closeCnxnAndCursor(cnxn, cursor)  
+            
+        # Loop through and drop all tables.
+        for row in rows:
+            self.dropTable(row[0])
         
     def sumComplexPower(self, cols, table, idCol='id', tCol='t',
                         nameCol='name', starttime=None, stoptime=None):

@@ -1315,13 +1315,13 @@ class modGLM:
         # Get a .csv reader
         with open(file, newline='') as f:
             r = csv.reader(f, delimiter=',')
-            # Discard the first three rows (description, time of run, nominal
-            # voltage)
-            for _ in range(3):
-                r.__next__()
+            # Discard rows until the first element is '# load'
+            row = r.__next__()
+            while row[0].lstrip() != '# load':
+                row = r.__next__()
             
-            # Extract the headers.
-            headers = r.__next__()
+            # Save this row, it has our headers.
+            headers = row
             
             # TODO: should we use a DictReader? Would the be more efficient?
             # We're building our own dict each time here...

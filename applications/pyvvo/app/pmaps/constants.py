@@ -21,17 +21,22 @@ NUM_IND = 6
 NUM_GEN = 2
 # Paths and files, dependent on machine.
 if os.name == 'nt':
-    BASE_PATH = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
-    INCLUDE_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
-    ZIP_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
-    OUTPUT_DIR = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
-    OUTPUT_GA = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
+    prefix = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app'.replace('\\', '/')
 elif os.name == 'posix':
-    BASE_PATH = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models'.replace('\\', '/')
-    INCLUDE_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\models\include'.replace('\\', '/')
-    ZIP_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\zip'.replace('\\', '/')
-    OUTPUT_DIR = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output'.replace('\\', '/')
-    OUTPUT_GA = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output_GA'.replace('\\', '/')
+    prefix = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app'.replace('\\', '/')
+
+BASE_PATH = prefix + r'\pmaps\models'.replace('\\', '/')
+INCLUDE_DIR = prefix + r'\pmaps\models\include'.replace('\\', '/')
+ZIP_DIR = prefix + r'\pmaps\zip'.replace('\\', '/')
+OUTPUT_DIR = prefix + r'\pmaps\output'.replace('\\', '/')
+OUTPUT_GA = prefix + r'\pmaps\output_GA'.replace('\\', '/')
+R_DIR = prefix + r'\ami2zip'.replace('\\', '/')
+AMI_IN_DIR = prefix + r'\pmaps\models\output\ami_15_min'.replace('\\', '/')
+
+# AMI files
+AMI_FILES = ['R2_12_47_2_AMI_residential_phase12_mag_voltage.csv',
+             'R2_12_47_2_AMI_residential_phase12_real_power.csv',
+             'R2_12_47_2_AMI_residential_phase12_reactive_power.csv']
     
 MODEL = 'R2_12_47_2'
 # Define names of the three models for comparing ZIP vs houses
@@ -66,6 +71,7 @@ COST_COLS = ['time', 'total'] + list(COSTS.keys())
 
 # Database for baseline.
 BASELINE_DB = {'database': 'baseline'}
+ZIP_DB = {'database': 'zip'}
 
 # For now, we'll only measure voltages for residential meters (note that any 
 # triplex meter with the commercial designation was switched to residential)
