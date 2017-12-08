@@ -105,8 +105,8 @@ def runModel(modelPath, gldPath=None):
         gldPath = gldPath.replace('\\', '/')
         env = os.environ
         env['PATH'] = "{}/bin".format(gldPath) + os.pathsep + env['PATH']
-        env['GLPATH'] = ("{}/share/gridlabd".format(gldPath) + os.pathsep
-                         + "{}/lib/gridlabd".format(gldPath))
+        env['GLPATH'] = ("{}/lib/gridlabd".format(gldPath) + os.pathsep
+                         + "{}/share/gridlabd".format(gldPath))
         env['CXXFLAGS'] = "-I{}/share/gridlabd".format(gldPath)
     else:
         env = None
