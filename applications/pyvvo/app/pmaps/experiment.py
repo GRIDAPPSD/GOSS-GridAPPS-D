@@ -680,9 +680,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         # Run the ZIP model
         ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
                                   inPath=MODEL_STRIPPED_RECORDER,
-                                  outDir=(outDir + '/'
-                                          + CONST.OUT_DIRS[CONST.IND_Z]),
-                                  costs=CONST.COSTS)
+                                  outDir=outDir, costs=CONST.COSTS)
         
         # Build cleanup dictionary and put it in the queue.
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
