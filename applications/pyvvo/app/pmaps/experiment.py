@@ -581,7 +581,9 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     print('Threads stopped and files closed. All done.')
     
 def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
-                runInterval=CONST.ZIP_INTERVAL, avgFlag=False, gldPath=None):
+                runInterval=CONST.ZIP_INTERVAL, avgFlag=False, gldPath=None,
+                outDir=CONST.OUTPUT_CONSTRAINED, uid=CONST.UID_CONSTRAINED,
+                zipDir=CONST.ZIP_CONSTRAINED):
     """Function to run the populated baseline model and the ZIP baseline model,
     and write output data to file. 
     """
@@ -595,30 +597,30 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # Get a database object. We'll need 3 connections for the 3 models
     dbObj = util.db.db(**{'pool_size': 1, **CONST.ZIP_DB})
     # Drop all the tables
-    dbObj.dropAllTables()
+    numTables = dbObj.dropAllTables(tableSuffix=('_' + str(uid)))
     
-    print('All tables dropped in {}'.format(CONST.ZIP_DB['database']),
+    print('{} tables dropped in {}'.format(numTables, CONST.ZIP_DB['database']),
           flush=True)
     
     # If the output directory doesn't exist, make it
-    if not os.path.isdir(CONST.OUTPUT_DIR):
-        os.mkdir(CONST.OUTPUT_DIR)
+    if not os.path.isdir(outDir):
+        os.mkdir(outDir)
     
     # Open the costs results files
-    fCosts = open(CONST.OUTPUT_DIR + '/' + CONST.COST_FILES[CONST.IND_Z], 
+    fCosts = open(outDir + '/' + CONST.COST_FILES[CONST.IND_Z], 
                    newline='', mode='w')
     csvCosts = csv.DictWriter(fCosts, fieldnames=CONST.COST_COLS,
                               quoting=csv.QUOTE_NONNUMERIC)
     csvCosts.writeheader()
         
     # Open the log results files
-    fLogs = open(CONST.OUTPUT_DIR + '/' + CONST.LOG_FILES[CONST.IND_Z],
+    fLogs = open(outDir + '/' + CONST.LOG_FILES[CONST.IND_Z],
                  newline='', mode='w')
     csvLogs = csv.DictWriter(fLogs, fieldnames=CONST.LOG_COLS,
                             quoting=csv.QUOTE_NONNUMERIC)
     csvLogs.writeheader()
         
-    fOutput = open(CONST.OUTPUT_DIR + '/' + CONST.MODEL_OUTPUT_FILES[CONST.IND_Z],
+    fOutput = open(outDir + '/' + CONST.MODEL_OUTPUT_FILES[CONST.IND_Z],
                    mode='w')
         
     # Initialize cleanup queue.
@@ -657,7 +659,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                                    database=CONST.ZIP_DB,
                                    voltFiles=voltFiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
-                                   controlFlag=4, uid=CONST.IND_Z,
+                                   controlFlag=4, uid=uid,
                                    gldPath=gldPath)
 
     # Loop over time until we've hit the stoptime, running the ZIP model for 
@@ -669,7 +671,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
               flush=True)
         
         # Add ZIP models to the ZIP object and run it it.
-        writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=clockObj.start_dt,
+        writeZIP.addZIP(zipDir=zipDir, starttime=clockObj.start_dt,
                         stoptime=clockObj.stop_dt, avgFlag=avgFlag)
         
         # Ensure cleanup is done before moving on.
@@ -678,7 +680,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         # Run the ZIP model
         ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
                                   inPath=MODEL_STRIPPED_RECORDER,
-                                  outDir=(CONST.OUTPUT_DIR + '/'
+                                  outDir=(outDir + '/'
                                           + CONST.OUT_DIRS[CONST.IND_Z]),
                                   costs=CONST.COSTS)
         
@@ -786,6 +788,7 @@ def setupModelForEval(modelIn, modelOut, replaceClimate, database,
     
     return files
 
+'''
 def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                 runInterval=CONST.ZIP_INTERVAL, resultsFile='results',
                 logFile='log_GA'):
@@ -963,6 +966,7 @@ def runGA(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     resultsBase.close()
     log.close()
     print('All done!')
+'''
     
 if __name__ == '__main__':
 
@@ -1024,9 +1028,29 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-04-12 00:00:00'
-    e = '2016-04-12 04:00:00'
+    s = '2016-02-12 00:00:00'
+    e = '2016-02-12 02:00:00'
     #runGA()
     #evaluateZIP(starttime=s, stoptime=e, avgFlag=True)
     #runEvalBaseline(starttime=s, stoptime=e)
-    evaluateZIP()
+    
+    #s = CONST.STARTTIME
+    #e = CONST.STOPTIME
+    
+    # Run constrained seasonal
+    evaluateZIP(starttime=s, stoptime=e, avgFlag=False,
+                gldPath=(CONST.GLD_PATH + '/develop'),
+                outDir=CONST.OUTPUT_CONSTRAINED, uid=CONST.UID_CONSTRAINED,
+                zipDir=CONST.ZIP_CONSTRAINED)
+    
+    # Run unconstrained seasonal
+    evaluateZIP(starttime=s, stoptime=e, avgFlag=False,
+                gldPath=(CONST.GLD_PATH + '/unconstrained'),
+                outDir=CONST.OUTPUT_UNCONSTRAINED, uid=CONST.UID_UNCONSTRAINED,
+                zipDir=CONST.ZIP_UNCONSTRAINED)
+    
+    # Run two week rolling average 
+    evaluateZIP(starttime=s, stoptime=e, avgFlag=True,
+                gldPath=(CONST.GLD_PATH + '/unconstrained'),
+                outDir=CONST.OUTPUT_2WEEK, uid=CONST.UID_2WEEK,
+                zipDir=CONST.ZIP_2WEEK)

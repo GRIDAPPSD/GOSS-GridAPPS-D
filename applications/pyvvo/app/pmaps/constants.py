@@ -22,13 +22,22 @@ NUM_GEN = 2
 # Paths and files, dependent on machine.
 if os.name == 'nt':
     prefix = r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app'.replace('\\', '/')
+    GLD_PATH = r'C:/gridlab-d'
 elif os.name == 'posix':
     prefix = r'/home/thay838/GOSS-GridAPPS-D\applications\pyvvo\app'.replace('\\', '/')
-
+    GLD_PATH = '/home/thay838/gridlab-d'
+    
 BASE_PATH = prefix + r'\pmaps\models'.replace('\\', '/')
 INCLUDE_DIR = prefix + r'\pmaps\models\include'.replace('\\', '/')
 ZIP_DIR = prefix + r'\pmaps\zip'.replace('\\', '/')
+ZIP_UNCONSTRAINED = ZIP_DIR + '/unconstrained'
+ZIP_CONSTRAINED = ZIP_DIR + '/constrained'
+ZIP_2WEEK = ZIP_DIR + '/twoWeek'
 OUTPUT_DIR = prefix + r'\pmaps\output'.replace('\\', '/')
+OUTPUT_BASELINE = prefix + r'\pmaps\output_baseline'
+OUTPUT_CONSTRAINED = prefix + r'\pmaps\output_constrained'.replace('\\', '/')
+OUTPUT_UNCONSTRAINED = prefix + r'\pmaps\output_unconstrained'.replace('\\', '/')
+OUTPUT_2WEEK = prefix + r'\pmaps\output_twoWeek' .replace('\\', '/')
 OUTPUT_GA = prefix + r'\pmaps\output_GA'.replace('\\', '/')
 R_DIR = prefix + r'\ami2zip'.replace('\\', '/')
 AMI_IN_DIR = prefix + r'\pmaps\models\output\ami_15_min'.replace('\\', '/')
@@ -49,6 +58,11 @@ OUT_DIRS = MNAMES
 IND_Z = MNAMES.index('ZIP')
 IND_2 = MNAMES.index('base2')
 IND_3 = MNAMES.index('base3')
+# Define some uid's for the ZIP model so different cases can be run
+# simulataneously
+UID_CONSTRAINED = 0
+UID_UNCONSTRAINED = 1
+UID_2WEEK = 2
 # Define timing:
 # Define recorder intervals (s)
 RECORD_INT = 60

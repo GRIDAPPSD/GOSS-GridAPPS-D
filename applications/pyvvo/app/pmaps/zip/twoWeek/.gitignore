@@ -1,0 +1,6 @@
+# Ignore all .csv files
+*.csv
+
+# Ignore all our two week folders
+2016-*/
+2017-*/

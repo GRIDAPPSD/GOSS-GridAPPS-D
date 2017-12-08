@@ -234,20 +234,28 @@ class db:
             # Clean up.
             self.closeCnxnAndCursor(cnxn, cursor)
     
-    def dropAllTables(self):
+    def dropAllTables(self, tableSuffix=None):
         """Drop all tables in database.
         INPUT: database connection.
         
         Note: my efficient dual-loop method kept giving an 'unread results' error.
+        
+        INPUTS: tableSuffix - if provided, only tables ending with the given
+            suffix will be dropped.
         """
         # Get connection and cursor.
         cnxn, cursor = self.getCnxnAndCursor()
         
         try:
+            q = ("SELECT table_name "
+                 "FROM information_schema.tables "
+                 "WHERE table_schema = '{}'").format(self.database)
+            
+            if tableSuffix:
+                q += " AND table_name LIKE '%{}'".format(tableSuffix)
+                
             # Get the names of all tables in database.
-            cursor.execute(("SELECT table_name "
-                            "FROM information_schema.tables "
-                            "WHERE table_schema = '{}'").format(self.database))
+            cursor.execute(q)
             # Assume there aren't so many tables that we blow up memory with 
             # a fetch all.
             rows = cursor.fetchall()
@@ -258,6 +266,8 @@ class db:
         # Loop through and drop all tables.
         for row in rows:
             self.dropTable(row[0])
+            
+        return len(rows)
         
     def sumComplexPower(self, cols, table, idCol='id', tCol='t',
                         nameCol='name', starttime=None, stoptime=None):

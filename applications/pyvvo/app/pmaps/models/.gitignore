@@ -3,3 +3,6 @@ R2_12_47_2_*.glm
 
 # But don't ignore R2_12_47_2_populated.glm
 !R2_12_47_2_populated.glm
+
+# Ignore player files
+*.player
