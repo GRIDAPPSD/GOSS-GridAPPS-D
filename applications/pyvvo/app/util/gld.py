@@ -113,9 +113,11 @@ def runModel(modelPath, gldPath=None):
     
     # Run command. Note with check=True exception will be thrown on failure.
     # TODO: rather than using check=True, handle the event of a GridLAB-D error
+    # NOTE: it's best practice to pass args as a list. If args is a list, using
+    # shell=True creates differences across platforms. Just don't do it.
     output = subprocess.run(['gridlabd', model], stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=True, 
-                            cwd=cwd, env=env)#, check=True)
+                            stderr=subprocess.PIPE, cwd=cwd, env=env,
+                            check=True)
     return output
 
 def translateTaps(lowerTaps, pos):
