@@ -6,6 +6,7 @@ Created on Oct 24, 2017
 # Add one directory up to the python path. This seems hacky, and I'm sure there's a better way.
 import os
 import sys
+from subprocess import CalledProcessError
 upDir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if upDir not in sys.path:
     sys.path.append(upDir)
@@ -15,14 +16,11 @@ import re
 from pmaps import constants as CONST
 import util.helper
 import util.db
-import util.constants
 from genetic import individual
-from genetic import population
 import threading
 from queue import Queue
 import csv
 import datetime
-import time
 
 # Paths to input/output models.
 partial =  CONST.BASE_PATH + '/' + CONST.MODEL
@@ -664,6 +662,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
 
     # Loop over time until we've hit the stoptime, running the ZIP model for 
     # each hour.
+    failList = []
     while clockObj.stop_utc <= clockObj.final_utc:
         
         print('Adding ZIP loads and running model for {} through {}'.format(clockObj.start_str,
@@ -677,35 +676,56 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         # Ensure cleanup is done before moving on.
         cleanupQueue.join()
         
-        # Run the ZIP model
-        ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
-                                  inPath=MODEL_STRIPPED_RECORDER,
-                                  outDir=outDir, costs=CONST.COSTS)
+        try:
+            # Run the ZIP model
+            ZIPInd.writeRunUpdateEval(strModel=writeZIP.strModel,
+                                      inPath=MODEL_STRIPPED_RECORDER,
+                                      outDir=outDir, costs=CONST.COSTS)
+        except CalledProcessError:
+            fail = True
+            failList.append(clockObj.start_dt)
+            # Model failed.
+            # Write -1 for costs.
+            csvCosts.writerow({'time': clockObj.start_str, 'total': -1,
+                               'realEnergy': -1, 'powerFactorLead': -1,
+                               'powerFactorLag': -1, 'tapChange': -1,
+                               'capSwitch': -1, 'undervoltage': -1,
+                               'overvoltage': -1})
+            
+            stateKey = 'prevState'
+        else:
+            # Model succeeded.
+            fail = False
+            stateKey = 'newState'
+            # Write ZIP data to file. Costs first.
+            csvCosts.writerow({'time': clockObj.start_str, **ZIPInd.costs})
+            
+        # Now create dictionary and write statuses.
+        stateKey 
+        stateDict = {'time': clockObj.start_str}
+        for reg, data in ZIPInd.reg.items():
+            for phase, states in data['phases'].items():
+                stateDict[(reg + '_' + phase)] = states[stateKey]
+                
+        for cap, data in ZIPInd.cap.items():
+            for phase, states in data['phases'].items():
+                stateDict[(cap + '_' + phase)] = states[stateKey]
+                
+        csvLogs.writerow(stateDict)    
         
         # Build cleanup dictionary and put it in the queue.
         ZIPClean = ZIPInd.buildCleanupDict(truncateFlag=True)
         cleanupQueue.put_nowait(ZIPClean)
         
-        # Write ZIP data to file. Costs first.
-        csvCosts.writerow({'time': clockObj.start_str, **ZIPInd.costs})
-        # Now create dictionary and write statuses.
-        stateDict = {'time': clockObj.start_str}
-        for reg, data in ZIPInd.reg.items():
-            for phase, states in data['phases'].items():
-                stateDict[(reg + '_' + phase)] = states['newState']
-                
-        for cap, data in ZIPInd.cap.items():
-            for phase, states in data['phases'].items():
-                stateDict[(cap + '_' + phase)] = states['newState']
-                
-        csvLogs.writerow(stateDict)
-
-        # Rotate dictionaries
-        ZIPInd.reg, ZIPInd.cap = util.helper.rotateVVODicts(reg=ZIPInd.reg,
-                                                            cap=ZIPInd.cap)
-        
         # Write to log
-        fOutput.write(ZIPInd.modelOutput.stderr.decode('utf-8') + '\n')
+        if fail:
+            fOutput.write('MODEL FAILED FOR {}\n'.format(clockObj.start_str))
+        else:
+            # Rotate dictionaries
+            ZIPInd.reg, ZIPInd.cap = util.helper.rotateVVODicts(reg=ZIPInd.reg,
+                                                                cap=ZIPInd.cap)
+            
+            fOutput.write(ZIPInd.modelOutput.stderr.decode('utf-8') + '\n')
         
         # Increment the times
         clockObj.advanceTime()
