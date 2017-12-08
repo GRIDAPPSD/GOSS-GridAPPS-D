@@ -1287,7 +1287,7 @@ class modGLM:
             
         return os.path.basename(fullfile)
             
-    def addZIP(self, zipDir, starttime, stoptime):
+    def addZIP(self, zipDir, starttime, stoptime, avgFlag=False):
         """Function to read the correct zip model file and apply zip loads to
         meters. 
         
@@ -1300,14 +1300,26 @@ class modGLM:
         creates grandchildren which isn't allowed in GridLAB-D at the moment.
         Another option would be to trace up the tree and add the triplex_load
         further up, but I don't see a point to that now.
+        
+        avgFlag: Files are different if we're using a two week window instead
+            of seasonal fits. False to use seasonal fits, True to use two week
+            window files.
         """
         # First, get time information. This function will error if interval
         # isn't proper. Pretty rudiemntary for now, but hey, it'll work :)
         t = util.helper.timeInfoForZIP(starttime=starttime, stoptime=stoptime)
         
-        # Craft the filename
-        file = (zipDir.replace('\\', '/') + '/' + 'ZIP_S' + str(t['season'])
-                + '_' + t['wday'] + '_' + str(t['hour']) + '.csv')
+        if not avgFlag:
+            
+            # Craft the filename
+            file = (zipDir.replace('\\', '/') + '/' + 'ZIP_S' + str(t['season'])
+                    + '_' + t['wday'] + '_' + str(t['hour']) + '.csv')
+        else:
+            # Infer folder name from date.
+            folder = starttime.strftime('%Y-%m-%d')
+            file = (zipDir.replace('\\', '/') + '/' + folder + '/ZIP_'
+                    + str(t['hour']) + '.csv')
+            
         
         # Hard code phase information
         phase = '_12'

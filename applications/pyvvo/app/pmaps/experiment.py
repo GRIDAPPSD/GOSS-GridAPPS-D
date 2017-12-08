@@ -581,7 +581,7 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     print('Threads stopped and files closed. All done.')
     
 def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
-                runInterval=CONST.ZIP_INTERVAL):
+                runInterval=CONST.ZIP_INTERVAL, avgFlag=False, gldPath=None):
     """Function to run the populated baseline model and the ZIP baseline model,
     and write output data to file. 
     """
@@ -657,7 +657,8 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                                    database=CONST.ZIP_DB,
                                    voltFiles=voltFiles, reg=CONST.REG,
                                    cap=CONST.CAP, regFlag=3, capFlag=3,
-                                   controlFlag=4, uid=CONST.IND_Z)
+                                   controlFlag=4, uid=CONST.IND_Z,
+                                   gldPath=gldPath)
 
     # Loop over time until we've hit the stoptime, running the ZIP model for 
     # each hour.
@@ -669,7 +670,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
         
         # Add ZIP models to the ZIP object and run it it.
         writeZIP.addZIP(zipDir=CONST.ZIP_DIR, starttime=clockObj.start_dt,
-                        stoptime=clockObj.stop_dt)
+                        stoptime=clockObj.stop_dt, avgFlag=avgFlag)
         
         # Ensure cleanup is done before moving on.
         cleanupQueue.join()
@@ -1026,6 +1027,6 @@ if __name__ == '__main__':
     s = '2016-04-12 00:00:00'
     e = '2016-04-12 04:00:00'
     #runGA()
-    #evaluateZIP(starttime=s, stoptime=e)
-    runEvalBaseline(starttime=s, stoptime=e)
-    #evaluateZIP()
+    #evaluateZIP(starttime=s, stoptime=e, avgFlag=True)
+    #runEvalBaseline(starttime=s, stoptime=e)
+    evaluateZIP()

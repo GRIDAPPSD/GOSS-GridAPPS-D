@@ -32,7 +32,7 @@ class individual:
     def __init__(self, uid, starttime, stoptime, timezone, database, voltFiles,
                  reg=None, regFlag=5, cap=None, capFlag=5, regChrom=None, 
                  capChrom=None, parents=None, controlFlag=0,
-                 recordInterval=60):
+                 recordInterval=60, gldPath=None):
         """An individual contains information about Volt/VAR control devices
         
         Individuals can be initialized in two ways: 
@@ -131,6 +131,9 @@ class individual:
         # to never change for an individual - feeders don't get up and move, 
         # and timezones don't often change.
         self.timezone = timezone
+        
+        # Assign gldPath
+        self.gldPath = gldPath
         
         # set database object
         self.dbObj = util.db.db(**database)
@@ -635,7 +638,9 @@ class individual:
     def runModel(self):
         """Function to run GridLAB-D model.
         """
-        self.modelOutput = util.gld.runModel((self.outDir + '/' + self.model))
+        self.modelOutput = util.gld.runModel(modelPath=(self.outDir + '/'
+                                                        + self.model),
+                                             gldPath=self.gldPath)
         # If a model failed to run, print to the console.
         if self.modelOutput.returncode:
             print("FAILURE! Individual {}'s model gave non-zero returncode.".format(self.uid))

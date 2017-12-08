@@ -72,7 +72,7 @@ CAP_STATE_PROPS = ['switchA', 'switchB', 'switchC']
 MEASURED_POWER = ['measured_power_A', 'measured_power_B', 'measured_power_C']
 MEASURED_ENERGY = ['measured_real_energy']
 
-def runModel(modelPath):
+def runModel(modelPath, gldPath=None):
     #, gldPath=r'C:/gridlab-d/develop'):
     """Function to run GridLAB-D model.
     
@@ -98,14 +98,24 @@ def runModel(modelPath):
     cmd += r'&&gridlabd'
     cmd += r' ' + model
     """
-    # Formulate the command.
-    cmd = 'gridlabd ' + model
+    # Setup environment if necessary
+    if gldPath:
+        # We'll use forward slashes here since GLD can have problems with 
+        # backslashes... Ugh.
+        gldPath = gldPath.replace('\\', '/')
+        env = os.environ
+        env['PATH'] = "{}/bin".format(gldPath) + os.pathsep + env['PATH']
+        env['GLPATH'] = ("{}/share/gridlabd".format(gldPath) + os.pathsep
+                         + "{}/lib/gridlabd".format(gldPath))
+        env['CXXFLAGS'] = "-I{}/share/gridlabd".format(gldPath)
+    else:
+        env = None
     
     # Run command. Note with check=True exception will be thrown on failure.
     # TODO: rather than using check=True, handle the event of a GridLAB-D error
-    output = subprocess.run(cmd, stdout=subprocess.PIPE,
+    output = subprocess.run(['gridlabd', model], stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, shell=True, 
-                            cwd=cwd)#, check=True)
+                            cwd=cwd, env=env)#, check=True)
     return output
 
 def translateTaps(lowerTaps, pos):
@@ -444,27 +454,6 @@ def sumVoltViolations(fileDir, files, vNom=120, vTol=6):
 '''
     
 if __name__ == '__main__':
-    """
-    f = r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output/dump1.csv'
-    # voltViolationsFromDump(fName=f)
-    t = sumVoltViolations(fileDir=r'C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/python/pyVVO/test/output',
-                          baseName='dump')
-    print(t)
-    """
-    """
-    # Hack this to print the version
-    output = runModel('--version')
-    print('OUTPUT:')
-    print(output.stdout.decode('utf-8'))
-    print('ERROR:')
-    print(output.stderr.decode('utf-8'))
-    """
-    """
-    output = runModel(modelPath='C:/Users/thay838/git_repos/GOSS-GridAPPS-D/applications/pyvvo/tests/output/ieee8500_base_benchmark.glm')
-    print(output.stdout.decode('utf-8'))
-    print(output.stderr.decode('utf-8'))
-    """
-    violations = violationsFromRecorderFiles(fileDir=r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output\ind_0'.replace('\\', '/'),
-                                             files=['voltage_1.csv', 'voltage_2.csv'],
-                                             )
+    result = runModel(modelPath=r'C:\Users\thay838\git_repos\GOSS-GridAPPS-D\applications\pyvvo\app\pmaps\output\subVTest.glm',
+                      gldPath=r'C:\gridlab-d\unconstrained')
     print('yay')
