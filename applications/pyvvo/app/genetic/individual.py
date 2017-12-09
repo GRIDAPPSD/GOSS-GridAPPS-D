@@ -840,6 +840,10 @@ def cleanup(cleanupQueue, dbObj):
                 # Note that all files should get overwritten by either this
                 # program or GridLAB-D anyways...
                 pass
+            except FileNotFoundError:
+                # Again, don't spoil runs if a file doesn't exist. It's weird
+                # we would ever get here, but oh well I guess.
+                pass
             
         # Delete the directory if it's empty.
         try:
