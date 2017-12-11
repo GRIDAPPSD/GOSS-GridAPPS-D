@@ -662,7 +662,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
 
     # Loop over time until we've hit the stoptime, running the ZIP model for 
     # each hour.
-    failList = []
+    failCount = 0
     while clockObj.stop_utc <= clockObj.final_utc:
         
         print('Adding ZIP loads and running model for {} through {}'.format(clockObj.start_str,
@@ -683,7 +683,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
                                       outDir=outDir, costs=CONST.COSTS)
         except CalledProcessError:
             fail = True
-            failList.append(clockObj.start_dt)
+            failCount += 1
             # Model failed.
             # Write -1 for costs.
             csvCosts.writerow({'time': clockObj.start_str, 'total': -1,
@@ -746,6 +746,7 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     fOutput.close()
     
     print('Cleanup threads stopped and files closed, all done.')
+    print('There were {} failures'.format(str(failCount)))
     
     
 def runModelsThreaded(modelQueue):

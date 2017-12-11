@@ -104,9 +104,16 @@ def runModel(modelPath, gldPath=None):
         # backslashes... Ugh.
         gldPath = gldPath.replace('\\', '/')
         env = os.environ
-        env['PATH'] = "{}/bin".format(gldPath) + os.pathsep + env['PATH']
+        binStr = "{}/bin".format(gldPath)
+        # We can form a kind of memory leak where we grow the environment
+        # variables if we add these elements repeatedly, so check before 
+        # adding or changing.
+        if binStr not in env['PATH']:
+            env['PATH'] = binStr + os.pathsep + env['PATH']
+
         env['GLPATH'] = ("{}/lib/gridlabd".format(gldPath) + os.pathsep
                          + "{}/share/gridlabd".format(gldPath))
+        
         env['CXXFLAGS'] = "-I{}/share/gridlabd".format(gldPath)
     else:
         env = None
