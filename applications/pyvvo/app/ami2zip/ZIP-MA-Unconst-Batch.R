@@ -3,8 +3,9 @@
 # using an unconstrianed moving average method
 # this version is fixed at using two weeks worth of data
 # unconstrained: i.e., Z% + I% + P% = 1  is not enforced
-# run in batch mode, where n is a test feature to only process n loads (default is all)
-# Rscript ZIP-MA-Unconst-Batch.R n
+# run in batch mode: 
+#   Rscript ZIP-MA-Unconst-Batch.R n1 n2
+#      where n1 and n2 is a test feature for a range of loads to process (default is all)
 
 # possible libraries we may use 
 # install.packages('Rsolnp')
@@ -29,12 +30,17 @@ chead = paste(cmd[5], '/ZIP', sep='') ; ctail = '.csv'
 
 # read load names
 load.names <- unlist(read.csv(cmd[2], skip=8, nrows=1, header=F)[-1])
-num.loads = length(load.names)
+# default loads to process
+num.loads = length(load.names)  ;  load1 = 1  ;  load2 = num.loads
 
 # see if we are running a subset of loads (from command line)
 args <- commandArgs(TRUE)
-if (length(args)>0) num.loads = as.numeric(args[1])
-paste('number of loads:', num.loads)
+if (length(args)>0) {
+   load1 = 1 ; load2 = as.numeric(args[1])
+   if (length(args)>1) {load1 = as.numeric(args[1]) ; load2 = as.numeric(args[2])}
+}
+paste('load range: (', load1, ', ', load2, ')', sep='')
+paste('number of loads:', (load2-load1+1))
 
 # read in data (voltage, Real Power, Reactive Power)
 Volt.mag   <- read.csv(cmd[2], skip=SKIP, header=F, nrows=NROWS)
@@ -82,6 +88,7 @@ Constrain <- function(Params) {
 Calc.day = as.Date(cmd[8]) ; Start.day = as.Date(cmd[6]) ; End.day = as.Date(cmd[7])
 icum <- which(as.Date(Ctime)>=Start.day & as.Date(Ctime)<=End.day)
 iday <- which(as.Date(Ctime)==Calc.day)
+weekdays(Calc.day)
 
 # separate if on the weekend (0) or a weekday
 iw = unique(Weekday[iday])
@@ -91,6 +98,7 @@ w.ind <- which(Weekday[icum]==iw)  #  0 --> weekend
 # constants
 Vn = 240.0   	              # place holder for nominal terminal voltage
 par0  <- rep(sqrt(1/18),6)    # initial parameters for ZIP model
+Frac <- rep(0,3) ; Cos <- rep(0,3)
 
 # loop over hour of the day
 for (hr in 0:(length(unique(Hour))-1)) {
@@ -111,7 +119,7 @@ for (hr in 0:(length(unique(Hour))-1)) {
    write(a, nfile, ncolumns=1, append=TRUE)
 
    # now loop over each load
-   for (load in 1:num.loads) {
+   for (load in load1:load2) {
       V <- Volt.mag[icum,load+1][w.ind][h.ind]
       P <- Power.real[icum,load+1][w.ind][h.ind] ; Q <- Power.reac[icum,load+1][w.ind][h.ind]
 
@@ -123,39 +131,27 @@ for (hr in 0:(length(unique(Hour))-1)) {
       # opti <- constrOptim.nl(par=par0,fn=Object,gr=NULL,heq=Constrain,control.outer=list(trace=F))
       # Opti = 'constrOptim.nl' ; constr = Constrain(opti$par) ; Model = 1 ; coe <- opti$par
       opti <- solnp(par0, fun=Object, eqfun=Constrain, eqB=1.0, control=list(trace=F)) 
-      Opti = 'solnp' ; constr = Constrain(opti$par) ; coe <- opti$par
+      if (abs(Constrain(opti$par))>3.0) {
+        opti <- solnp(par0, fun=Object, eqfun=Constrain, eqB=2.0, control=list(trace=F)) 
+      }
 
       # convert back to original scale
       # opti$par[1] = Z%*cos(Zo), opti$par[2] = I%*cos(Io), opti$par[3] = P%*cos(Po)
       # opti$par[4] = Z%*sin(Zo), opti$par[5] = I%*sin(Io), opti$par[6] = P%*sin(Po)
-      Z.frac = sqrt(opti$par[1]*opti$par[1] + opti$par[4]*opti$par[4])
-      Z.cos = 1.0 ; if (Z.frac!=0) Z.cos = abs(opti$par[1]/Z.frac)
-
-      I.frac = sqrt(opti$par[2]*opti$par[2] + opti$par[5]*opti$par[5])
-      I.cos = 1.0 ; if (I.frac!=0) I.cos = abs(opti$par[2]/I.frac)
-
-      P.frac = sqrt(opti$par[3]*opti$par[3] + opti$par[6]*opti$par[6])
-      P.cos = 1.0 ; if (P.frac!=0) P.cos = abs(opti$par[3]/P.frac)
-
-      # set up for how Gridlab-D assigns values
-      if (opti$par[1]>0 & opti$par[4]<0) Z.cos  = -Z.cos
-      if (opti$par[1]<0 & opti$par[4]<0) Z.frac = -Z.frac
-      if (opti$par[1]<0 & opti$par[4]>0) { Z.cos  = -Z.cos ; Z.frac = -Z.frac }
-
-      if (opti$par[2]>0 & opti$par[5]<0) I.cos  = -I.cos 
-      if (opti$par[2]<0 & opti$par[5]<0) I.frac = -I.frac
-      if (opti$par[2]<0 & opti$par[5]>0) { I.cos  = -I.cos ; I.frac = -I.frac }
-
-      if (opti$par[3]>0 & opti$par[6]<0) P.cos  = -P.cos 
-      if (opti$par[3]<0 & opti$par[6]<0) P.frac = -P.frac
-      if (opti$par[3]<0 & opti$par[6]>0) { P.cos  = -P.cos ; P.frac = -P.frac }
-
+      p <- opti$par[1:3]  ;  q <- opti$par[4:6]
+        
+      for (i in 1:3) {
+         Frac[i] = sqrt(p[i]*p[i] + q[i]*q[i]) 
+         Cos[i]  = 1.0 ; if (Frac[i]!=0) Cos[i] = abs(p[i]/Frac[i])
+         # match what is done in Gridlab-D
+         if (p[i]>0 & q[i]<0) Cos[i]  = -Cos[i] ;  
+         if (p[i]<0 & q[i]<0) Frac[i] = -Frac[i]
+         if (p[i]<0 & q[i]>0) { Cos[i]  = -Cos[i] ; Frac[i] = -Frac[i] }
+      }
       a = paste(load.names[load], 
-                  round(Z.cos,6), round(Z.frac,6), 
-                  round(I.cos,6), round(I.frac,6), 
-                  round(P.cos,6), round(P.frac,6), round(Sn,6), sep=', ')
-      # a = paste(load.names[load],round(opti$par[1],6),round(opti$par[2],6),round(opti$par[3],6),
-      #       round(opti$par[4],6),round(opti$par[5],6),round(opti$par[6],6),Sn,sep=', ')
+                round(Cos[1],6), round(Frac[1],6), 
+                round(Cos[2],6), round(Frac[2],6), 
+                round(Cos[3],6), round(Frac[3],6), round(Sn,6), sep=', ')
       write(a, nfile, ncolumns=1, append=TRUE)
    }
 }
