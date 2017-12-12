@@ -158,7 +158,7 @@ def threadedRoutine(q, scriptDir, amiDir, amiFiles, zipOutDir,
 
 if __name__ == '__main__':
     writeYear(numThreads=20, scriptDir=CONST.R_DIR, amiDir=CONST.AMI_IN_DIR,
-              amiFiles=CONST.AMI_FILES, zipOutDir=CONST.ZIP_DIR)
+              amiFiles=CONST.AMI_FILES, zipOutDir=CONST.ZIP_2WEEK)
     """
     s = '2016-01-01 00:00:00 PST'
     e = '2016-01-14 23:45:00 PST'
