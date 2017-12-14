@@ -701,7 +701,6 @@ def evaluateZIP(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
             csvCosts.writerow({'time': clockObj.start_str, **ZIPInd.costs})
             
         # Now create dictionary and write statuses.
-        stateKey 
         stateDict = {'time': clockObj.start_str}
         for reg, data in ZIPInd.reg.items():
             for phase, states in data['phases'].items():
