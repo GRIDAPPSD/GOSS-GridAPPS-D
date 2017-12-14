@@ -351,8 +351,8 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
           flush=True)
     
     # If the output directory doesn't exist, make it
-    if not os.path.isdir(CONST.OUTPUT_DIR):
-        os.mkdir(CONST.OUTPUT_DIR)
+    if not os.path.isdir(CONST.OUTPUT_BASELINE):
+        os.mkdir(CONST.OUTPUT_BASELINE)
     
     # Hard-coding some indexes here.
     ind2 = 0
@@ -361,7 +361,7 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     fCosts = []
     csvCosts = []
     for c in [CONST.COST_FILES[CONST.IND_2], CONST.COST_FILES[CONST.IND_3]]:
-        fCosts.append(open(CONST.OUTPUT_DIR + '/' + c, newline='', mode='w'))
+        fCosts.append(open(CONST.OUTPUT_BASELINE + '/' + c, newline='', mode='w'))
         csvCosts.append(csv.DictWriter(fCosts[-1], fieldnames=CONST.COST_COLS,
                                        quoting=csv.QUOTE_NONNUMERIC))
         csvCosts[-1].writeheader()
@@ -370,7 +370,7 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     fLogs = []
     csvLogs = []
     for c in [CONST.LOG_FILES[CONST.IND_2], CONST.LOG_FILES[CONST.IND_3]]:
-        fLogs.append(open(CONST.OUTPUT_DIR + '/' + c, newline='', mode='w'))
+        fLogs.append(open(CONST.OUTPUT_BASELINE + '/' + c, newline='', mode='w'))
         csvLogs.append(csv.DictWriter(fLogs[-1], fieldnames=CONST.LOG_COLS,
                                       quoting=csv.QUOTE_NONNUMERIC))
         csvLogs[-1].writeheader()
@@ -378,7 +378,7 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     # Open the model output files
     fOutput = []
     for c in [CONST.MODEL_OUTPUT_FILES[CONST.IND_2], CONST.MODEL_OUTPUT_FILES[CONST.IND_3]]:
-        fOutput.append(open(CONST.OUTPUT_DIR + '/' + c, mode='w'))
+        fOutput.append(open(CONST.OUTPUT_BASELINE + '/' + c, mode='w'))
         
     # Initialize queue for running and cleaning up models
     modelQueue = Queue()
@@ -442,12 +442,12 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     
     # Write models for the 'populated' models
     baseInd2.writeModel(strModel=writeBase2.strModel, inPath=MODEL_BASELINE_2,
-                        outDir=(CONST.OUTPUT_DIR + '/'
+                        outDir=(CONST.OUTPUT_BASELINE + '/'
                                 + CONST.OUT_DIRS[CONST.IND_2]),
                         recordInterval=CONST.ZIP_INTERVAL)
     
     baseInd3.writeModel(strModel=writeBase3.strModel, inPath=MODEL_BASELINE_3,
-                        outDir=(CONST.OUTPUT_DIR+ '/'
+                        outDir=(CONST.OUTPUT_BASELINE+ '/'
                                 + CONST.OUT_DIRS[CONST.IND_3]),
                         recordInterval=CONST.ZIP_INTERVAL)
     
@@ -471,9 +471,9 @@ def runEvalBaseline(starttime=CONST.STARTTIME, stoptime=CONST.STOPTIME,
     
     # Now, we need to evaluate costs of the baseline model for each hour.
     # Start by looping through the voltage files.
-    voltViolations2 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_DIR + '/' + CONST.OUT_DIRS[CONST.IND_2]),
+    voltViolations2 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_BASELINE + '/' + CONST.OUT_DIRS[CONST.IND_2]),
                                                            files=voltFiles)
-    voltViolations3 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_DIR + '/' + CONST.OUT_DIRS[CONST.IND_3]),
+    voltViolations3 = util.gld.violationsFromRecorderFiles(fileDir=(CONST.OUTPUT_BASELINE + '/' + CONST.OUT_DIRS[CONST.IND_3]),
                                                            files=voltFiles)
     
     
@@ -1046,15 +1046,16 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    s = '2016-02-12 00:00:00'
-    e = '2016-02-12 02:00:00'
+    #s = '2016-01-01 00:00:00'
+    #e = '2016-01-01 02:00:00'
     #runGA()
     #evaluateZIP(starttime=s, stoptime=e, avgFlag=True)
-    #runEvalBaseline(starttime=s, stoptime=e)
     
-    #s = CONST.STARTTIME
-    #e = CONST.STOPTIME
-    
+    s = CONST.STARTTIME
+    e = CONST.STOPTIME
+    runEvalBaseline(starttime=s, stoptime=e)
+        
+    """
     # Run constrained seasonal
     evaluateZIP(starttime=s, stoptime=e, avgFlag=False,
                 gldPath=(CONST.GLD_PATH + '/develop'),
@@ -1072,3 +1073,4 @@ if __name__ == '__main__':
                 gldPath=(CONST.GLD_PATH + '/unconstrained'),
                 outDir=CONST.OUTPUT_2WEEK, uid=CONST.UID_2WEEK,
                 zipDir=CONST.ZIP_2WEEK)
+    """
