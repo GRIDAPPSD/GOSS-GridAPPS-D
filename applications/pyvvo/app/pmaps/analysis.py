@@ -25,7 +25,9 @@ def plotPMAPS():
          'sConst': {'dir': CONST.OUTPUT_CONSTRAINED,
                     'files': [CONST.COST_FILES[CONST.IND_Z]]},
          'sUnConst': {'dir': CONST.OUTPUT_UNCONSTRAINED,
-                      'files': [CONST.COST_FILES[CONST.IND_Z]]}}
+                      'files': [CONST.COST_FILES[CONST.IND_Z]]},
+         'twoWeek': {'dir': CONST.OUTPUT_2WEEK,
+                     'files': [CONST.COST_FILES[CONST.IND_Z]]}}
     
     cols = CONST.COST_COLS
     # Remove non-numeric columns
@@ -68,6 +70,13 @@ def plotPMAPS():
     plotTimeSeries(x=x, y=y, xl='Time', yl='PF Lag Cost ($)',
                    legend=['Base Case', 'ZIP Model'],
                    file='figures/pfLag_base3_test2')
+    
+    # Plot base_2 real energy and two week ZIP
+    y = [d['base']['data'][:, cols.index('realEnergy'), 0],
+         d['twoWeek']['data'][:, cols.index('realEnergy'), 0]]
+    plotTimeSeries(x=x, y=y, xl='Time', yl='Real Energy Cost ($)',
+                   legend=['Base Case', 'ZIP Model'],
+                   file='figures/energy_base2_test3')
         
     print('hooray')
     

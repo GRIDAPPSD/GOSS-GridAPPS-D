@@ -2,3 +2,5 @@ output_baseline/
 output_constrained/
 output_twoWeek/
 output_unconstrained/
+*.zip
+figures/
