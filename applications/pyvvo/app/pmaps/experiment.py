@@ -1046,13 +1046,13 @@ if __name__ == '__main__':
     s = '2016-07-19 14:00:00'
     e = '2016-07-19 15:00:00'
     """
-    #s = '2016-01-01 00:00:00'
-    #e = '2016-01-01 02:00:00'
+    s = '2016-01-01 00:00:00'
+    e = '2016-01-01 02:00:00'
     #runGA()
     #evaluateZIP(starttime=s, stoptime=e, avgFlag=True)
     
-    s = CONST.STARTTIME
-    e = CONST.STOPTIME
+    #s = CONST.STARTTIME
+    #e = CONST.STOPTIME
     runEvalBaseline(starttime=s, stoptime=e)
         
     """

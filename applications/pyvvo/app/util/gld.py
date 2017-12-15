@@ -316,19 +316,8 @@ def violationsFromRecorderFiles(fileDir, files, vNom=120, vTol=6):
     # Loop through the files and advance the lines.
     headers = []
     for r in readers:
-        done = False
-        while not done:
-            line = next(r)
-            # If we're not yet at the row which starts with timestamp, move on
-            if (line[0].strip().startswith('#')) and \
-            (not line[0].strip().startswith(util.constants.GLD_TIMESTAMP)):
-                pass
-            elif line[0].strip().startswith(util.constants.GLD_TIMESTAMP):
-                # The row starts with '# timestamp' --> this is the header row
-                headers.append(line)
-                done = True
-            else:
-                raise ValueError('File had unexpected format!')
+        h = getGLDFileHeaders(r=r)
+        headers.append(h)
             
     # Ensure all headers are the same. If not, raise an error.
     sameHeaders = True
@@ -397,6 +386,26 @@ def violationsFromRecorderFiles(fileDir, files, vNom=120, vTol=6):
         file.close()
         
     return violations
+
+def getGLDFileHeaders(r):
+    """Helper to take a csv reader for a GLD output file, and run through
+    rows until the headers are found.
+    
+    INPUTS: r is a .csv reader. NOTE: NOT a dictionary reader.
+    """
+    while True:
+        line = next(r)
+        # If we're not yet at the row which starts with timestamp, move on
+        if (line[0].strip().startswith('#')) and \
+        (not line[0].strip().startswith(util.constants.GLD_TIMESTAMP)):
+            pass
+        elif line[0].strip().startswith(util.constants.GLD_TIMESTAMP):
+            # The row starts with '# timestamp' --> this is the header row
+            break
+        else:
+            raise ValueError('File had unexpected format!')
+        
+    return line
 
 '''      
 def voltViolationsFromDump(fName, vNom=120, vTol=6):
