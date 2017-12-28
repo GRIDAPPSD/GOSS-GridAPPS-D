@@ -108,16 +108,16 @@ public class ServiceManagerImpl implements ServiceManager{
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true));
+				true),GridAppsDConstants.username);
 		
 		scanForServices();
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				new Date().getTime(), 
-				String.format("Found %s servicelications", services.size()), 
+				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true));
+				true),GridAppsDConstants.username);
 	}
 	
 	/**
