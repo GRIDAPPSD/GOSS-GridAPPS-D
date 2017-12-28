@@ -114,7 +114,7 @@ public class GridLabDDataHandlerTests {
 		handler.handle(TestConstants.REQUEST_SIMULATION_CONFIG, simulationId, "", statusReporter);
 		//verify handlers are registered for String.class and RequestSiulation.class
 		Mockito.verify(statusReporter, Mockito.times(4)).reportStatus(argCaptor.capture(), argCaptor.capture());
-		assertEquals(argCaptor.getAllValues().get(0), GridAppsDConstants.topic_simulationStatus+simulationId);
+		assertEquals(argCaptor.getAllValues().get(0), GridAppsDConstants.topic_simulationLog+simulationId);
 		assertEquals(argCaptor.getAllValues().get(1),  "Generating GridLABD simulation files");
 		
 	}	
