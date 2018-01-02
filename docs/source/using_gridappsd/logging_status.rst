@@ -20,10 +20,12 @@ Message structure:
 .. code-block:: console
 
 	{
-		timestamp: "",
-		status: "[started|stopped|running|error|passed|failed]",
-		log_message: "",
-		log_level: "[info|debug|error]"
+		"process_id": ""
+		"timestamp": "",
+		"process_status": "[started|stopped|running|error|passed|failed]",
+		"log_message": "",
+		"log_level": "[info|debug|error]",
+		"store_to_db": [true|false]
 	}
 
 Receving multiple logs:

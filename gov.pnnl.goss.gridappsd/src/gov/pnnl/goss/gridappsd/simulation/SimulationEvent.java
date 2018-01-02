@@ -92,19 +92,19 @@ public class SimulationEvent implements GossResponseEvent {
 			RunCommandLine.runCommand(commandFNCS);
 			
 			//TODO: check if FNCS is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
+			client.publish(GridAppsDConstants.topic_simulationLog+simulationId, "FNCS Co-Simulator started");
 			
 			//Start GridLAB-D
 			RunCommandLine.runCommand(commandGridLABD+" "+simulationFile);
 			
 			//TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLAB-D started");
+			client.publish(GridAppsDConstants.topic_simulationLog+simulationId, "GridLAB-D started");
 			
 			//Start GOSS-FNCS Bridge
 			RunCommandLine.runCommand(commandFNCS_GOSS_Bridge);
 			
 			//TODO: check if bridge is started correctly and send publish simulation status accordingly
-			client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS-GOSS Bridge started");
+			client.publish(GridAppsDConstants.topic_simulationLog+simulationId, "FNCS-GOSS Bridge started");
 			
 			//Subscribe to GOSS FNCS Bridge output topic
 			client.subscribe(GridAppsDConstants.topic_FNCS_output, new FNCSOutputEvent());

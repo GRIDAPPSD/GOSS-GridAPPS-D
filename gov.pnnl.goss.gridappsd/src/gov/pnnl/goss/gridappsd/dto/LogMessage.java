@@ -39,9 +39,14 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto;
 
-import com.google.gson.Gson;
+import java.io.Serializable;
 
-public class LogMessage {
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
+public class LogMessage implements Serializable {
+	
+	private static final long serialVersionUID = 3528865632052617983L;
 	
 	public enum LogLevel {
 		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
@@ -50,38 +55,29 @@ public class LogMessage {
 		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE
 	}
 	
-	String process_id;
-	String parent_process_id;
-
+	String processId;
 	long timestamp;
-	String log_message;
-	LogLevel log_level;
-	ProcessStatus process_status;
-	Boolean storeToDB = true;
-	
-	//I would change timestamp to a long, log level and process status to enums. and probably process id to a numeric.  and storeToDB should be store_to_db for consistency
+	String logMessage;
+	LogLevel logLevel;
+	ProcessStatus processStatus;
+	Boolean storeToDb = true;
 	
 	public LogMessage(){}
-	public LogMessage(String process_id, long timestamp, String log_message, LogLevel log_level, ProcessStatus process_status, Boolean storeToDB){
-		this.process_id = process_id;
+	
+	public LogMessage(String processId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb){
+		this.processId = processId;
 		this.timestamp = timestamp;
-		this.log_level = log_level;
-		this.log_message = log_message;
-		this.process_status = process_status;
-		this.storeToDB = storeToDB;
+		this.logLevel = logLevel;
+		this.logMessage = logMessage;
+		this.processStatus = processStatus;
+		this.storeToDb = storeToDb;
 	}
 	
-	public String getProcess_id() {
-		return process_id;
+	public String getProcessId() {
+		return processId;
 	}
-	public void setProcess_id(String process_id) {
-		this.process_id = process_id;
-	}
-	public String getParent_process_id() {
-		return parent_process_id;
-	}
-	public void setParent_process_id(String parent_process_id) {
-		this.parent_process_id = parent_process_id;
+	public void setProcessId(String processId) {
+		this.processId = processId;
 	}
 	public long getTimestamp() {
 		return timestamp;
@@ -89,39 +85,39 @@ public class LogMessage {
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	public String getLog_message() {
-		return log_message;
+	public String getLogMessage() {
+		return logMessage;
 	}
-	public void setLog_message(String log_message) {
-		this.log_message = log_message;
+	public void setLogMessage(String logMessage) {
+		this.logMessage = logMessage;
 	}
-	public LogLevel getLog_level() {
-		return log_level;
+	public LogLevel getLogLevel() {
+		return logLevel;
 	}
-	public void setLog_level(LogLevel log_level) {
-		this.log_level = log_level;
+	public void setLogLevel(LogLevel logLevel) {
+		this.logLevel = logLevel;
 	}
-	public ProcessStatus getProcess_status() {
-		return process_status;
+	public ProcessStatus getProcessStatus() {
+		return processStatus;
 	}
-	public void setProcess_status(ProcessStatus process_status) {
-		this.process_status = process_status;
+	public void setProcessStatus(ProcessStatus processStatus) {
+		this.processStatus = processStatus;
 	}
-	public Boolean getStoreToDB() {
-		return storeToDB;
+	public Boolean getStoreToDb() {
+		return storeToDb;
 	}
-	public void setStoreToDB(Boolean storeToDB) {
-		this.storeToDB = storeToDB;
+	public void setStoreToDb(Boolean storeToDb) {
+		this.storeToDb = storeToDb;
 	}
 	
-	
-	public static LogMessage parse(String jsonString){
+	public static LogMessage parse(String jsonString) throws JsonSyntaxException {
 		Gson  gson = new Gson();
 		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
-		if(obj.log_message==null)
-			throw new RuntimeException("Expected attribute log_message not found");
+		if(obj.logMessage==null)
+			throw new RuntimeException("Expected attribute logMessage not found");
 		return obj;
 	}
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
