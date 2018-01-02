@@ -289,6 +289,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String configFileName = "configfile.json";
 //				String configFileValue = "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
 				String configFileValue = generateConfigValue(dataRequest.getSimulation_config().simulation_output);
+				//TODO change this to be obtained from Tom's conversion script
+				//MRID->grid labd names
+				
 				FileOutputStream configFileOut = new FileOutputStream(tempDataPath+configFileName);
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
