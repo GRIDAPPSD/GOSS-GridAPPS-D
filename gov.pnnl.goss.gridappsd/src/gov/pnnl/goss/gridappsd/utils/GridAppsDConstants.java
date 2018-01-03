@@ -53,6 +53,9 @@ public class GridAppsDConstants {
 	
 	//Process Manager topics
 	public static final String topic_process_prefix = topic_prefix+".process";
+	public static final String topic_request = topic_prefix+".process";
+	
+	
 	
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";

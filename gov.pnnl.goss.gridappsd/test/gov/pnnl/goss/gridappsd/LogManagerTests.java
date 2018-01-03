@@ -89,7 +89,7 @@ public class LogManagerTests {
 		message.setStoreToDb(true);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
 		
-		logManager.log(message,GridAppsDConstants.username);
+		logManager.log(message,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 		
 		
 		
@@ -121,7 +121,7 @@ public class LogManagerTests {
 				+ "\"log_message\":\"Testing LogManager\","
 				+ "\"timestamp\": "+GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()+"}";
 		
-		logManager.log(LogMessage.parse(message),GridAppsDConstants.username);
+		logManager.log(LogMessage.parse(message),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 		
 		
 		

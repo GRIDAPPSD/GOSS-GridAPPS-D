@@ -100,7 +100,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username);
+				true),GridAppsDConstants.username,
+				GridAppsDConstants.topic_platformLog);
 		
 		scanForServices();
 		
@@ -109,7 +110,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username);
+				true),GridAppsDConstants.username,
+				GridAppsDConstants.topic_platformLog);
 	}
 	
 	protected void scanForServices(){

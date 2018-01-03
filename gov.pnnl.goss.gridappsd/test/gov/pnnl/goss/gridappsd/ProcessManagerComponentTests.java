@@ -129,7 +129,7 @@ public class ProcessManagerComponentTests {
 											statusReporter, logManager, appManager, newSimulationProcess);
 		processManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
@@ -197,7 +197,7 @@ public class ProcessManagerComponentTests {
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
 		
-		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
+		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
@@ -282,7 +282,7 @@ public class ProcessManagerComponentTests {
 		dr.setDestination("goss.gridappsd.process.request.simulation");
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
-		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
+		Mockito.verify(logManager, Mockito.times(2)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 		
