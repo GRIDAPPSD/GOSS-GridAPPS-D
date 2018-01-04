@@ -188,9 +188,5 @@ public class LogManagerImpl implements LogManager {
 				username, resultTopic, logTopic);
 
 	}
-	
-	void logAsPlatform(LogMessage message) {
-		
-	}
 
 }
