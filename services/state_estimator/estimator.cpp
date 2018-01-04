@@ -46,9 +46,9 @@
 
 
 int main(void) {
-	// ----------
+	// ------------------------------------------------------------------------
 	// INITIALIZE
-	// ----------
+	// ------------------------------------------------------------------------
 	
 	
 	// READ CONFIGURATOIN FILE
@@ -75,9 +75,9 @@ int main(void) {
 	
 	
 	
-	// --------------
+	// ------------------------------------------------------------------------
 	// BUILD TOPOLOGY
-	// --------------
+	// ------------------------------------------------------------------------
 	// Build the adjacency matrix
 	std::vector<std::vector<uint>> A;
 	// outer vector has an element for every row
@@ -293,9 +293,9 @@ int main(void) {
 		for ( int idx = 0 ; idx < Hx.size() ; idx++ ) {
 			uint i = Hxi[idx];
 			std::vector<uint> js = Hxj[idx];
-			// ---------------------------------------------------
+			// ----------------------------------------------------------------
 			// Partial derivatives of real power flow measurements
-			// ---------------------------------------------------
+			// ----------------------------------------------------------------
 			if ( tHx[idx] == dPijdVi ) {
 				uint j = js[0];
 				double Tij = xT[i] - xT[j];
@@ -355,9 +355,9 @@ int main(void) {
 				double bij = std::imag(-1.0*Ym[i][j]);
 				Hx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
 			}
-			// --------------------------------------------------------
+			// ----------------------------------------------------------------
 			// Partial derivatives of real power injection measurements
-			// --------------------------------------------------------
+			// ----------------------------------------------------------------
 			else if ( tHx[idx] == dPidVi ) {
 				double h = 0;
 				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
@@ -394,9 +394,9 @@ int main(void) {
 				double Bij = std::imag(Ym[i][j]);
 				Hx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 			}
-			// ------------------------------------------------------------
+			// ----------------------------------------------------------------
 			// Partial derivatives of reactive power injection measurements
-			// ------------------------------------------------------------
+			// ----------------------------------------------------------------
 			else if ( tHx[idx] == dQidVi ) {
 				double h = 0;
 				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
