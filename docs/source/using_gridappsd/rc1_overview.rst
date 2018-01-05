@@ -1,43 +1,30 @@
 RC1 Demonstration
 ^^^^^^^^^^^^^^^^^
-In order to run the RC1 demonstration you will need to have access to a Linux machine configured 
-according to the instructions in the Installing GridAPPS-D section.  In order to 
-run the demonstration you will need both ssh and web access to the machine.
+In order to run the RC1 demonstration you will need to have access to the GridDAPPS-D docker containers.
 
-In this procedure, we connect to a Linux virtual machine (VM) in the PNNL 
-Energy Infrastructure Operations Center (EIOC) using a virtual private 
-network (VPN) connection.  The ssh host for 
-GridAPPS-D in the EIOC is at 172.20.128.20, and you would need user 
-credentials for both that VM and the VPN connection.  
+Start gridappsd
+---------------
 
-The procedure could vary if logging into a local 
-build of GridAPPS-D, i.e. not hosted in PNNL's EIOC.  If logging into your own 
-build, you will need to replace the IP in the following steps with that of your system. You 
-can use the ssh command from a Terminal or any SSH client such as *ssh -X -Y 
-username@your.host.ip.address* and then supply your local password when 
-prompted.  If you don't have direct web access, you may also need to take extra steps in setting up a secure 
-SSH tunnel for your browser to work in step 3 below; please ask your local IT 
-administrator for those details.
-  
-Once connected to the VM hosting GridAPPS-D, there are three basic steps 
-involved in starting the RC1 demo: 
- 
-1. Start GridAPPS-D; this prepares the platform to configure a power system model and generate results.
-      a. Open the first terminal to 172.20.128.20.
-      b. Switch to the gridappsd user by typing *sudo su - gridappsd*
-      c. Type *cd $HOME/gridappds_project/sources/GOSS-GridAPPS-D*
-      d. Type *./run-goss-test.sh* You may not see any output and it doesn't exit until you press Ctrl-C.
- 
-2. Start the node server for the viz application, which allows you to start the simulation and see its results.
-      a. Open a second terminal to 172.20.128.20.
-      b. Switch to the gridappsd user by typing *sudo su - gridappsd*
-      c. Type *cd $HOME/gridappsd_project/sources/viz*
-      d. Start the node server by typing *node server.js* You may not see any output and it doesn't exit until you press Ctrl-C.
- 
-3. Start the viz demo. In some cases this may require a browser using an SSH tunnel.
-      a. In a browser go to http://172.20.128.20:8082/ieee8500
-      b. Click on the IEEE 8500 link in the top left of the webpage (see Figure 1).
-      c. Click the play button in the top right of the webpage. It will take 5-10 seconds before you see the graphs being generated.
+Connect to the running gridappsd container
+
+.. code-block:: bash
+
+  user@foo>docker exec -it gridappsddocker_gridappsd_1 bash
+
+..
+
+Now we are inside the executing container
+
+.. code-block:: bash
+
+  root@737c30c82df7:/gridappsd# ./gridappsd.run.sh
+
+..
+
+Open your browser to http://localhost:8080/ieee8500
+
+Click the triangle in the top right corner to have a simulation run.
+
  
 The demonstration runs a continuous loop of load variations with a 
 Volt-Var Optimization (VVO) application [CIT5]_ controlling capacitor 
@@ -54,13 +41,13 @@ information with the VVO application using GOSS [CIT6]_ and FNCS [CIT7]_.
   
 For an orderly shutdown of the demonstration:
   
-1. Close the web browser (i.e. step 3 above).
-  
-2. Enter Ctrl-C and then *Exit* in the node server's terminal window / tab (i.e. step 2 above).
-  
-3. Enter Ctrl-C and then *Exit* in the GOSS terminal window (i.e. step 1 above). 
- 
-4. Log off the VM and the VPN. 
+.. code-block:: bash
+
+  Use Ctrl+C to stop gridappsd from running
+  exit
+  ./stop.sh
+
+..
 
 |rc1_overview_image0|
 
