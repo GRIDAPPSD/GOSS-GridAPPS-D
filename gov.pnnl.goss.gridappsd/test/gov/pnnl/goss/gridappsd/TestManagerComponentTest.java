@@ -77,7 +77,7 @@ public class TestManagerComponentTest {
 											statusReporter,logManager);
 		testManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username);
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture()); //GridAppsDConstants.username);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 
