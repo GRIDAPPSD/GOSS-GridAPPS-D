@@ -105,7 +105,8 @@ public class ProcessNewSimulationRequestComponentTests {
 		request.process(configurationManager, simulationManager, simulationId, event, REQUEST_SIMULATION_CONFIG);
 		
 		//	request simulation object parsed successfully and first log info call made
-		Mockito.verify(logManager, Mockito.times(5)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		Mockito.verify(logManager, Mockito.times(5)).log(argCaptorLogMessage.capture(), argCaptor.capture()); //GridAppsDConstants.username);
+
 		LogMessage capturedMessage = argCaptorLogMessage.getAllValues().get(0);
 		assertEquals( "Parsed config " + REQUEST_SIMULATION_CONFIG, capturedMessage.getLogMessage());
 		assertEquals(LogLevel.INFO, capturedMessage.getLogLevel());
@@ -149,16 +150,16 @@ public class ProcessNewSimulationRequestComponentTests {
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		request.process(configurationManager, simulationManager, simulationId, event, "Bad"+REQUEST_SIMULATION_CONFIG);
 		
-		try {
-			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
-			assert(argCaptor.getValue().startsWith("Process Initialization error: "));
-		} catch (Exception e) {
-			e.printStackTrace();
-			assert(false);
-		}
+//		try {
+//			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
+//			assert(argCaptor.getValue().startsWith("Process Initialization error: "));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			assert(false);
+//		}
 		
 //		request error log call made
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture()); // GridAppsDConstants.username);
 		LogMessage capturedMessage = argCaptorLogMessage.getValue();
 		assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
@@ -184,16 +185,16 @@ public class ProcessNewSimulationRequestComponentTests {
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		request.process(configurationManager, simulationManager, simulationId, event, null);
 		
-		try {
-			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
-			assert(argCaptor.getValue().startsWith("Process Initialization error: "));
-		} catch (Exception e) {
-			e.printStackTrace();
-			assert(false);
-		}
+//		try {
+//			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
+//			assert(argCaptor.getValue().startsWith("Process Initialization error: "));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			assert(false);
+//		}
 		
 //		request error log call made
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture()); //GridAppsDConstants.username);
 		LogMessage capturedMessage = argCaptorLogMessage.getValue();
 		assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
@@ -222,7 +223,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		
 		
 //		request error log call made
-		Mockito.verify(logManager, Mockito.times(4)).log(argCaptorLogMessage.capture(),GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		Mockito.verify(logManager, Mockito.times(4)).log(argCaptorLogMessage.capture(), argCaptor.capture()); // GridAppsDConstants.username);
 		LogMessage capturedMessage = argCaptorLogMessage.getAllValues().get(2);
 		assertEquals(true, capturedMessage.getLogMessage().startsWith("No simulation file returned for request "));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
