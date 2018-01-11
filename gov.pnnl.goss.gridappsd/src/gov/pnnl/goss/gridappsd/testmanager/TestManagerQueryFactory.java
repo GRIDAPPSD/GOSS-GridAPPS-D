@@ -34,13 +34,8 @@ public class TestManagerQueryFactory {
 
 		String geoRegionQuery = "SELECT ?name WHERE { " + "?s r:type c:GeographicalRegion. " + "?s c:IdentifiedObject.name ?name} "
 				+ "ORDER by ?name";
-		String subGeoRegionQuery = "SELECT ?name WHERE { " + "?s r:type c:SubGeographicalRegion. " + "?s c:IdentifiedObject.name ?name} "
-				+ "ORDER by ?name";
 		ResultSet results = queryHandler.query(geoRegionQuery);
 		String geoName = getResultName(results);
-		results = queryHandler.query(subGeoRegionQuery);
-		String subGeoName = getResultName(results);
-			
 		return geoName;
 	}
 	

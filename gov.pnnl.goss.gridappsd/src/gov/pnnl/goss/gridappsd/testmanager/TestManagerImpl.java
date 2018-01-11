@@ -55,11 +55,6 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,15 +65,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
-import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -130,6 +122,14 @@ public class TestManagerImpl implements TestManager {
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
+
+	protected int tempIndex=0;
+	
+	protected boolean testMode=false;
+
+	protected TestResultSeries testResultSeries = new TestResultSeries();
+
+	protected TestScript testScript;
 	
 	public TestManagerImpl(){}
 	public TestManagerImpl(ClientFactory clientFactory, 
@@ -185,6 +185,19 @@ public class TestManagerImpl implements TestManager {
 			
 			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
 			client.subscribe(topic_requestTest, new GossResponseEvent() {
+				private TestConfiguration testConfig;
+				private int simulationID;
+				private RequestTest reqTest;
+
+				/*
+				 * Need:
+				 * TestConfig
+				 * TestScript
+				 * ExpectedResults
+				 * SimuationID
+				 * TestID
+				 * @see pnnl.goss.core.GossResponseEvent#onMessage(java.io.Serializable)
+				 */
 				
 				@Override
 				public void onMessage(Serializable message) {
@@ -193,18 +206,23 @@ public class TestManagerImpl implements TestManager {
 					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
 					logManager.log(logMessageObj);
 					
-					RequestTest reqTest = RequestTest.parse(message.toString());
+					System.out.println("TestManager got message " + message.toString());
 					
-					TestConfiguration testConfig = loadTestConfig(reqTest.getTestConfigPath());
+					reqTest = RequestTest.parse(message.toString());
 					
-					TestScript testScript = loadTestScript(reqTest.getTestScriptPath());
+					testConfig = loadTestConfig(reqTest.getTestConfigPath());
 					
-					try {
-						requestSimulation(client, testConfig, testScript);
-					} catch (JMSException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					testScript = loadTestScript(reqTest.getTestScriptPath());
+					
+					simulationID = reqTest.getSimulationID();
+					
+					testMode=true;
+//					try {
+//						requestSimulation(client, testConfig, testScript);
+//					} catch (JMSException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
 					
 				}
 
@@ -221,6 +239,7 @@ public class TestManagerImpl implements TestManager {
 				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 //				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
 				String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
+				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
 //				/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json
 //				testScript.getOutputs().get("regulator_list");
 				
@@ -270,27 +289,17 @@ public class TestManagerImpl implements TestManager {
 				Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 						.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 				
-				
-				TestResults tr = compareResults.compareExpectedWithSimulationOutput(expectedOutputMap, propMap,simOutputObject.getAsJsonObject());
-//				TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
-				
-//				TestResults tr = compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
-				
-
-				
+				//Temp timeseries index
+				String indexStr = tempIndex + "";
+				tempIndex++;
+//				TestResults tr = compareResults.compareExpectedWithSimulationOutput(expectedOutputMap, propMap,simOutputObject.getAsJsonObject());
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series, simOutProperties);
+				testResultSeries.add(indexStr, tr);
+//				int count2 = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series, simOutProperties).getNumberOfConflicts();
 				
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLog_message("TestManager number of conflicts: "+ tr.getNumberOfConflicts());
+				logMessageObj.setLog_message("Index: " + indexStr +" TestManager number of conflicts: "+ tr.getNumberOfConflicts() + " total "+ testResultSeries.getTotal());
 				logManager.log(logMessageObj);
-				
-//				try {
-//
-//
-//					
-//				} catch (JMSException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
 				
 			}
 
@@ -469,11 +478,11 @@ public class TestManagerImpl implements TestManager {
 
 	
 	public static void main(String[] args) {
-		TestManagerImpl tm = new TestManagerImpl();
+//		TestManagerImpl tm = new TestManagerImpl();
 		TestManagerQueryFactory qf =  new TestManagerQueryFactory();
 		qf.getFeeder();
-		qf.getGeographicalRegion();
-		qf.getSubGeographicalRegion();
+
+		
 //		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
 //		TestConfiguration testConf = tm.loadTestConfig(path);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";

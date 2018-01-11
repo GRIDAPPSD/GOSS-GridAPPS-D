@@ -53,13 +53,6 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.system.JenaSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -68,16 +61,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
-import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
 /**
@@ -242,7 +229,6 @@ public class CompareResults {
 
 		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-//		JsonObject jsonObject = getSimulationOutputFile(simOutputPath);
 		
 		return compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject);
 	}

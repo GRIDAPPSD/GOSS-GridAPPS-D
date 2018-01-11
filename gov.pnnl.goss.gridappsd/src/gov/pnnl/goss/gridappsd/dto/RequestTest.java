@@ -51,6 +51,14 @@ public class RequestTest implements Serializable {
 
 	public String testScriptPath;
 	
+	public String simulationOutputObject;
+	
+	public String expectResult;
+	
+	public int testID;
+	
+	public int simulationID;
+	
 	public String getTestConfigPath() {
 		return testConfigPath;
 	}
@@ -67,6 +75,38 @@ public class RequestTest implements Serializable {
 		this.testConfigPath = testConfigPath;
 	}	
 	
+	public String getSimulationOutputObject() {
+		return simulationOutputObject;
+	}
+
+	public void setSimulationOutputObject(String simulationOutputObject) {
+		this.simulationOutputObject = simulationOutputObject;
+	}
+
+	public String getExpectResult() {
+		return expectResult;
+	}
+
+	public void setExpectResult(String expectResult) {
+		this.expectResult = expectResult;
+	}
+
+	public int getTestID() {
+		return testID;
+	}
+
+	public void setTestID(int testID) {
+		this.testID = testID;
+	}
+
+	public int getSimulationID() {
+		return simulationID;
+	}
+
+	public void setSimulationID(int simulationID) {
+		this.simulationID = simulationID;
+	}
+
 	public RequestTest(){}
 	
 	public RequestTest(String testConfigPath, String testScriptPath){
