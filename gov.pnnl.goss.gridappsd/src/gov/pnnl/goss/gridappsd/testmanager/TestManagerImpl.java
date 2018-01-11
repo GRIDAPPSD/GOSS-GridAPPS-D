@@ -157,23 +157,6 @@ public class TestManagerImpl implements TestManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-//			String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-//			TestConfiguration testConf = loadTestConfig(path);
-//			path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-//			TestScript testScript = loadTestScript(path);
-//			
-//			requestSimulation(client, testConf, testScript);
-			
-//			TestConfigurationImpl tc = null;
-//			
-//			TestScriptImpl ts = null;
-//			
-			//TODO: Setup Figure out location of TestScripts
-			
-//			requestSimulation(client, tc, ts);
-			
-			//TODO: Collect data from data manager
-				// TODO Build queries
 			
 			//TODO: Get Simulation Results from ProcessManager
 			
@@ -217,12 +200,7 @@ public class TestManagerImpl implements TestManager {
 					simulationID = reqTest.getSimulationID();
 					
 					testMode=true;
-//					try {
-//						requestSimulation(client, testConfig, testScript);
-//					} catch (JMSException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
+
 					
 				}
 
@@ -233,8 +211,8 @@ public class TestManagerImpl implements TestManager {
 			public void onMessage(Serializable message) {
 				DataResponse event = (DataResponse)message;
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-				logManager.log(logMessageObj);
+				logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+				logManager.log(logMessageObj, GridAppsDConstants.username);
 				
 				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 //				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
@@ -244,8 +222,8 @@ public class TestManagerImpl implements TestManager {
 //				testScript.getOutputs().get("regulator_list");
 				
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLog_message("TestManager fncs :  "+ message.toString());
-				logManager.log(logMessageObj);
+				logMessageObj.setLogMessage("TestManager fncs :  "+ message.toString());
+				logManager.log(logMessageObj, expected_output_series);
 				
 				CompareResults compareResults = new CompareResults();
 				
@@ -260,8 +238,8 @@ public class TestManagerImpl implements TestManager {
 //				{"output": null, "command": "isInitialized", "response": "False"}
 				if( jsonObject.get("output").isJsonNull() || jsonObject.get("output") == null){
 					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("TestManager fncs : null output " + jsonObject.get("output").toString());
-					logManager.log(logMessageObj);
+					logMessageObj.setLogMessage("TestManager fncs : null output " + jsonObject.get("output").toString());
+					logManager.log(logMessageObj,GridAppsDConstants.username);
 					return;	
 				}
 				
@@ -298,8 +276,8 @@ public class TestManagerImpl implements TestManager {
 //				int count2 = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series, simOutProperties).getNumberOfConflicts();
 				
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLog_message("Index: " + indexStr +" TestManager number of conflicts: "+ tr.getNumberOfConflicts() + " total "+ testResultSeries.getTotal());
-				logManager.log(logMessageObj);
+				logMessageObj.setLogMessage("Index: " + indexStr +" TestManager number of conflicts: "+ tr.getNumberOfConflicts() + " total "+ testResultSeries.getTotal());
+				logManager.log(logMessageObj,GridAppsDConstants.username);
 				
 			}
 
@@ -475,25 +453,9 @@ public class TestManagerImpl implements TestManager {
 		}
 	}
 	
-
 	
 	public static void main(String[] args) {
-//		TestManagerImpl tm = new TestManagerImpl();
 		TestManagerQueryFactory qf =  new TestManagerQueryFactory();
 		qf.getFeeder();
-
-		
-//		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json";
-//		TestConfiguration testConf = tm.loadTestConfig(path);
-//		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json";
-//		TestScript testScript = tm.loadTestScript(path);
-		
-//		Credentials credentials = new UsernamePasswordCredentials(
-//				GridAppsDConstants.username, GridAppsDConstants.password);
-//		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-//		
-//		
-//		requestSimulation(client, testConf, testScript);
-//		
 	}
 }
