@@ -66,6 +66,7 @@ import java.util.zip.ZipInputStream;
 import javax.jms.Destination;
 
 
+
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -124,6 +125,8 @@ public class AppManagerImpl implements AppManager{
 	
 	private HashMap<String, AppInstance> appInstances = new HashMap<String, AppInstance>();
 	
+	private String username;
+	
 	private Client client;
 	
 	public AppManagerImpl() {
@@ -136,7 +139,12 @@ public class AppManagerImpl implements AppManager{
 	}
 	
 	@Override
-	public void process(StatusReporter statusReporter, int processId, DataResponse event, Serializable message) throws Exception {
+	public void process(int processId, DataResponse event, Serializable message) throws Exception {
+		
+		
+		//TODO:Get username from message's metadata e.g. event.getUserName()
+		username  = GridAppsDConstants.username;
+		
 		if(client==null){
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -214,7 +222,7 @@ public class AppManagerImpl implements AppManager{
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true));
+				true),GridAppsDConstants.username);
 		
 		scanForApps();
 		
@@ -223,7 +231,7 @@ public class AppManagerImpl implements AppManager{
 				String.format("Found %s applications", apps.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true));
+				true),GridAppsDConstants.username);
 	}
 	
 	protected void scanForApps(){
@@ -544,7 +552,7 @@ public class AppManagerImpl implements AppManager{
 			String appConfigStr = new String(Files.readAllBytes(appConfigFile.toPath()));
 			appInfo = AppInfo.parse(appConfigStr);
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager",new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
+			logManager.log(new LogMessage("App Manager",new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 		}
 		
 		return appInfo;
@@ -558,7 +566,7 @@ public class AppManagerImpl implements AppManager{
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager", new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
+			logManager.log(new LogMessage("App Manager", new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 		}
 	}
 
@@ -585,14 +593,14 @@ public class AppManagerImpl implements AppManager{
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                	System.out.println("APPRECEIVED "+line);
-	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false));
+	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username);
 	                	
 //	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();
 //	                log.error("Error on process "+processName, e);
-                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false));
+                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username);
 
 	            }
 	        }
