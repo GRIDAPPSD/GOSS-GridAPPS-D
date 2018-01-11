@@ -212,7 +212,7 @@ public class TestManagerImpl implements TestManager {
 				DataResponse event = (DataResponse)message;
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-				logManager.log(logMessageObj, GridAppsDConstants.username);
+//				logManager.log(logMessageObj, GridAppsDConstants.username);
 				
 				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 //				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
@@ -223,7 +223,7 @@ public class TestManagerImpl implements TestManager {
 				
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("TestManager fncs :  "+ message.toString());
-				logManager.log(logMessageObj, expected_output_series);
+				logManager.log(logMessageObj,  GridAppsDConstants.username);
 				
 				CompareResults compareResults = new CompareResults();
 				
