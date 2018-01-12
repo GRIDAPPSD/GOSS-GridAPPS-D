@@ -271,7 +271,7 @@ public class CompareResults {
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject.get("output").getAsJsonObject();
 		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject, testResults, simOutput);
+		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
 		return testResults;
 	}
 	
@@ -334,16 +334,15 @@ public class CompareResults {
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
 		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject, testResults, simOutput);
+		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
 		return testResults;
 	}
 
 	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
-			JsonObject jsonObject, TestResults testResults, JsonObject simOutput) {
+			TestResults testResults, JsonObject simOutput) {
 		int countTrue = 0;
 		int countFalse = 0;
-		if (jsonObject != null) {
-
+		if (simOutput != null) {
 			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
 			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
 //				System.out.println(simOutputElement);
