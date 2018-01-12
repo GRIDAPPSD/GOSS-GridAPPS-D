@@ -2,12 +2,13 @@ import json
 import sys
 import stomp
 import time
+import os
 
 
 goss_output_topic = 'goss.gridappsd/fncs/output'
 goss_simulation_status_topic = 'goss.gridappsd/simulation/status/'
 goss_sim ="goss.gridappsd.process.request.simulation"
-goss_sim = '/queue/goss/gridappsd/process/request/simulation'
+# goss_sim = '/queue/goss/gridappsd/process/request/simulation'
 test_topic = 'goss.gridappsd.process.test'
 test_topic = 'goss.gridappsd.test'
 
@@ -75,10 +76,22 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613'):
     		+	"expectResults":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json", \
     		+	"simulationOutputObject":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json" \
     }'
- 
-    testCfg = '{"testConfigPath":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/exampleTestConfig.json", "testScriptPath":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/exampleTestScript.json", "simulationID": 1234, "expectResults":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json","simulationOutputObject":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json"}'
- 
- 
+    loc = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd"
+    # loc = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd"
+
+    loc = os.path.realpath(__file__)
+    loc =  os.path.dirname(os.path.dirname(os.path.dirname(loc)))
+    print (loc)
+    testCfg = {"testConfigPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestConfig.json",
+            "testScriptPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestScript.json",
+            "simulationID": 1234,
+            "expectResults":loc+"/test/gov/pnnl/goss/gridappsd/expected_output_series3.json",
+            "simulationOutputObject":loc+"/test/gov/pnnl/goss/gridappsd/sim_output_object.json"
+            }
+    testCfg =json.dumps(testCfg)
+
+    print (testCfg)
+
     if (gossServer == None or gossServer == ''
         or type(gossServer) != str):
         raise ValueError(
