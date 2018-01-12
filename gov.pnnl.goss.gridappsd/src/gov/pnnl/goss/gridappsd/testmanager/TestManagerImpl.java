@@ -202,7 +202,7 @@ public class TestManagerImpl implements TestManager {
 					
 					testScript = loadTestScript(reqTest.getTestScriptPath());
 					
-					expectedResultSeriesPath = reqTest.getExpectResult();
+					expectedResultSeriesPath = reqTest.getExpectedResult();
 					
 					simulationID = reqTest.getSimulationID();
 					
@@ -231,7 +231,7 @@ public class TestManagerImpl implements TestManager {
 				}
 				
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("TestManager fncs :  "+ message.toString());
+				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
 				logManager.log(logMessageObj,  GridAppsDConstants.username);
 				
 				CompareResults compareResults = new CompareResults();

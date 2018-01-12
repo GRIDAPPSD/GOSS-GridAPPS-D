@@ -206,7 +206,7 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613'):
     testCfg = {"testConfigPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestConfig.json",
             "testScriptPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestScript.json",
             "simulationID": 1234,
-            "expectResults":loc+"/test/gov/pnnl/goss/gridappsd/expected_output_series3.json",
+            "expectedResult":loc+"/test/gov/pnnl/goss/gridappsd/expected_output_series3.json",
             "simulationOutputObject":loc+"/test/gov/pnnl/goss/gridappsd/sim_output_object.json"
             }
     testCfg =json.dumps(testCfg)
@@ -232,7 +232,7 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613'):
     # gossConnection.subscribe(destination='/queue/reply',id=2)
     gossConnection.subscribe(destination=responseQueueTopic,id=2)
     gossConnection.send(body=testCfg, destination=test_topic, headers={'reply-to': '/queue/reply'})
-    gossConnection.send(body=simulationCfg, destination=goss_sim, headers={'reply-to': '/queue/reply'})
+#    gossConnection.send(body=simulationCfg, destination=goss_sim, headers={'reply-to': '/queue/reply'})
 
     time.sleep(3)
     print('sent test request')

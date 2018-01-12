@@ -53,7 +53,7 @@ public class RequestTest implements Serializable {
 	
 	public String simulationOutputObject;
 	
-	public String expectResult;
+	public String expectedResult;
 	
 	public int testID;
 	
@@ -83,12 +83,12 @@ public class RequestTest implements Serializable {
 		this.simulationOutputObject = simulationOutputObject;
 	}
 
-	public String getExpectResult() {
-		return expectResult;
+	public String getExpectedResult() {
+		return expectedResult;
 	}
 
-	public void setExpectResult(String expectResult) {
-		this.expectResult = expectResult;
+	public void setExpectedResult(String expectedResult) {
+		this.expectedResult = expectedResult;
 	}
 
 	public int getTestID() {
