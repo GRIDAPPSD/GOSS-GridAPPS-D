@@ -140,7 +140,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 			
 			if(newSimulationProcess==null)
-				newSimulationProcess = new ProcessNewSimulationRequest(); 
+				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager); 
 			
 			
 			
