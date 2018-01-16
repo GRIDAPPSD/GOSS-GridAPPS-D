@@ -111,7 +111,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		assertEquals( "Parsed config " + REQUEST_SIMULATION_CONFIG, capturedMessage.getLogMessage());
 		assertEquals(LogLevel.INFO, capturedMessage.getLogLevel());
 		assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
-		assertEquals(new Integer(simulationId).toString(), capturedMessage.getRequestId());
+		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
 		assertEquals(ProcessStatus.RUNNING, capturedMessage.getProcessStatus());
 		assertEquals(false, capturedMessage.getStoreToDb());
 		
@@ -165,7 +165,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
 		assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
-		assertEquals(new Integer(simulationId).toString(), capturedMessage.getRequestId());
+		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
 		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
 		assertEquals(false, capturedMessage.getStoreToDb());
 	}
@@ -200,7 +200,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		LogMessage capturedMessage = argCaptorLogMessage.getValue();
 		assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
-		assertEquals(new Integer(simulationId).toString(), capturedMessage.getRequestId());
+		assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
 		assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
 		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
 		assertEquals(false, capturedMessage.getStoreToDb());

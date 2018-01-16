@@ -121,7 +121,7 @@ public class LogManagerImpl implements LogManager {
 			client.publish(topic, message.toString());
 		
 		String source = message.getSource();
-		String requestId = message.getRequestId();
+		String requestId = message.getProcessId();
 		long timestamp = message.getTimestamp();
 		String log_message = message.getLogMessage();
 		LogLevel logLevel = message.getLogLevel();
@@ -180,7 +180,7 @@ public class LogManagerImpl implements LogManager {
 	public void get(LogMessage message, String resultTopic, String logTopic) {
 		
 		String source = message.getSource();
-		String requestId = message.getRequestId();
+		String requestId = message.getProcessId();
 		long timestamp = message.getTimestamp();
 		LogLevel log_level = message.getLogLevel();
 		ProcessStatus process_status = message.getProcessStatus();

@@ -85,7 +85,7 @@ public class LogManagerTests {
 		message.setLogLevel(LogLevel.DEBUG);
 		message.setLogMessage("Process manager received message "+ message);
 		message.setSource(this.getClass().getName());
-		message.setRequestId("request_1234");
+		message.setProcessId("request_1234");
 		message.setProcessStatus(ProcessStatus.RUNNING);
 		message.setStoreToDb(true);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
@@ -101,7 +101,7 @@ public class LogManagerTests {
 		List<String> allStringValues = argCaptor.getAllValues();
 		assertEquals(4, allStringValues.size());
 		assertEquals(message.getSource(), allStringValues.get(0));
-		assertEquals(message.getRequestId(), allStringValues.get(1));
+		assertEquals(message.getProcessId(), allStringValues.get(1));
 		//TODO: User test user for this instead of system
 		assertEquals("system", allStringValues.get(3));
 		assertEquals(new Long(message.getTimestamp()), argLongCaptor.getValue());
