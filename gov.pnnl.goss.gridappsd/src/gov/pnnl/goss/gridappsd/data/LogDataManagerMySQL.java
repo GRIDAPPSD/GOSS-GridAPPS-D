@@ -45,11 +45,11 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -58,8 +58,8 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.ClientFactory;
 
 
 @Component
@@ -103,7 +103,7 @@ public class LogDataManagerMySQL implements LogDataManager {
 			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?, ?)");
 			preparedStatement.setString(1, source);
 			preparedStatement.setString(2, processId);
-			preparedStatement.setDate(3, new Date(timestamp));
+			preparedStatement.setTimestamp(3, new Timestamp(timestamp));
 			preparedStatement.setString(4, log_message);
 			preparedStatement.setString(5, log_level.toString());
 			preparedStatement.setString(6, process_status.toString());
