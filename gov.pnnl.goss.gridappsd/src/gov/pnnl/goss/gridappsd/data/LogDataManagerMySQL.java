@@ -95,14 +95,14 @@ public class LogDataManagerMySQL implements LogDataManager {
 	}
 
 	@Override
-	public void store(String source, String requestId, long timestamp,
+	public void store(String source, String processId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 		
 		try {
 			
-			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?)");
+			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?, ?)");
 			preparedStatement.setString(1, source);
-			preparedStatement.setString(2, requestId);
+			preparedStatement.setString(2, processId);
 			preparedStatement.setDate(3, new Date(timestamp));
 			preparedStatement.setString(4, log_message);
 			preparedStatement.setString(5, log_level.toString());
@@ -122,14 +122,14 @@ public class LogDataManagerMySQL implements LogDataManager {
 	}
 
 	@Override
-	public void query(String source, String requestId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username, String resultTopic, String logTopic) {
+	public void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username, String resultTopic, String logTopic) {
 		
 		try {
 			String queryString = "SELECT * FROM gridappsd.log WHERE";
 			if(source!=null)
 				queryString+=" source="+source;
-			if(requestId!=null)
-				queryString+=" requestId="+requestId;
+			if(processId!=null)
+				queryString+=" process_id="+processId;
 			if(log_level!=null)
 				queryString+=" log_level="+log_level;
 			if(process_status!=null)
