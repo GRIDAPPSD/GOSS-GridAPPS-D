@@ -68,10 +68,11 @@ public class BlazegraphQueryHandler implements QueryHandler {
 
 	@Override
 	public ResultSet query(String szQuery) { 
-		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
+		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
 		Query query = QueryFactory.create (qPrefix + szQuery);
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 		return qexec.execSelect();
+		
 	}
 
 }

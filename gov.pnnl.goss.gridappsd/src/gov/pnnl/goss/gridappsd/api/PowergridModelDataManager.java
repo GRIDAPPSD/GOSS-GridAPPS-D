@@ -1,17 +1,31 @@
 package gov.pnnl.goss.gridappsd.api;
 
+import java.util.List;
+
+import org.apache.jena.query.ResultSet;
+
 public interface PowergridModelDataManager {
 	public enum ResultFormat {
-	    JSON, GLM, XML 
+	    JSON, XML 
 	}
 	
-	void query(String query, String resultFormat, String resultTopic, String statusTopic);
-	void queryObject(String mrid, String resultFormat, String outputTopic, String statusTopic);
-	void queryObjectTypeList(String modelId, String resultFormat, String resultTopic, String statusTopic);
-	void queryModel(String modelId, String objectType, String filter, String resultFormat, String outputTopic, String statusTopic);
-	void queryModelList(String outputTopic, String statusTopic);
-	void putModel(String modelId, String model, String inputFormat, String resultTopic, String statusTopic);
+	String query(String modelId, String query, String resultFormat ) throws Exception;
+	ResultSet queryResultSet(String modelId, String query);
 	
-	//Also probably need putObject and deleteObject  (will need to support the right security permissions)
+	String queryObject(String modelId, String mrid, String resultFormat) throws Exception;
+	ResultSet queryObjectResultSet(String modelId, String mrid);
+	
+	String queryObjectTypes(String modelId, String resultFormat );
+	List<String> queryObjectTypeList(String modelId);
+	
+	String queryModel(String modelId, String objectType, String filter, String resultFormat) throws Exception;
+	ResultSet queryModelResultSet(String modelId, String objectType, String filter);
+	
+	String queryModelNames(String resultFormat);
+	List<String> queryModelNameList();
+	
+	void putModel(String modelId, String model, String inputFormat);
+	
+	//Also will need putObject and deleteObject  (will need to support the right security permissions)
 
 }
