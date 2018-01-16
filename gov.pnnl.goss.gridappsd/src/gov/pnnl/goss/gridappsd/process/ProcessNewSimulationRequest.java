@@ -90,41 +90,41 @@ public class ProcessNewSimulationRequest {
 			
 			RequestSimulation config = RequestSimulation.parse(message.toString());
 			config.simulation_config.setSimulation_broker_port(simulationPort);
-			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Parsed config " + config, LogLevel.INFO, ProcessStatus.RUNNING, false), username);
+			logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Parsed config " + config, LogLevel.INFO, ProcessStatus.RUNNING, false), username);
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {
-				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
+				logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
 						+ config, LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 				throw new RuntimeException("Invalid configuration received");
 			}
 
 			// make request to configuration Manager to get power grid model
 			// file locations and names
-			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Creating simulation and power grid model files for simulation Id "
+			logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Creating simulation and power grid model files for simulation Id "
 					+ simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false), username);
 
 			File simulationFile = configurationManager.getSimulationFile(
 					simulationId, config);
 			if (simulationFile == null) {
-				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
+				logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "No simulation file returned for request "
 						+ config, LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 				throw new Exception("No simulation file returned for request "
 						+ config);
 			}
 
-			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Simulation and power grid model files generated for simulation Id "
+			logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Simulation and power grid model files generated for simulation Id "
 					+ simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false),username);
 
 			// start simulation
-			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Starting simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false),username);
+			logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Starting simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false),username);
 			simulationManager.startSimulation(simulationId, simulationFile,
 					config.getSimulation_config());
-			logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false),username);
+			logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Started simulation for id " + simulationId, LogLevel.DEBUG, ProcessStatus.RUNNING, false),username);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			try {
-				logManager.log(new LogMessage(new Integer(simulationId).toString(),new Date().getTime(), "Process Initialization error: " + e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),GridAppsDConstants.username);
+				logManager.log(new LogMessage(this.getClass().getName(),new Integer(simulationId).toString(),new Date().getTime(), "Process Initialization error: " + e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),GridAppsDConstants.username);
 
 			} catch (Exception e1) {
 				e1.printStackTrace();

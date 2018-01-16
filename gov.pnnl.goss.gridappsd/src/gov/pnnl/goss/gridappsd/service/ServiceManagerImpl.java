@@ -96,6 +96,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		logManager.log(new LogMessage(this.getClass().getName(), 
+				null,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
@@ -105,6 +106,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		scanForServices();
 		
 		logManager.log(new LogMessage(this.getClass().getName(), 
+				null,
 				new Date().getTime(), 
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 

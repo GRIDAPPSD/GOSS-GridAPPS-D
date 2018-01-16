@@ -98,15 +98,22 @@ public class LogManagerImpl implements LogManager {
 	@Override
 	public void log(LogMessage message, String username) {
 		
-		String processId = message.getProcessId();
+		String source = message.getSource();
+		String requestId = message.getRequestId();
 		long timestamp = message.getTimestamp();
 		String log_message = message.getLogMessage();
 		LogLevel logLevel = message.getLogLevel();
 		ProcessStatus processStatus = message.getProcessStatus();
 		Boolean storeToDb = message.getStoreToDb();
 		
-		String logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, processId,
+		String logString;
+		if(requestId!=null)
+			logString = String.format("%s|%s|%s|%s|%s|%s\n%s\n", timestamp, source, requestId,
 				processStatus, username, logLevel, log_message);
+		else
+			logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, source,
+					processStatus, username, logLevel, log_message);
+		
 		switch(message.getLogLevel()) {
 			case TRACE:	log.trace(logString);
 						break;
@@ -126,15 +133,15 @@ public class LogManagerImpl implements LogManager {
 		}
 		
 		if(storeToDb)
-			store(processId,timestamp,log_message,logLevel,processStatus,username);
+			store(source,requestId,timestamp,log_message,logLevel,processStatus,username);
 		
 	}
 	
-	private void store(String process_id, long timestamp,
+	private void store(String source, String requestId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 		
 		//TODO: Save log in data store using DataManager
-		logDataManager.store(process_id, timestamp,
+		logDataManager.store(source, requestId, timestamp,
 				log_message, log_level, process_status, username);
 		log.debug("log saved");
 		
@@ -148,12 +155,13 @@ public class LogManagerImpl implements LogManager {
 	@Override
 	public void get(LogMessage message, String resultTopic, String logTopic) {
 		
-		String process_id = message.getProcessId();
+		String source = message.getSource();
+		String requestId = message.getRequestId();
 		long timestamp = message.getTimestamp();
 		LogLevel log_level = message.getLogLevel();
 		ProcessStatus process_status = message.getProcessStatus();
 		String username = "system";
-		logDataManager.query(process_id, timestamp, log_level, process_status, username, resultTopic, logTopic);
+		logDataManager.query(source, requestId, timestamp, log_level, process_status, username, resultTopic, logTopic);
 		
 	}
 

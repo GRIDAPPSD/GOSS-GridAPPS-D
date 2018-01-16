@@ -202,7 +202,7 @@ public class TestManagerImpl implements TestManager {
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
 		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setProcessId(this.getClass().getName());
+		logMessageObj.setSource(this.getClass().getName());
 		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
 		logMessageObj.setStoreToDb(true);
 		logMessageObj.setTimestamp(new Date().getTime());

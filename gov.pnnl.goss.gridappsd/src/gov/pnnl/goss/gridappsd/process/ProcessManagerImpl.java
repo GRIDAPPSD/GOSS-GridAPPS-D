@@ -137,7 +137,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 		
 			logMessageObj.setLogLevel(LogLevel.DEBUG);
-			logMessageObj.setProcessId(this.getClass().getName());
+			logMessageObj.setSource(this.getClass().getName());
 			logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
 			logMessageObj.setStoreToDb(true);
 			logMessageObj.setLogMessage("Starting "+ this.getClass().getName());

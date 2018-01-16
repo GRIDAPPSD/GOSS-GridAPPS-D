@@ -218,6 +218,7 @@ public class AppManagerImpl implements AppManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		logManager.log(new LogMessage(this.getClass().getName(), 
+				null,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
@@ -226,7 +227,8 @@ public class AppManagerImpl implements AppManager{
 		
 		scanForApps();
 		
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		logManager.log(new LogMessage(this.getClass().getName(),
+				null,
 				new Date().getTime(), 
 				String.format("Found %s applications", apps.size()), 
 				LogLevel.INFO, 
@@ -552,7 +554,7 @@ public class AppManagerImpl implements AppManager{
 			String appConfigStr = new String(Files.readAllBytes(appConfigFile.toPath()));
 			appInfo = AppInfo.parse(appConfigStr);
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager",new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
+			logManager.log(new LogMessage(this.getClass().getName(),null,new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 		}
 		
 		return appInfo;
@@ -566,7 +568,7 @@ public class AppManagerImpl implements AppManager{
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
-			logManager.log(new LogMessage("App Manager", new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
+			logManager.log(new LogMessage(this.getClass().getName(),null, new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username);
 		}
 	}
 
@@ -593,14 +595,14 @@ public class AppManagerImpl implements AppManager{
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                	System.out.println("APPRECEIVED "+line);
-	                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username);
+	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username);
 	                	
 //	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();
 //	                log.error("Error on process "+processName, e);
-                	logManager.log(new LogMessage(appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username);
+                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username);
 
 	            }
 	        }
