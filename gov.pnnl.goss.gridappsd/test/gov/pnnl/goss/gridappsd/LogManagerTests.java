@@ -118,7 +118,7 @@ public class LogManagerTests {
 		LogManager logManager = new LogManagerImpl(logDataManager);
 		String message = "{"
 				+ "\"source\":\"app_123\","
-				+ "\"requestId\":\"request_123\","
+				+ "\"processId\":\"request_123\","
 				+ "\"processStatus\":\"STARTED\","
 				+ "\"logLevel\":\"DEBUG\","
 				+ "\"logMessage\":\"Testing LogManager\","
