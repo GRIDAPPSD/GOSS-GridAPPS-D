@@ -339,7 +339,7 @@ public class ProcessManagerComponentTests {
 
 
 		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), 
-				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt());
+				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt(),Mockito.any(),Mockito.any());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));

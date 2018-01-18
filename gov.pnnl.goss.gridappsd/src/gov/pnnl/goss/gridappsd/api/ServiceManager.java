@@ -58,7 +58,7 @@ public interface ServiceManager {
 	
 	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
 	
-	String startServiceForSimultion(String service_id, String runtimeOptions, String simulationId);  //may also need input/output topics??
+	String startServiceForSimultion(String service_id, String runtimeOptions, String simulationId, String simulationPort);  //may also need input/output topics??
 	
 	void stopService(String service_id);  
 	

@@ -183,7 +183,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 						}
 						
-						logManager.log(new LogMessage(this.getClass().getName(),
+						/*logManager.log(new LogMessage(this.getClass().getName(),
 								Integer.toString(simulationId), 
 								new Date().getTime(), 
 								"Calling "+getPath(GridAppsDConstants.FNCS_PATH)+" 2",
@@ -201,9 +201,9 @@ public class SimulationManagerImpl implements SimulationManager{
 						// Watch the process
 						watch(fncsProcess, "FNCS");
 						//TODO: check if FNCS is started correctly and send publish simulation status accordingly
-
+						*/
 						
-						logManager.log(new LogMessage(this.getClass().getName(),
+						/*logManager.log(new LogMessage(this.getClass().getName(),
 								Integer.toString(simulationId), 
 								new Date().getTime(), 
 								"FNCS Co-Simulator started", 
@@ -211,7 +211,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								ProcessStatus.RUNNING, 
 								true),GridAppsDConstants.username,
 								GridAppsDConstants.topic_platformLog);
-
+						*/
 
 						//client.publish(GridAppsDConstants.topic_simulationStatus+simulationId, "FNCS Co-Simulator started");
 

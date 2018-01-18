@@ -159,6 +159,10 @@ public class LogManagerImpl implements LogManager {
 		
 	}
 	
+	public void log(LogMessage message, String topic) {
+		this.log(message, GridAppsDConstants.username, topic);
+	}
+	
 	private void store(String source, String requestId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 		

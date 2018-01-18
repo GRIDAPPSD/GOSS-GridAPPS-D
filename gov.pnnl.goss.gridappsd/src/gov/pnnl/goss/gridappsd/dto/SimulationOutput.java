@@ -39,13 +39,16 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
 
-public class SimulationOutput {
+public class SimulationOutput implements Serializable{
 
+	private static final long serialVersionUID = 1L;
+	
 	public List<SimulationOutputObject> output_objects;
 
 	

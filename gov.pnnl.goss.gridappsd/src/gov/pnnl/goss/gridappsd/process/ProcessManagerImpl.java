@@ -43,6 +43,7 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -96,6 +97,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
+	
+	@ServiceDependency
+	private volatile ServiceManager serviceManager;
 	
 	ProcessNewSimulationRequest newSimulationProcess = null;
 	
@@ -165,12 +169,11 @@ public class ProcessManagerImpl implements ProcessManager {
 										
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-						//generate simulation id and reply to event's reply destination.
 						
 						try {
 							int simPort = assignSimulationPort(processId);
 							client.publish(event.getReplyDestination(), processId);
-							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort);
+							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort, appManager, serviceManager);
 						} catch (Exception e) {
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());

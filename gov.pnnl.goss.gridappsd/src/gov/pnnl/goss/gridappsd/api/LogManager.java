@@ -56,6 +56,16 @@ public interface LogManager {
 	 *            Message should be published on this topic if topic is not null. 
 	 */
 	void log(LogMessage message, String username, String topic);
+	
+	/**
+	 * Use platform's default username and call previous log method. 
+	 * 
+	 * @param message
+	 *            an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
+	 * @param topic
+	 *            Message should be published on this topic if topic is not null. 
+	 */
+	void log(LogMessage message, String topic);
 
 	/**
 	 * Implementation of this method should call an implementation of

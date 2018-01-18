@@ -39,27 +39,34 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.app.AppManagerImpl;
+import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
+import gov.pnnl.goss.gridappsd.data.LogDataManagerMySQL;
+import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
+import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
+import gov.pnnl.goss.gridappsd.simulation.SimulationManagerImpl;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
+import java.util.List;
 
 import pnnl.goss.core.DataResponse;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
-@Component
 public class ProcessNewSimulationRequest {
 
 	public ProcessNewSimulationRequest() {
@@ -69,25 +76,29 @@ public class ProcessNewSimulationRequest {
 		this.logManager = logManager;
 	}
 
-	@ServiceDependency
 	private volatile LogManager logManager;
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
-			DataResponse event, Serializable message) {
+			DataResponse event, Serializable message, AppManager appManager,
+			ServiceManager serviceManager) {
 		process(configurationManager, simulationManager, simulationId, message,
-				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT);
+				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT, appManager,
+				serviceManager);
 	}
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
-			Serializable message, int simulationPort) {
+			Serializable message, int simulationPort, AppManager appManager,
+			ServiceManager serviceManager) {
 
 		try {
 
-			// TODO:Get username from message's metadata e.g.
-			// event.getUserName()
 			String username = GridAppsDConstants.username;
+			String source = this.getClass().getSimpleName();
+			String simId = new Integer(simulationId).toString();
+			String simulationLogTopic = GridAppsDConstants.topic_simulationLog
+					+ simId;
 
 			RequestSimulation config = RequestSimulation.parse(message
 					.toString());
@@ -96,7 +107,7 @@ public class ProcessNewSimulationRequest {
 					new Integer(simulationId).toString(), new Date().getTime(),
 					"Parsed config " + config, LogLevel.INFO,
 					ProcessStatus.RUNNING, false), username,
-					GridAppsDConstants.topic_simulationLog+simulationId);
+					GridAppsDConstants.topic_simulationLog + simulationId);
 			if (config == null || config.getPower_system_config() == null
 					|| config.getSimulation_config() == null) {
 				logManager.log(
@@ -105,20 +116,20 @@ public class ProcessNewSimulationRequest {
 								"No simulation file returned for request "
 										+ config, LogLevel.ERROR,
 								ProcessStatus.ERROR, false), username,
-								GridAppsDConstants.topic_simulationLog+simulationId);
+						GridAppsDConstants.topic_simulationLog + simulationId);
 				throw new RuntimeException("Invalid configuration received");
 			}
 
 			// make request to configuration Manager to get power grid model
 			// file locations and names
-			logManager.log(new LogMessage(this.getClass().getName(),
-					new Integer(simulationId).toString(), new Date().getTime(),
+			logManager.log(new LogMessage(source, simId,
+					 new Date().getTime(),
 					"Creating simulation and power grid model files for simulation Id "
-							+ simulationId, LogLevel.DEBUG,
-					ProcessStatus.RUNNING, false), username,
-					GridAppsDConstants.topic_simulationLog+simulationId);
+							+ simulationId,
+							LogLevel.ERROR,
+							ProcessStatus.ERROR,true), simulationLogTopic);
 
-			File simulationFile = configurationManager.getSimulationFile(
+			/*File simulationFile = configurationManager.getSimulationFile(
 					simulationId, config);
 			if (simulationFile == null) {
 				logManager.log(
@@ -132,26 +143,50 @@ public class ProcessNewSimulationRequest {
 						+ config);
 			}
 
-			logManager.log(new LogMessage(this.getClass().getName(),
-					new Integer(simulationId).toString(), new Date().getTime(),
-					"Simulation and power grid model files generated for simulation Id "
-							+ simulationId, LogLevel.DEBUG,
-					ProcessStatus.RUNNING, false), username,
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager
+					.log(new LogMessage(source, simId,
+							"Simulation and power grid model files generated for simulation Id "),
+							simulationLogTopic);*/
+
+			// Start Apps and Services
+
+			for (ApplicationObject app : config.application_config
+					.getApplications()) {
+				// TODO: Ask Tara: is simulation id same as request id
+				List<String> prereqsList = appManager.getApp(app.getName())
+						.getPrereqs();
+				for (String prereqs : prereqsList) {
+					String serviceInstanceId = serviceManager
+							.startServiceForSimultion(prereqs, serviceManager.getService(prereqs).getStatic_args(),
+									new Integer(simulationId).toString(), new Integer(simulationPort).toString());
+					logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+							+ app.getName() + " with instance id "
+							+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+							GridAppsDConstants.topic_simulationLog
+									+ simulationId);
+				}
+
+				String appInstanceId = appManager.startAppForSimultion(app
+						.getName(), app.getConfig_string(), new Integer(
+						simulationId).toString(), new Integer(simulationId)
+						.toString());
+				logManager.log(
+						new LogMessage(source, simId, new Date().getTime(),"Started "
+								+ app.getName() + " with instance id "
+								+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+						GridAppsDConstants.topic_simulationLog + simulationId);
+
+			}
 
 			// start simulation
-			logManager.log(new LogMessage(this.getClass().getName(),
-					new Integer(simulationId).toString(), new Date().getTime(),
-					"Starting simulation for id " + simulationId,
-					LogLevel.DEBUG, ProcessStatus.RUNNING, false), username,
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			/*logManager.log(new LogMessage(source, simId,
+					"Starting simulation for id " + simulationId),
+					simulationLogTopic);
 			simulationManager.startSimulation(simulationId, simulationFile,
 					config.getSimulation_config());
-			logManager.log(new LogMessage(this.getClass().getName(),
-					new Integer(simulationId).toString(), new Date().getTime(),
-					"Started simulation for id " + simulationId,
-					LogLevel.DEBUG, ProcessStatus.RUNNING, false), username,
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.log(new LogMessage(source, simId,
+					"Started simulation for id " + simulationId),
+					simulationLogTopic);*/
 
 		} catch (Exception e) {
 			e.printStackTrace();

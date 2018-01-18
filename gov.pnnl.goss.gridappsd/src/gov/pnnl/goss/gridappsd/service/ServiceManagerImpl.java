@@ -39,22 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.service;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.List;
-
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ConfigurationDependency;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
-
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -64,6 +48,25 @@ import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
 import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ConfigurationDependency;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+
 import pnnl.goss.core.ClientFactory;
 
 @Component
@@ -83,6 +86,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	
 	private HashMap<String, ServiceInstance> serviceInstances = new HashMap<String, ServiceInstance>();
 	
+	public String simulationId;
+	public String simulationPort;
+	
+	
+	
 	public ServiceManagerImpl() {
 	}
 	 
@@ -95,7 +103,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				null,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
@@ -106,7 +114,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 		scanForServices();
 		
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				null,
 				new Date().getTime(), 
 				String.format("Found %s services", services.size()), 
@@ -194,11 +202,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Override
 	public String startService(String serviceId,
 			String runtimeOptions) {
-		return startServiceForSimultion(serviceId, runtimeOptions, null);	
+		return startServiceForSimultion(serviceId, runtimeOptions, null, null);	
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions, String simulationId) {
+	public String startServiceForSimultion(String serviceId, String runtimeOptions, String simulationId, String simulationPort) {
 		
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
@@ -213,8 +221,30 @@ public class ServiceManagerImpl implements ServiceManager{
 			throw new RuntimeException("Service is already running and multiple instances are not allowed: "+serviceId);
 		}
 
-		//build options
-		//might need a standard method for replacing things like SIMULATION_ID in the input/output options
+		File serviceDirectory = new File(getServiceConfigDirectory().getAbsolutePath()
+				+ File.separator + serviceId);
+		
+		
+			        
+	     //Check if static args contain any replacement values
+		String staticArgs = "(simulationId) tcp://127.0.0.1:(simulationPort)";
+	     if(staticArgs.contains("(")){
+	    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
+	    	 for(String args : replaceArgs){
+	    		Field f1;
+				try {
+					f1 = this.getClass().getField(args);
+					staticArgs = staticArgs.replace("("+args+")",f1.get(this).toString());
+						
+				} catch (NoSuchFieldException | IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+	    		
+	    	 }
+	     }
+	     
+	        
 		
 		Process process = null;
 		//something like 
@@ -222,20 +252,27 @@ public class ServiceManagerImpl implements ServiceManager{
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(serviceInfo.getExecution_path());
-			//TODO add other options
+			commands.add(staticArgs);
+			if(runtimeOptions!=null){
+				commands.add(runtimeOptions);
+			}
+
+			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
+			processAppBuilder.redirectErrorStream(true);
+			processAppBuilder.redirectOutput();
+			processAppBuilder.directory(serviceDirectory);
+			try {
+				process = processAppBuilder.start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			
 			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
 			processServiceBuilder.redirectErrorStream(true);
 			processServiceBuilder.redirectOutput();
-			
-//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//		fncsBridgeBuilder.redirectErrorStream(true);
-//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//		fncsBridgeProcess = fncsBridgeBuilder.start();
-//		// Watch the process
-//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-		//during watch, send stderr/out to logmanager
+
 			
 		} else if(serviceInfo.getType().equals(ServiceType.EXE)){
 			List<String> commands = new ArrayList<String>();
@@ -247,37 +284,17 @@ public class ServiceManagerImpl implements ServiceManager{
 			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
 			processServiceBuilder.redirectErrorStream(true);
 			processServiceBuilder.redirectOutput();
-			
-//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//		fncsBridgeBuilder.redirectErrorStream(true);
-//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//		fncsBridgeProcess = fncsBridgeBuilder.start();
-//		// Watch the process
-//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-		//during watch, send stderr/out to logmanager
+
 			
 		} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
-//			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//			fncsBridgeBuilder.redirectErrorStream(true);
-//			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//			fncsBridgeProcess = fncsBridgeBuilder.start();
-//			// Watch the process
-//			watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-			//during watch, send stderr/out to logmanager
+
 				
 		} else if(serviceInfo.getType().equals(ServiceType.WEB)){
-//			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//			fncsBridgeBuilder.redirectErrorStream(true);
-//			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//			fncsBridgeProcess = fncsBridgeBuilder.start();
-//			// Watch the process
-//			watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-			//during watch, send stderr/out to logmanager
+
 				
 		} else {
 			throw new RuntimeException("Type not recognized "+serviceInfo.getType());
 		}
-		
 		
 		//create serviceinstance object
 		ServiceInstance serviceInstance = new ServiceInstance(instanceId, serviceInfo, runtimeOptions, simulationId, process);
