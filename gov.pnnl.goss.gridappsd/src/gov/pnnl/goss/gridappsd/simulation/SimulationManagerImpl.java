@@ -39,6 +39,17 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.simulation;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -55,25 +66,13 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
-import riotcmd.json;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
+
+import com.google.gson.Gson;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -95,11 +94,14 @@ public class SimulationManagerImpl implements SimulationManager{
 	@ServiceDependency
 	ServerControl serverControl;
 
-	@ServiceDependency
-	private volatile ConfigurationManager configurationManager;
+	//@ServiceDependency
+	//private volatile ConfigurationManager configurationManager;
 
 	@ServiceDependency
 	private volatile ServiceManager serviceManager;
+	
+	@ServiceDependency
+	private volatile AppManager appManager;
 	
 	@ServiceDependency
 	LogManager logManager;
@@ -108,11 +110,11 @@ public class SimulationManagerImpl implements SimulationManager{
 
 
 	public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl,
-			LogManager logManager, ConfigurationManager configurationManager) {
+			LogManager logManager) {
 		this.clientFactory = clientFactory;
 		this.serverControl = serverControl;
 		this.logManager = logManager;
-		this.configurationManager = configurationManager;
+		//this.configurationManager = configurationManager;
 	}
 	@Start
 	public void start() throws Exception{
@@ -139,7 +141,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig){
+	public void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext){
 
 			try {
 				logManager.log(new LogMessage(this.getClass().getName(),
@@ -161,15 +163,16 @@ public class SimulationManagerImpl implements SimulationManager{
 				public void run() {
 
 					Process gridlabdProcess = null;
-					Process fncsProcess = null;
-					Process fncsBridgeProcess = null;
-					Process vvoAppProcess = null;
+					//Process fncsProcess = null;
+					//Process fncsBridgeProcess = null;
+					//Process vvoAppProcess = null;
 					InitializedTracker isInitialized = new InitializedTracker();
 					try{
 
-						File defaultLogDir = simulationFile.getParentFile();
+						File defaultLogDir = new File(simulationContext.get("simulationDir").toString());
+						File simulationFile = new File(simulationContext.get("simulationFile").toString());
 
-						//Start FNCS
+						/*//Start FNCS
 						//TODO, verify no errors on this
 						String broker_location = "tcp://*:5570";
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
@@ -181,7 +184,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
-						}
+						}*/
 						
 						/*logManager.log(new LogMessage(this.getClass().getName(),
 								Integer.toString(simulationId), 
@@ -219,14 +222,14 @@ public class SimulationManagerImpl implements SimulationManager{
 						logManager.log(new LogMessage(this.getClass().getName(),
 								Integer.toString(simulationId), 
 								new Date().getTime(), 
-								"Calling "+getPath(GridAppsDConstants.GRIDLABD_PATH)+" "+simulationFile,
+								simulationContext.get("simulationPath").toString()+" "+simulationFile,
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
 								true),GridAppsDConstants.username,
 								GridAppsDConstants.topic_platformLog);
-						ProcessBuilder gridlabDBuilder = new ProcessBuilder(getPath(GridAppsDConstants.GRIDLABD_PATH), simulationFile.getAbsolutePath());
+						ProcessBuilder gridlabDBuilder = new ProcessBuilder(simulationContext.get("simulationPath").toString(), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
-						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"gridlabd.log"));
+						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"simulator.log"));
 						//launch from directory containing simulation files
 						gridlabDBuilder.directory(simulationFile.getParentFile());
 						gridlabdProcess = gridlabDBuilder.start();
@@ -248,7 +251,7 @@ public class SimulationManagerImpl implements SimulationManager{
 												
 						//Start VVO Application
 						//TODO filname really should be constant
-						String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
+						/*String vvoInputFile = simulationFile.getParentFile().getAbsolutePath()+File.separator+"vvo_inputs.json";
 						logManager.log(new LogMessage(this.getClass().getName(),
 								Integer.toString(simulationId), 
 								new Date().getTime(), 
@@ -299,7 +302,7 @@ public class SimulationManagerImpl implements SimulationManager{
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
 								true),GridAppsDConstants.username,
-								GridAppsDConstants.topic_platformLog);
+								GridAppsDConstants.topic_platformLog);*/
 
 
 						//Subscribe to fncs-goss-bridge output topic
@@ -377,7 +380,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							}
 					} finally {
 						//shut down fncs broker and gridlabd and bridge if still running
-						if(fncsProcess!=null){
+						/*if(fncsProcess!=null){
 							fncsProcess.destroy();
 						}
 						if(gridlabdProcess!=null){
@@ -385,7 +388,14 @@ public class SimulationManagerImpl implements SimulationManager{
 						}
 						if(fncsBridgeProcess!=null){
 							fncsBridgeProcess.destroy();
+						}*/
+						
+						for(String id : (String[])simulationContext.get("connectedServiceIds")){
+							appManager.stopAppInstance(id);
 						}
+						for(String id : (String[])simulationContext.get("connectedAppInstanceIds")){
+							serviceManager.stopServiceInstance(id);
+						}						
 					}
 				}
 			});
@@ -475,14 +485,14 @@ public class SimulationManagerImpl implements SimulationManager{
 	}
 
 
-	private String getPath(String key){
+	/*private String getPath(String key){
 		String path = configurationManager.getConfigurationProperty(key);
 		if(path==null){
 			log.warn("Configuration property not found, defaulting to .: "+key);
 			path = ".";
 		}
 		return path;
-	}
+	}*/
 
 
 

@@ -60,6 +60,7 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
@@ -202,11 +203,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Override
 	public String startService(String serviceId,
 			String runtimeOptions) {
-		return startServiceForSimultion(serviceId, runtimeOptions, null, null);	
+		return startServiceForSimultion(serviceId, runtimeOptions, null);	
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions, String simulationId, String simulationPort) {
+	public String startServiceForSimultion(String serviceId, String runtimeOptions, Map simulationContext) {
 		
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
@@ -226,33 +227,22 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 		
 			        
-	     //Check if static args contain any replacement values
-		String staticArgs = "(simulationId) tcp://127.0.0.1:(simulationPort)";
-	     if(staticArgs.contains("(")){
-	    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
-	    	 for(String args : replaceArgs){
-	    		Field f1;
-				try {
-					f1 = this.getClass().getField(args);
-					staticArgs = staticArgs.replace("("+args+")",f1.get(this).toString());
-						
-				} catch (NoSuchFieldException | IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} 
-	    		
-	    	 }
-	     }
-	     
-	        
-		
-		Process process = null;
+	    Process process = null;
 		//something like 
 		if(serviceInfo.getType().equals(ServiceType.PYTHON)){
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(serviceInfo.getExecution_path());
-			commands.add(staticArgs);
+			
+			 //Check if static args contain any replacement values
+			String staticArgs = serviceInfo.getStatic_args();
+		     if(staticArgs!=null && staticArgs.contains("(")){
+		    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
+		    	 for(String args : replaceArgs){
+		    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
+		    	 }
+		     }
+		    commands.add(staticArgs);
 			if(runtimeOptions!=null){
 				commands.add(runtimeOptions);
 			}

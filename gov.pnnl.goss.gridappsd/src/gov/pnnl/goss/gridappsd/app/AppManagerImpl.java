@@ -39,6 +39,22 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.app;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
+import gov.pnnl.goss.gridappsd.dto.AppInstance;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestAppList;
+import gov.pnnl.goss.gridappsd.dto.RequestAppRegister;
+import gov.pnnl.goss.gridappsd.dto.RequestAppStart;
+import gov.pnnl.goss.gridappsd.dto.ResponseAppInfo;
+import gov.pnnl.goss.gridappsd.dto.ResponseAppInstance;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -58,6 +74,7 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -72,26 +89,11 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.AppInstance;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.RequestAppList;
-import gov.pnnl.goss.gridappsd.dto.RequestAppRegister;
-import gov.pnnl.goss.gridappsd.dto.RequestAppStart;
-import gov.pnnl.goss.gridappsd.dto.ResponseAppInfo;
-import gov.pnnl.goss.gridappsd.dto.ResponseAppInstance;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.Client.PROTOCOL;
 
 /**
  * This class implements subset of functionalities for Internal Functions 405
@@ -199,9 +201,7 @@ public class AppManagerImpl implements AppManager {
 						new Integer(processId).toString());
 			} else {
 				instanceId = startAppForSimultion(requestObj.getApp_id(),
-						requestObj.getRuntime_options(),
-						new Integer(processId).toString(),
-						requestObj.getSimulation_id());
+						requestObj.getRuntime_options(),null);
 			}
 
 			client.publish(replyDestination, instanceId);
@@ -420,12 +420,14 @@ public class AppManagerImpl implements AppManager {
 
 	@Override
 	public String startApp(String appId, String runtimeOptions, String requestId) {
-		return startAppForSimultion(appId, runtimeOptions, requestId, null);
+		return startAppForSimultion(appId, runtimeOptions, null);
 	}
 
 	@Override
-	public String startAppForSimultion(String appId, String runtimeOptions,
-			String requestId, String simulationId) {
+	public String startAppForSimultion(String appId, String runtimeOptions, Map simulationContext) {
+		
+		String simulationId = simulationContext.get("simulationId").toString();
+		
 		appId = appId.trim();
 		String instanceId = appId + "-" + new Date().getTime();
 		// get execution path
@@ -522,7 +524,7 @@ public class AppManagerImpl implements AppManager {
 
 		// create appinstance object
 		AppInstance appInstance = new AppInstance(instanceId, appInfo,
-				runtimeOptions, requestId, simulationId, process);
+				runtimeOptions, simulationId, simulationId, process);
 		appInstance.setApp_info(appInfo);
 		watch(appInstance);
 		// add to app instances map

@@ -39,12 +39,13 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
-
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import java.util.Map;
 
 public interface ServiceManager {
 
@@ -58,7 +59,7 @@ public interface ServiceManager {
 	
 	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
 	
-	String startServiceForSimultion(String service_id, String runtimeOptions, String simulationId, String simulationPort);  //may also need input/output topics??
+	String startServiceForSimultion(String service_id, String runtimeOptions, Map simulationContext);  //may also need input/output topics??
 	
 	void stopService(String service_id);  
 	
