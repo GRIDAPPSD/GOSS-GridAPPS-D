@@ -236,13 +236,16 @@ public class ServiceManagerImpl implements ServiceManager{
 			
 			 //Check if static args contain any replacement values
 			String staticArgs = serviceInfo.getStatic_args();
-		     if(staticArgs!=null && staticArgs.contains("(")){
-		    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
-		    	 for(String args : replaceArgs){
-		    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
-		    	 }
-		     }
-		    commands.add(staticArgs);
+		    if(staticArgs!=null){
+		    	if(staticArgs.contains("(")){
+			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
+			    	 for(String args : replaceArgs){
+			    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
+			    	 }
+		    	}
+		    	commands.add(staticArgs);
+		    }
+		    
 			if(runtimeOptions!=null){
 				commands.add(runtimeOptions);
 			}

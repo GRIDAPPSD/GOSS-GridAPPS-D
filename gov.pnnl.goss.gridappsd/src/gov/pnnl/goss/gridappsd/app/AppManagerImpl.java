@@ -82,6 +82,7 @@ import java.util.zip.ZipInputStream;
 
 import javax.jms.Destination;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -448,7 +449,7 @@ public class AppManagerImpl implements AppManager {
 		// build options
 		// might need a standard method for replacing things like SIMULATION_ID
 		// in the input/output options
-		String optionsString = appInfo.getOptions();
+		/*String optionsString = appInfo.getOptions();
 		if (simulationId != null) {
 			if (optionsString.contains("SIMULATION_ID")) {
 				optionsString = optionsString.replace("SIMULATION_ID",
@@ -458,7 +459,8 @@ public class AppManagerImpl implements AppManager {
 				runtimeOptions = runtimeOptions.replace("SIMULATION_ID",
 						simulationId);
 			}
-		}
+		}*/
+		
 		File appDirectory = new File(getAppConfigDirectory().getAbsolutePath()
 				+ File.separator + appId);
 
@@ -468,9 +470,23 @@ public class AppManagerImpl implements AppManager {
 			List<String> commands = new ArrayList<String>();
 			commands.add("python");
 			commands.add(appInfo.getExecution_path());
-			commands.addAll(splitOptionsString(optionsString));
-			commands.addAll(splitOptionsString(runtimeOptions));
-
+			
+			 //Check if static args contain any replacement values
+			String staticArgs = appInfo.getOptions();
+		    if(staticArgs!=null){
+		    	if(staticArgs.contains("(")){
+			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
+			    	 for(String args : replaceArgs){
+			    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
+			    	 }
+		    	}
+		    	commands.add(staticArgs);
+		    }
+		    
+			if(runtimeOptions!=null){
+				commands.add(runtimeOptions);
+			}
+			
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
