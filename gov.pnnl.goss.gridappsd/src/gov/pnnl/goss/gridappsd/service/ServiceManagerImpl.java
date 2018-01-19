@@ -52,8 +52,9 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
-import java.lang.reflect.Field;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
@@ -228,65 +229,85 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 			        
 	    Process process = null;
-		//something like 
-		if(serviceInfo.getType().equals(ServiceType.PYTHON)){
-			List<String> commands = new ArrayList<String>();
-			commands.add("python");
-			commands.add(serviceInfo.getExecution_path());
-			
-			 //Check if static args contain any replacement values
-			String staticArgs = serviceInfo.getStatic_args();
-		    if(staticArgs!=null){
-		    	if(staticArgs.contains("(")){
-			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
-			    	 for(String args : replaceArgs){
-			    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
-			    	 }
-		    	}
-		    	commands.add(staticArgs);
-		    }
-		    
-			if(runtimeOptions!=null){
-				commands.add(runtimeOptions);
-			}
-
-			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
-			processAppBuilder.redirectErrorStream(true);
-			processAppBuilder.redirectOutput();
-			processAppBuilder.directory(serviceDirectory);
-			try {
-				process = processAppBuilder.start();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			
-			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-			processServiceBuilder.redirectErrorStream(true);
-			processServiceBuilder.redirectOutput();
-
-			
-		} else if(serviceInfo.getType().equals(ServiceType.EXE)){
-			List<String> commands = new ArrayList<String>();
-			commands.add(serviceInfo.getExecution_path());
+	    List<String> commands = new ArrayList<String>();
+	    commands.add(serviceInfo.getExecution_path());
+	    
+	    //Check if static args contain any replacement values
+		String staticArgs = serviceInfo.getStatic_args();
+	    if(staticArgs!=null){
+	    	if(staticArgs.contains("(")){
+		    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
+		    	 for(String args : replaceArgs){
+		    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
+		    	 }
+	    	}
+	    	commands.add(staticArgs);
+	    }
+	    
+		if(runtimeOptions!=null){
 			commands.add(runtimeOptions);
-			//TODO add other options
-			
-			
-			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-			processServiceBuilder.redirectErrorStream(true);
-			processServiceBuilder.redirectOutput();
-
-			
-		} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
-
+		}
+	    
+		try{
+			if(serviceInfo.getType().equals(ServiceType.PYTHON)){
 				
-		} else if(serviceInfo.getType().equals(ServiceType.WEB)){
-
+				commands.add(0,"python");
 				
-		} else {
-			throw new RuntimeException("Type not recognized "+serviceInfo.getType());
+				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				process = processServiceBuilder.start();
+				
+				
+			} else if(serviceInfo.getType().equals(ServiceType.EXE)){
+							
+				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				process = processServiceBuilder.start();
+				
+			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
+	
+					
+			} else if(serviceInfo.getType().equals(ServiceType.WEB)){
+	
+					
+			} else {
+				throw new RuntimeException("Type not recognized "+serviceInfo.getType());
+			}
+		} catch (IOException e) {
+			
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			String sStackTrace = sw.toString(); // stack trace as a string
+			System.out.println(sStackTrace);
+			
+			StringBuilder commandString = new StringBuilder();
+			for (String s : commands)
+			{
+				commandString.append(s);
+				commandString.append(" ");
+			}
+
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					simulationId, 
+					new Date().getTime(), 
+					"Error running command + "+ commandString,
+					LogLevel.ERROR,
+					ProcessStatus.ERROR,
+					true), 
+					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					simulationId, 
+					new Date().getTime(), 
+					sStackTrace,
+					LogLevel.ERROR,
+					ProcessStatus.ERROR,
+					true), 
+					GridAppsDConstants.topic_simulationLog+simulationId);
 		}
 		
 		//create serviceinstance object
@@ -340,7 +361,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public void registerService(ServiceInfo appInfo, Serializable appPackage) {
+	public void registerService(ServiceInfo serviceInfo, Serializable servicePackage) {
 		// TODO Implement this method when service registration request comes on message bus	
 	}
 	

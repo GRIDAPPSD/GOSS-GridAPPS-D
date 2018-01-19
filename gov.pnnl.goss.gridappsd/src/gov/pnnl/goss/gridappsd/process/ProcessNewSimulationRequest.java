@@ -184,7 +184,7 @@ public class ProcessNewSimulationRequest {
 
 			}
 			
-			simulationContext.put("connectServiceInstanceIds",connectServiceInstanceIds);
+			simulationContext.put("connectedServiceInstanceIds",connectServiceInstanceIds);
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
 
 			// start simulation
