@@ -63,6 +63,9 @@ public class GridAppsDConstants {
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
 	
+	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";
+	public static final String topic_requestListServicesWithInstances = "goss.gridappsd.process.request.list.services";
+	
 	public static final String topic_responseData = topic_prefix+".response.data";
 	
 	public static final String topic_platformLog = topic_prefix+".platform.log";
