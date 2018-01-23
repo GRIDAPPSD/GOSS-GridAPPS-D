@@ -148,12 +148,30 @@ public class ProcessNewSimulationRequest {
 			
 			// Start Apps and Services
 			
+			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
 			simulationContext.put("simulationId",simId);
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationFile.getParentFile());
-			simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
+			try{
+				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
+			}catch(NullPointerException e){
+				if(serviceManager.getService(config.getSimulation_config().getSimulator()) == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}
+				e.printStackTrace();
+			}
 		
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
