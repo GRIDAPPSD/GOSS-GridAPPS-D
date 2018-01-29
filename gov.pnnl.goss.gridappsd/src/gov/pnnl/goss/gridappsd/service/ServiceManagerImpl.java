@@ -208,7 +208,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions, Map simulationContext) {
+	public String startServiceForSimultion(String serviceId, String runtimeOptions, Map<String, Object> simulationContext) {
 		
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
@@ -269,6 +269,14 @@ public class ServiceManagerImpl implements ServiceManager{
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
+				
+				commands.add(0,"java -jar");
+				
+				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				process = processServiceBuilder.start();
 	
 					
 			} else if(serviceInfo.getType().equals(ServiceType.WEB)){

@@ -124,8 +124,7 @@ public class ProcessNewSimulationRequest {
 							LogLevel.ERROR,
 							ProcessStatus.ERROR,true), simulationLogTopic);
 
-			File simulationFile = new File("test.sim");
-			/*File simulationFile = configurationManager.getSimulationFile(
+			File simulationFile = configurationManager.getSimulationFile(
 					simulationId, config);
 			if (simulationFile == null) {
 				logManager.log(
@@ -137,7 +136,7 @@ public class ProcessNewSimulationRequest {
 						GridAppsDConstants.topic_platformLog);
 				throw new Exception("No simulation file returned for request "
 						+ config);
-			}*/
+			}
 
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
