@@ -88,7 +88,7 @@ int main(void) {
     //     ssl://localhost:61617
     //
 	    std::string brokerURI =
-        "failover:(tcp://localhost:61616"
+        "failover:(tcp://WE33461.pnl.gov:61616"
 //        "?wireFormat=openwire"
 //        "&transport.useInactivityMonitor=false"
 //        "&connection.alwaysSyncSend=true"
@@ -115,6 +115,7 @@ int main(void) {
     // Start the consumer thread.
     Thread consumerThread(&consumer);
     consumerThread.start();
+	std::cout<<"consumer thread started\n";
 
     // Wait for the consumer to indicate that its ready to go.
     consumer.waitUntilReady();
@@ -122,6 +123,7 @@ int main(void) {
     // Start the producer thread.
     Thread producerThread(&producer);
     producerThread.start();
+	std::cout<<"producer thread started\n";
 
     // Wait for the threads to complete.
     producerThread.join();
