@@ -535,65 +535,65 @@ int main(void) {
 		// --------------------------------------------------------------------
 		
 		
-		
-		// --------------------------------------------------------------------
-		// Setup variables
-		// --------------------------------------------------------------------
-		// Some variables are established outside of the loop
-		// z
-		// Note: to improve efficiency, initialize a csc before loop and
-		//		insert new measurements directly into the csc
-		cs *zraw = cs_spalloc(0,0,zqty,1,1);
-		for ( int ii = 0 ; ii < zqty ; ii++ )
-			cs_entry(zraw,ii,0,sense[ii]);
-		cs *z = cs_compress(zraw); cs_spfree(zraw);
-		
-		// h
-		// Note: to improve efficiency, initialize a csc before loop and
-		//		insert new values computed above directly into the csc
-		cs *hraw = cs_spalloc(0,0,zqty,1,1);
-		for ( int ii = 0 ; ii < zqty ; ii++ )
-			cs_entry(hraw,ii,0,hx[ii]);
-		cs *h = cs_compress(hraw); cs_spfree(hraw);
-		
-		// H
-		// Note: to improve efficiency, initialize a csc before loop and
-		//		insert new values computed above directly into the csc
-		cs *Hraw = cs_spalloc(0,0,xqty*zqty,1,1);
-		// for ( int ii = 0 ; ii < Hx.size() ; ii ++
-		cs *H = cs_compress(Hraw); cs_spfree(Hraw);
-		
-		
-		
-		// --------------------------------------------------------------------
-		// Predict Step
-		// --------------------------------------------------------------------
-		// -- compute x_predict = F*x
-		cs *xpre = cs_multiply(F,x);
-		// -- compute p_predict = F*P*F'+Q
-		cs *P1 = cs_transpose(F,1);
-		cs *P2 = cs_multiply(P,P1); cs_spfree(P1);
-		cs *P3 = cs_multiply(F,P2); cs_spfree(P2);
-		cs *Ppre = cs_add(P3,Q,1,1); cs_spfree(P3);
-		// clean up
-		// cs_spfree(xc);
-		// cs_spfree(Fc);
-		// cs_spfree(Qc);
-		
-		// --------------------------------------------------------------------
-		// Update Step
-		// --------------------------------------------------------------------
-		// -- compute y = H*x_predict + z
-		cs *y1 = cs_multiply(H,xpre);
-		cs *yupd = cs_add(z,y1,1,-1); cs_spfree(y1);
-		// -- compute S = H*P_predict*H' + R
-		cs *S1 = cs_transpose(H,1);
-		cs *S2 = cs_multiply(Ppre,S1); cs_spfree(S1);
-		cs *S3 = cs_multiply(H,S2); cs_spfree(S2);
-		cs *Supd = cs_add(R,S3,1,1); cs_spfree(S3);
-		// -- compute K = P_predict*H'*S^-1
-		cs *K1 = cs_transpose(H,1);
-		cs *K2 = cs_multiply(Ppre,K1); cs_spfree(K1);
+		try {
+			// ----------------------------------------------------------------
+			// Setup variables
+			// ----------------------------------------------------------------
+			// Some variables are established outside of the loop
+			// z
+			// Note: to improve efficiency, initialize a csc before loop and
+			//		insert new measurements directly into the csc
+			cs *zraw = cs_spalloc(0,0,zqty,1,1);
+			for ( int ii = 0 ; ii < zqty ; ii++ )
+				cs_entry(zraw,ii,0,sense[ii]);
+			cs *z = cs_compress(zraw); cs_spfree(zraw);
+			
+			// h
+			// Note: to improve efficiency, initialize a csc before loop and
+			//		insert new values computed above directly into the csc
+			cs *hraw = cs_spalloc(0,0,zqty,1,1);
+			for ( int ii = 0 ; ii < zqty ; ii++ )
+				cs_entry(hraw,ii,0,hx[ii]);
+			cs *h = cs_compress(hraw); cs_spfree(hraw);
+			
+			// H
+			// Note: to improve efficiency, initialize a csc before loop and
+			//		insert new values computed above directly into the csc
+			cs *Hraw = cs_spalloc(0,0,xqty*zqty,1,1);
+			// for ( int ii = 0 ; ii < Hx.size() ; ii ++
+			cs *H = cs_compress(Hraw); cs_spfree(Hraw);
+			
+			
+			
+			// ----------------------------------------------------------------
+			// Predict Step
+			// ----------------------------------------------------------------
+			// -- compute x_predict = F*x
+			cs *xpre = cs_multiply(F,x);
+			// -- compute p_predict = F*P*F'+Q
+			cs *P1 = cs_transpose(F,1);
+			cs *P2 = cs_multiply(P,P1); cs_spfree(P1);
+			cs *P3 = cs_multiply(F,P2); cs_spfree(P2);
+			cs *Ppre = cs_add(P3,Q,1,1); cs_spfree(P3);
+			// clean up
+			// cs_spfree(xc);
+			// cs_spfree(Fc);
+			// cs_spfree(Qc);
+			
+			// ----------------------------------------------------------------
+			// Update Step
+			// ----------------------------------------------------------------
+			// -- compute y = H*x_predict + z
+			cs *y1 = cs_multiply(H,xpre);
+			cs *yupd = cs_add(z,y1,1,-1); cs_spfree(y1);
+			// -- compute S = H*P_predict*H' + R
+			cs *S1 = cs_transpose(H,1);
+			cs *S2 = cs_multiply(Ppre,S1); cs_spfree(S1);
+			cs *S3 = cs_multiply(H,S2); cs_spfree(S2);
+			cs *Supd = cs_add(R,S3,1,1); cs_spfree(S3);
+			// -- compute K = P_predict*H'*S^-1
+			cs *K1 = cs_transpose(H,1);
+			cs *K2 = cs_multiply(Ppre,K1); cs_spfree(K1);
 			// cs *K3 = invertcs(Supd);
 			// Initialize klusolve variables
 			klu_symbolic *klusym;
@@ -601,9 +601,9 @@ int main(void) {
 			klu_common klucom;
 			if (!klu_defaults(&klucom)) throw "klu_defaults failed";
 			klusym = klu_analyze(Supd->m,Supd->p,Supd->i,&klucom);
-			if (!klusym) throw "klu_analyze failed in se_bcse_kfe";
+			if (!klusym) throw "klu_analyze failed";
 			klunum = klu_factor(Supd->p,Supd->i,Supd->x,klusym,&klucom);
-			if (!klunum) throw "klu_factor failed in se_bcse_kfe";
+			if (!klunum) throw "klu_factor failed";
 			// Initialize an identiy right-hand size
 			double *rhs = new double[zqty*zqty];
 			for ( int ii = 0 ; ii < zqty*zqty ; ii++ )
@@ -616,43 +616,46 @@ int main(void) {
 					if (rhs[ii+zqty*jj])
 						cs_entry(K3raw,ii,jj,rhs[ii+zqty*jj]);
 			delete rhs;
-		cs *K3 = cs_compress(K3raw); cs_spfree(K3raw);
-		cs *Kupd = cs_multiply(K2,K3); cs_spfree(K2); cs_free(K3);
-		
-		
-		cs *x1 = cs_multiply(Kupd,yupd);
-		cs *xupd = cs_add(xpre,x1,1,1); cs_spfree(x1);
-		
-		// -- compute P = (K*H+I)*P_predict
-		cs *P4 = cs_multiply(Kupd,H);
-		cs *P5 = cs_add(eyex,P4,1,-1); cs_spfree(P4);
-		cs *Pupd = cs_multiply(P5,Ppre); cs_spfree(P5);
-		// Cleanup
-		cs_spfree(xpre);
-		cs_spfree(Ppre);
-		cs_spfree(yupd);
-		cs_spfree(Supd);
-		cs_spfree(Kupd);
-		// cs_spfree(Pupd);
-		// cs_spfree(z);
-		// cs_spfree(H);
-		// cs_spfree(R);
-		
-		
-		// Shift updated variables
-		cs_spfree(P); P = Pupd; // delete Pupd; //cs_spfree(Pupd);
-		// cs_spfree(yint); y = yupd; // delete yupd; //cs_spfree(yupd);
-		
-		
-		// Compute Full State
-		
-		
-		
-		// Publish State
-		
-		
-		
-		quit = true;
+			cs *K3 = cs_compress(K3raw); cs_spfree(K3raw);
+			cs *Kupd = cs_multiply(K2,K3); cs_spfree(K2); cs_free(K3);
+			
+			
+			cs *x1 = cs_multiply(Kupd,yupd);
+			cs *xupd = cs_add(xpre,x1,1,1); cs_spfree(x1);
+			
+			// -- compute P = (K*H+I)*P_predict
+			cs *P4 = cs_multiply(Kupd,H);
+			cs *P5 = cs_add(eyex,P4,1,-1); cs_spfree(P4);
+			cs *Pupd = cs_multiply(P5,Ppre); cs_spfree(P5);
+			// Cleanup
+			cs_spfree(xpre);
+			cs_spfree(Ppre);
+			cs_spfree(yupd);
+			cs_spfree(Supd);
+			cs_spfree(Kupd);
+			// cs_spfree(Pupd);
+			// cs_spfree(z);
+			// cs_spfree(H);
+			// cs_spfree(R);
+			
+			
+			// Shift updated variables
+			cs_spfree(P); P = Pupd; // delete Pupd; //cs_spfree(Pupd);
+			// cs_spfree(yint); y = yupd; // delete yupd; //cs_spfree(yupd);
+			
+			
+			// Compute Full State
+			
+			
+			
+			// Publish State
+			
+			
+			
+			quit = true;
+		catch(char* = err) {
+			std::cout << err << std::endl;
+		}
 	}
 	
 	
