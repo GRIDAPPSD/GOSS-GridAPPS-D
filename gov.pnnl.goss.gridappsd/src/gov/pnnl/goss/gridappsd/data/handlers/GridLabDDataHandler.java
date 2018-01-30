@@ -233,8 +233,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					}
 					
 					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					//cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
+					//		modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction); 
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
 //										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
 //										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
@@ -254,8 +257,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 //					rdfToGLM.process(args);
 					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0, fXY);
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0); 
 				
 				}
 				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
