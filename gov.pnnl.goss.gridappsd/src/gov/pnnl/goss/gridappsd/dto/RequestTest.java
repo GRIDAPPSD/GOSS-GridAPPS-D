@@ -47,47 +47,107 @@ public class RequestTest implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
-	public String testConfigPath;
-
-	public String testScriptPath;
-	
-	public String getTestConfigPath() {
-		return testConfigPath;
-	}
-
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}	
-	
-	public RequestTest(){}
-	
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
-	}
-	
-
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-	
 	public static RequestTest parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
 		if(obj.testConfigPath==null)
 			throw new RuntimeException("Expected attribute testConfigPath not found");
 		return obj;
+	}
+
+	public String expectedResult;
+	
+	public int rulePort;
+	
+	public int simulationID;
+	
+	public String simulationOutputObject;
+	
+	public String testConfigPath;
+	
+	public int testID;
+	
+	public String testScriptPath;
+	
+	public String topic;
+
+	public RequestTest(){}
+
+	public RequestTest(String testConfigPath, String testScriptPath){
+		this.testConfigPath = testConfigPath;
+		this.testScriptPath = testScriptPath;
+	}
+
+	public String getExpectedResult() {
+		return expectedResult;
+	}
+
+	public int getRulePort() {
+		return rulePort;
+	}
+
+	public int getSimulationID() {
+		return simulationID;
+	}	
+	
+	public String getSimulationOutputObject() {
+		return simulationOutputObject;
+	}
+
+	public String getTestConfigPath() {
+		return testConfigPath;
+	}
+
+	public int getTestID() {
+		return testID;
+	}
+
+	public String getTestScriptPath() {
+		return testScriptPath;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setExpectedResult(String expectedResult) {
+		this.expectedResult = expectedResult;
+	}
+
+	public void setRulePort(int rulePort) {
+		this.rulePort = rulePort;
+	}
+
+	public void setSimulationID(int simulationID) {
+		this.simulationID = simulationID;
+	}
+
+	public void setSimulationOutputObject(String simulationOutputObject) {
+		this.simulationOutputObject = simulationOutputObject;
+	}
+
+	public void setTestConfigPath(String testConfigPath) {
+		this.testConfigPath = testConfigPath;
+	}
+
+	public void setTestID(int testID) {
+		this.testID = testID;
+	}
+	
+	public void setTestScriptPath(String testScriptPath) {
+		this.testScriptPath = testScriptPath;
+	}
+	
+
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+	
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 
 }
