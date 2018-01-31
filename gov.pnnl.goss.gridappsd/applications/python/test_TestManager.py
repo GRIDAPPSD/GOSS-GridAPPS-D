@@ -3,6 +3,7 @@ import sys
 import stomp
 import time
 import os
+import argparse
 
 
 goss_output_topic = 'goss.gridappsd/fncs/output'
@@ -188,7 +189,7 @@ _simulationRequest = {
         }
     }
 
-def _startTest(username,password,gossServer='localhost',stompPort='61613'):
+def _startTest(username,password,gossServer='localhost',stompPort='61613', simulationID=1234, rulePort=5000, topic="input"):
     simulationCfg = '{"power_system_config":{"GeographicalRegion_name":"ieee8500nodecktassets_Region","SubGeographicalRegion_name":"ieee8500nodecktassets_SubRegion","Line_name":"ieee8500"}, "simulation_config":{"start_time":"03-07-2017 00:00:00","duration":"60","simulator":"GridLAB-D","simulation_name":"my test simulation","power_flow_solver_method":"FBS"}}'
     # testCfg = "{\"testConfigPath\":\"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json\",\"testScriptPath\":\"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json\"}";
     testCfg = '{"testConfigPath":"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/exampleTestConfig.json", \
@@ -206,6 +207,8 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613'):
     testCfg = {"testConfigPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestConfig.json",
             "testScriptPath":loc+"/test/gov/pnnl/goss/gridappsd/exampleTestScript.json",
             "simulationID": 1234,
+            "rulePort": 5000,
+            "topic":"input",
             "expectedResult":loc+"/test/gov/pnnl/goss/gridappsd/expected_output_series3.json",
             "simulationOutputObject":loc+"/test/gov/pnnl/goss/gridappsd/sim_output_object.json"
             }
@@ -239,8 +242,15 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613'):
 
 
 if __name__ == "__main__":
-    #TODO: send simulationId, fncsBrokerLocation, gossLocation,
-    #stompPort, username and password as command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t","--topic", type=str, help="topic, the default is input", default="input", required=False)
+    parser.add_argument("-p","--port", type=int, help="port number, the default is 5000", default=5000, required=False)
+    parser.add_argument("-i", "--id", type=int, help="simulation id", required=False)
+    parser.add_argument("--start_date", type=str, help="Simulation start date", default="2017-07-21 12:00:00", required=False)
+    parser.add_argument("--end_date", type=str, help="Simulation end date" , default="2017-07-22 12:00:00", required=False)
+    # parser.add_argument('-o', '--options', type=str, default='{}')
+    args = parser.parse_args()
+    
 
-    _startTest('system','manager',gossServer='127.0.0.1',stompPort='61613')
+    _startTest('system','manager',gossServer='127.0.0.1',stompPort='61613', simulationID=args.id, rulePort=args.port, topic=args.topic)
 

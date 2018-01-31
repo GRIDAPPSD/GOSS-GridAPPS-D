@@ -39,13 +39,19 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.testmanager;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import javax.jms.JMSException;
@@ -55,6 +61,12 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,15 +137,19 @@ public class TestManagerImpl implements TestManager {
 
 	protected int tempIndex=0;
 	
-	protected boolean testMode=false;
-
-	protected TestResultSeries testResultSeries = new TestResultSeries();
-
-	protected TestScript testScript;
+	protected int rulePort;
+	
+	protected String topic;
+	
+	protected int simulationID;
 	
 	protected TestConfiguration testConfig;
 	
-	protected int simulationID;
+	protected TestResultSeries testResultSeries = new TestResultSeries();
+	
+	protected TestScript testScript;
+	
+	protected boolean testMode=false;
 
 	protected String expectedResultSeriesPath;
 	
@@ -148,6 +164,31 @@ public class TestManagerImpl implements TestManager {
 		this.simulationManager = simulationManager;
 		this.statusReporter = statusReporter;
 		this.logManager = logManager;
+	}
+	
+	private String getPath(String key){
+		String path = configurationManager.getConfigurationProperty(key);
+		if(path==null){
+			log.warn("Configuration property not found, defaulting to .: "+key);
+			path = ".";
+		}
+		return path;
+	}
+	
+	private void watch(final Process process, String processName) {
+	    new Thread() {
+	        public void run() {
+	            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+	            String line = null;
+	            try {
+	                while ((line = input.readLine()) != null) {
+	                    log.info(processName+": "+line);
+	                }
+	            } catch (IOException e) {
+	                log.error("Error on process "+processName, e);
+	            }
+	        }
+	    }.start();
 	}
 	
 	@Start
@@ -176,7 +217,6 @@ public class TestManagerImpl implements TestManager {
 			client.subscribe(topic_requestTest, new GossResponseEvent() {
 
 				private RequestTest reqTest;
-
 				/*
 				 * Need:
 				 * TestConfig
@@ -206,7 +246,50 @@ public class TestManagerImpl implements TestManager {
 					
 					simulationID = reqTest.getSimulationID();
 					
+					rulePort = reqTest.getRulePort();
+					
+					topic = reqTest.getTopic();
+					
 					testMode=true;
+					
+					DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
+					df.setTimeZone(TimeZone.getTimeZone("UTC"));
+					
+					String startDateStr= df.format(testConfig.getRun_start());
+							
+					String endDateStr = df.format(testConfig.getRun_end());
+			
+				    System.out.println(startDateStr);
+				    System.out.println(endDateStr);
+				    
+					Process rulesProcess = null;
+					try {
+						
+						File defaultLogDir = new File(reqTest.getTestConfigPath()).getParentFile();
+
+	//					String RULE_APP_PATH = GridAppsDConstants.RULE_APP_PATH;
+//						String RULE_APP_PATH = "/Users/jsimpson/git/adms-business-rules/durable_rules/";
+						String RULE_APP_PATH = defaultLogDir.getAbsolutePath();
+
+						String appRuleName = "app_rules.py";
+						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationID), 
+								new Date().getTime(), 
+								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
+								true),GridAppsDConstants.username);
+//						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", getPath(RULE_APP_PATH), ""+simulationID);
+						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", RULE_APP_PATH+File.separator+appRuleName,"-t","input","-p",""+rulePort,"--id", ""+simulationID);
+						ruleAppBuilder.redirectErrorStream(true);
+						ruleAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"rule_app.log"));
+
+						rulesProcess = ruleAppBuilder.start();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					// Watch the process
+					watch(rulesProcess, "Rules Application");
 				}
 
 			});
@@ -217,6 +300,10 @@ public class TestManagerImpl implements TestManager {
 				DataResponse event = (DataResponse)message;
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+				
+				CompareResults compareResults = new CompareResults();
+				JsonObject jsonObject = compareResults.getSimulationJson(message.toString()); 
+				forwardFNCSOutput(jsonObject,rulePort,topic);
 //				logManager.log(logMessageObj, GridAppsDConstants.username);
 				
 				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
@@ -234,9 +321,6 @@ public class TestManagerImpl implements TestManager {
 				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
 				logManager.log(logMessageObj,  GridAppsDConstants.username);
 				
-				CompareResults compareResults = new CompareResults();
-				
-				JsonObject jsonObject = compareResults.getSimulationJson(message.toString());
 //				{"output": null, "command": "isInitialized", "response": "False"}
 				if( jsonObject.get("output").isJsonNull() || jsonObject.get("output") == null){
 					logMessageObj.setTimestamp(new Date().getTime());
@@ -244,7 +328,6 @@ public class TestManagerImpl implements TestManager {
 					logManager.log(logMessageObj,GridAppsDConstants.username);
 					return;	
 				}
-				
 				
 //				gridappsd_project/builds/log/karaf.log.1:TestManager fncs : not outputtruefalse{"ieee8500":{"cap_capbank0a":{"capacitor_A":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":100.0,"phases":"AN","phases_connected":"NA","pt_phase":"A","switchA":"CLOSED"},"cap_capbank0b":{"capacitor_B":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":101.0,"phases":"BN","phases_connected":"NB","pt_phase":"B","switchB":"CLOSED"},"cap_capbank0c":{"capacit
 //				if( ! jsonObject.get("output").isJsonObject()){
@@ -282,12 +365,42 @@ public class TestManagerImpl implements TestManager {
 				
 			}
 
+
 			});
 		}
 		catch(Exception e){
 			log.error("Error in test manager",e);
 		}	
 	}
+	
+	public void forwardFNCSOutput(JsonObject jsonObject, int port, String topic) {
+		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+		try {
+		    HttpPost request = new HttpPost("http://localhost:"+port+"/"+topic+"/events");
+			String str_json= "{\"simulation_id\" : \"12ae2345\", \"message\" : { \"timestamp\" : \"YYYY-MMssZ\", \"difference_mrid\" : \"123a456b-789c-012d-345e-678f901a234\", \"reverse_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"0\" }, \"forward_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"1\" } }}";
+			
+		    StringEntity params = new StringEntity(jsonObject.toString());
+		    request.addHeader(HTTP.CONTENT_TYPE, "application/json");
+		    request.addHeader("Accept","application/json");
+		    request.setEntity(params);
+		    CloseableHttpResponse response = httpClient.execute(request);	    
+            /*Checking response */
+            if (response != null) {
+                InputStream in = response.getEntity().getContent(); //Get the data in the entity
+            }
+
+		} catch (Exception ex) {
+		    // handle exception here
+		} finally {
+		    try {
+				httpClient.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+	}
+
 	
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();

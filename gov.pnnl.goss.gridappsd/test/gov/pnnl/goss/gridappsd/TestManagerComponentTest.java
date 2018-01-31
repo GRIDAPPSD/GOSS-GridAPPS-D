@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -28,6 +29,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
+import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerQueryFactory;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -108,7 +110,7 @@ public class TestManagerComponentTest {
 		String path = "./applications/python/exampleTestConfig.json";
 //		/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json
 		TestConfiguration testConfig = testManager.loadTestConfig(path);
-		assertEquals(testConfig.getPowerSystemConfiguration(),"ieee8500");
+		assertEquals(testConfig.getPower_system_configuration(),"ieee8500");
 	}
 
 	@Test
@@ -139,6 +141,24 @@ public class TestManagerComponentTest {
 		String testCfg = "{\"testConfigPath\":\"./applications/python/exampleTestConfig.json\",\"testScriptPath\":\"/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestScript.json\"}";
 		RequestTest.parse(testCfg);
 
+	}
+	
+	@Test
+	public void testForward(){
+		try {
+			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+											configurationManager, simulationManager, 
+											statusReporter,logManager);
+		testManager.start();
+		String str_json= "{\"simulation_id\" : \"12ae2345\", \"message\" : { \"timestamp\" : \"YYYY-MMssZ\", \"difference_mrid\" : \"123a456b-789c-012d-345e-678f901a234\", \"reverse_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"0\" }, \"forward_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"1\" } }}";
+		CompareResults cr = new CompareResults();
+		JsonObject jsonObject = cr.getSimulationJson(str_json);
+		testManager.forwardFNCSOutput(jsonObject,5000, "input");
 	}
 	
 	

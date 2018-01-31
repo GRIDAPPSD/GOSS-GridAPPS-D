@@ -66,6 +66,110 @@ public class TestConfiguration implements Serializable {
 
 	public String line_name;
 
+	public String getPower_system_configuration() {
+		return power_system_configuration;
+	}
+
+	public void setPower_system_configuration(String power_system_configuration) {
+		this.power_system_configuration = power_system_configuration;
+	}
+
+	public String getSimulation_configuration() {
+		return simulation_configuration;
+	}
+
+	public void setSimulation_configuration(String simulation_configuration) {
+		this.simulation_configuration = simulation_configuration;
+	}
+
+	public Integer getDurations() {
+		return durations;
+	}
+
+	public void setDurations(Integer durations) {
+		this.durations = durations;
+	}
+
+	public Date getRun_start() {
+		return run_start;
+	}
+
+	public void setRun_start(Date run_start) {
+		this.run_start = run_start;
+	}
+
+	public Date getRun_end() {
+		return run_end;
+	}
+
+	public void setRun_end(Date run_end) {
+		this.run_end = run_end;
+	}
+
+	public String getRegion_name() {
+		return region_name;
+	}
+
+	public void setRegion_name(String region_name) {
+		this.region_name = region_name;
+	}
+
+	public String getSubregion_name() {
+		return subregion_name;
+	}
+
+	public void setSubregion_name(String subregion_name) {
+		this.subregion_name = subregion_name;
+	}
+
+	public String getLine_name() {
+		return line_name;
+	}
+
+	public void setLine_name(String line_name) {
+		this.line_name = line_name;
+	}
+
+	public Boolean getLogging() {
+		return logging;
+	}
+
+	public void setLogging(Boolean logging) {
+		this.logging = logging;
+	}
+
+	public Map<String, String> getLogging_options() {
+		return logging_options;
+	}
+
+	public void setLogging_options(Map<String, String> logging_options) {
+		this.logging_options = logging_options;
+	}
+
+	public Map<String, String> getInitial_conditions() {
+		return initial_conditions;
+	}
+
+	public void setInitial_conditions(Map<String, String> initial_conditions) {
+		this.initial_conditions = initial_conditions;
+	}
+
+	public Map<String, String> getDefault_values() {
+		return default_values;
+	}
+
+	public void setDefault_values(Map<String, String> default_values) {
+		this.default_values = default_values;
+	}
+
+	public String[] getOutputs() {
+		return outputs;
+	}
+
+	public void setOutputs(String[] outputs) {
+		this.outputs = outputs;
+	}
+
 	public Boolean logging;
 	
 	public Map<String,String> logging_options;
