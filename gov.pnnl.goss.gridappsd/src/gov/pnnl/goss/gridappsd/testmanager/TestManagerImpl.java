@@ -259,8 +259,8 @@ public class TestManagerImpl implements TestManager {
 							
 					String endDateStr = df.format(testConfig.getRun_end());
 			
-				    System.out.println(startDateStr);
-				    System.out.println(endDateStr);
+//				    System.out.println(startDateStr);
+//				    System.out.println(endDateStr);
 				    
 					Process rulesProcess = null;
 					try {
@@ -272,12 +272,13 @@ public class TestManagerImpl implements TestManager {
 						String RULE_APP_PATH = defaultLogDir.getAbsolutePath();
 
 						String appRuleName = "app_rules.py";
-						logManager.log(new LogMessage(this.getClass().getName()+"-"+Integer.toString(simulationID), 
+						logManager.log(new LogMessage(this.getClass().getSimpleName(),
+								Integer.toString(simulationID), 
 								new Date().getTime(), 
 								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
-								true),GridAppsDConstants.username);
+								true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 //						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", getPath(RULE_APP_PATH), ""+simulationID);
 						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", RULE_APP_PATH+File.separator+appRuleName,"-t","input","-p",""+rulePort,"--id", ""+simulationID);
 						ruleAppBuilder.redirectErrorStream(true);
@@ -319,13 +320,13 @@ public class TestManagerImpl implements TestManager {
 				
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
-				logManager.log(logMessageObj,  GridAppsDConstants.username);
+				logManager.log(logMessageObj,  GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 				
 //				{"output": null, "command": "isInitialized", "response": "False"}
 				if( jsonObject.get("output").isJsonNull() || jsonObject.get("output") == null){
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLogMessage("TestManager fncs : null output " + jsonObject.get("output").toString());
-					logManager.log(logMessageObj,GridAppsDConstants.username);
+					logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 					return;	
 				}
 				
@@ -361,7 +362,7 @@ public class TestManagerImpl implements TestManager {
 				
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("Index: " + indexStr +" TestManager number of conflicts: "+ tr.getNumberOfConflicts() + " total "+ testResultSeries.getTotal());
-				logManager.log(logMessageObj,GridAppsDConstants.username);
+				logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 				
 			}
 
