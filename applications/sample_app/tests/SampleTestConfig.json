@@ -1,6 +1,6 @@
-{ 
+{
     "power_system_configuration":"ieee8500",
-    "simulation_configuration":"ieee8500", 
+    "simulation_configuration":"ieee8500",
     "duration":60,
     "run_start":"2017-07-21 12:00:00",
     "run_end":"2017-07-22 12:00:00",
@@ -8,7 +8,7 @@
     "subregion_name":"ieee8500_SubRegion",
     "line_name":"ieee8500",
     "logging":"true",
-    "logging_options":{ "log1":"true"
+    "logging_options":{ "log":"true"
 
     },
     "initial_conditions":{
@@ -16,8 +16,5 @@
     },
     "default_values":{
 
-    },
-    "outputs":[  
-		"output1"
-    ]
+    }
 }

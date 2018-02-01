@@ -15,5 +15,10 @@
     },
     "events" : [
 
-    ]
+    ],
+    "rules":[
+   		 {"name": "app_rules.py",
+        "port": 5000,
+        "topic":"input"
+     }  ]
 }

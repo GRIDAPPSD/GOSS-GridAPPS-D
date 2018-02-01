@@ -198,7 +198,7 @@ public class TestManagerImpl implements TestManager {
 			LogMessage logMessageObj = createLogMessage();
 			
 			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj,GridAppsDConstants.username, null);
+			logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -226,21 +226,21 @@ public class TestManagerImpl implements TestManager {
 				 * TestID
 				 * @see pnnl.goss.core.GossResponseEvent#onMessage(java.io.Serializable)
 				 */
-				
+				 
 				@Override
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj,GridAppsDConstants.username,null);
+					logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 					
 					System.out.println("TestManager got message " + message.toString());
 					
 					reqTest = RequestTest.parse(message.toString());
 					
-					testConfig = loadTestConfig(reqTest.getTestConfigPath());
-					
 					testScript = loadTestScript(reqTest.getTestScriptPath());
+					
+					testConfig = loadTestConfig(reqTest.getTestConfigPath());
 					
 					expectedResultSeriesPath = reqTest.getExpectedResult();
 					
@@ -259,7 +259,7 @@ public class TestManagerImpl implements TestManager {
 							
 					String endDateStr = df.format(testConfig.getRun_end());
 			
-//				    System.out.println(startDateStr);
+//				    System.out.println(startDateStr); 
 //				    System.out.println(endDateStr);
 				    
 					Process rulesProcess = null;
@@ -272,13 +272,13 @@ public class TestManagerImpl implements TestManager {
 						String RULE_APP_PATH = defaultLogDir.getAbsolutePath();
 
 						String appRuleName = "app_rules.py";
-						logManager.log(new LogMessage(this.getClass().getSimpleName(),
-								Integer.toString(simulationID), 
-								new Date().getTime(), 
-								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
-								LogLevel.INFO, 
-								ProcessStatus.RUNNING, 
-								true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+//						logManager.log(new LogMessage(this.getClass().getSimpleName(),
+//								Integer.toString(simulationID), 
+//								new Date().getTime(), 
+//								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
+//								LogLevel.INFO, 
+//								ProcessStatus.RUNNING, 
+//								true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 //						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", getPath(RULE_APP_PATH), ""+simulationID);
 						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", RULE_APP_PATH+File.separator+appRuleName,"-t","input","-p",""+rulePort,"--id", ""+simulationID);
 						ruleAppBuilder.redirectErrorStream(true);
@@ -405,6 +405,7 @@ public class TestManagerImpl implements TestManager {
 	
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setProcessId(this.getClass().getSimpleName());
 		logMessageObj.setLogLevel(LogLevel.DEBUG);
 		logMessageObj.setSource(this.getClass().getSimpleName());
 		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
@@ -417,7 +418,7 @@ public class TestManagerImpl implements TestManager {
 	public TestConfiguration loadTestConfig(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLogMessage("Loading TestCofiguration from:" + path);
-		logManager.log(logMessageObj,GridAppsDConstants.username,null);
+		logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
@@ -447,15 +448,15 @@ public class TestManagerImpl implements TestManager {
 //			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Error" + e.getMessage());
-			logManager.log(logMessageObj,GridAppsDConstants.username,null);
+			logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 		}
 		return testConfig;
 	}
 	
 	public TestScript loadTestScript(String path){
-		LogMessage logMessageObj = createLogMessage();
-		logMessageObj.setLogMessage("Loading TestScript from:" + path);
-		logManager.log(logMessageObj,GridAppsDConstants.username,null);
+//		LogMessage logMessageObj = createLogMessage();
+//		logMessageObj.setLogMessage("Loading TestScript from:" + path);
+//		logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
 		TestScript testScript = null;
@@ -467,9 +468,9 @@ public class TestManagerImpl implements TestManager {
 			jsonReader.close();
 		} catch (Exception e) {
 			e.printStackTrace();
-			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLogMessage("Error" + e.getMessage());
-			logManager.log(logMessageObj,GridAppsDConstants.username,null);
+//			logMessageObj.setTimestamp(new Date().getTime());
+//			logMessageObj.setLogMessage("Error" + e.getMessage());
+//			logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 		}
 		return testScript;
 	}

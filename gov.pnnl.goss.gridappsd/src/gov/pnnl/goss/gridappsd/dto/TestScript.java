@@ -57,7 +57,25 @@ public class TestScript implements Serializable {
 	
 	private Map<String,List<String>> outputs;
 	
+	private List<RuleSettings> rules;
+	
 //	private String[] events;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public List<RuleSettings> getRules() {
+		return rules;
+	}
+
+	public void setRules(List<RuleSettings> rules) {
+		this.rules = rules;
+	}
 
 	public TestScript() {
 
