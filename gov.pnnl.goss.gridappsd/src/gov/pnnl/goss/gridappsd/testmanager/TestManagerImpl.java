@@ -408,7 +408,10 @@ public class TestManagerImpl implements TestManager {
 	
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setProcessId(this.getClass().getSimpleName());
+
+//		logMessageObj.setProcessId(this.getClass().getSimpleName());
+		logMessageObj.setSource(this.getClass().getSimpleName());
+
 		logMessageObj.setLogLevel(LogLevel.DEBUG);
 		logMessageObj.setSource(this.getClass().getSimpleName());
 		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
