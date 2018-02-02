@@ -48,45 +48,46 @@
 
 
 int main(void) {
-	// ------------------------------------------------------------------------
-	// START ACTIVEMQ
-	// ------------------------------------------------------------------------
-	activemq::library::ActiveMQCPP::initializeLibrary();
-	std::cout << "=====================================================\n";
-    std::cout << "Starting the example:" << std::endl;
-    std::cout << "-----------------------------------------------------\n";
-	// Set the URI to point to the IP Address of your broker.
-    // add any optional params to the url to enable things like
-    // tightMarshalling or tcp logging etc.  See the CMS web site for
-    // a full list of configuration options.
-    //
-    //  http://activemq.apache.org/cms/
-    //
-    // Wire Format Options:
-    // =========================
-    // Use either stomp or openwire, the default ports are different for each
-    //
-    // Examples:
-    //    tcp://127.0.0.1:61616                      default to openwire
-    //    tcp://127.0.0.1:61616?wireFormat=openwire  same as above
-    //    tcp://127.0.0.1:61613?wireFormat=stomp     use stomp instead
-    //
-    // SSL:
-    // =========================
-    // To use SSL you need to specify the location of the trusted Root CA or the
-    // certificate for the broker you want to connect to.  Using the Root CA allows
-    // you to use failover with multiple servers all using certificates signed by
-    // the trusted root.  If using client authentication you also need to specify
-    // the location of the client Certificate.
-    //
-    //     System::setProperty( "decaf.net.ssl.keyStore", "<path>/client.pem" );
-    //     System::setProperty( "decaf.net.ssl.keyStorePassword", "password" );
-    //     System::setProperty( "decaf.net.ssl.trustStore", "<path>/rootCA.pem" );
-    //
-    // The you just specify the ssl transport in the URI, for example:
-    //
-    //     ssl://localhost:61617
-    //
+	try {
+		// --------------------------------------------------------------------
+		// START ACTIVEMQ
+		// --------------------------------------------------------------------
+		activemq::library::ActiveMQCPP::initializeLibrary();
+		std::cout << "=====================================================\n";
+	    std::cout << "Starting the example:" << std::endl;
+	    std::cout << "-----------------------------------------------------\n";
+		// Set the URI to point to the IP Address of your broker.
+	    // add any optional params to the url to enable things like
+	    // tightMarshalling or tcp logging etc.  See the CMS web site for
+	    // a full list of configuration options.
+	    //
+	    //  http://activemq.apache.org/cms/
+	    //
+	    // Wire Format Options:
+	    // =========================
+	    // Use either stomp or openwire, the default ports are different for each
+	    //
+	    // Examples:
+	    //    tcp://127.0.0.1:61616                      default to openwire
+	    //    tcp://127.0.0.1:61616?wireFormat=openwire  same as above
+	    //    tcp://127.0.0.1:61613?wireFormat=stomp     use stomp instead
+	    //
+	    // SSL:
+	    // =========================
+	    // To use SSL you need to specify the location of the trusted Root CA or the
+	    // certificate for the broker you want to connect to.  Using the Root CA allows
+	    // you to use failover with multiple servers all using certificates signed by
+	    // the trusted root.  If using client authentication you also need to specify
+	    // the location of the client Certificate.
+	    //
+    	//     System::setProperty( "decaf.net.ssl.keyStore", "<path>/client.pem" );
+    	//     System::setProperty( "decaf.net.ssl.keyStorePassword", "password" );
+    	//     System::setProperty( "decaf.net.ssl.trustStore", "<path>/rootCA.pem" );
+    	//
+    	// The you just specify the ssl transport in the URI, for example:
+    	//
+    	//     ssl://localhost:61617
+    	//
 	    std::string brokerURI =
         "failover:(tcp://WE33461.pnl.gov:61616"
 //        "?wireFormat=openwire"
@@ -98,446 +99,448 @@ int main(void) {
 //        "&wireFormat.tightEncodingEnabled=true"
         ")";
 
-    //============================================================
-    // set to true to use topics instead of queues
-    // Note in the code above that this causes createTopic or
-    // createQueue to be used in both consumer an producer.
-    //============================================================
-    bool useTopics = true;
-    bool sessionTransacted = false;
-    int numMessages = 2000;
+	    //============================================================
+	    // set to true to use topics instead of queues
+	    // Note in the code above that this causes createTopic or
+	    // createQueue to be used in both consumer an producer.
+	    //============================================================
+	    bool useTopics = true;
+	    bool sessionTransacted = false;
+	    int numMessages = 100;
+	
+	    long long startTime = System::currentTimeMillis();
+	
+    	HelloWorldProducer producer(brokerURI, numMessages, useTopics);
+    	HelloWorldConsumer consumer(brokerURI, numMessages, useTopics, sessionTransacted);
 
-    long long startTime = System::currentTimeMillis();
-
-    HelloWorldProducer producer(brokerURI, numMessages, useTopics);
-    HelloWorldConsumer consumer(brokerURI, numMessages, useTopics, sessionTransacted);
-
-    // Start the consumer thread.
-    Thread consumerThread(&consumer);
-    consumerThread.start();
-	std::cout<<"consumer thread started\n";
-
-    // Wait for the consumer to indicate that its ready to go.
-    consumer.waitUntilReady();
-
-    // Start the producer thread.
-    Thread producerThread(&producer);
-    producerThread.start();
-	std::cout<<"producer thread started\n";
-
-    // Wait for the threads to complete.
-    producerThread.join();
-    consumerThread.join();
-
-    long long endTime = System::currentTimeMillis();
-    double totalTime = (double)(endTime - startTime) / 1000.0;
-
-    consumer.close();
-    producer.close();
+	    // Start the consumer thread.
+	    Thread consumerThread(&consumer);
+	    consumerThread.start();
+		std::cout<<"consumer thread started\n";
 	
-	std::cout << "Time to completion = " << totalTime << " seconds." << std::endl;
-    std::cout << "-----------------------------------------------------\n";
-    std::cout << "Finished with the example." << std::endl;
-    std::cout << "=====================================================\n";
-
-    activemq::library::ActiveMQCPP::shutdownLibrary();
+	    // Wait for the consumer to indicate that its ready to go.
+	    consumer.waitUntilReady();
 	
+	    // Start the producer thread.
+		Thread producerThread(&producer);
+   		producerThread.start();
+		std::cout<<"producer thread started\n";
 	
-	// ------------------------------------------------------------------------
-	// INITIALIZE
-	// ------------------------------------------------------------------------
+	    // Wait for the threads to complete.
+	    producerThread.join();
+	    consumerThread.join();
 	
+	    long long endTime = System::currentTimeMillis();
+	    double totalTime = (double)(endTime - startTime) / 1000.0;
 	
-	// READ CONFIGURATOIN FILE
-	//  - Determine mode
-	//  - Determine 
+	    consumer.close();
+	    producer.close();
+		
+		std::cout << "Time to completion = " << totalTime << " seconds." << std::endl;
+   		std::cout << "-----------------------------------------------------\n";
+   		std::cout << "Finished with the example." << std::endl;
+   		std::cout << "=====================================================\n";
 	
-	// vector of busnames
-	SVEC busnames;
-	// map busname -> position
-	
-	
-	// Initialize state vector
-	DVEC xV;	// vector of voltage magnitude states
-	DVEC xT;	// vector of voltage angle states
-	// for ( /* numbuses/numbranches */ ) {
-		// xV.append();
-		// xT.append();
-	// }
-	int xqty = xV.size() + xT.size();
-	
-	
-	// query database for branches
-	// vectors of: bus1, bus2, impedance parameters
-	
-	
-	
-	// ------------------------------------------------------------------------
-	// BUILD TOPOLOGY
-	// ------------------------------------------------------------------------
-	// Build the adjacency matrix
-	std::vector<std::vector<uint>> A;
-	// outer vector has an element for every row
-	// inner vector contains the indices of adjacent nodes
-	// To add an adjacent pair of indices (i,j):
-	//	-- if ( i > A.size() ) { append empty vector until A.size() == i }
-	//  -- A[i].append(j);
-	
-	// Build the Admittance Matrix Y
-	MMAP Ym;
-	CVEC Y;
-	// To append an element:
-	//	-- Ym[i][j] = Y.size();
-	//	-- Y.append(yij);
-	// G, B, g, and b are derived from Y:
-	//	-- Gij = std::real(Ym[i][j]);
-	//	-- Bij = std::imag(Ym[i][j]);
-	//	-- gij = std::real(-1.0*Ym[i][j]);
-	//	-- bij = std::imag(-1.0*Ym[i][j]);
-
-	
-	// Initialize Measurement Vector z
-	// Determine the size of the measurement vector
-	DVEC sense;
-	DVEC ssigs;
-	SVEC sname;
-	// for ( /* sensor objects */ ) {
-		// z.append(0.0);
-		// sigs.append(sensor.std_dev());
-		// zn.append(/*JSON ADDRESS OF MEASUREMENT*/);
-	// }
-	int zqty = sense.size();
-	
-	
-	// Initialize Measurement Function h(x) and its jacobian H(x)
-	enum hx_t {
-		Pij ,
-		Qij ,
-		Pi ,
-		Qi };
-	DVEC hx;
-	std::vector<hx_t> thx;
-	std::vector<uint> hxi;
-	std::vector<std::vector<uint>> hxj;
-	for ( int ii = 0 ; ii < zqty ; ii++ ) {
-		// for each measurement:
-		// hx.append(initial value)
-		// thx.append(type [hx_t])
-		// if ( branch ) {
-			// hxi.append( i );
-			// hxj.append( (vector)(j) );
-		// }
-		// if ( bus ) {
-			// hxi.append( i );
-			// hxj.append( A[i] ); // from adjacency matrix
-		// }
-		// we should actually probably store the nodename or xidx
-	}
-	
-	
-	enum Hx_t {
-		dPijdVi , dPijdVj , dPijdTi , dPijdTj , 	
-		dQijdVi , dQijdVj , dQijdTi , dQijdTj , 
-		dPidVi  , dPidVj  , dPidTi  , dPidTj  ,
-		dQidVi  , dQidVj  , dQidTi  , dQidTj  };
-	DVEC Hx;
-	std::vector<Hx_t> tHx;
-	std::vector<uint> Hxi;
-	std::vector<std::vector<uint>> Hxj;
-	for ( int ii = 0 ; ii < zqty ; ii++ ) {
-		// for each measurement function:
-		for ( int jj = 0 ; jj < xqty ; jj ++ ) {
-			// We might want to have established a unified state vector by now
-			// establish the derivetive with respect to each state
-			// Hx.append(initial value)
-			// tHx.append(type [Hx_t])
-			// i???
-			// j???
-			// rows correspond to measurements
-			// columns correspond to derivatives with respect to states
-		}
-	}
-	
-	// Handoff from the topology processor to the state estimator
-	// ------------------------------------------------------------------------
-	// INTERNAL VARIABLE INITIALIZATION
-	// ------------------------------------------------------------------------
-	// Initialize State Vector x
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *xraw = cs_spalloc(0,0,xqty,1,1);
-	for ( int ii = 0 ; ii < xV.size() ; ii++ )
-		cs_entry(xraw,ii,0,xV[ii]);
-	for ( int ii = 0 ; ii < xT.size() ; ii++ )
-		cs_entry(xraw,xV.size()+ii,0,xT[ii]);
-	cs *x = cs_compress(xraw); cs_spfree(xraw);
-	
-	// Initialize measurement covariance matrix R
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *Rraw = cs_spalloc(0,0,zqty,1,1);
-	for ( int ii = 0 ; ii < zqty ; ii++ )
-		cs_entry(Rraw,ii,ii,ssigs[ii]);
-	cs *R = cs_compress(Rraw); cs_spfree(Rraw);
-	
-	// State transition matrix F
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *Fraw = cs_spalloc(0,0,xqty,1,1);
-	for ( int ii = 0 ; ii < xqty ; ii++ )
-		cs_entry(Fraw,ii,ii,1.0);
-	cs *F = cs_compress(Fraw); cs_spfree(Fraw);
-	
-	// Process noise covariance matrix Q
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *Qraw = cs_spalloc(0,0,xqty,1,1);
-	for ( int ii = 0 ; ii < xqty ; ii++ )
-		cs_entry(Qraw,ii,ii,0.04*sqrt(1.0/4));
-	cs *Q = cs_compress(Qraw); cs_spfree(Qraw);
-	
-	// Identity matrix of dimention of x eyex
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *eyexraw = cs_spalloc(0,0,xqty,1,1);
-	for ( int ii = 0 ; ii < xqty ; ii++ )
-		cs_entry(eyexraw,ii,ii,1.0);
-	cs *eyex = cs_compress(eyexraw); cs_spfree(eyexraw);
-	
-	// Identity matrix of dimention of z eyez
-	// cs_spalloc(m,n,nzmax,values,triplet)
-	cs *eyezraw = cs_spalloc(0,0,zqty,1,1);
-	for ( int ii = 0 ; ii < zqty ; ii++ )
-		cs_entry(eyexraw,ii,ii,1.0);
-	cs *eyez = cs_compress(eyezraw); cs_spfree(eyezraw);
-	
-	// Initialized error covariance matrix P
-	cs *Praw = cs_spalloc(0,0,xqty*xqty,1,1);
-	// initialize to zero on a cold start?
-	cs *P = cs_compress(Praw); cs_spfree(Praw);
-	
-	
-	
-	// ------------------------------------------------------------------------
-	// STATE ESTIMATOR LOOP
-	// ------------------------------------------------------------------------
-	bool quit = false;
-	while(!quit) {
-		// --------------------------------------------------------------------
-		// Check for New Measurements
-		// --------------------------------------------------------------------
-		while ( 0 /* check for new measurements */ ) {
-			// #include <chrono>
-			// #include <thread>
-			// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		}
+   		activemq::library::ActiveMQCPP::shutdownLibrary();
 		
 		
 		// --------------------------------------------------------------------
-		// Read Measurements
+		// INITIALIZE
 		// --------------------------------------------------------------------
-		for( int ii = 0 ; ii < sense.size() ; ii++ ) {
-			// if ( /* sname[ii] in json */ ) {
-				// sense[ii] = json[sname[ii]];
+		
+		std::cout<<"Begin initialization...\n";
+
+		// READ CONFIGURATOIN FILE
+		//  - Determine mode
+		//  - Determine 
+		
+		// vector of busnames
+		SVEC busnames;
+		// map busname -> position
+		
+		
+		// Initialize state vector
+		DVEC xV;	// vector of voltage magnitude states
+		DVEC xT;	// vector of voltage angle states
+		// for ( /* numbuses/numbranches */ ) {
+			// xV.append();
+			// xT.append();
+		// }
+		int xqty = xV.size() + xT.size();
+		
+		
+		// query database for branches
+		// vectors of: bus1, bus2, impedance parameters
+		
+		
+		
+		// --------------------------------------------------------------------
+		// BUILD TOPOLOGY
+		// --------------------------------------------------------------------
+		// Build the adjacency matrix
+		std::vector<std::vector<uint>> A;
+		// outer vector has an element for every row
+		// inner vector contains the indices of adjacent nodes
+		// To add an adjacent pair of indices (i,j):
+		//	-- if ( i > A.size() ) { append empty vector until A.size() == i }
+		//  -- A[i].append(j);
+		
+		// Build the Admittance Matrix Y
+		MMAP Ym;
+		CVEC Y;
+		// To append an element:
+		//	-- Ym[i][j] = Y.size();
+		//	-- Y.append(yij);
+		// G, B, g, and b are derived from Y:
+		//	-- Gij = std::real(Ym[i][j]);
+		//	-- Bij = std::imag(Ym[i][j]);
+		//	-- gij = std::real(-1.0*Ym[i][j]);
+		//	-- bij = std::imag(-1.0*Ym[i][j]);
+	
+		
+		// Initialize Measurement Vector z
+		// Determine the size of the measurement vector
+		DVEC sense;
+		DVEC ssigs;
+		SVEC sname;
+		// for ( /* sensor objects */ ) {
+			// z.append(0.0);
+			// sigs.append(sensor.std_dev());
+			// zn.append(/*JSON ADDRESS OF MEASUREMENT*/);
+		// }
+		int zqty = sense.size();
+		
+		
+		// Initialize Measurement Function h(x) and its jacobian H(x)
+		enum hx_t {
+			Pij ,
+			Qij ,
+			Pi ,
+			Qi };
+		DVEC hx;
+		std::vector<hx_t> thx;
+		std::vector<uint> hxi;
+		std::vector<std::vector<uint>> hxj;
+		for ( int ii = 0 ; ii < zqty ; ii++ ) {
+			// for each measurement:
+			// hx.append(initial value)
+			// thx.append(type [hx_t])
+			// if ( branch ) {
+				// hxi.append( i );
+				// hxj.append( (vector)(j) );
 			// }
-		}
-		
-		// --------------------------------------------------------------------
-		// Update Measurement Function h(x)
-		// --------------------------------------------------------------------
-		for ( int idx = 0 ; idx < hx.size() ; idx++ ) {
-			uint i = hxi[idx];
-			std::vector<uint> js = hxj[idx];
-			if ( Pij == thx[idx] ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				hx[idx] = xV[i]*xV[i]*gij - xV[i]*xV[j] * 
-					( gij*cos(Tij) + bij*sin(Tij) );
-			}
-			else if ( thx[idx] == Qij ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				hx[idx] = -1.0*xV[i]*xV[i]*bij - xV[i]*xV[j] * 
-					( gij*sin(Tij) - bij*cos(Tij) );
-			}
-			else if ( thx[idx] == Pi ) {
-				double h = 0;
-				for ( uint jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
-				}
-				hx[idx] = h * xV[i];
-			}
-			else if ( thx[idx] == Qi ) {
-				double h = 0;
-				for ( unsigned int jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
-				}
-				hx[idx] = h * xV[i];
-			}
+			// if ( bus ) {
+				// hxi.append( i );
+				// hxj.append( A[i] ); // from adjacency matrix
+			// }
+			// we should actually probably store the nodename or xidx
 		}
 		
 		
-		// --------------------------------------------------------------------
-		// Update Measurement Jacobian H(x)
-		// --------------------------------------------------------------------
-		for ( int idx = 0 ; idx < Hx.size() ; idx++ ) {
-			uint i = Hxi[idx];
-			std::vector<uint> js = Hxj[idx];
-			// ----------------------------------------------------------------
-			// Partial derivatives of real power flow measurements
-			// ----------------------------------------------------------------
-			if ( tHx[idx] == dPijdVi ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] =  -1.0*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) ) + 2*gij*xV[i];
-			}
-			else if ( tHx[idx] == dPijdVj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = -1.0*xV[i] * ( gij*cos(Tij) + bij*sin(Tij) );
-			}
-			else if ( tHx[idx] == dPijdTi ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
-			}
-			else if ( tHx[idx] == dPijdTj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
-			}
-			// ----------------------------------------------------------------
-			// Partial derivatives of reactive power flow measurements
-			// ----------------------------------------------------------------
-			else if ( tHx[idx] == dQijdVi ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = -1.0*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) ) - 2.0*xV[i]*bij;
-			}
-			else if ( tHx[idx] == dQijdVj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = -1.0*xV[i] * ( gij*sin(Tij) - bij*cos(Tij) );
-			}
-			else if ( tHx[idx] == dQijdTi ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
-			}
-			else if ( tHx[idx] == dQijdTj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double gij = std::real(-1.0*Ym[i][j]);
-				double bij = std::imag(-1.0*Ym[i][j]);
-				Hx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
-			}
-			// ----------------------------------------------------------------
-			// Partial derivatives of real power injection measurements
-			// ----------------------------------------------------------------
-			else if ( tHx[idx] == dPidVi ) {
-				double h = 0;
-				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
-				}
-				Hx[idx] = h + xV[i]*std::real(Ym[i][i]);
-			}
-			else if ( tHx[idx] == dPidVj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double Gij = std::real(Ym[i][j]);
-				double Bij = std::imag(Ym[i][j]);
-				Hx[idx] = xV[i] * ( Gij*cos(Tij) + Bij*sin(Tij) );
-			}
-			else if ( tHx[idx] == dPidTi ) {
-				double h = 0;
-				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[i]*xV[j]*( -1.0*Gij*sin(Tij) + Bij*cos(Tij) );
-				}
-				Hx[idx] = h - xV[i]*xV[i]*std::imag(Ym[i][i]);
-			}
-			else if ( tHx[idx] == dPidTj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double Gij = std::real(Ym[i][j]);
-				double Bij = std::imag(Ym[i][j]);
-				Hx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
-			}
-			// ----------------------------------------------------------------
-			// Partial derivatives of reactive power injection measurements
-			// ----------------------------------------------------------------
-			else if ( tHx[idx] == dQidVi ) {
-				double h = 0;
-				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
-				}
-				Hx[idx] =  h - xV[i]*std::imag(Ym[i][i]);
-			}
-			else if ( tHx[idx] == dQidVj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double Gij = std::real(Ym[i][j]);
-				double Bij = std::imag(Ym[i][j]);
-				Hx[idx] = xV[i] * ( Gij*sin(Tij) - Bij*cos(Tij) );
-			}
-			else if ( tHx[idx] == dQidTi ) {
-				double h = 0;
-				for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
-					uint j = js[jdx];
-					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
-					h += xV[i]*xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
-				}
-				Hx[idx] = h - xV[i]*xV[i]*std::real(Ym[i][i]);
-			}
-			else if ( tHx[idx] == dQidTj ) {
-				uint j = js[0];
-				double Tij = xT[i] - xT[j];
-				double Gij = std::real(Ym[i][j]);
-				double Bij = std::imag(Ym[i][j]);
-				Hx[idx] =  xV[i]*xV[j] * ( -1.0*Gij*cos(Tij) - Bij*sin(Tij) );
+		enum Hx_t {
+			dPijdVi , dPijdVj , dPijdTi , dPijdTj , 	
+			dQijdVi , dQijdVj , dQijdTi , dQijdTj , 
+			dPidVi  , dPidVj  , dPidTi  , dPidTj  ,
+			dQidVi  , dQidVj  , dQidTi  , dQidTj  };
+		DVEC Hx;
+		std::vector<Hx_t> tHx;
+		std::vector<uint> Hxi;
+		std::vector<std::vector<uint>> Hxj;
+		for ( int ii = 0 ; ii < zqty ; ii++ ) {
+			// for each measurement function:
+			for ( int jj = 0 ; jj < xqty ; jj ++ ) {
+				// We might want to have established a unified state vector by now
+				// establish the derivetive with respect to each state
+				// Hx.append(initial value)
+				// tHx.append(type [Hx_t])
+				// i???
+				// j???
+				// rows correspond to measurements
+				// columns correspond to derivatives with respect to states
 			}
 		}
 		
+		// Handoff from the topology processor to the state estimator
 		// --------------------------------------------------------------------
-		// Estimate State
+		// INTERNAL VARIABLE INITIALIZATION
 		// --------------------------------------------------------------------
+		// Initialize State Vector x
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *xraw = cs_spalloc(0,0,xqty,1,1);
+		for ( int ii = 0 ; ii < xV.size() ; ii++ )
+			cs_entry(xraw,ii,0,xV[ii]);
+		for ( int ii = 0 ; ii < xT.size() ; ii++ )
+			cs_entry(xraw,xV.size()+ii,0,xT[ii]);
+		cs *x = cs_compress(xraw); cs_spfree(xraw);
+		
+		// Initialize measurement covariance matrix R
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *Rraw = cs_spalloc(0,0,zqty,1,1);
+		for ( int ii = 0 ; ii < zqty ; ii++ )
+			cs_entry(Rraw,ii,ii,ssigs[ii]);
+		cs *R = cs_compress(Rraw); cs_spfree(Rraw);
+		
+		// State transition matrix F
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *Fraw = cs_spalloc(0,0,xqty,1,1);
+		for ( int ii = 0 ; ii < xqty ; ii++ )
+			cs_entry(Fraw,ii,ii,1.0);
+		cs *F = cs_compress(Fraw); cs_spfree(Fraw);
+		
+		// Process noise covariance matrix Q
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *Qraw = cs_spalloc(0,0,xqty,1,1);
+		for ( int ii = 0 ; ii < xqty ; ii++ )
+			cs_entry(Qraw,ii,ii,0.04*sqrt(1.0/4));
+		cs *Q = cs_compress(Qraw); cs_spfree(Qraw);
+		
+		// Identity matrix of dimention of x eyex
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *eyexraw = cs_spalloc(0,0,xqty,1,1);
+		for ( int ii = 0 ; ii < xqty ; ii++ )
+			cs_entry(eyexraw,ii,ii,1.0);
+		cs *eyex = cs_compress(eyexraw); cs_spfree(eyexraw);
+		
+		// Identity matrix of dimention of z eyez
+		// cs_spalloc(m,n,nzmax,values,triplet)
+		cs *eyezraw = cs_spalloc(0,0,zqty,1,1);
+		for ( int ii = 0 ; ii < zqty ; ii++ )
+			cs_entry(eyexraw,ii,ii,1.0);
+		cs *eyez = cs_compress(eyezraw); cs_spfree(eyezraw);
+		
+		// Initialized error covariance matrix P
+		cs *Praw = cs_spalloc(0,0,xqty*xqty,1,1);
+		// initialize to zero on a cold start?
+		cs *P = cs_compress(Praw); cs_spfree(Praw);
 		
 		
-		try {
+		
+		// --------------------------------------------------------------------
+		// STATE ESTIMATOR LOOP
+		// --------------------------------------------------------------------
+		std::cout<<"Begin estimator loop...\n";
+		bool quit = false;
+		while(!quit) {
+			// ----------------------------------------------------------------
+			// Check for New Measurements
+			// ----------------------------------------------------------------
+			while ( 0 /* check for new measurements */ ) {
+				// #include <chrono>
+				// #include <thread>
+				// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			}
+			
+			
+			// ----------------------------------------------------------------
+			// Read Measurements
+			// ----------------------------------------------------------------
+			for( int ii = 0 ; ii < sense.size() ; ii++ ) {
+				// if ( /* sname[ii] in json */ ) {
+					// sense[ii] = json[sname[ii]];
+				// }
+			}
+			
+			// ----------------------------------------------------------------
+			// Update Measurement Function h(x)
+			// ----------------------------------------------------------------
+			for ( int idx = 0 ; idx < hx.size() ; idx++ ) {
+				uint i = hxi[idx];
+				std::vector<uint> js = hxj[idx];
+				if ( Pij == thx[idx] ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					hx[idx] = xV[i]*xV[i]*gij - xV[i]*xV[j] * 
+						( gij*cos(Tij) + bij*sin(Tij) );
+				}
+				else if ( thx[idx] == Qij ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					hx[idx] = -1.0*xV[i]*xV[i]*bij - xV[i]*xV[j] * 
+						( gij*sin(Tij) - bij*cos(Tij) );
+				}
+				else if ( thx[idx] == Pi ) {
+					double h = 0;
+					for ( uint jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
+					}
+					hx[idx] = h * xV[i];
+				}
+				else if ( thx[idx] == Qi ) {
+					double h = 0;
+					for ( unsigned int jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+					}
+					hx[idx] = h * xV[i];
+				}
+			}
+			
+			
+			// ----------------------------------------------------------------
+			// Update Measurement Jacobian H(x)
+			// ----------------------------------------------------------------
+			for ( int idx = 0 ; idx < Hx.size() ; idx++ ) {
+				uint i = Hxi[idx];
+				std::vector<uint> js = Hxj[idx];
+				// ------------------------------------------------------------
+				// Partial derivatives of real power flow measurements
+				// ------------------------------------------------------------
+				if ( tHx[idx] == dPijdVi ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] =  -1.0*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) ) + 2*gij*xV[i];
+				}
+				else if ( tHx[idx] == dPijdVj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = -1.0*xV[i] * ( gij*cos(Tij) + bij*sin(Tij) );
+				}
+				else if ( tHx[idx] == dPijdTi ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
+				}
+				else if ( tHx[idx] == dPijdTj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
+				}
+				// ------------------------------------------------------------
+				// Partial derivatives of reactive power flow measurements
+				// ------------------------------------------------------------
+				else if ( tHx[idx] == dQijdVi ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = -1.0*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) ) - 2.0*xV[i]*bij;
+				}
+				else if ( tHx[idx] == dQijdVj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = -1.0*xV[i] * ( gij*sin(Tij) - bij*cos(Tij) );
+				}
+				else if ( tHx[idx] == dQijdTi ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
+				}
+				else if ( tHx[idx] == dQijdTj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double gij = std::real(-1.0*Ym[i][j]);
+					double bij = std::imag(-1.0*Ym[i][j]);
+					Hx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
+				}
+				// ------------------------------------------------------------
+				// Partial derivatives of real power injection measurements
+				// ------------------------------------------------------------
+				else if ( tHx[idx] == dPidVi ) {
+					double h = 0;
+					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
+						}
+					Hx[idx] = h + xV[i]*std::real(Ym[i][i]);
+				}
+				else if ( tHx[idx] == dPidVj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double Gij = std::real(Ym[i][j]);
+					double Bij = std::imag(Ym[i][j]);
+					Hx[idx] = xV[i] * ( Gij*cos(Tij) + Bij*sin(Tij) );
+				}
+				else if ( tHx[idx] == dPidTi ) {
+					double h = 0;
+					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[i]*xV[j]*( -1.0*Gij*sin(Tij) + Bij*cos(Tij) );
+					}
+					Hx[idx] = h - xV[i]*xV[i]*std::imag(Ym[i][i]);
+				}
+				else if ( tHx[idx] == dPidTj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double Gij = std::real(Ym[i][j]);
+					double Bij = std::imag(Ym[i][j]);
+					Hx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+				}
+				// ----------------------------------------------------------------
+				// Partial derivatives of reactive power injection measurements
+				// ----------------------------------------------------------------
+				else if ( tHx[idx] == dQidVi ) {
+					double h = 0;
+					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+					}
+					Hx[idx] =  h - xV[i]*std::imag(Ym[i][i]);
+				}
+				else if ( tHx[idx] == dQidVj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double Gij = std::real(Ym[i][j]);
+					double Bij = std::imag(Ym[i][j]);
+					Hx[idx] = xV[i] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+				}
+				else if ( tHx[idx] == dQidTi ) {
+					double h = 0;
+					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
+						uint j = js[jdx];
+						double Tij = xT[i] - xT[j];
+						double Gij = std::real(Ym[i][j]);
+						double Bij = std::imag(Ym[i][j]);
+						h += xV[i]*xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
+					}
+					Hx[idx] = h - xV[i]*xV[i]*std::real(Ym[i][i]);
+				}
+				else if ( tHx[idx] == dQidTj ) {
+					uint j = js[0];
+					double Tij = xT[i] - xT[j];
+					double Gij = std::real(Ym[i][j]);
+					double Bij = std::imag(Ym[i][j]);
+					Hx[idx] =  xV[i]*xV[j] * ( -1.0*Gij*cos(Tij) - Bij*sin(Tij) );
+				}
+			}
+			
+			// ----------------------------------------------------------------
+			// Estimate State
+			// ----------------------------------------------------------------
+			std::cout<<"Estimating state...\n";
+		
+		
 			// ----------------------------------------------------------------
 			// Setup variables
 			// ----------------------------------------------------------------
@@ -565,7 +568,7 @@ int main(void) {
 			// for ( int ii = 0 ; ii < Hx.size() ; ii ++
 			cs *H = cs_compress(Hraw); cs_spfree(Hraw);
 			
-			
+			cs_print(H,1);
 			
 			// ----------------------------------------------------------------
 			// Predict Step
@@ -597,16 +600,32 @@ int main(void) {
 			cs *K1 = cs_transpose(H,1);
 			cs *K2 = cs_multiply(Ppre,K1); cs_spfree(K1);
 			// cs *K3 = invertcs(Supd);
+
+			std::cout<<"hi\n";
+
 			// Initialize klusolve variables
 			klu_symbolic *klusym;
 			klu_numeric *klunum;
 			klu_common klucom;
-			if (!klu_defaults(&klucom)) throw "klu_defaults failed";
+			if (!klu_defaults(&klucom)) {
+				std::cout<<"klu_defaults failed";
+				throw "klu_defaults exception";
+			}
 			klusym = klu_analyze(Supd->m,Supd->p,Supd->i,&klucom);
-			if (!klusym) throw "klu_analyze failed";
+			if (!klusym) {
+				std::cout<<"klu_analyze failed:\n";
+				cs_print(Supd,1);
+				std::cout<<"\tSupd->m: "<<Supd->m<<'\n';
+				std::cout<<"\tSupd->p: "<<Supd->p<<'\n';
+				std::cout<<"\tSupd->i: "<<Supd->i<<'\n';
+				throw "klu_analyze exception";
+			}
 			klunum = klu_factor(Supd->p,Supd->i,Supd->x,klusym,&klucom);
-			if (!klunum) throw "klu_factor failed";
-			// Initialize an identiy right-hand size
+			if (!klunum) {
+				std::cout<<"klu_factor failed\n";
+				throw "klu_factor exception";
+			}
+			// Initialize an identiy right-hand side
 			double *rhs = new double[zqty*zqty];
 			for ( int ii = 0 ; ii < zqty*zqty ; ii++ )
 				rhs[ii] = ii/zqty == ii%zqty ? 1 : 0;
@@ -655,12 +674,13 @@ int main(void) {
 			
 			
 			quit = true;
-		catch(char* = err) {
-			std::cout << err << std::endl;
 		}
 	}
-	
-	
-	
+	catch(const char* err) {
+		std::cout<<"in catch block...\n";
+		//std::printf("%s",err);
+		// std::cout << err << std::endl;
+	}
+
 	return 0;
 }
