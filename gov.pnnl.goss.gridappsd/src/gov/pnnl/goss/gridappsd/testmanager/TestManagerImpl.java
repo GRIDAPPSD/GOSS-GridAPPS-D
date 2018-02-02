@@ -265,21 +265,23 @@ public class TestManagerImpl implements TestManager {
 					Process rulesProcess = null;
 					try {
 						
-						File defaultLogDir = new File(reqTest.getTestConfigPath()).getParentFile();
+						File defaultLogDir = new File(reqTest.getTestScriptPath()).getParentFile();
 
 	//					String RULE_APP_PATH = GridAppsDConstants.RULE_APP_PATH;
 //						String RULE_APP_PATH = "/Users/jsimpson/git/adms-business-rules/durable_rules/";
 						String RULE_APP_PATH = defaultLogDir.getAbsolutePath();
 
-						String appRuleName = "app_rules.py";
-//						logManager.log(new LogMessage(this.getClass().getSimpleName(),
-//								Integer.toString(simulationID), 
-//								new Date().getTime(), 
-//								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
-//								LogLevel.INFO, 
-//								ProcessStatus.RUNNING, 
-//								true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-//						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", getPath(RULE_APP_PATH), ""+simulationID);
+//						String appRuleName = "app_rules.py";
+						String appRuleName = testScript.getRules().get(0).name;
+						
+						logManager.log(new LogMessage(this.getClass().getSimpleName(),
+								Integer.toString(simulationID), 
+								new Date().getTime(), 
+								"Calling "+"python "+RULE_APP_PATH+" "+simulationID,
+								LogLevel.INFO, 
+								ProcessStatus.RUNNING, 
+								true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+
 						ProcessBuilder ruleAppBuilder = new ProcessBuilder("python", RULE_APP_PATH+File.separator+appRuleName,"-t","input","-p",""+rulePort,"--id", ""+simulationID);
 						ruleAppBuilder.redirectErrorStream(true);
 						ruleAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"rule_app.log"));
@@ -295,7 +297,8 @@ public class TestManagerImpl implements TestManager {
 
 			});
 			
-		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+//		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+		client.subscribe(GridAppsDConstants.topic_simulationLog + simulationID, new GossResponseEvent(){
 				
 			public void onMessage(Serializable message) {
 				DataResponse event = (DataResponse)message;
@@ -378,7 +381,7 @@ public class TestManagerImpl implements TestManager {
 		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 		try {
 		    HttpPost request = new HttpPost("http://localhost:"+port+"/"+topic+"/events");
-			String str_json= "{\"simulation_id\" : \"12ae2345\", \"message\" : { \"timestamp\" : \"YYYY-MMssZ\", \"difference_mrid\" : \"123a456b-789c-012d-345e-678f901a234\", \"reverse_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"0\" }, \"forward_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"1\" } }}";
+//			String str_json= "{\"simulation_id\" : \"12ae2345\", \"message\" : { \"timestamp\" : \"YYYY-MMssZ\", \"difference_mrid\" : \"123a456b-789c-012d-345e-678f901a234\", \"reverse_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"0\" }, \"forward_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"1\" } }}";
 			
 		    StringEntity params = new StringEntity(jsonObject.toString());
 		    request.addHeader(HTTP.CONTENT_TYPE, "application/json");
