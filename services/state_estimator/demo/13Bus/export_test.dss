@@ -1,0 +1,5 @@
+redirect IEEE13Base.dss
+solve
+export y triplet base_ysparse.csv
+export ynodelist base_nodelist.csv
+export summary base_summary.csv
