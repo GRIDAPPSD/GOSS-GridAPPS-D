@@ -230,7 +230,10 @@ public class ServiceManagerImpl implements ServiceManager{
 			        
 	    Process process = null;
 	    List<String> commands = new ArrayList<String>();
+	    String commandString = "";
 	    commands.add(serviceInfo.getExecution_path());
+	    StringUtils.join(iterable, separator)
+	    commandString += serviceInfo.getExecution_path()
 	    
 	    //Check if static args contain any replacement values
 		String staticArgs = serviceInfo.getStatic_args();
@@ -258,6 +261,12 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
 				
@@ -267,6 +276,11 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
@@ -277,6 +291,11 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 	
 					
