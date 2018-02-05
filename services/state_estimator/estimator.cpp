@@ -1,42 +1,37 @@
 // ActiveMQ Dependancies
 #include <activemq/library/ActiveMQCPP.h>
 #include "my_activeMQ.hpp"
-
-
-
 // END ActiveMQ Dependancies
 
 
+// SuiteSparse Dependancies
 #include "klu.h"
 #include "cs.h"
+// END SuiteSparse Dependancies
+
 
 #include <complex>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 #define uint unsigned int
 
-#include <array>
-#define DARY(len) std::array<double,len>
-#define UARY(len) std::array<unsigned int,len>
-#define SARY(len) std::array<std::string,len>
 
-
+// Aliases for vector data types
 #include <vector>
 #define DVEC std::vector<double>
-//#define UVEC std::vector<unsigned int>
 #define CVEC std::vector<std::complex<double>>
 #define SVEC std::vector<std::string>
 
 
-/*
-// Address (i,j) of a matrix
-#include <tuple>
-#define MADR std::tuple<unsigned int,unsigned int>
-*/
-
+// Store node names in a linked list and hash node name to their position
+#include <list>
+#define SLST std::list<std::string>
+#include <unordered_map>
+#define SMAP std::unordered_map<std::string,unsigned int>
 
 // Hash address (i,j) to the index of a sparse matrix vector
-#include <unordered_map>
 #define UMAP std::unordered_map<unsigned int,unsigned int>
 #define MMAP std::unordered_map<unsigned int,UMAP>
 
@@ -49,6 +44,7 @@
 
 int main(void) {
 	try {
+		/*
 		// --------------------------------------------------------------------
 		// START ACTIVEMQ
 		// --------------------------------------------------------------------
@@ -142,10 +138,10 @@ int main(void) {
    		std::cout << "=====================================================\n";
 	
    		activemq::library::ActiveMQCPP::shutdownLibrary();
-		
+		*/
 		
 		// --------------------------------------------------------------------
-		// INITIALIZE
+		// INITIALIZATION
 		// --------------------------------------------------------------------
 		
 		std::cout<<"Begin initialization...\n";
@@ -154,9 +150,7 @@ int main(void) {
 		//  - Determine mode
 		//  - Determine 
 		
-		// vector of busnames
-		SVEC busnames;
-		// map busname -> position
+
 		
 		
 		// Initialize state vector
@@ -175,29 +169,96 @@ int main(void) {
 		
 		
 		// --------------------------------------------------------------------
-		// BUILD TOPOLOGY
+		// PROCESS TOPOLOGY
 		// --------------------------------------------------------------------
-		// Build the adjacency matrix
-		std::vector<std::vector<uint>> A;
-		// outer vector has an element for every row
-		// inner vector contains the indices of adjacent nodes
-		// To add an adjacent pair of indices (i,j):
-		//	-- if ( i > A.size() ) { append empty vector until A.size() == i }
-		//  -- A[i].append(j);
-		
-		// Build the Admittance Matrix Y
-		MMAP Ym;
-		CVEC Y;
+
+		// BUILD NODE LIST STRUCTURES
+		SLST nodens; 	// tracks all node names in order
+		SMAP nodem;		// maps from node name to 1-indexed position
+		uint numns = 0;	// number nodes
+		// to add a node:
+		//	-- nodens.push_back(noden);
+		//	-- nodem[ndoen] = ++numns;
+
+
+		// For now, pull this in from a file:
+		//	base_nodelist.csv from dss cmd "export ynodelist base_nodelist.csv"
+		std::ifstream nfs;
+		nfs.open("demo/13Bus/base_nodelist.csv",std::ifstream::in);
+		if ( !nfs ) throw "failed to open node name file";
+		std::string nfsl;
+		while ( std::getline(nfs,nfsl) ) {
+			// strip leading and trailing quotations and white space
+			std::string noden = nfsl.substr(nfsl.find_first_not_of("\'\""),
+					nfsl.find_last_not_of(" \t\f\v\n\r\'\""));
+			//std::cout << "|" << noden << "|\n";
+			nodens.push_back(noden);
+			nodem[noden] = ++numns;
+		}
+		nfs.close();
+		// END pull node list from file
+
+
+//		// print back nodens and their positiions from nodem
+//		for ( auto itr = nodens.begin() ; itr != nodens.end() ; itr++ ) 
+//			cout << "Node |" << *itr << "| -> " << nodem[*itr] << '\n';
+
+
+
+		// BUILD THE ADMITTANCE MATRIX STRUCTURES
+		CVEC Y;			// this linear vector stores sparse Ybus entries
+		MMAP Ym;		// This 2D map maps row and colum indices to Y
 		// To append an element:
 		//	-- Ym[i][j] = Y.size();
-		//	-- Y.append(yij);
+		//	-- Y.push_back(std::complex<double>(G,B));
 		// G, B, g, and b are derived from Y:
-		//	-- Gij = std::real(Ym[i][j]);
-		//	-- Bij = std::imag(Ym[i][j]);
-		//	-- gij = std::real(-1.0*Ym[i][j]);
-		//	-- bij = std::imag(-1.0*Ym[i][j]);
-	
+		//	-- Gij = std::real(Y[Ym[i][j]]);
+		//	-- Bij = std::imag(Y[Ym[i][j]]);
+		//	-- gij = std::real(-1.0*Y[Ym[i][j]]);
+		//	-- bij = std::imag(-1.0*Y[Ym[i][j]]);
+
+
+		// For now, pull the ybus from a file:
+		// base_ysparse.csv from dss cmd "export y triplet base_ysparse.csv"
+		std::ifstream yfs;
+		//yfs.open("demo/4node/base_ysparse.csv",std::ifstream::in);
+		yfs.open("demo/13Bus/base_ysparse.csv",std::ifstream::in);
+		if ( !yfs ) throw "failed to open ybus file";
+		std::string yfsl;
+		std::getline(yfs,yfsl);		// skip the header
+		//std::cout<<yfsl<<'\n';		// print back the header
+		int i,j;
+		double G,B;
+		char c;
+		while ( yfs >> i >> c >> j >> c >> G >> c >> B ) {
+			cout << i << '\t' << j << '\t' << G << '\t' << B << '\n';
+			Ym[i][j] = Y.size();
+			if ( i != j ) Ym[j][i] = Y.size();
+			Y.push_back(std::complex<double>(G,B));
+		}
+		yfs.close();
+		// END pull ybus from file
+
 		
+//		// this accesses the sparse data vector Y directly
+//		for ( auto itr=Y.begin() ; itr!=Y.end() ; itr++ )
+//			cout << *itr << '\n';
+		
+//		// this provides random access sparse elements in Y:
+//		cout << "Y[1][1] = " <<	Y[Ym[1][1]] << '\n';
+//		cout << "Y[35][36] = " << Y[Ym[35][36]] << '\n';
+
+//		// list the populated index pairs in Ym:
+//		for ( auto itr=Ym.begin() ; itr!=Ym.end() ; itr++ ) {
+//			int i = std::get<0>(*itr);
+//			cout << "columns in row " << i << ";\n\t";
+//			for ( auto jtr=Ym[i].begin() ; jtr!=Ym[i].end() ; jtr++ ) {
+//				int j = std::get<0>(*jtr);
+//				cout << j << '\t';
+//			}
+//			cout << '\n';
+//		}
+
 		// Initialize Measurement Vector z
 		// Determine the size of the measurement vector
 		DVEC sense;
@@ -601,30 +662,15 @@ int main(void) {
 			cs *K2 = cs_multiply(Ppre,K1); cs_spfree(K1);
 			// cs *K3 = invertcs(Supd);
 
-			std::cout<<"hi\n";
-
 			// Initialize klusolve variables
 			klu_symbolic *klusym;
 			klu_numeric *klunum;
 			klu_common klucom;
-			if (!klu_defaults(&klucom)) {
-				std::cout<<"klu_defaults failed";
-				throw "klu_defaults exception";
-			}
+			if (!klu_defaults(&klucom)) throw "klu_defaults exception";
 			klusym = klu_analyze(Supd->m,Supd->p,Supd->i,&klucom);
-			if (!klusym) {
-				std::cout<<"klu_analyze failed:\n";
-				cs_print(Supd,1);
-				std::cout<<"\tSupd->m: "<<Supd->m<<'\n';
-				std::cout<<"\tSupd->p: "<<Supd->p<<'\n';
-				std::cout<<"\tSupd->i: "<<Supd->i<<'\n';
-				throw "klu_analyze exception";
-			}
+			if (!klusym) throw "klu_analyze exception";
 			klunum = klu_factor(Supd->p,Supd->i,Supd->x,klusym,&klucom);
-			if (!klunum) {
-				std::cout<<"klu_factor failed\n";
-				throw "klu_factor exception";
-			}
+			if (!klunum) throw "klu_factor exception";
 			// Initialize an identiy right-hand side
 			double *rhs = new double[zqty*zqty];
 			for ( int ii = 0 ; ii < zqty*zqty ; ii++ )
@@ -679,7 +725,7 @@ int main(void) {
 	catch(const char* err) {
 		std::cout<<"in catch block...\n";
 		//std::printf("%s",err);
-		// std::cout << err << std::endl;
+		std::cout << err << std::endl;
 	}
 
 	return 0;
