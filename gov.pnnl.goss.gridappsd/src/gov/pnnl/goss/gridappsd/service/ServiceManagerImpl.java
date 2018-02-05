@@ -230,10 +230,7 @@ public class ServiceManagerImpl implements ServiceManager{
 			        
 	    Process process = null;
 	    List<String> commands = new ArrayList<String>();
-	    String commandString = "";
 	    commands.add(serviceInfo.getExecution_path());
-	    StringUtils.join(iterable, separator)
-	    commandString += serviceInfo.getExecution_path()
 	    
 	    //Check if static args contain any replacement values
 		String staticArgs = serviceInfo.getStatic_args();
