@@ -254,7 +254,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				commands.add(0,"python");
 				
 				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-				processServiceBuilder.directory(serviceDirectory);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
 				process = processServiceBuilder.start();
