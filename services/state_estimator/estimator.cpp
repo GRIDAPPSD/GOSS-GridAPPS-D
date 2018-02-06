@@ -35,6 +35,11 @@
 #define UMAP std::unordered_map<unsigned int,unsigned int>
 #define MMAP std::unordered_map<unsigned int,UMAP>
 
+#define CMAP std::unordered_map<unsigned int, std::complex<double>>
+#define CMMP std::unordered_map<unsigned int,CAP>
+
+// Store x and z in a list indexed by 
+
 
 /*
 #include <array>
@@ -44,6 +49,18 @@
 
 int main(void) {
 	try {
+		// --------------------------------------------------------------------
+		// INITIALIZATION
+		// --------------------------------------------------------------------
+		
+		std::cout<<"Begin initialization...\n";
+
+		// READ CONFIGURATOIN FILE
+		//  - Determine mode
+		//  - Determine 
+		
+
+		
 		/*
 		// --------------------------------------------------------------------
 		// START ACTIVEMQ
@@ -140,32 +157,6 @@ int main(void) {
    		activemq::library::ActiveMQCPP::shutdownLibrary();
 		*/
 		
-		// --------------------------------------------------------------------
-		// INITIALIZATION
-		// --------------------------------------------------------------------
-		
-		std::cout<<"Begin initialization...\n";
-
-		// READ CONFIGURATOIN FILE
-		//  - Determine mode
-		//  - Determine 
-		
-
-		
-		
-		// Initialize state vector
-		DVEC xV;	// vector of voltage magnitude states
-		DVEC xT;	// vector of voltage angle states
-		// for ( /* numbuses/numbranches */ ) {
-			// xV.append();
-			// xT.append();
-		// }
-		int xqty = xV.size() + xT.size();
-		
-		
-		// query database for branches
-		// vectors of: bus1, bus2, impedance parameters
-		
 		
 		
 		// --------------------------------------------------------------------
@@ -205,17 +196,21 @@ int main(void) {
 
 
 
-		// BUILD THE ADMITTANCE MATRIX STRUCTURES
-		CVEC Y;			// this linear vector stores sparse Ybus entries
-		MMAP Ym;		// This 2D map maps row and colum indices to Y
-		// To append an element:
-		//	-- Ym[i][j] = Y.size();
-		//	-- Y.push_back(std::complex<double>(G,B));
-		// G, B, g, and b are derived from Y:
-		//	-- Gij = std::real(Y[Ym[i][j]]);
-		//	-- Bij = std::imag(Y[Ym[i][j]]);
-		//	-- gij = std::real(-1.0*Y[Ym[i][j]]);
-		//	-- bij = std::imag(-1.0*Y[Ym[i][j]]);
+//		// BUILD THE ADMITTANCE MATRIX STRUCTURES
+//		CVEC Y;			// this linear vector stores sparse Ybus entries
+//		MMAP Ym;		// This 2D map maps row and colum indices to Y
+//		// To append an element:
+//		//	-- Ym[i][j] = Y.size();
+//		//	-- Y.push_back(std::complex<double>(G,B));
+//		// G, B, g, and b are derived from Y:
+//		//	-- Gij = std::real(Y[Ym[i][j]]);
+//		//	-- Bij = std::imag(Y[Ym[i][j]]);
+//		//	-- gij = std::real(-1.0*Y[Ym[i][j]]);
+//		//	-- bij = std::imag(-1.0*Y[Ym[i][j]]);
+
+		CMMP YY;		// two-dimensional sparse matrix
+		
+		
 
 
 		// For now, pull the ybus from a file:
@@ -232,13 +227,19 @@ int main(void) {
 		char c;
 		while ( yfs >> i >> c >> j >> c >> G >> c >> B ) {
 			cout << i << '\t' << j << '\t' << G << '\t' << B << '\n';
-			Ym[i][j] = Y.size();
-			if ( i != j ) Ym[j][i] = Y.size();
-			Y.push_back(std::complex<double>(G,B));
+//			Ym[i][j] = Y.size();
+//			if ( i != j ) Ym[j][i] = Y.size();
+//			Y.push_back(std::complex<double>(G,B));
+			YY[i][j] = std::complex<double>(G,B));
+			if ( i != j ) YY[j][i] = std::complex<double(G,B));
 		}
 		yfs.close();
 		// END pull ybus from file
 
+
+		cout << "Y[1][1] = " << Y[1][1] << '\n';
+		cout << "Y[35][36] = " << Y[35][36] << '\n';
+		throw "debugging: end YY test";
 		
 //		// this accesses the sparse data vector Y directly
 //		for ( auto itr=Y.begin() ; itr!=Y.end() ; itr++ )
@@ -259,7 +260,23 @@ int main(void) {
 //			cout << '\n';
 //		}
 
-		// Initialize Measurement Vector z
+
+		// --------------------------------------------------------------------
+		// INITIALIZE METER INTERFACE
+		// --------------------------------------------------------------------
+
+		// INITIALIZE THE STATE VECTOR
+		vnom = 0.0;	// get this from the CIM?
+		DVEC xV;	// vector of voltage magnitude states
+		DVEC xT;	// vector of voltage angle states
+		for ( int idx = 0 ; idx < numns ; idx++ ) {
+			xV.push_back(vnom);
+			xT.push_back(0);
+		}
+		int xqty = xV.size() + xT.size();
+		
+		
+		// INITIALIZE THE MEASUREMENT VECTOR
 		// Determine the size of the measurement vector
 		DVEC sense;
 		DVEC ssigs;
@@ -272,7 +289,7 @@ int main(void) {
 		int zqty = sense.size();
 		
 		
-		// Initialize Measurement Function h(x) and its jacobian H(x)
+		// INITIALIZE THE MEASUREMENT FUNCTION h(x)
 		enum hx_t {
 			Pij ,
 			Qij ,
@@ -297,23 +314,23 @@ int main(void) {
 			// we should actually probably store the nodename or xidx
 		}
 		
-		
-		enum Hx_t {
+		// INITIALIZE THE MEASUREMENT FUNCTION JACOBIAN J(x)
+		enum Jx_t {
 			dPijdVi , dPijdVj , dPijdTi , dPijdTj , 	
 			dQijdVi , dQijdVj , dQijdTi , dQijdTj , 
 			dPidVi  , dPidVj  , dPidTi  , dPidTj  ,
 			dQidVi  , dQidVj  , dQidTi  , dQidTj  };
-		DVEC Hx;
-		std::vector<Hx_t> tHx;
-		std::vector<uint> Hxi;
-		std::vector<std::vector<uint>> Hxj;
+		DVEC Jx;
+		std::vector<Jx_t> tJx;
+		std::vector<uint> Jxi;
+		std::vector<std::vector<uint>> Jxj;
 		for ( int ii = 0 ; ii < zqty ; ii++ ) {
 			// for each measurement function:
 			for ( int jj = 0 ; jj < xqty ; jj ++ ) {
 				// We might want to have established a unified state vector by now
 				// establish the derivetive with respect to each state
-				// Hx.append(initial value)
-				// tHx.append(type [Hx_t])
+				// Jx.append(initial value)
+				// tJx.append(type [Jx_t])
 				// i???
 				// j???
 				// rows correspond to measurements
@@ -451,75 +468,75 @@ int main(void) {
 			// ----------------------------------------------------------------
 			// Update Measurement Jacobian H(x)
 			// ----------------------------------------------------------------
-			for ( int idx = 0 ; idx < Hx.size() ; idx++ ) {
-				uint i = Hxi[idx];
-				std::vector<uint> js = Hxj[idx];
+			for ( int idx = 0 ; idx < Jx.size() ; idx++ ) {
+				uint i = Jxi[idx];
+				std::vector<uint> js = Jxj[idx];
 				// ------------------------------------------------------------
 				// Partial derivatives of real power flow measurements
 				// ------------------------------------------------------------
-				if ( tHx[idx] == dPijdVi ) {
+				if ( tJx[idx] == dPijdVi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] =  -1.0*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) ) + 2*gij*xV[i];
+					Jx[idx] =  -1.0*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) ) + 2*gij*xV[i];
 				}
-				else if ( tHx[idx] == dPijdVj ) {
+				else if ( tJx[idx] == dPijdVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = -1.0*xV[i] * ( gij*cos(Tij) + bij*sin(Tij) );
+					Jx[idx] = -1.0*xV[i] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
-				else if ( tHx[idx] == dPijdTi ) {
+				else if ( tJx[idx] == dPijdTi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
+					Jx[idx] = xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
-				else if ( tHx[idx] == dPijdTj ) {
+				else if ( tJx[idx] == dPijdTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
+					Jx[idx] = -1.0*xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
 				// ------------------------------------------------------------
 				// Partial derivatives of reactive power flow measurements
 				// ------------------------------------------------------------
-				else if ( tHx[idx] == dQijdVi ) {
+				else if ( tJx[idx] == dQijdVi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = -1.0*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) ) - 2.0*xV[i]*bij;
+					Jx[idx] = -1.0*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) ) - 2.0*xV[i]*bij;
 				}
-				else if ( tHx[idx] == dQijdVj ) {
+				else if ( tJx[idx] == dQijdVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = -1.0*xV[i] * ( gij*sin(Tij) - bij*cos(Tij) );
+					Jx[idx] = -1.0*xV[i] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
-				else if ( tHx[idx] == dQijdTi ) {
+				else if ( tJx[idx] == dQijdTi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = -1.0*xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
+					Jx[idx] = -1.0*xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
-				else if ( tHx[idx] == dQijdTj ) {
+				else if ( tJx[idx] == dQijdTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double gij = std::real(-1.0*Ym[i][j]);
 					double bij = std::imag(-1.0*Ym[i][j]);
-					Hx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
+					Jx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
 				// ------------------------------------------------------------
 				// Partial derivatives of real power injection measurements
 				// ------------------------------------------------------------
-				else if ( tHx[idx] == dPidVi ) {
+				else if ( tJx[idx] == dPidVi ) {
 					double h = 0;
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
@@ -528,16 +545,16 @@ int main(void) {
 						double Bij = std::imag(Ym[i][j]);
 						h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 						}
-					Hx[idx] = h + xV[i]*std::real(Ym[i][i]);
+					Jx[idx] = h + xV[i]*std::real(Ym[i][i]);
 				}
-				else if ( tHx[idx] == dPidVj ) {
+				else if ( tJx[idx] == dPidVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double Gij = std::real(Ym[i][j]);
 					double Bij = std::imag(Ym[i][j]);
-					Hx[idx] = xV[i] * ( Gij*cos(Tij) + Bij*sin(Tij) );
+					Jx[idx] = xV[i] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 				}
-				else if ( tHx[idx] == dPidTi ) {
+				else if ( tJx[idx] == dPidTi ) {
 					double h = 0;
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
@@ -546,19 +563,19 @@ int main(void) {
 						double Bij = std::imag(Ym[i][j]);
 						h += xV[i]*xV[j]*( -1.0*Gij*sin(Tij) + Bij*cos(Tij) );
 					}
-					Hx[idx] = h - xV[i]*xV[i]*std::imag(Ym[i][i]);
+					Jx[idx] = h - xV[i]*xV[i]*std::imag(Ym[i][i]);
 				}
-				else if ( tHx[idx] == dPidTj ) {
+				else if ( tJx[idx] == dPidTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double Gij = std::real(Ym[i][j]);
 					double Bij = std::imag(Ym[i][j]);
-					Hx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+					Jx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 				}
 				// ----------------------------------------------------------------
 				// Partial derivatives of reactive power injection measurements
 				// ----------------------------------------------------------------
-				else if ( tHx[idx] == dQidVi ) {
+				else if ( tJx[idx] == dQidVi ) {
 					double h = 0;
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
@@ -567,16 +584,16 @@ int main(void) {
 						double Bij = std::imag(Ym[i][j]);
 						h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 					}
-					Hx[idx] =  h - xV[i]*std::imag(Ym[i][i]);
+					Jx[idx] =  h - xV[i]*std::imag(Ym[i][i]);
 				}
-				else if ( tHx[idx] == dQidVj ) {
+				else if ( tJx[idx] == dQidVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double Gij = std::real(Ym[i][j]);
 					double Bij = std::imag(Ym[i][j]);
-					Hx[idx] = xV[i] * ( Gij*sin(Tij) - Bij*cos(Tij) );
+					Jx[idx] = xV[i] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 				}
-				else if ( tHx[idx] == dQidTi ) {
+				else if ( tJx[idx] == dQidTi ) {
 					double h = 0;
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
@@ -585,14 +602,14 @@ int main(void) {
 						double Bij = std::imag(Ym[i][j]);
 						h += xV[i]*xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 					}
-					Hx[idx] = h - xV[i]*xV[i]*std::real(Ym[i][i]);
+					Jx[idx] = h - xV[i]*xV[i]*std::real(Ym[i][i]);
 				}
-				else if ( tHx[idx] == dQidTj ) {
+				else if ( tJx[idx] == dQidTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
 					double Gij = std::real(Ym[i][j]);
 					double Bij = std::imag(Ym[i][j]);
-					Hx[idx] =  xV[i]*xV[j] * ( -1.0*Gij*cos(Tij) - Bij*sin(Tij) );
+					Jx[idx] =  xV[i]*xV[j] * ( -1.0*Gij*cos(Tij) - Bij*sin(Tij) );
 				}
 			}
 			
@@ -626,7 +643,7 @@ int main(void) {
 			// Note: to improve efficiency, initialize a csc before loop and
 			//		insert new values computed above directly into the csc
 			cs *Hraw = cs_spalloc(0,0,xqty*zqty,1,1);
-			// for ( int ii = 0 ; ii < Hx.size() ; ii ++
+			// for ( int ii = 0 ; ii < Jx.size() ; ii ++
 			cs *H = cs_compress(Hraw); cs_spfree(Hraw);
 			
 			cs_print(H,1);
