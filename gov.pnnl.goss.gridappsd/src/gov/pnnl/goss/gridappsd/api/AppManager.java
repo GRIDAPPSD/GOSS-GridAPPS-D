@@ -39,12 +39,14 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.AppInstance;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import pnnl.goss.core.DataResponse;
 
 public interface AppManager {
@@ -107,15 +109,7 @@ public interface AppManager {
 	 */
 	String startApp(String appId, String runtimeOptions, String requestId);  //may also need input/output topics or simulation id, would return app instance id
 	
-	/**
-	 * Start app instance
-	 * @param appId Registered ID of the desired app
-	 * @param runtimeOptions Runtime options for the app instance, in most cases these will be passed in on the command-line
-	 * @param simulationId  Associated simulation Id
-	 * @param requestId
-	 * @return String containing app instance ID
-	 */
-	String startAppForSimultion(String appId, String runtimeOptions, String simulationId, String requestId);  //may also need input/output topics??, would return app instance id
+	String startAppForSimultion(String appId, String runtimeOptions, Map simulationContext);  //may also need input/output topics??, would return app instance id
 	
 	/**
 	 * Stops all instances of the app with requested app ID

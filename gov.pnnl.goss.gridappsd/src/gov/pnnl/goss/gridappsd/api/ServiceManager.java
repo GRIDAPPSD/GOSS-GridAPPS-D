@@ -39,12 +39,13 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
-
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import java.util.Map;
 
 public interface ServiceManager {
 
@@ -83,14 +84,7 @@ public interface ServiceManager {
 	 */
 	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
 	
-	/**
-	 * Start service instance for a particular simulation
-	 * @param service_id   Registered ID of the desired service
-	 * @param runtimeOptions Runtime options for the service instance, in most cases these will be passed in on the command-line 
-	 * @param simulationId  Associated simulation Id
-	 * @return  String containing service instance ID
-	 */
-	String startServiceForSimultion(String service_id, String runtimeOptions, String simulationId);  //may also need input/output topics??
+	String startServiceForSimultion(String service_id, String runtimeOptions, Map<String,Object> simulationContext);  //may also need input/output topics??
 	
 	/**
 	 * Stops all instances of the service with requested service ID

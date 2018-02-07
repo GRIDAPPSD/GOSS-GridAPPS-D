@@ -64,6 +64,21 @@ public class AppInfo implements Serializable {
 	boolean launch_on_startup;
 	List<String> prereqs;
 	boolean multiple_instances;
+	List<AppInstance> instances;
+	
+
+	public List<AppInstance> getInstances() {
+		return instances;
+	}
+
+	public void setInstances(List<AppInstance> instances) {
+		this.instances = instances;
+	}
+	
+	public void addInstance(AppInstance instance) {
+		this.instances.add(instance);
+	}
+
 	
 
 	public String getId() {

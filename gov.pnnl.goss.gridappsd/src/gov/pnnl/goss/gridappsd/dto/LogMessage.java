@@ -55,17 +55,19 @@ public class LogMessage implements Serializable {
 		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE
 	}
 	
+	String source;
 	String processId;
 	long timestamp;
 	String logMessage;
-	LogLevel logLevel;
-	ProcessStatus processStatus;
+	LogLevel logLevel = LogLevel.DEBUG;
+	ProcessStatus processStatus = ProcessStatus.RUNNING;
 	Boolean storeToDb = true;
 	
 	public LogMessage(){}
 	
-	public LogMessage(String processId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb){
-		this.processId = processId;
+	public LogMessage(String source, String requestId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb){
+		this.source = source;
+		this.processId = requestId;
 		this.timestamp = timestamp;
 		this.logLevel = logLevel;
 		this.logMessage = logMessage;
@@ -73,12 +75,21 @@ public class LogMessage implements Serializable {
 		this.storeToDb = storeToDb;
 	}
 	
+	public String getSource() {
+		return source;
+	}
+	public void setSource(String source) {
+		this.source = source;
+	}
+	
 	public String getProcessId() {
 		return processId;
 	}
+
 	public void setProcessId(String processId) {
 		this.processId = processId;
 	}
+
 	public long getTimestamp() {
 		return timestamp;
 	}

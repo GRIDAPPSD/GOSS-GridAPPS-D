@@ -39,10 +39,14 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.io.Serializable;
+
 import com.google.gson.Gson;
 
-public class ModelCreationConfig {
+public class ModelCreationConfig implements Serializable{
 
+	private static final long serialVersionUID = 1L;
+	
 	public double load_scaling_factor = 1; // -l .2 to 1
 	public char triplex = 'y'; //allowed values y|n to include secondary     maps to -t
 	public char encoding = 'u';  //allowed values u|i for UTF-8 or ISO-8859-1    maps to -e

@@ -43,17 +43,20 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
-import java.awt.GridBagConstraints;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -62,9 +65,6 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.mockito.internal.matchers.InstanceOf;
-
-import com.google.gson.JsonSyntaxException;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -100,6 +100,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
+	
+	@ServiceDependency
+	private volatile ServiceManager serviceManager;
 	
 	ProcessNewSimulationRequest newSimulationProcess = null;
 	
@@ -137,14 +140,14 @@ public class ProcessManagerImpl implements ProcessManager {
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 		
 			logMessageObj.setLogLevel(LogLevel.DEBUG);
-			logMessageObj.setProcessId(this.getClass().getName());
+			logMessageObj.setSource(this.getClass().getName());
 			logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
 			logMessageObj.setStoreToDb(true);
 			logMessageObj.setLogMessage("Starting "+ this.getClass().getName());
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 			
 			if(newSimulationProcess==null)
-				newSimulationProcess = new ProcessNewSimulationRequest(); 
+				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager); 
 			
 			
 			
@@ -166,17 +169,14 @@ public class ProcessManagerImpl implements ProcessManager {
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLogMessage("Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
 					client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-					
-					
-					
+										
 					//TODO: create registry mapping between request topics and request handlers.
 					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-						//generate simulation id and reply to event's reply destination.
 						
 						try {
 							int simPort = assignSimulationPort(processId);
 							client.publish(event.getReplyDestination(), processId);
-							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort);
+							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort, appManager, serviceManager);
 						} catch (Exception e) {
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());
@@ -211,7 +211,18 @@ public class ProcessManagerImpl implements ProcessManager {
 						//TODO: catch JsonSyntaxException and call  get ModelDataManager or SimulationOutputDataManager
 						
 					} else if(event.getDestination().contains("log")){
-						logManager.log(LogMessage.parse(message.toString()), username);
+						logManager.log(LogMessage.parse(message.toString()), username,null);
+					}
+					else if(event.getDestination().contains(GridAppsDConstants.topic_requestListAppsWithInstances)){
+						
+						
+						List<AppInfo> apps = appManager.listApps();
+						for(AppInfo app : apps){
+							List<AppInstance> appInstances = appManager.listRunningApps(app.getId());
+							app.setInstances(appInstances);
+						}
+						 
+						client.publish(event.getReplyDestination(), apps.toString());
 					}
 					
 					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
@@ -224,7 +235,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogLevel(LogLevel.ERROR);
 			logMessageObj.setLogMessage(e.getMessage());
-			logManager.log(logMessageObj, GridAppsDConstants.username);
+			logManager.log(logMessageObj, GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 		}
 		
 	}
