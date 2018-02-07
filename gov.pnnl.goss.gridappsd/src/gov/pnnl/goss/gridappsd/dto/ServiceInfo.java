@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ServiceInfo implements Serializable {
 	
@@ -172,7 +173,7 @@ public class ServiceInfo implements Serializable {
 		Gson  gson = new Gson();
 		ServiceInfo obj = gson.fromJson(jsonString, ServiceInfo.class);
 		if(obj.id==null)
-			throw new RuntimeException("Expected attribute service_id not found");
+			throw new JsonSyntaxException("Expected attribute service_id not found");
 		return obj;
 	}
 	

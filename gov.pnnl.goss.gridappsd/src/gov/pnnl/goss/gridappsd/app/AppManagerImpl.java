@@ -228,6 +228,7 @@ public class AppManagerImpl implements AppManager {
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
+		try{
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				null,
 				new Date().getTime(), 
@@ -245,8 +246,10 @@ public class AppManagerImpl implements AppManager {
 				String.format("Found %s applications", apps.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username,
-				GridAppsDConstants.topic_platformLog);
+				true),GridAppsDConstants.username);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	protected void scanForApps() {

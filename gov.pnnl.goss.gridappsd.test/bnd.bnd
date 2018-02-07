@@ -27,8 +27,8 @@ Test-Cases: ${test-cases}
 	org.amdatu.testing.configurator;version='[3.1,4)',\
 	org.apache.felix.dependencymanager;version='[4,5)',\
 	org.apache.felix.configadmin,\
-	pnnl.goss.core.core-api,\
-	pnnl.goss.core.goss-client,\
+	pnnl.goss.core.core-api;version=latest,\
+	pnnl.goss.core.goss-client;version=latest,\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
 	pnnl.goss.core.goss-core-server,\
 	pnnl.goss.core.goss-core-server-api,\

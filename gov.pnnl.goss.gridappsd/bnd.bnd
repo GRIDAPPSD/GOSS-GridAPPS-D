@@ -6,7 +6,7 @@
 	pnnl.goss.core.core-api;version=latest,\
 	pnnl.goss.core.goss-core-security,\
 	pnnl.goss.core.goss-core-server-api,\
-	pnnl.goss.core.goss-client,\
+	pnnl.goss.core.goss-client;version=latest,\
 	pnnl.goss.core.goss-core-server,\
 	pnnl.goss.core.goss-core-server-web,\
 	pnnl.goss.core.goss-core-server-registry,\
@@ -30,8 +30,8 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	blazegraph.cim2glm;version=latest
-
+	blazegraph.cim2glm;version=latest,\
+	commons-logging:commons-logging
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd

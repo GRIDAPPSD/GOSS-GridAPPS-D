@@ -56,6 +56,8 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -75,6 +77,9 @@ public class LogDataManagerMySQL implements LogDataManager {
 	private PreparedStatement preparedStatement;
 	Client client;
 	
+    private Logger log = LoggerFactory.getLogger(getClass());
+
+	
 	@Start
 	public void start(){
 		
@@ -84,7 +89,7 @@ public class LogDataManagerMySQL implements LogDataManager {
 			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
 			
-		} catch (SQLException e) {
+		} catch (SQLException e) { 
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -98,22 +103,26 @@ public class LogDataManagerMySQL implements LogDataManager {
 	public void store(String source, String processId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 		
-		try {
-			
-			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?, ?)");
-			preparedStatement.setString(1, source);
-			preparedStatement.setString(2, processId);
-			preparedStatement.setTimestamp(3, new Timestamp(timestamp));
-			preparedStatement.setString(4, log_message);
-			preparedStatement.setString(5, log_level.toString());
-			preparedStatement.setString(6, process_status.toString());
-			preparedStatement.setString(7, username);
-			
-			preparedStatement.executeUpdate();
-			
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
+		if(connection!=null){
+			try {
+				
+				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?)");
+				preparedStatement.setString(1, processId);
+				preparedStatement.setTimestamp(2, new Timestamp(timestamp));
+				preparedStatement.setString(3, log_message);
+				preparedStatement.setString(4, log_level.toString());
+				preparedStatement.setString(5, process_status.toString());
+				preparedStatement.setString(6, username);
+				
+				preparedStatement.executeUpdate();
+				
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			//Need to log a warning to file, that the connection did not exist
+			log.warn("Mysql connection not initialized for store");
 		}
 		
 		
@@ -122,7 +131,10 @@ public class LogDataManagerMySQL implements LogDataManager {
 	}
 
 	@Override
-	public void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username, String resultTopic, String logTopic) {
+	public void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,
+			String username, String resultTopic, String logTopic) {
+		
+		if(connection!=null){
 		
 		try {
 			String queryString = "SELECT * FROM gridappsd.log WHERE";
@@ -157,7 +169,11 @@ public class LogDataManagerMySQL implements LogDataManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		} else {
+			//Need a way to log warning to file that connection does not exist
+			log.warn("Mysql connection not initialized for query");
+		}		
+
 	}
 
 

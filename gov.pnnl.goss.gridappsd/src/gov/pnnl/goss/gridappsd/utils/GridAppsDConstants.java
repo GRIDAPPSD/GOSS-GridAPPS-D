@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Properties;
 import java.util.TimeZone;
 
 public class GridAppsDConstants {
@@ -140,4 +141,35 @@ public class GridAppsDConstants {
 	}
 	
 	
+	
+	/**
+	 * Helper method to get double value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static double getDoubleProperty(Properties props, String keyName, double defaultValue){
+		if(props.containsKey(keyName)){
+			String val = props.getProperty(keyName);
+			return new Double(val).doubleValue();
+		}
+		
+		return defaultValue;
+	}
+	
+	/**
+	 * Helper method to get String value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static String getStringProperty(Properties props, String keyName, String defaultValue){
+		if(props.containsKey(keyName)){
+			return props.getProperty(keyName);
+		}
+		
+		return defaultValue;
+	}
 }

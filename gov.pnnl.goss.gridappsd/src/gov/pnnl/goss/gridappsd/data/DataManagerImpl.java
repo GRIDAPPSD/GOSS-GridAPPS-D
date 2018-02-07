@@ -48,20 +48,19 @@ import java.util.Map;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.StatusReporter;
 
 /**
@@ -74,32 +73,41 @@ import gov.pnnl.goss.gridappsd.api.StatusReporter;
 public class DataManagerImpl implements DataManager {
 	
 	private Map<Class<?>, List<GridAppsDataHandler>> handlers = new HashMap<Class<?>, List<GridAppsDataHandler>>();
+	private Map<String, DataManagerHandler> dataManagers = new HashMap<String, DataManagerHandler>();
     private Logger log = LoggerFactory.getLogger(getClass());
     
 	Client client = null; 
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
-	
-	
+	@ServiceDependency
+	private volatile LogManager logManager;
 	@ServiceDependency
 	private volatile StatusReporter statusReporter;
+	
+	public DataManagerImpl(ClientFactory clientFactory, LogManager logManager){
+		this.clientFactory = clientFactory;
+		this.logManager = logManager;
+	}
+	public DataManagerImpl(){
+		
+	}
 	
 	@Start
 	public void start(){
 		log.info("Starting "+getClass());
-		try{
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
-			client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			client.subscribe(GridAppsDConstants.topic_requestData, new DataEvent(this));
-			
-			
-		}
-		catch(Exception e){
-				e.printStackTrace();
-		}
+//		try{
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
+//			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+//			
+//			client.subscribe(GridAppsDConstants.topic_requestData, new DataEvent(this));
+//			
+//			
+//		}
+//		catch(Exception e){
+//				e.printStackTrace();
+//		}
 		
 	}
 
@@ -117,9 +125,33 @@ public class DataManagerImpl implements DataManager {
 		typeHandlers.add(handler);
 	}
 
+	@Override
+	public void registerDataManagerHandler(DataManagerHandler handler, String name){
+		//TODO Should it support multiple handlers per request type???
+		log.info("Data Manager Handler Registration: "+handler.getClass()+" - "+name);
+		this.dataManagers.put(name, handler);
+	}
 
 	@Override
-	public Response processDataRequest(Serializable request, int simulationId, String tempDataPath) throws Exception {
+	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath) throws Exception {
+				
+		
+		if(request!=null && type!=null){
+			DataResponse r = new DataResponse();
+			Serializable responseData = null;
+			if(dataManagers.containsKey(type)){
+				responseData = dataManagers.get(type).handle(request);
+			} else {
+				System.out.println("TYPE NOT SUPPORTED");
+				//TODO throw error that type not supported
+			}
+			r.setData(responseData);
+			r.setResponseComplete(true);
+			return r;
+		}
+			
+		
+		//TODO this will be phased out
 		List<GridAppsDataHandler> handlers = getHandlers(request.getClass());
 		if(handlers!=null){
 			//iterate through all handlers until we get one with a result

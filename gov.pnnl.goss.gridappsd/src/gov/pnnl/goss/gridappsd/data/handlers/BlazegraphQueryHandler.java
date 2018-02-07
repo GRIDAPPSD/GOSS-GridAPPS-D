@@ -53,7 +53,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
-	
+	public static final String DEFAULT_ENDPOINT =  "http://blazegraph:8080/bigdata";
 	
 	public BlazegraphQueryHandler(String endpoint) {
 		this.endpoint = endpoint;

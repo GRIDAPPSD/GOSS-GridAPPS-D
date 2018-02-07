@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.process;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
@@ -53,6 +54,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.awt.GridBagConstraints;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
@@ -65,6 +67,9 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.mockito.internal.matchers.InstanceOf;
+
+import com.google.gson.JsonSyntaxException;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -103,6 +108,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	
 	@ServiceDependency
 	private volatile ServiceManager serviceManager;
+
+	@ServiceDependency
+	private volatile DataManager dataManager;
 	
 	ProcessNewSimulationRequest newSimulationProcess = null;
 	
@@ -156,86 +164,15 @@ public class ProcessManagerImpl implements ProcessManager {
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 			
 			
-			client.subscribe(GridAppsDConstants.topic_prefix+".>", new GossResponseEvent() {
-				@Override
-				public void onMessage(Serializable message) {
-					
-					
-					DataResponse event = (DataResponse)message;
-					//TODO:Get username from message's metadata e.g. event.getUserName()
-					String username  = GridAppsDConstants.username;
-					int processId = generateProcessId();
-					
-					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLogMessage("Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
-					client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-										
-					//TODO: create registry mapping between request topics and request handlers.
-					if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-						
-						try {
-							int simPort = assignSimulationPort(processId);
-							client.publish(event.getReplyDestination(), processId);
-							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort, appManager, serviceManager);
-						} catch (Exception e) {
-							e.printStackTrace();
-							logMessageObj.setTimestamp(new Date().getTime());
-							logMessageObj.setLogLevel(LogLevel.ERROR);
-							logMessageObj.setLogMessage(e.getMessage());
-							client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-						}
-					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
-						try{
-							appManager.process(processId, event, message);
-						}
-						catch(Exception e){
-							e.printStackTrace();
-							logMessageObj.setTimestamp(new Date().getTime());
-							logMessageObj.setLogLevel(LogLevel.ERROR);
-							logMessageObj.setLogMessage(e.getMessage());
-							client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-						}
-					} else if(event.getDestination().contains(GridAppsDConstants.topic_requestData)){
-						
-						String outputTopics = String.join(".", 
-								GridAppsDConstants.topic_responseData,
-								String.valueOf(processId),
-								"output");
-						
-						String logTopic = String.join(".", 
-								GridAppsDConstants.topic_responseData,
-								String.valueOf(processId),
-								"log");
-						
-						logManager.get(LogMessage.parse(message.toString()), outputTopics, logTopic);
-						//TODO: catch JsonSyntaxException and call  get ModelDataManager or SimulationOutputDataManager
-						
-					} else if(event.getDestination().contains("log")){
-						logManager.log(LogMessage.parse(message.toString()), username,null);
-					}
-					else if(event.getDestination().contains(GridAppsDConstants.topic_requestListAppsWithInstances)){
-						
-						
-						List<AppInfo> apps = appManager.listApps();
-						for(AppInfo app : apps){
-							List<AppInstance> appInstances = appManager.listRunningApps(app.getId());
-							app.setInstances(appInstances);
-						}
-						 
-						client.publish(event.getReplyDestination(), apps.toString());
-					}
-					
-					//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
-					//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
-				}
-			});
+			client.subscribe(GridAppsDConstants.topic_prefix+".>", new ProcessEvent(this, 
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager));
 		}
 		catch(Exception e){
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogLevel(LogLevel.ERROR);
 			logMessageObj.setLogMessage(e.getMessage());
-			logManager.log(logMessageObj, GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+			logManager.log(logMessageObj, GridAppsDConstants.username);
 		}
 		
 	}

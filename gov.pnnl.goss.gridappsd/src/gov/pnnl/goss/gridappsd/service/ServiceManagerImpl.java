@@ -113,8 +113,9 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				null,
+		try{
+		logManager.log(new LogMessage(this.getClass().getName(), 
+				simulationId,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
@@ -130,8 +131,10 @@ public class ServiceManagerImpl implements ServiceManager{
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username,
-				GridAppsDConstants.topic_platformLog);
+				true),GridAppsDConstants.username);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 	
 	/**

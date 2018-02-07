@@ -1,6 +1,7 @@
 package gov.pnnl.goss.gridappsd.data;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,21 +15,21 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.openrdf.model.Statement;
-import org.openrdf.query.GraphQueryResult;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.bigdata.rdf.sail.webapp.SD;
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+//import org.openrdf.model.Statement;
+//import org.openrdf.query.GraphQueryResult;
+//import com.bigdata.rdf.sail.webapp.SD;
+//import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.felix.dm.annotation.api.Start;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
@@ -36,17 +37,15 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.Client.PROTOCOL;
 
 @Component
-public class BGPowergridModelDataManagerImpl implements PowergridModelDataManager {
+public class BGPowergridModelDataManagerImpl implements PowergridModelDataManager { 
 	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
@@ -57,11 +56,17 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	final String PREDICATE = "predicate";
 	final String OBJECT = "object";
 	
+	
+	public static final String DATA_MANAGER_TYPE = "powergridmodel";
+	 
 	String endpointBaseURL;
 //	BlazegraphQueryHandler queryHandler;
 
 	@ServiceDependency 
 	private volatile ConfigurationManager configManager;
+	
+	@ServiceDependency 
+	private volatile DataManager dataManager;
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
@@ -70,12 +75,29 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	private volatile ClientFactory clientFactory;
 	
 	public BGPowergridModelDataManagerImpl() {
-		endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		
 //		queryHandler = new BlazegraphQueryHandler(configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH));
+//		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 	}
 	public BGPowergridModelDataManagerImpl(String endpoint) {
 		endpointBaseURL = endpoint;
 		//queryHandler = new BlazegraphQueryHandler(endpoint);
+//		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
+	}
+	
+	@Start
+	public void start(){
+		System.out.println("Starting "+getClass());
+		
+		System.out.println("STARTING BGPGMODELDM");
+		try{
+			endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		}catch(Exception e){
+			e.printStackTrace();
+			endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
+		}
+		
+		dataManager.registerDataManagerHandler(new BGPowergridModelDataManagerHandlerImpl(this), DATA_MANAGER_TYPE);
 	}
 	
 	
@@ -102,6 +124,11 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	
+	
+	
+	
+	
+	
 	//,  String requestId/processId
 	@Override
 	public String query(String modelId, String query, String resultFormat) throws Exception {
@@ -116,7 +143,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 		} else {
 			//PROCESS ID?  TIMESTAMP passed in or generated?? USERNAME??
-			
+			//TODO send log message 
 			//logManager.log(new LogMessage(processId, timestamp, "Result Format not recognized, '"+resultFormat+"'", LogMessage.LogLevel.ERROR, LogMessage.ProcessStatus.ERROR, storeToDb), username);
 		}
 		
@@ -351,30 +378,31 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@Override
 	public List<String> queryModelNameList() {
 		List<String> models = new ArrayList<String>();
-		RemoteRepositoryManager repo = new RemoteRepositoryManager(
-				endpointBaseURL, false /* useLBS */);
-		try{
-			GraphQueryResult res = repo.getRepositoryDescriptions();
-	
-			while (res.hasNext()) {
-				Statement stmt = res.next();
-				if (stmt.getPredicate()
-						.toString()
-						.equals(SD.KB_NAMESPACE.stringValue())) {
-					models.add(stmt.getObject().stringValue());
-				}
-				
-			}	
-			res.close();
-		}catch(Exception e){
-			e.printStackTrace();
-			//TODO log message
-		} finally {
-			try {
-				repo.close();
-			} catch (Exception e) {
-			}
-		}
+		//TODO need to get bigdata jar working in osgi if I want to use this code
+//		RemoteRepositoryManager repo = new RemoteRepositoryManager(
+//				endpointBaseURL, false /* useLBS */);
+//		try{
+//			GraphQueryResult res = repo.getRepositoryDescriptions();
+//	
+//			while (res.hasNext()) {
+//				Statement stmt = res.next();
+//				if (stmt.getPredicate()
+//						.toString()
+//						.equals(SD.KB_NAMESPACE.stringValue())) {
+//					models.add(stmt.getObject().stringValue());
+//				}
+//				
+//			}	
+//			res.close();
+//		}catch(Exception e){
+//			e.printStackTrace();
+//			//TODO log message
+//		} finally {
+//			try {
+//				repo.close();
+//			} catch (Exception e) {
+//			}
+//		}
 		return models;
 	}
 	
@@ -394,14 +422,14 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	
-	protected void sendResult(String result, String resultTopic) throws Exception{
-		Credentials credentials = new UsernamePasswordCredentials(
-				GridAppsDConstants.username, GridAppsDConstants.password);
-//		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-		
-		 
-		
-	}
+//	protected void sendResult(String result, String resultTopic) throws Exception{
+//		Credentials credentials = new UsernamePasswordCredentials(
+//				GridAppsDConstants.username, GridAppsDConstants.password);
+////		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+//		
+//		 
+//		
+//	}
 	
 	
 	protected void sendStatus(String status) throws Exception{

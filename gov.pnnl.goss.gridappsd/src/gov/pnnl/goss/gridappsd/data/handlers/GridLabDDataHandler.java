@@ -210,7 +210,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 				if(bgHost==null || bgHost.trim().length()==0){
-					bgHost = "http://blazegraph:8080/bigdata";
+					bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;;
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
 				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
