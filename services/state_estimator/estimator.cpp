@@ -26,19 +26,19 @@
 
 
 // Store node names in a linked list and hash node name to their position
+// Iterate over the linked list to access all nodes or states
+// Note that positions are one-indexed
 #include <list>
 #define SLST std::list<std::string>
 #include <unordered_map>
 #define SMAP std::unordered_map<std::string,unsigned int>
 
 // Hash address (i,j) to the index of a sparse matrix vector
-#define UMAP std::unordered_map<unsigned int,unsigned int>
-#define MMAP std::unordered_map<unsigned int,UMAP>
-
-#define CMAP std::unordered_map<unsigned int, std::complex<double>>
-#define CMMP std::unordered_map<unsigned int,CAP>
+#define CMAP std::unordered_map<unsigned int,std::complex<double>>
+#define CMMP std::unordered_map<unsigned int,CMAP>
 
 // Store x and z in a list indexed by 
+#define DMAP std::unordered_map<unsigned int,double>
 
 
 /*
@@ -197,20 +197,14 @@ int main(void) {
 
 
 //		// BUILD THE ADMITTANCE MATRIX STRUCTURES
-//		CVEC Y;			// this linear vector stores sparse Ybus entries
-//		MMAP Ym;		// This 2D map maps row and colum indices to Y
-//		// To append an element:
-//		//	-- Ym[i][j] = Y.size();
-//		//	-- Y.push_back(std::complex<double>(G,B));
+		CMMP Y;		// two-dimensional sparse matrix
+		// To add an element:
+		//	-- Y[i][j] = std::complex<double>(G,B);
 //		// G, B, g, and b are derived from Y:
-//		//	-- Gij = std::real(Y[Ym[i][j]]);
-//		//	-- Bij = std::imag(Y[Ym[i][j]]);
-//		//	-- gij = std::real(-1.0*Y[Ym[i][j]]);
-//		//	-- bij = std::imag(-1.0*Y[Ym[i][j]]);
-
-		CMMP YY;		// two-dimensional sparse matrix
-		
-		
+//		//	-- Gij = std::real(Y[i][j]);
+//		//	-- Bij = std::imag(Y[i][j]);
+//		//	-- gij = std::real(-1.0*Y[i][j]);
+//		//	-- bij = std::imag(-1.0*Y[i][j]);
 
 
 		// For now, pull the ybus from a file:
@@ -227,11 +221,8 @@ int main(void) {
 		char c;
 		while ( yfs >> i >> c >> j >> c >> G >> c >> B ) {
 			cout << i << '\t' << j << '\t' << G << '\t' << B << '\n';
-//			Ym[i][j] = Y.size();
-//			if ( i != j ) Ym[j][i] = Y.size();
-//			Y.push_back(std::complex<double>(G,B));
-			YY[i][j] = std::complex<double>(G,B));
-			if ( i != j ) YY[j][i] = std::complex<double(G,B));
+			Y[i][j] = std::complex<double>(G,B);
+			if ( i != j ) Y[j][i] = std::complex<double>(G,B);
 		}
 		yfs.close();
 		// END pull ybus from file
@@ -239,42 +230,35 @@ int main(void) {
 
 		cout << "Y[1][1] = " << Y[1][1] << '\n';
 		cout << "Y[35][36] = " << Y[35][36] << '\n';
-		throw "debugging: end YY test";
-		
-//		// this accesses the sparse data vector Y directly
-//		for ( auto itr=Y.begin() ; itr!=Y.end() ; itr++ )
-//			cout << *itr << '\n';
-		
-//		// this provides random access sparse elements in Y:
-//		cout << "Y[1][1] = " <<	Y[Ym[1][1]] << '\n';
-//		cout << "Y[35][36] = " << Y[Ym[35][36]] << '\n';
 
-//		// list the populated index pairs in Ym:
-//		for ( auto itr=Ym.begin() ; itr!=Ym.end() ; itr++ ) {
-//			int i = std::get<0>(*itr);
-//			cout << "columns in row " << i << ";\n\t";
-//			for ( auto jtr=Ym[i].begin() ; jtr!=Ym[i].end() ; jtr++ ) {
-//				int j = std::get<0>(*jtr);
-//				cout << j << '\t';
-//			}
-//			cout << '\n';
-//		}
+		// list the populated index pairs in Y
+		for ( auto itr=Y.begin() ; itr!=Y.end() ; itr++ ) {
+			int i = std::get<0>(*itr);
+			cout << "coulumns in row " << i << ":\n\t";
+			for ( auto jtr=Y[i].begin() ; jtr!=Y[i].end() ; jtr++ ) {
+				int j = std::get<0>(*jtr);
+				cout << j << '\t';
+			}
+			cout << '\n';
+		}
+		
+
+		// INITIALIZE THE STATE VECTOR
+		double vnom = 0.0;	// get this from the CIM?
+		DMAP xV;	// container for voltage magnitude states
+		DMAP xT;	// container for voltage angle states
+		for ( auto itr = nodens.begin() ; itr != nodens.end() ; itr++ ) {
+			xV[nodem[*itr]] = vnom;
+			xT[nodem[*itr]] = 0;
+		}
+		int xqty = xV.size() + xT.size();
+		if ( xqty != 2*numns ) throw "x initialization failed";
+
 
 
 		// --------------------------------------------------------------------
 		// INITIALIZE METER INTERFACE
 		// --------------------------------------------------------------------
-
-		// INITIALIZE THE STATE VECTOR
-		vnom = 0.0;	// get this from the CIM?
-		DVEC xV;	// vector of voltage magnitude states
-		DVEC xT;	// vector of voltage angle states
-		for ( int idx = 0 ; idx < numns ; idx++ ) {
-			xV.push_back(vnom);
-			xT.push_back(0);
-		}
-		int xqty = xV.size() + xT.size();
-		
 		
 		// INITIALIZE THE MEASUREMENT VECTOR
 		// Determine the size of the measurement vector
@@ -291,10 +275,10 @@ int main(void) {
 		
 		// INITIALIZE THE MEASUREMENT FUNCTION h(x)
 		enum hx_t {
-			Pij ,
-			Qij ,
-			Pi ,
-			Qi };
+				Pij ,
+				Qij ,
+				Pi ,
+				Qi };
 		DVEC hx;
 		std::vector<hx_t> thx;
 		std::vector<uint> hxi;
@@ -316,10 +300,10 @@ int main(void) {
 		
 		// INITIALIZE THE MEASUREMENT FUNCTION JACOBIAN J(x)
 		enum Jx_t {
-			dPijdVi , dPijdVj , dPijdTi , dPijdTj , 	
-			dQijdVi , dQijdVj , dQijdTi , dQijdTj , 
-			dPidVi  , dPidVj  , dPidTi  , dPidTj  ,
-			dQidVi  , dQidVj  , dQidTi  , dQidTj  };
+				dPijdVi , dPijdVj , dPijdTi , dPijdTj , 	
+				dQijdVi , dQijdVj , dQijdTi , dQijdTj , 
+				dPidVi  , dPidVj  , dPidTi  , dPidTj  ,
+				dQidVi  , dQidVj  , dQidTi  , dQidTj  };
 		DVEC Jx;
 		std::vector<Jx_t> tJx;
 		std::vector<uint> Jxi;
@@ -427,16 +411,16 @@ int main(void) {
 				if ( Pij == thx[idx] ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					hx[idx] = xV[i]*xV[i]*gij - xV[i]*xV[j] * 
 						( gij*cos(Tij) + bij*sin(Tij) );
 				}
 				else if ( thx[idx] == Qij ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					hx[idx] = -1.0*xV[i]*xV[i]*bij - xV[i]*xV[j] * 
 						( gij*sin(Tij) - bij*cos(Tij) );
 				}
@@ -445,8 +429,8 @@ int main(void) {
 					for ( uint jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 					}
 					hx[idx] = h * xV[i];
@@ -456,8 +440,8 @@ int main(void) {
 					for ( unsigned int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 					}
 					hx[idx] = h * xV[i];
@@ -477,29 +461,29 @@ int main(void) {
 				if ( tJx[idx] == dPijdVi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] =  -1.0*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) ) + 2*gij*xV[i];
 				}
 				else if ( tJx[idx] == dPijdVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = -1.0*xV[i] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
 				else if ( tJx[idx] == dPijdTi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
 				else if ( tJx[idx] == dPijdTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = -1.0*xV[i]*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
 				// ------------------------------------------------------------
@@ -508,29 +492,29 @@ int main(void) {
 				else if ( tJx[idx] == dQijdVi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = -1.0*xV[j] * ( gij*sin(Tij) - bij*cos(Tij) ) - 2.0*xV[i]*bij;
 				}
 				else if ( tJx[idx] == dQijdVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = -1.0*xV[i] * ( gij*sin(Tij) - bij*cos(Tij) );
 				}
 				else if ( tJx[idx] == dQijdTi ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = -1.0*xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
 				else if ( tJx[idx] == dQijdTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double gij = std::real(-1.0*Ym[i][j]);
-					double bij = std::imag(-1.0*Ym[i][j]);
+					double gij = std::real(-1.0*Y[i][j]);
+					double bij = std::imag(-1.0*Y[i][j]);
 					Jx[idx] = xV[i]*xV[j] * ( gij*cos(Tij) + bij*sin(Tij) );
 				}
 				// ------------------------------------------------------------
@@ -541,17 +525,17 @@ int main(void) {
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 						}
-					Jx[idx] = h + xV[i]*std::real(Ym[i][i]);
+					Jx[idx] = h + xV[i]*std::real(Y[i][i]);
 				}
 				else if ( tJx[idx] == dPidVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
+					double Gij = std::real(Y[i][j]);
+					double Bij = std::imag(Y[i][j]);
 					Jx[idx] = xV[i] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 				}
 				else if ( tJx[idx] == dPidTi ) {
@@ -559,17 +543,17 @@ int main(void) {
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[i]*xV[j]*( -1.0*Gij*sin(Tij) + Bij*cos(Tij) );
 					}
-					Jx[idx] = h - xV[i]*xV[i]*std::imag(Ym[i][i]);
+					Jx[idx] = h - xV[i]*xV[i]*std::imag(Y[i][i]);
 				}
 				else if ( tJx[idx] == dPidTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
+					double Gij = std::real(Y[i][j]);
+					double Bij = std::imag(Y[i][j]);
 					Jx[idx] = xV[i]*xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 				}
 				// ----------------------------------------------------------------
@@ -580,17 +564,17 @@ int main(void) {
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[j] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 					}
-					Jx[idx] =  h - xV[i]*std::imag(Ym[i][i]);
+					Jx[idx] =  h - xV[i]*std::imag(Y[i][i]);
 				}
 				else if ( tJx[idx] == dQidVj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
+					double Gij = std::real(Y[i][j]);
+					double Bij = std::imag(Y[i][j]);
 					Jx[idx] = xV[i] * ( Gij*sin(Tij) - Bij*cos(Tij) );
 				}
 				else if ( tJx[idx] == dQidTi ) {
@@ -598,17 +582,17 @@ int main(void) {
 					for ( int jdx = 0 ; jdx < js.size() ; jdx++ ) {
 						uint j = js[jdx];
 						double Tij = xT[i] - xT[j];
-						double Gij = std::real(Ym[i][j]);
-						double Bij = std::imag(Ym[i][j]);
+						double Gij = std::real(Y[i][j]);
+						double Bij = std::imag(Y[i][j]);
 						h += xV[i]*xV[j] * ( Gij*cos(Tij) + Bij*sin(Tij) );
 					}
-					Jx[idx] = h - xV[i]*xV[i]*std::real(Ym[i][i]);
+					Jx[idx] = h - xV[i]*xV[i]*std::real(Y[i][i]);
 				}
 				else if ( tJx[idx] == dQidTj ) {
 					uint j = js[0];
 					double Tij = xT[i] - xT[j];
-					double Gij = std::real(Ym[i][j]);
-					double Bij = std::imag(Ym[i][j]);
+					double Gij = std::real(Y[i][j]);
+					double Bij = std::imag(Y[i][j]);
 					Jx[idx] =  xV[i]*xV[j] * ( -1.0*Gij*cos(Tij) - Bij*sin(Tij) );
 				}
 			}
