@@ -39,23 +39,14 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.simulation;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -66,13 +57,23 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
-
-import com.google.gson.Gson;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -390,11 +391,13 @@ public class SimulationManagerImpl implements SimulationManager{
 							fncsBridgeProcess.destroy();
 						}*/
 						
-						for(String id : (String[])simulationContext.get("connectedServiceInstanceIds")){
-							appManager.stopAppInstance(id);
-						}
-						for(String id : (String[])simulationContext.get("connectedAppInstanceIds")){
+						List<String> ids = (ArrayList<String>)simulationContext.get("connectedServiceInstanceIds");
+						for(String id : ids){
 							serviceManager.stopServiceInstance(id);
+						}
+						ids = (ArrayList<String>)simulationContext.get("connectedAppInstanceIds");
+						for(String id : ids){
+							appManager.stopAppInstance(id);
 						}						
 					}
 				}

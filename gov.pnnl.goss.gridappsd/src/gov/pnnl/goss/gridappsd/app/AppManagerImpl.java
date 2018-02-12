@@ -491,6 +491,11 @@ public class AppManagerImpl implements AppManager {
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
 			processAppBuilder.directory(appDirectory);
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					simulationId, new Date().getTime(),
+					"Starting app with command "+ String.join(" ",commands), 
+					LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+					GridAppsDConstants.topic_simulationLog+simulationId);
 			try {
 				process = processAppBuilder.start();
 			} catch (IOException e) {

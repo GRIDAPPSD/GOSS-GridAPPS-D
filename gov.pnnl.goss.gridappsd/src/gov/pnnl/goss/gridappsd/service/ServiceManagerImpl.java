@@ -254,9 +254,16 @@ public class ServiceManagerImpl implements ServiceManager{
 				commands.add(0,"python");
 				
 				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-				processServiceBuilder.directory(serviceDirectory);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
 				
@@ -266,6 +273,11 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
@@ -276,6 +288,11 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 	
 					
