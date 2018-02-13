@@ -126,22 +126,19 @@ public class BGPGModelManagerTest {
 //			e.printStackTrace();
 //		}
 		
-		new BGPGModelManagerTest().test();
+		BGPGModelManagerTest tester = new BGPGModelManagerTest();
+		
+//		tester.testQuery();
+		tester.testQueryModelNames();
 		System.exit(0);
 	}
 	
 	
 	
-	public void test(){
+	public void testQuery(){
 
 		try {
 
-			
-			
-			
-			
-			
-			
 			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 			String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
 	                              			 "?line cim:IdentifiedObject.name ?line_name."+
@@ -175,168 +172,64 @@ public class BGPGModelManagerTest {
 				System.out.println(response.getClass());
 			}
 			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void testQueryModelNames(){
+
+		try {
+
+			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
+			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL_NAMES.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
 			
+			System.out.println(pgDataRequest);
 			
+			Client client = getClient();
 			
-//			DataResponse message = new DataResponse();
-//			message.setDestination(GridAppsDConstants.topic_requestData+".powergridmodel");
-//			message.setData(pgDataRequest);
+			GsonBuilder gsonbuilder = new GsonBuilder();
+//			gsonbuilder.registerTypeAdapter(Serializable.class, new SerializableInstanceCreator());
+			Gson gson = gsonbuilder.create();
+			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
 			
-			
-			
-			
-			
-			//			Dictionary properties = new Hashtable();
-//			properties.put("goss.system.manager", "system");
-//			properties.put("goss.system.manager.password", "manager");
-//
-//			// The following are used for the core-client connection.
-//			properties.put("goss.openwire.uri", "tcp://0.0.0.0:61616");
-//			properties.put("goss.stomp.uri", "stomp://0.0.0.0:61613");
-//			properties.put("goss.ws.uri", "ws://0.0.0.0:61614");
-//			properties.put("goss.ssl.uri", "ssl://0.0.0.0:61443");
-//			testConfig = configure(this)
-//					.add(CoreGossConfig.configureServerAndClientPropertiesConfig())
-//					.add(createServiceDependency().setService(ClientFactory.class));
-//			testConfig.apply();
-//			ClientServiceFactory clientFactory = new ClientServiceFactory();
-//			clientFactory.updated(properties);
-			
-			//Step1: Create GOSS Client
-//			Credentials credentials = new UsernamePasswordCredentials(
-//					GridAppsDConstants.username, GridAppsDConstants.password);
-//			client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
-			
-			//Create Request Simulation object
-//			PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-//			powerSystemConfig.GeographicalRegion_name = "ieee8500_Region";
-//			powerSystemConfig.SubGeographicalRegion_name = "ieee8500_SubRegion";
-//			powerSystemConfig.Line_name = "ieee8500";
-			
-			
-//			Gson  gson = new Gson();
-//			String request = gson.toJson(powerSystemConfig); 
-//			DataRequest request = new DataRequest();
-//			request.setRequestContent(powerSystemConfig);
-//			System.out.println(client);
-			
-			
-//			registerApp();
-			
-//			AppInfo
-//			String response = client.getResponse("",GridAppsDConstants.topic_requestData, RESPONSE_FORMAT.JSON).toString();
-//			
-//			//TODO subscribe to response
-//			client.subscribe(GridAppsDConstants.topic_simulationOutput+response, new GossResponseEvent() {
-//				
-//				@Override
-//				public void onMessage(Serializable response) {
-//					// TODO Auto-generated method stub
-//					System.out.println("RESPNOSE "+response);
-//				}
-//			});
-			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				System.out.println(responseStr);
+				
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
 	
-	
-//	public void registerApp() throws IOException, SystemException, JMSException{
-//		
-//		
-//		
-//		
-//		AppInfo appInfo = new AppInfo();
-//		appInfo.setId("vvo");
-//		appInfo.setCreator("pnnl");
-//		appInfo.setDescription("VVO app");
-//		appInfo.setExecution_path("app/vvoapp.py");
-//		
-//		List<String> inputs = new ArrayList<String>();
-//		inputs.add(GridAppsDConstants.topic_FNCS_output);
-//		appInfo.setInputs(inputs);
-//		
-//		List<String> outputs = new ArrayList<String>();
-//		outputs.add(GridAppsDConstants.topic_FNCS_input);
-//		appInfo.setOutputs(outputs);
-//		
-//		appInfo.setLaunch_on_startup(false);
-//		appInfo.setMultiple_instances(true);
-//		appInfo.setOptions("SIMULATION_ID");
-//		List<String> prereqs = new ArrayList<String>();
-//		prereqs.add("fncs-goss-bridge");
-//		appInfo.setPrereqs(prereqs);
-//		appInfo.setType(AppType.PYTHON);
-//		
-//		System.out.println(appInfo);
-//		
-//		
-//		File parentDir = new File(".");
-//		File f = new File(parentDir.getAbsolutePath()+File.separator+"resources"+File.separator+"vvo.zip");
-//		System.out.println(f.getAbsolutePath());
-//		byte[] fileData = Files.readAllBytes(f.toPath());
-//
-//		RequestAppRegister appRegister = new RequestAppRegister(appInfo,fileData);
-//		System.out.println("REGISTER"+appRegister);
-//
-////		DataRequest request = new DataRequest();
-////		request.setRequestContent(appRegister);
-////		client.publish(GridAppsDConstants.topic_requestSimulation, appRegister);
-//		sendMessage(GridAppsDConstants.topic_app_register, appRegister);
-////		String response = client.getResponse(request,GridAppsDConstants.topic_app_register, RESPONSE_FORMAT.JSON).toString();
-//		try {
-//			Thread.sleep(3000);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
+//	
+//	private void sendMessage(String destination, Serializable message) throws JMSException{
+//		Gson gson = new Gson();
+//		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
+//		connectionFactory.setBrokerURI("tcp://localhost:61613");
+//		connectionFactory.setUsername("system");
+//		connectionFactory.setPassword("manager");
+//		Connection connection = connectionFactory.createConnection(); 
+//		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+//		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
+//		TextMessage textMessage = null;
+//		if(message instanceof String){
+//			textMessage = session.createTextMessage(message.toString());
+//		} else {
+//			textMessage = session.createTextMessage(gson.toJson(message));
+//			
 //		}
-//		
-//		String runtimeOptions = "-c \""+APPLICATION_OBJECT_CONFIG+"\"";
-//
-//		String simulationId = "12345";
-//		RequestAppStart appStart = new RequestAppStart(appInfo.getId(), runtimeOptions, simulationId);
-//		sendMessage(GridAppsDConstants.topic_app_start, appStart);
-//		System.out.println(appStart);
-//		
-//		
-//		try {
-//			Thread.sleep(30000);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		
-////		sendMessage(GridAppsDConstants.topic_app_deregister, appInfo.getId());
-////		System.out.println("RESPONSE "+response);
-//		
-//		
-//		
+//		producer.send(textMessage);
 //	}
-	
-	
-	private void sendMessage(String destination, Serializable message) throws JMSException{
-		Gson gson = new Gson();
-		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
-		connectionFactory.setBrokerURI("tcp://localhost:61613");
-		connectionFactory.setUsername("system");
-		connectionFactory.setPassword("manager");
-		Connection connection = connectionFactory.createConnection(); 
-		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
-		TextMessage textMessage = null;
-		if(message instanceof String){
-			textMessage = session.createTextMessage(message.toString());
-		} else {
-			textMessage = session.createTextMessage(gson.toJson(message));
-			
-		}
-		producer.send(textMessage);
-	}
-	
+//	
 	
 	Client getClient() throws Exception{
 		if(client==null){
@@ -361,17 +254,13 @@ public class BGPGModelManagerTest {
 		return client;
 	}
 	
-//	private class SerializableInstanceCreator implements InstanceCreator<Serializable>{
-//
-//		@Override
-//		public Serializable createInstance(Type type) {
-//			System.out.println("type  "+type);
-//			return new String();
-//		}
-//		
-//		
-//	}
-	
-	
+	@Override
+		protected void finalize() throws Throwable {
+			// TODO Auto-generated method stub
+			super.finalize();
+			if(client!=null){
+				client.close();
+			}
+		}
 	
 }

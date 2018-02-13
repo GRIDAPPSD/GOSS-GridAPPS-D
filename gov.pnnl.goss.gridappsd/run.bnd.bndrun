@@ -76,8 +76,14 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	blazegraph.cim2glm;version=latest
-
+	blazegraph.cim2glm;version=latest,\
+	org.openrdf.sesame2,\
+	bigdata-core,\
+	cern.colt,\
+	com.ibm.icu,\
+	bigdata.runtime,\
+	it.unimi.dsi.fastutil
+	
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
 	broker-name=goss default broker

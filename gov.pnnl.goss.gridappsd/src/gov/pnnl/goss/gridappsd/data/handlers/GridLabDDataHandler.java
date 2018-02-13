@@ -60,7 +60,6 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
@@ -126,6 +125,8 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		
 		try {
 			GridAppsDataHandler handler = new GridLabDDataHandler();
+			
+			
 			
 			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new SimpleStatusReporterImpl());
 		} catch (Exception e) {

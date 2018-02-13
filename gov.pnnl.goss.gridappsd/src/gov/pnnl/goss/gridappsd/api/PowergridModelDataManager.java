@@ -6,7 +6,7 @@ import org.apache.jena.query.ResultSet;
 
 public interface PowergridModelDataManager {
 	public enum ResultFormat {
-	    JSON, XML 
+	    JSON, XML, CSV
 	}
 	
 	String query(String modelId, String query, String resultFormat ) throws Exception;

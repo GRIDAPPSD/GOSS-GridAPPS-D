@@ -39,12 +39,19 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.Date;
+
+import javax.jms.Destination;
 
 import org.apache.felix.dm.annotation.api.Component;
 
+import com.google.gson.JsonSyntaxException;
+
 import pnnl.goss.core.Client;
+import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
@@ -54,6 +61,7 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -101,7 +109,7 @@ public class ProcessEvent implements GossResponseEvent {
 	 */
 	@Override
 	public void onMessage(Serializable message) {
-System.out.println("PROCESSMANAGER "+message +" "+message.getClass());
+//System.out.println("PROCESSMANAGER "+message +" "+message.getClass());
 		DataResponse event = (DataResponse)message;
 		//TODO:Get username from message's metadata e.g. event.getUserName()
 		String username  = GridAppsDConstants.username;
@@ -191,6 +199,44 @@ System.out.println("PROCESSMANAGER "+message +" "+message.getClass());
 				//TODO log error and send error response
 			}
 			
+		} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
+			System.out.println("CONFIG REQUEST "+message.toString());
+
+			Serializable request;
+			if (message instanceof DataResponse){
+				request = ((DataResponse)message).getData();
+			} else {
+				request = message;
+			}
+			
+			ConfigurationRequest configRequest = null;
+			if(message instanceof ConfigurationRequest){
+				configRequest = ((ConfigurationRequest)request);
+			} else{
+				try{
+					configRequest = ConfigurationRequest.parse(request.toString());
+				}catch(JsonSyntaxException e){
+					//TODO log error
+					sendError(client, event.getReplyDestination(), e.getMessage());
+				}
+			}
+			if(configRequest!=null){
+				StringWriter sw = new StringWriter();
+				PrintWriter out = new PrintWriter(sw);
+				try {
+					configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
+				} catch (Exception e) {
+					//TODO log error
+					sendError(client, event.getReplyDestination(), e.getMessage());
+				}
+				String result = sw.toString();
+				sendData(client, event.getReplyDestination(), result);
+				
+			} else {
+				sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request);
+			}
+			
+			
 		} else if(event.getDestination().contains("log")){
 			logManager.log(LogMessage.parse(message.toString()), username);
 		}
@@ -199,4 +245,30 @@ System.out.println("PROCESSMANAGER "+message +" "+message.getClass());
 		//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
 	}
 
+
+	void sendData(Client client, Destination replyDestination, Serializable data){
+		try {
+			DataResponse r = new DataResponse();
+			r.setData(data);
+			r.setResponseComplete(true);
+			client.publish(replyDestination, r);
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO log error and send error response
+		}
+	}
+
+	
+	void sendError(Client client, Destination replyDestination, String error){
+		try {
+			DataResponse r = new DataResponse();
+			r.setError(new DataError(error));
+			r.setResponseComplete(true);
+			client.publish(replyDestination, r);
+		} catch (Exception e) {
+			e.printStackTrace();
+			//TODO log error and send error response
+		}
+	}
+	
 }

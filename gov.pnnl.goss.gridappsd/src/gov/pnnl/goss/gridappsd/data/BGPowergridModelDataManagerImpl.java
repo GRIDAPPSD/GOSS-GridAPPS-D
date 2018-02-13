@@ -1,7 +1,6 @@
 package gov.pnnl.goss.gridappsd.data;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,11 +17,10 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-//import org.openrdf.model.Statement;
-//import org.openrdf.query.GraphQueryResult;
-//import com.bigdata.rdf.sail.webapp.SD;
-//import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+import org.openrdf.model.Statement;
+import org.openrdf.query.GraphQueryResult;
+import com.bigdata.rdf.sail.webapp.SD;
+import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -74,6 +72,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+	
+	List<String> reservedModelNames = new ArrayList<String>();
+	
 	public BGPowergridModelDataManagerImpl() {
 		
 //		queryHandler = new BlazegraphQueryHandler(configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH));
@@ -84,18 +85,20 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		//queryHandler = new BlazegraphQueryHandler(endpoint);
 //		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 	}
-	
+//	Repository repository;
 	@Start
 	public void start(){
-		System.out.println("Starting "+getClass());
+//		System.out.println("Starting "+getClass());
 		
-		System.out.println("STARTING BGPGMODELDM");
+//		System.out.println("STARTING BGPGMODELDM");
 		try{
 			endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 		}catch(Exception e){
 			e.printStackTrace();
 			endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
 		}
+		
+		reservedModelNames.add("kb");
 		
 		dataManager.registerDataManagerHandler(new BGPowergridModelDataManagerHandlerImpl(this), DATA_MANAGER_TYPE);
 	}
@@ -116,7 +119,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
 //			System.out.println(bg.queryObjectTypes("ieee13", "JSON"));
 //			System.out.println(bg.queryModelNameList());
-			System.out.println(bg.queryModel("ieee8500", null, null, "JSON"));
+//			System.out.println(bg.queryModel("ieee8500", null, null, "JSON"));
+			System.out.println(bg.queryModelNames("XML"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -150,15 +154,16 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		String result = new String(resultString.toByteArray());
 
 			//TODO
-		sendStatus("COMPLETE");
+		logStatus("COMPLETE");
 		
 		return result;
 	}
 	@Override
 	public ResultSet queryResultSet(String modelId, String query) {
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
-		ResultSet rs = queryHandler.query(query);
-		return rs;
+		String endpoint = getEndpointURL(modelId);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint);
+		return  queryHandler.query(query);
+		
 	}
 	
 	@Override
@@ -180,7 +185,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		String result = new String(resultString.toByteArray());
 
 		//TODO
-		sendStatus("COMPLETE");
+		logStatus("COMPLETE");
 		
 		return result;
 	}
@@ -198,8 +203,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	@Override
 	public String queryObjectTypes(String modelId, String resultFormat) {
-		// TODO Auto-generated method stub
-		return queryObjectTypeList(modelId).toString();
+		return formatStringList(queryObjectTypeList(modelId), "objectTypes", resultFormat);
 	}
 	@Override
 	public List<String> queryObjectTypeList(String modelId) {
@@ -223,7 +227,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public String queryModel(String modelId, String objectType, String filter, String resultFormat) throws Exception {
 		String result = null;
 		ResultSet rs = queryModelResultSet(modelId, objectType, filter);
-		ByteArrayOutputStream resultString = new ByteArrayOutputStream();
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			JsonArray resultArr = new JsonArray();
 			String baseUrl = getEndpointURL(modelId);
@@ -260,7 +263,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				resultArr.add(obj);
 			}
 			
-//			ResultSetFormatter.outputAsJSON(resultString, rs);
 			result = resultArr.toString();
 		} else if(resultFormat.equals(ResultFormat.XML.toString())){
 			DocumentBuilderFactory factory =
@@ -345,7 +347,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		}
 		
 		//TODO
-		sendStatus("COMPLETE");
+		logStatus("COMPLETE");
 		
 		return result;
 
@@ -372,37 +374,53 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	@Override
 	public String queryModelNames(String resultFormat) {
-		// TODO Auto-generated method stub
-		return null;
+		return formatStringList(queryModelNameList(), "modelNames", resultFormat);
 	}
+	
+	
+	
+
+	
+	
+	
 	@Override
 	public List<String> queryModelNameList() {
 		List<String> models = new ArrayList<String>();
-		//TODO need to get bigdata jar working in osgi if I want to use this code
-//		RemoteRepositoryManager repo = new RemoteRepositoryManager(
-//				endpointBaseURL, false /* useLBS */);
-//		try{
-//			GraphQueryResult res = repo.getRepositoryDescriptions();
-//	
-//			while (res.hasNext()) {
-//				Statement stmt = res.next();
-//				if (stmt.getPredicate()
-//						.toString()
-//						.equals(SD.KB_NAMESPACE.stringValue())) {
-//					models.add(stmt.getObject().stringValue());
-//				}
-//				
-//			}	
-//			res.close();
-//		}catch(Exception e){
-//			e.printStackTrace();
-//			//TODO log message
-//		} finally {
-//			try {
-//				repo.close();
-//			} catch (Exception e) {
-//			}
-//		}
+
+		//Set this to keep RemoteRepositoryManager happy, may fix it by rebuilt bidata jar?
+//		System.setProperty(DefaultHttpClientFactory.Options.FOLLOW_REDIRECTS,"false");
+		System.out.println(endpointBaseURL);
+
+		RemoteRepositoryManager repo = new RemoteRepositoryManager(
+				endpointBaseURL, false);
+		try{
+			GraphQueryResult res = repo.getRepositoryDescriptions();
+	
+			while (res.hasNext()) {
+				Statement stmt = res.next();
+				if (stmt.getPredicate()
+						.toString()
+						.equals(SD.KB_NAMESPACE.stringValue())) {
+					
+					String name = stmt.getObject().stringValue();
+					if(!reservedModelNames.contains(name)){
+						models.add(name);
+					}
+				}
+				
+			}	
+			res.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			//TODO log message
+		} finally {
+			try {
+				repo.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("MODELS "+models);
 		return models;
 	}
 	
@@ -432,7 +450,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //	}
 	
 	
-	protected void sendStatus(String status) throws Exception{
+	protected void logStatus(String status) throws Exception{
 //		Credentials credentials = new UsernamePasswordCredentials(
 //				GridAppsDConstants.username, GridAppsDConstants.password);
 //		Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
@@ -463,6 +481,52 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	
-	
+	private String formatStringList(List<String> values, String rootElementName, String resultFormat){
+		if(resultFormat.equals(ResultFormat.JSON.toString())){
+			JsonObject obj = new JsonObject();
+			JsonArray resultArr = new JsonArray();
+			for(String str: values){
+				resultArr.add(new JsonPrimitive(str));
+			}
+			obj.add(rootElementName, resultArr);
+			return obj.toString();
+
+		} else if(resultFormat.equals(ResultFormat.XML.toString())){
+			try{
+			DocumentBuilderFactory factory =
+			        DocumentBuilderFactory.newInstance();
+			factory.setNamespaceAware(true);
+			
+
+			 DocumentBuilder builder =
+			            factory.newDocumentBuilder();
+			 Document rootDoc = builder.newDocument();
+			 Element rootElement = rootDoc.createElement(rootElementName);
+//			 rootElement.setAttribute("xmlns:cim", nsCIM);
+//			 ROOTELEMENT.SETATTRIBUTE("XMLNS:RDF", NSRDF);
+			 rootDoc.appendChild(rootElement);
+			 for(String str: values){
+				 rootElement.appendChild(rootDoc.createElement(str));
+			 }
+			 
+			 TransformerFactory tranFactory = TransformerFactory.newInstance();
+			    Transformer transformer = tranFactory.newTransformer();
+		        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+			    StringWriter resultWriter = new StringWriter();
+			    transformer.transform(new DOMSource(rootDoc), new StreamResult(resultWriter));
+				return resultWriter.toString();
+			}catch(Exception e){
+				e.printStackTrace();
+				//todo thrw a parsing error
+			}
+		} else if(resultFormat.equals(ResultFormat.CSV.toString())){
+			return String.join(",", values);
+		} else {
+			//TODO send unrecognized type error
+		}
+		return null;
+	}
 
 }

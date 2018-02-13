@@ -107,7 +107,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@Start
 	public void start(){
-		System.out.println("STARTING CONFIGURATION MANAGER");
+//		System.out.println("STARTING CONFIGURATION MANAGER");
 //		statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		
 //		log.debug("Starting "+this.getClass().getName());
@@ -164,6 +164,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 
 	@Override
 	public void registerConfigurationHandler(String type, ConfigurationHandler handler) {
+		//TODO log
+		System.out.println("REGISTERING CONFIG "+type+" "+handler.getClass());
 		configHandlers.put(type, handler);
 	}
 
@@ -171,6 +173,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	public void generateConfiguration(String type, Properties parameters, PrintWriter out) throws Exception {
 		if(configHandlers.containsKey(type) && configHandlers.get(type)!=null){
 			configHandlers.get(type).generateConfig(parameters, out);
+		} else {
+			throw new Exception("No configuration handler registered for '"+type+"'");
 		}
 	}
 	
