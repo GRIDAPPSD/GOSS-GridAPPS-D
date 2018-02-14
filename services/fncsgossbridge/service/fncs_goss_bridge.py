@@ -416,11 +416,11 @@ def _send_simulation_status(status, message, log_level):
             log_level = 'INFO'
         t_now = datetime.utcnow()
         status_message = {
-            "process_id" : "fncs_goss_bridge-"+str(simulation_id),
+            "processId" : "fncs_goss_bridge-"+str(simulation_id),
             "timestamp" : t_now.microsecond,
-            "proces_status" : status,
-            "log_message" : str(message),
-            "log_level" : log_level,
+            "procesStatus" : status,
+            "logMessage" : str(message),
+            "logLevel" : log_level,
         }
         status_str = json.dumps(status_message)
         goss_connection.send(simulation_status_topic, status_str)
