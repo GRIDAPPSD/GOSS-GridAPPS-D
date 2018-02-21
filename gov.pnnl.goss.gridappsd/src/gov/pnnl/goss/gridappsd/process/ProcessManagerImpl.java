@@ -176,7 +176,7 @@ public class ProcessManagerImpl implements ProcessManager {
 						try {
 							int simPort = assignSimulationPort(processId);
 							client.publish(event.getReplyDestination(), processId);
-							newSimulationProcess.process(configurationManager, simulationManager, processId, message, simPort, appManager, serviceManager);
+							newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(), simPort, appManager, serviceManager);
 						} catch (Exception e) {
 							e.printStackTrace();
 							logMessageObj.setTimestamp(new Date().getTime());

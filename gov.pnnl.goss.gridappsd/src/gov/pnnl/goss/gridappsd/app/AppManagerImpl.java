@@ -484,7 +484,8 @@ public class AppManagerImpl implements AppManager {
 		    }
 		    
 			if(runtimeOptions!=null){
-				commands.add(runtimeOptions);
+				String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
+				commands.add(runTimeString);
 			}
 			
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
