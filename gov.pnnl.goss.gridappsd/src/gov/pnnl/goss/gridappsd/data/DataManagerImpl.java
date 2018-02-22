@@ -61,7 +61,6 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -82,8 +81,6 @@ public class DataManagerImpl implements DataManager {
 	private volatile ClientFactory clientFactory;
 	@ServiceDependency
 	private volatile LogManager logManager;
-	@ServiceDependency
-	private volatile StatusReporter statusReporter;
 	
 	public DataManagerImpl(ClientFactory clientFactory, LogManager logManager){
 		this.clientFactory = clientFactory;
@@ -157,7 +154,7 @@ public class DataManagerImpl implements DataManager {
 			//iterate through all handlers until we get one with a result
 			for(GridAppsDataHandler handler: handlers){
 				//datahandler.handle
-				Response r = handler.handle(request, simulationId, tempDataPath, statusReporter);
+				Response r = handler.handle(request, simulationId, tempDataPath, logManager);
 				if(r!=null){
 					return r; 
 				}

@@ -57,7 +57,6 @@ import javax.jms.Destination;
 import static gov.pnnl.goss.gridappsd.TestConstants.*;
 
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.client.fluent.Request;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -70,14 +69,12 @@ import org.mockito.stubbing.Answer;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.GridAppsDataSourcesImpl;
 import pnnl.goss.core.server.DataSourceBuilder;
 import pnnl.goss.core.server.DataSourceObject;
 import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
-import pnnl.goss.server.registry.DataSourceRegistryImpl;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationManagerComponentTests {

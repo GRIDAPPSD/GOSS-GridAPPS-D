@@ -46,19 +46,13 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
-import java.awt.GridBagConstraints;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,15 +61,11 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.mockito.internal.matchers.InstanceOf;
 
-import com.google.gson.JsonSyntaxException;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.GossResponseEvent;
 
 
 
@@ -101,9 +91,6 @@ public class ProcessManagerImpl implements ProcessManager {
 	private volatile AppManager appManager;
 	
 	@ServiceDependency
-	private volatile StatusReporter statusReporter;
-	
-	@ServiceDependency
 	private volatile LogManager logManager;
 	
 	@ServiceDependency
@@ -122,14 +109,12 @@ public class ProcessManagerImpl implements ProcessManager {
 	public ProcessManagerImpl(ClientFactory clientFactory, 
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
-			StatusReporter statusReporter,
 			LogManager logManager, 
 			AppManager appManager,
 			ProcessNewSimulationRequest newSimulationProcess){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
-		this.statusReporter = statusReporter;
 		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
 	}

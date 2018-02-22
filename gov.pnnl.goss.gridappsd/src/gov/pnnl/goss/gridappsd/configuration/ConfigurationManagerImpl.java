@@ -56,7 +56,6 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
@@ -107,7 +106,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@Start
 	public void start(){
-//		System.out.println("STARTING CONFIGURATION MANAGER");
+		System.out.println("STARTING CONFIGURATION MANAGER");
 //		statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		
 //		log.debug("Starting "+this.getClass().getName());

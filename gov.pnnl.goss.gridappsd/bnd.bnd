@@ -14,7 +14,6 @@
 	slf4j.api,\
 	org.apache.activemq.activemq-osgi,\
 	com.springsource.javax.management.j2ee,\
-	org.apache.felix.http.jetty,\
 	com.google.gson,\
 	org.fusesource.stompjms.stompjms-client,\
 	org.apache.commons.math3,\
@@ -30,10 +29,8 @@
 	org.mockito.mockito-all,\
 	httpcore,\
 	blazegraph.cim2glm;version=latest,\
-	commons-logging:commons-logging,\
-	org.apache.httpcomponents.httpclient,\
-	org.openrdf.sesame2,\
-	bigdata-core
+	httpclient,\
+	com.bigdata.rdf
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd

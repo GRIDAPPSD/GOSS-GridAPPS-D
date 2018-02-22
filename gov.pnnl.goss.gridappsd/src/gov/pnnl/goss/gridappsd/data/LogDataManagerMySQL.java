@@ -69,16 +69,19 @@ public class LogDataManagerMySQL implements LogDataManager {
 	
 	@ServiceDependency
 	GridAppsDataSources dataSources;
-	
-	@ServiceDependency
+//	
+//	@ServiceDependency
 	ClientFactory clientFactory;
 	
 	private Connection connection;
 	private PreparedStatement preparedStatement;
 	Client client;
 	
+	public LogDataManagerMySQL(){
+		System.out.println("CREATING LOG DATA MGR MYSQL");
+	}
+	
     private Logger log = LoggerFactory.getLogger(getClass());
-
 	
 	@Start
 	public void start(){

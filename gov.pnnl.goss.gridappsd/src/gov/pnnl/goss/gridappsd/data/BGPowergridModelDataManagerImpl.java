@@ -17,10 +17,10 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.openrdf.model.Statement;
-import org.openrdf.query.GraphQueryResult;
-import com.bigdata.rdf.sail.webapp.SD;
-import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
+//import org.openrdf.model.Statement;
+//import org.openrdf.query.GraphQueryResult;
+//import com.bigdata.rdf.sail.webapp.SD;
+//import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -391,35 +391,35 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //		System.setProperty(DefaultHttpClientFactory.Options.FOLLOW_REDIRECTS,"false");
 		System.out.println(endpointBaseURL);
 
-		RemoteRepositoryManager repo = new RemoteRepositoryManager(
-				endpointBaseURL, false);
-		try{
-			GraphQueryResult res = repo.getRepositoryDescriptions();
-	
-			while (res.hasNext()) {
-				Statement stmt = res.next();
-				if (stmt.getPredicate()
-						.toString()
-						.equals(SD.KB_NAMESPACE.stringValue())) {
-					
-					String name = stmt.getObject().stringValue();
-					if(!reservedModelNames.contains(name)){
-						models.add(name);
-					}
-				}
-				
-			}	
-			res.close();
-		}catch(Exception e){
-			e.printStackTrace();
-			//TODO log message
-		} finally {
-			try {
-				repo.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+//		RemoteRepositoryManager repo = new RemoteRepositoryManager(
+//				endpointBaseURL, false);
+//		try{
+//			GraphQueryResult res = repo.getRepositoryDescriptions();
+//	
+//			while (res.hasNext()) {
+//				Statement stmt = res.next();
+//				if (stmt.getPredicate()
+//						.toString()
+//						.equals(SD.KB_NAMESPACE.stringValue())) {
+//					
+//					String name = stmt.getObject().stringValue();
+//					if(!reservedModelNames.contains(name)){
+//						models.add(name);
+//					}
+//				}
+//				
+//			}	
+//			res.close();
+//		}catch(Exception e){
+//			e.printStackTrace();
+//			//TODO log message
+//		} finally {
+//			try {
+//				repo.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
 		System.out.println("MODELS "+models);
 		return models;
 	}

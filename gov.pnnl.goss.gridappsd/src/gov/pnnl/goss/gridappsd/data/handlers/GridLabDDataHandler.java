@@ -67,20 +67,20 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 //import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
 //import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
 @Component
@@ -128,7 +128,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 			
 			
 			
-			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new SimpleStatusReporterImpl());
+			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new LogManagerImpl());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -148,8 +148,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	
 	@Override
-	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
-		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
+	public Response handle(Serializable request, int simulationId, String tempDataPath, LogManager logManager) throws Exception {
+//		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
+		//TODO log message
+		
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			request = RequestSimulation.parse((String)request);
@@ -271,7 +273,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0); 
 				
 				}
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
@@ -300,7 +302,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
 
 				
 				//generate simulation config startup file
@@ -373,16 +375,16 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
 
 				
 				return new DataResponse(startupFile);
 				
 				
 				
-			} catch (SQLException e) {
-				log.error("Error while generating GridLABD config files", e);
-				throw new Exception("SQL error while generating GLM configuration",e);
+//			} catch (SQLException e) {
+//				log.error("Error while generating GridLABD config files", e);
+//				throw new Exception("SQL error while generating GLM configuration",e);
 			} catch (IOException e) {
 				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("IO error while generating GLM configuration",e);

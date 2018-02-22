@@ -56,7 +56,6 @@
 	pnnl.goss.core.security-propertyfile;version=latest,\
 	com.springsource.javax.jms,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
-	org.eclipse.jetty.aggregate.jetty-all-server;version='[7.6,7.7)',\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
 	com.mysql.jdbc,\
@@ -77,12 +76,9 @@
 	httpclient,\
 	xml-apis,\
 	blazegraph.cim2glm;version=latest,\
-	org.openrdf.sesame2,\
-	bigdata-core,\
-	cern.colt,\
-	com.ibm.icu,\
-	bigdata.runtime,\
-	it.unimi.dsi.fastutil
+	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
+	javax.servlet-api,\
+	com.bigdata.rdf
 	
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\

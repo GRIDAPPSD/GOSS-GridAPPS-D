@@ -73,7 +73,6 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
  * @author shar064
  *
  */
-@Component
 public class ProcessEvent implements GossResponseEvent {
 
 	Client client;

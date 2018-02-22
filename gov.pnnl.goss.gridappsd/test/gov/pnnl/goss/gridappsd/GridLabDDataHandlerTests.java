@@ -56,7 +56,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.data.handlers.GridLabDDataHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -75,8 +74,6 @@ public class GridLabDDataHandlerTests {
 	
 	@Mock
 	ConfigurationManager cm;
-	@Mock
-	StatusReporter statusReporter;
 	@Mock
 	CIMImporter cimImporter; 
 	
@@ -111,9 +108,6 @@ public class GridLabDDataHandlerTests {
 		//   datasourceRegistry.getAvailable() called
 		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
 		handler.start();
-		handler.handle(TestConstants.REQUEST_SIMULATION_CONFIG, simulationId, "", statusReporter);
-		//verify handlers are registered for String.class and RequestSiulation.class
-		Mockito.verify(statusReporter, Mockito.times(4)).reportStatus(argCaptor.capture(), argCaptor.capture());
 		assertEquals(argCaptor.getAllValues().get(0), GridAppsDConstants.topic_simulationLog+simulationId);
 		assertEquals(argCaptor.getAllValues().get(1),  "Generating GridLABD simulation files");
 		
