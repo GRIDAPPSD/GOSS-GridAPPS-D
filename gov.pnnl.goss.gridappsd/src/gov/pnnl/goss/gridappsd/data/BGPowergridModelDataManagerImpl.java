@@ -33,6 +33,7 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.sparql.engine.binding.Binding;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -111,16 +112,16 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //				" ?tank c:TransformerTank.PowerTransformer ?pxf."+
 //				" ?pxf c:IdentifiedObject.name ?key"+
 //				"} GROUP BY ?key ORDER BY ?key";
-		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph");///namespace/kb/sparql");
+		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
 		try {
 //			String query = "select ?s ?p ?o where {?s r:type c:ConnectivityNode. ?s ?p ?o}";
 //			System.out.println(bg.query("ieee13", query, "JSON"));
 			
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
 //			System.out.println(bg.queryObjectTypes("ieee13", "JSON"));
-//			System.out.println(bg.queryModelNameList());
+			System.out.println(bg.queryModelNameList());
 //			System.out.println(bg.queryModel("ieee8500", null, null, "JSON"));
-			System.out.println(bg.queryModelNames("XML"));
+//			System.out.println(bg.queryModelNames("XML"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -389,7 +390,20 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 		//Set this to keep RemoteRepositoryManager happy, may fix it by rebuilt bidata jar?
 //		System.setProperty(DefaultHttpClientFactory.Options.FOLLOW_REDIRECTS,"false");
-		System.out.println(endpointBaseURL);
+//		System.out.println(endpointBaseURL);
+		
+		String modelNameQuery = "SELECT ?feeder ?fid  WHERE {"
+				+ "?s r:type c:Feeder."
+				+ "?s c:IdentifiedObject.name ?feeder."
+				+ "?s c:IdentifiedObject.mRID ?fid	}"
+				+ " ORDER by ?fid";
+		ResultSet modelNameRS = queryResultSet(null, modelNameQuery);
+		while(modelNameRS.hasNext()){
+			QuerySolution qs = modelNameRS.nextSolution();
+			Resource subjectRes = qs.getResource("fid");
+			String subject = subjectRes.getLocalName();
+			System.out.println("SUBJECT "+subject);
+		}
 
 //		RemoteRepositoryManager repo = new RemoteRepositoryManager(
 //				endpointBaseURL, false);
@@ -468,16 +482,19 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	private String getEndpointURL(String modelId){
+		//Originally this used a different endpoint based on the model id, with all 
+		// models in the same namespace that is not necessary
 		if(endpointBaseURL==null){
 			//TODO log error status
 			//throw new Exception(bg endpoint not available);
 		}
-		if(modelId==null) {
-			return endpointBaseURL+"/sparql";
-		}
-		
-		return endpointBaseURL+"/namespace/"+modelId+"/sparql";
-		
+//		if(modelId==null) {
+//			return endpointBaseURL+"/sparql";
+//		}
+//		
+//		return endpointBaseURL+"/namespace/"+modelId+"/sparql";
+//		
+		return endpointBaseURL;
 	}
 	
 	
