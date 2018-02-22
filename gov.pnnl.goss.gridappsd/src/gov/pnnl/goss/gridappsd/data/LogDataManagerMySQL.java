@@ -39,32 +39,126 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.Start;
-
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+
+import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.ClientFactory;
 
 
 @Component
-public class LogDataManagerImpl implements LogDataManager {
+public class LogDataManagerMySQL implements LogDataManager {
+	
+	@ServiceDependency
+	GridAppsDataSources dataSources;
+	
+	@ServiceDependency
+	ClientFactory clientFactory;
+	
+	private Connection connection;
+	private PreparedStatement preparedStatement;
+	Client client;
 	
 	@Start
 	public void start(){
+		
+		try {
+			Credentials credentials = new UsernamePasswordCredentials(
+					GridAppsDConstants.username, GridAppsDConstants.password);
+			client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 	@Override
-	public void store(String process_id, String username, long timestamp, String log_message, LogLevel log_level,
-			ProcessStatus process_status) {
-		// TODO Auto-generated method stub
+	public void store(String source, String processId, long timestamp,
+			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
+		
+		try {
+			
+			preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?, ?)");
+			preparedStatement.setString(1, source);
+			preparedStatement.setString(2, processId);
+			preparedStatement.setTimestamp(3, new Timestamp(timestamp));
+			preparedStatement.setString(4, log_message);
+			preparedStatement.setString(5, log_level.toString());
+			preparedStatement.setString(6, process_status.toString());
+			preparedStatement.setString(7, username);
+			
+			preparedStatement.executeUpdate();
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		
+		
 
 	}
 
 	@Override
-	public void query(String process_id, long timestamp, LogLevel log_level, ProcessStatus process_status, String username) {
-		// TODO Auto-generated method stub
+	public void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username, String resultTopic, String logTopic) {
+		
+		try {
+			String queryString = "SELECT * FROM gridappsd.log WHERE";
+			if(source!=null)
+				queryString+=" source="+source;
+			if(processId!=null)
+				queryString+=" process_id="+processId;
+			if(log_level!=null)
+				queryString+=" log_level="+log_level;
+			if(process_status!=null)
+				queryString+=" process_status="+process_status;
+			if(username!=null)
+				queryString+=" username="+username;
+			if(timestamp!=new Long("OL"))
+				queryString+=" timestamp="+timestamp;
+					
+			preparedStatement = connection.prepareStatement(queryString);
+			
+			ResultSet rs = preparedStatement.executeQuery();
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columnsNumber = rsmd.getColumnCount();
+			String rowResult="";
 
+			while (rs.next()) {
+			    for(int i = 1; i < columnsNumber; i++)
+			    	rowResult = rowResult + " " + rs.getString(i);
+			    client.publish(resultTopic, rowResult);
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
+
 
 }

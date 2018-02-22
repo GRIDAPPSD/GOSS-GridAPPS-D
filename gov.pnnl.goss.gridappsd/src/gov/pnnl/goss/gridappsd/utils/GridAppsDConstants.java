@@ -49,16 +49,26 @@ public class GridAppsDConstants {
 	public static final String password = "manager";
 	
 	//topics
-	private static final String topic_prefix = "goss.gridappsd";
+	public static final String topic_prefix = "goss.gridappsd";
 	
 	//Process Manager topics
 	public static final String topic_process_prefix = topic_prefix+".process";
+	public static final String topic_request = topic_prefix+".process";
+	
+	
 	
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
 	public static final String topic_requestData = topic_process_prefix+".request.data";
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";
+	public static final String topic_requestListServicesWithInstances = "goss.gridappsd.process.request.list.services";
+	
+	public static final String topic_responseData = topic_prefix+".response.data";
+	
+	public static final String topic_platformLog = topic_prefix+".platform.log";
 	
 	//App Request Topics
 	public static final String topic_app_register = topic_requestApp+".register";
@@ -70,22 +80,34 @@ public class GridAppsDConstants {
 	public static final String topic_app_stop_instance = topic_requestApp+".stopinstance";
 	
 	
-	//Process Manager Log Messages Topic 
-	public static final String topic_log_prefix = topic_process_prefix+".log";
-	public static final String topic_log_simulation = topic_log_prefix+".simulation";
-	public static final String topic_log_service = topic_log_prefix+".service";
-	public static final String topic_log_test = topic_log_prefix+".test";
-	public static final String topic_log_app = topic_log_prefix+".app";
-	
 	//Configuration Manager topics
 	public static final String topic_configuration = topic_prefix+".configuration";
 	public static final String topic_configuration_powergrid = topic_configuration+".powergrid";
 	public static final String topic_configuration_simulation = topic_configuration+".simulation";
 	
-	//Simulation Manager Topics
+	//Simulation Topics
 	public static final String topic_simulation = topic_prefix+".simulation";
+	public static final String topic_simulationInput = topic_simulation+".input";
 	public static final String topic_simulationOutput = topic_simulation+".output";
-	public static final String topic_simulationStatus = topic_simulation+".status.";
+	public static final String topic_simulationLog = topic_simulation+".log.";
+	
+	//Service Topics
+	public static final String topic_service = topic_prefix+".simulation";
+	public static final String topic_serviceInput = topic_service+".input";
+	public static final String topic_serviceOutput = topic_service+".output";
+	public static final String topic_serviceLog = topic_service+".log";
+		
+	//Application Topics
+	public static final String topic_application = topic_prefix+".simulation";
+	public static final String topic_applicationInput = topic_application+".input";
+	public static final String topic_applicationOutput = topic_application+".output";
+	public static final String topic_applicationLog = topic_application+".log";
+	
+	//Test topics
+	public static final String topic_test = topic_prefix+".test";
+	public static final String topic_testInput = topic_test+".input";
+	public static final String topic_testOutput = topic_test+".output";
+	public static final String topic_testLog = topic_test+".log";
 	
 	//Data Manager Topics
 	public static final String topic_getDataFilesLocation = topic_prefix+".data.filesLocation";

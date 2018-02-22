@@ -9,10 +9,10 @@ Log message with process status should be published on the following topic. Proc
 	
 .. code-block:: console
 
-	goss.gridappsd.process.log.simulation.[simulation_id]
-	goss.gridappsd.process.log.service.[service_id]
-	goss.gridappsd.process.log.application.[app_id]
-	goss.gridappsd.process.log.test.[test_id]
+	goss.gridappsd.simulation.log.[simulation_id]
+	goss.gridappsd.service.log.[service_id]
+	goss.gridappsd.application.log.[app_id]
+	goss.gridappsd.test.log.[test_id]
 
 Message structure:
 ^^^^^^^^^^^^^^^^^^
@@ -20,10 +20,13 @@ Message structure:
 .. code-block:: console
 
 	{
-		timestamp: "",
-		status: "[started|stopped|running|error|passed|failed]",
-		log_message: "",
-		log_level: "[info|debug|error]"
+		"source": "",
+		"processId": "",
+		"timestamp": "",
+		"process_status": "[started|stopped|running|error|passed|failed]",
+		"log_message": "",
+		"log_level": "[info|debug|error]",
+		"store_to_db": [true|false]
 	}
 
 Receving multiple logs:
@@ -33,15 +36,15 @@ User can either receive individual process's log by subcribing to topics mention
 
 .. code-block:: console
 
-	goss.gridappsd.process.log.simulation.*
-	goss.gridappsd.process.log.service.*
-	goss.gridappsd.process.log.application.*
-	goss.gridappsd.process.log.test.*
+	goss.gridappsd.simulation.log.*
+	goss.gridappsd.service.log.*
+	goss.gridappsd.application.log.*
+	goss.gridappsd.test.log.*
 
 Similarly, to receive to all logs subscribe to following topic:
 
 .. code-block:: console
 
-	goss.gridappsd.process.log.>
+	goss.gridappsd.*.log.*
 
  

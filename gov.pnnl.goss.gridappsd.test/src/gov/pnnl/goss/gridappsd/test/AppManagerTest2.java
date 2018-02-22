@@ -136,7 +136,7 @@ public class AppManagerTest2 {
 		appInfo.setMultiple_instances(true);
 		appInfo.setOptions("SIMULATION_ID");
 		List<String> prereqs = new ArrayList<String>();
-		prereqs.add("fncs-goss-bridge");
+		prereqs.add("fncsgossbridge");
 		appInfo.setPrereqs(prereqs);
 		appInfo.setType(AppType.PYTHON);
 		

@@ -137,7 +137,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	@Override
 	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
-		statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Generating GridLABD simulation files");
+		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			Gson  gson = new Gson();
@@ -201,10 +201,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 				if(bgHost==null || bgHost.trim().length()==0){
-					bgHost = "http://localhost:9999";
+					bgHost = "http://blazegraph:8080/bigdata";
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/namespace/kb/sparql");
 				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;
@@ -233,8 +233,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					}
 					
 					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					//cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
+					//		modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction); 
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
 //										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
 //										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
@@ -254,11 +257,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 //					rdfToGLM.process(args);
 					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0, fXY);
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0); 
 				
 				}
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD base file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
@@ -284,7 +287,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD output config file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
 
 				
 				//generate simulation config startup file
@@ -357,7 +360,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "GridLABD startup file generated");
+				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
 
 				
 				return new DataResponse(startupFile);

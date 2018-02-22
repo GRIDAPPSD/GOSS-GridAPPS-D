@@ -135,7 +135,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		
 		if(resp!=null && (resp instanceof DataResponse) && (((DataResponse)resp).getData())!=null && (((DataResponse)resp).getData() instanceof File)){
 			//Update simulation status after every step, for example:
-			statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+simulationId, "Simulation files created");
+			statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Simulation files created");
 			return (File)((DataResponse)resp).getData();
 		}
 		

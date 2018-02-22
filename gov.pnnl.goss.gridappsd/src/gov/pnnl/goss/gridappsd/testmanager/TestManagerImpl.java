@@ -134,8 +134,8 @@ public class TestManagerImpl implements TestManager {
 		try{
 			LogMessage logMessageObj = createLogMessage();
 			
-			logMessageObj.setLog_message("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj);
+			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
+			logManager.log(logMessageObj,GridAppsDConstants.username, null);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -174,8 +174,8 @@ public class TestManagerImpl implements TestManager {
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
 					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLog_message("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj);
+					logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+					logManager.log(logMessageObj,GridAppsDConstants.username,null);
 					
 					RequestTest reqTest = RequestTest.parse(message.toString());
 					
@@ -201,10 +201,11 @@ public class TestManagerImpl implements TestManager {
 	
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setLog_level(LogLevel.DEBUG);
-		logMessageObj.setProcess_id(this.getClass().getName());
-		logMessageObj.setProcess_status(ProcessStatus.RUNNING);
-		logMessageObj.setStoreToDB(true);
+		logMessageObj.setSource(this.getClass().getSimpleName());
+		logMessageObj.setLogLevel(LogLevel.DEBUG);
+		logMessageObj.setSource(this.getClass().getSimpleName());
+		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
+		logMessageObj.setStoreToDb(true);
 		logMessageObj.setTimestamp(new Date().getTime());
 		return logMessageObj;
 	}
@@ -212,8 +213,8 @@ public class TestManagerImpl implements TestManager {
 	
 	public TestConfiguration loadTestConfig(String path){
 		LogMessage logMessageObj = createLogMessage();
-		logMessageObj.setLog_message("Loading TestCofiguration from:" + path);
-		logManager.log(logMessageObj);
+		logMessageObj.setLogMessage("Loading TestCofiguration from:" + path);
+		logManager.log(logMessageObj,GridAppsDConstants.username,null);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
@@ -242,16 +243,16 @@ public class TestManagerImpl implements TestManager {
 			// TODO Auto-generated catch block
 //			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLog_message("Error" + e.getMessage());
-			logManager.log(logMessageObj);
+			logMessageObj.setLogMessage("Error" + e.getMessage());
+			logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		}
 		return testConfig;
 	}
 	
 	public TestScript loadTestScript(String path){
 		LogMessage logMessageObj = createLogMessage();
-		logMessageObj.setLog_message("Loading TestScript from:" + path);
-		logManager.log(logMessageObj);
+		logMessageObj.setLogMessage("Loading TestScript from:" + path);
+		logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
 		TestScript testScript = null;
@@ -264,8 +265,8 @@ public class TestManagerImpl implements TestManager {
 		} catch (Exception e) {
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLog_message("Error" + e.getMessage());
-			logManager.log(logMessageObj);
+			logMessageObj.setLogMessage("Error" + e.getMessage());
+			logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		}
 		return testScript;
 	}
@@ -343,14 +344,14 @@ public class TestManagerImpl implements TestManager {
 					
 					//start simulation
 					log.debug("Starting simulation for id "+ testId);
-					simulationManager.startSimulation(testId, simulationFile, config.getSimulation_config());
+					simulationManager.startSimulation(testId, config.getSimulation_config(),null);
 					log.debug("Starting simulation for id "+ testId);
 						
 //								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
 				}catch (Exception e){
 					e.printStackTrace();
 					try {
-						statusReporter.reportStatus(GridAppsDConstants.topic_simulationStatus+testId, "Test Initialization error: "+e.getMessage());
+						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
 						log.error("Test Initialization error",e);
 					} catch (Exception e1) {
 						e1.printStackTrace();

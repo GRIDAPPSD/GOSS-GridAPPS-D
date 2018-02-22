@@ -409,7 +409,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "goss.gridappsd.process.log.simulation"
+    simulation_status_topic = "goss.gridappsd.process.log.simulation."+str(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -418,11 +418,11 @@ def _send_simulation_status(status, message, log_level):
             log_level = 'INFO'
         t_now = datetime.utcnow()
         status_message = {
+            "processId" : "fncs_goss_bridge-"+str(simulation_id),
             "timestamp" : t_now.microsecond,
-            "status" : status,
-            "log_message" : str(message),
-            "log_level" : log_level,
-            "simulation_id" : str(simulation_id)
+            "procesStatus" : status,
+            "logMessage" : str(message),
+            "logLevel" : log_level,
         }
         status_str = json.dumps(status_message)
         goss_connection.send(simulation_status_topic, status_str)

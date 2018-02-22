@@ -26,6 +26,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -76,13 +77,14 @@ public class TestManagerComponentTest {
 											statusReporter,logManager);
 		testManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture());
+
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 
-		assertEquals(logMessage.getLog_level(), LogLevel.DEBUG);
-		assertEquals(logMessage.getLog_message(), "Starting "+TestManagerImpl.class.getName());
-		assertEquals(logMessage.getProcess_status(), ProcessStatus.RUNNING);
+		assertEquals(logMessage.getLogLevel(), LogLevel.DEBUG);
+		assertEquals(logMessage.getLogMessage(), "Starting "+TestManagerImpl.class.getName());
+		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 		
 		assertNotNull(logMessage.getTimestamp());
 	}

@@ -82,30 +82,32 @@ public class LogManagerTests {
 		LogManager logManager = new LogManagerImpl(logDataManager);
 		
 		LogMessage message = new LogMessage();
-		message.setLog_level(LogLevel.DEBUG);
-		message.setLog_message("Process manager received message "+ message);
-		message.setProcess_id(this.getClass().getName());
-		message.setProcess_status(ProcessStatus.RUNNING);
-		message.setStoreToDB(true);
+		message.setLogLevel(LogLevel.DEBUG);
+		message.setLogMessage("Process manager received message "+ message);
+		message.setSource(this.getClass().getName());
+		message.setProcessId("request_1234");
+		message.setProcessStatus(ProcessStatus.RUNNING);
+		message.setStoreToDb(true);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
 		
-		logManager.log(message);
+		logManager.log(message,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 		
 		
 		
-		Mockito.verify(logDataManager).store(argCaptor.capture(), argCaptor.capture(),
+		Mockito.verify(logDataManager).store(argCaptor.capture(),argCaptor.capture(),  
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
-		assertEquals(3, allStringValues.size());
-		assertEquals(message.getProcess_id(), allStringValues.get(0));
+		assertEquals(4, allStringValues.size());
+		assertEquals(message.getSource(), allStringValues.get(0));
+		assertEquals(message.getProcessId(), allStringValues.get(1));
 		//TODO: User test user for this instead of system
-		assertEquals("system", allStringValues.get(1));
+		assertEquals("system", allStringValues.get(3));
 		assertEquals(new Long(message.getTimestamp()), argLongCaptor.getValue());
-		assertEquals(message.getLog_level(), argLogLevelCaptor.getValue());
-		assertEquals(message.getLog_message(), allStringValues.get(2));
-		assertEquals(message.getProcess_status(), argProcessStatusCaptor.getValue());
+		assertEquals(message.getLogLevel(), argLogLevelCaptor.getValue());
+		assertEquals(message.getLogMessage(), allStringValues.get(2));
+		assertEquals(message.getProcessStatus(), argProcessStatusCaptor.getValue());
 	
 	}
 	
@@ -115,26 +117,25 @@ public class LogManagerTests {
 		
 		LogManager logManager = new LogManagerImpl(logDataManager);
 		String message = "{"
-				+ "\"process_id\":\"app_123\","
-				+ "\"process_status\":\"STARTED\","
-				+ "\"log_level\":\"DEBUG\","
-				+ "\"log_message\":\"Testing LogManager\","
+				+ "\"source\":\"app_123\","
+				+ "\"processId\":\"request_123\","
+				+ "\"processStatus\":\"STARTED\","
+				+ "\"logLevel\":\"DEBUG\","
+				+ "\"logMessage\":\"Testing LogManager\","
 				+ "\"timestamp\": "+GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()+"}";
 		
-		logManager.log(LogMessage.parse(message));
+		logManager.log(LogMessage.parse(message), GridAppsDConstants.username,GridAppsDConstants.topic_testLog);
 		
-		
-		
-		
-		Mockito.verify(logDataManager).store(argCaptor.capture(), argCaptor.capture(),
+		Mockito.verify(logDataManager).store(argCaptor.capture(),argCaptor.capture(),  
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
-		assertEquals(3, allStringValues.size());
+		assertEquals(4, allStringValues.size());
 		assertEquals("app_123", allStringValues.get(0));
+		assertEquals("request_123", allStringValues.get(1));
 		//TODO: User test user for this instead of system
-		assertEquals("system", allStringValues.get(1));
+		assertEquals("system", allStringValues.get(3));
 		assertEquals(new Long(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()), argLongCaptor.getValue());
 		assertEquals(LogLevel.DEBUG, argLogLevelCaptor.getValue());
 		assertEquals("Testing LogManager", allStringValues.get(2));
@@ -149,12 +150,15 @@ public class LogManagerTests {
 		LogManager logManager = new LogManagerImpl(logDataManager);
 		
 		LogMessage message = new LogMessage();
-		message.setLog_level(LogLevel.DEBUG);
-		message.setProcess_id(this.getClass().getName());
-		message.setProcess_status(ProcessStatus.RUNNING);
+		message.setLogLevel(LogLevel.DEBUG);
+		message.setSource(this.getClass().getName());
+		message.setProcessStatus(ProcessStatus.RUNNING);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
 		
-		logManager.get(message);
+		String restultTopic = "goss.gridappsd.data.output";
+		String logTopic = "goss.gridappsd.data.log";
+		
+		logManager.get(message, restultTopic, logTopic);
 		
 		
 //		Mockito.verify(logDataManager).query(argCaptor.capture(), argCaptor.capture(),
@@ -182,7 +186,10 @@ public class LogManagerTests {
 				+ "\"log_message\":\"something happened\","
 				+ "\"timestamp\": "+GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()+"}";
 		
-		logManager.get(LogMessage.parse(message));
+		String restultTopic = "goss.gridappsd.data.output";
+		String logTopic = "goss.gridappsd.data.log";
+		
+//		logManager.get(LogMessage.parse(message),restultTopic,logTopic);
 		
 		
 //		Mockito.verify(logDataManager).query(argCaptor.capture(), argCaptor.capture(),
