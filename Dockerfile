@@ -21,6 +21,8 @@ RUN apt-get update && \
 COPY ./applications /gridappsd/applications
 COPY ./services /gridappsd/services
 COPY ./gov.pnnl.goss.gridappsd/conf /gridappsd/conf
+COPY ./entrypoint.sh /gridappsd/entrypoint.sh
+RUN chmod +x /gridappsd/entrypoint.sh
 
 COPY ./run-docker.sh /gridappsd/run-docker.sh
 RUN chmod +x /gridappsd/run-docker.sh
@@ -35,8 +37,9 @@ RUN pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
 
 # Should match what is in conf/pnnl.goss.core.server.cfg and
 # conf/pnnl.goss.core.client.cfg
-EXPOSE 61616 61613 61614 8000
+EXPOSE 61616 61613 61614 8000-9000
 
 WORKDIR /gridappsd
 
-CMD ['bash']
+ENTRYPOINT ["/gridappsd/entrypoint.sh"]
+CMD ["gridappsd"]
