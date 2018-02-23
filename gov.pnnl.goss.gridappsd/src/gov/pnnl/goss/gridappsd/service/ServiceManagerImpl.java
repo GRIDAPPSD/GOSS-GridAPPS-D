@@ -39,16 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.service;
 
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -69,6 +59,16 @@ import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.dto.EnvironmentVariable;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
+import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
 @Component
@@ -227,33 +227,54 @@ public class ServiceManagerImpl implements ServiceManager{
 				+ File.separator + serviceId);
 		
 		
-			        
-	    Process process = null;
+		ProcessBuilder processServiceBuilder = new ProcessBuilder();
+		Process process = null;
 	    List<String> commands = new ArrayList<String>();
+	    Map<String, String> envVars = processServiceBuilder.environment();
+	    
+		
+		
+		//set environment variables
+		List<EnvironmentVariable> envVarList = serviceInfo.getEnvironmentVariables();
+		for(EnvironmentVariable envVar : envVarList) {
+			String value = envVar.getEnvValue();
+		    	if(value.contains("(")){
+		    		 String[] replaceValue = StringUtils.substringsBetween(envVar.getEnvValue(), "(", ")");
+			    	 for(String args : replaceValue){
+			    		 value = value.replace("("+args+")",simulationContext.get(args).toString());
+			    	 }
+		    	}
+		    	envVars.put(envVar.getEnvName(), value);
+		}
+		
+		
+		//add executation command	        
 	    commands.add(serviceInfo.getExecution_path());
 	    
 	    //Check if static args contain any replacement values
-		String staticArgs = serviceInfo.getStatic_args();
-	    if(staticArgs!=null){
-	    	if(staticArgs.contains("(")){
-		    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
-		    	 for(String args : replaceArgs){
-		    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
-		    	 }
-	    	}
-	    	commands.add(staticArgs);
-	    }
+		List<String> staticArgsList = serviceInfo.getStatic_args();
+		for(String staticArg : staticArgsList) {
+		    if(staticArg!=null){
+		    	if(staticArg.contains("(")){
+			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+			    	 for(String args : replaceArgs){
+			    		 staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
+			    	 }
+		    	}
+		    	commands.add(staticArg);
+		    }
+		}
 	    
 		if(runtimeOptions!=null){
 			commands.add(runtimeOptions);
 		}
+		
 	    
 		try{
 			if(serviceInfo.getType().equals(ServiceType.PYTHON)){
 				
 				commands.add(0,"python");
-				
-				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.command(commands);
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
@@ -269,7 +290,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				
 			} else if(serviceInfo.getType().equals(ServiceType.EXE)){
 							
-				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.command(commands);
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
@@ -284,8 +305,7 @@ public class ServiceManagerImpl implements ServiceManager{
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
 				
 				commands.add(0,"java -jar");
-				
-				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
+				processServiceBuilder.command(commands);
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);

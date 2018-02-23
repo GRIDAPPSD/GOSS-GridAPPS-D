@@ -185,7 +185,7 @@ public class ProcessNewSimulationRequest {
 					String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
 					connectServiceInstanceIds.add(serviceInstanceId);
 					logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-							+ app.getName() + " with instance id "
+							+ prereqs + " with instance id "
 							+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
 							GridAppsDConstants.topic_simulationLog
 									+ simulationId);

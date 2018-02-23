@@ -65,6 +65,7 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.mortbay.log.Log;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -211,7 +212,11 @@ public class ProcessManagerImpl implements ProcessManager {
 						//TODO: catch JsonSyntaxException and call  get ModelDataManager or SimulationOutputDataManager
 						
 					} else if(event.getDestination().contains("log")){
-						logManager.log(LogMessage.parse(message.toString()), username,null);
+						try{
+							logManager.log(LogMessage.parse(message.toString()), username,null);
+						}catch(RuntimeException e) {
+							System.out.println(message);
+						}
 					}
 					else if(event.getDestination().contains(GridAppsDConstants.topic_requestListAppsWithInstances)){
 						
