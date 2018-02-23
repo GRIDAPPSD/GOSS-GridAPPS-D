@@ -75,13 +75,13 @@ import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
 //import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
 @Component
@@ -324,24 +324,24 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("}");
 				
 				startupFileWriter.println("object fncs_msg {");
-				startupFileWriter.println("     name "+simulationName+";");
+				startupFileWriter.println("     name "+simulationId+";");
 				startupFileWriter.println("     message_type JSON;");
 				startupFileWriter.println("     configure configfile.json;");
 				startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
 				startupFileWriter.println("}");
 				startupFileWriter.println("object recorder {");
-				startupFileWriter.println("     parent "+simulationName+";");
+				startupFileWriter.println("     parent "+simulationId+";");
 				startupFileWriter.println("     property message_type;");
-				startupFileWriter.println("     file "+simulationName+".csv;");
+				startupFileWriter.println("     file "+simulationId+".csv;");
 				startupFileWriter.println("     interval 60;");
 				startupFileWriter.println("}");
-				startupFileWriter.println("object multi_recorder {");
+				/*startupFileWriter.println("object multi_recorder {");
 				startupFileWriter.println("          parent "+simulationName+";");
 				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,_hvmv_sub_lsb:voltage_A,_hvmv_sub_lsb:voltage_B,_hvmv_sub_lsb:voltage_C;");
 				startupFileWriter.println("         file "+simulationName+"_debug_states.csv;");
 				startupFileWriter.println("         interval 1;");
 				startupFileWriter.println("         limit 120;");
-				startupFileWriter.println("}");
+				startupFileWriter.println("}");*/
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					startupFileWriter.println("class player {");
 					startupFileWriter.println("	double value;");

@@ -69,9 +69,11 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
 
@@ -173,11 +175,11 @@ public class SimulationManagerImpl implements SimulationManager{
 						File defaultLogDir = new File(simulationContext.get("simulationDir").toString());
 						File simulationFile = new File(simulationContext.get("simulationFile").toString());
 
-						/*//Start FNCS
+						//Start FNCS
 						//TODO, verify no errors on this
-						String broker_location = "tcp://*:5570";
+						//String broker_location = "tcp://*:5570";
 						if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-							broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
+							//broker_location = "tcp://"+simulationConfig.getSimulation_broker_location()+":"+String.valueOf(simulationConfig.getSimulation_broker_port());
 							File serviceDir = serviceManager.getServiceConfigDirectory();
 							//copy zipload_schedule.player file
 							try{
@@ -185,7 +187,7 @@ public class SimulationManagerImpl implements SimulationManager{
 							}catch(Exception e){
 								log.warn("Could not copy player file to working directory");
 							}
-						}*/
+						}
 						
 						/*logManager.log(new LogMessage(this.getClass().getSimpleName(),
 								Integer.toString(simulationId), 
@@ -428,17 +430,21 @@ public class SimulationManagerImpl implements SimulationManager{
 			try{
 				//Parse response
 				// if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
+				
+				DataResponse dataResponse = (DataResponse)response;
+				
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),
 						Integer.toString(simulationId), 
 						new Date().getTime(), 
-						 "FNCS-GOSS Bridge response:"+response, 
+						 "FNCS-GOSS Bridge response:"+dataResponse.getData(), 
 							LogLevel.INFO, 
 							ProcessStatus.RUNNING,
 						true),GridAppsDConstants.username,
 						GridAppsDConstants.topic_platformLog);
 
 				Gson  gson = new Gson();
-				FncsBridgeResponse responseJson = gson.fromJson(response.toString(), FncsBridgeResponse.class);
+				
+				FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
 				log.debug("FNCS output message: "+responseJson);
 				if("isInitialized".equals(responseJson.command)){
 					log.debug("FNCS Initialized response: "+responseJson);
