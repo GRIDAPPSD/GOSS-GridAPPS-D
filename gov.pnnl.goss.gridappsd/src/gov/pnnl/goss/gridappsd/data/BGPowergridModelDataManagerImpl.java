@@ -33,7 +33,6 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.sparql.engine.binding.Binding;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -74,7 +73,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	private volatile ClientFactory clientFactory;
 	
 	
-	List<String> reservedModelNames = new ArrayList<String>();
+//	List<String> reservedModelNames = new ArrayList<String>();
 	
 	public BGPowergridModelDataManagerImpl() {
 		
@@ -99,7 +98,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
 		}
 		
-		reservedModelNames.add("kb");
+//		reservedModelNames.add("kb");
 		
 		dataManager.registerDataManagerHandler(new BGPowergridModelDataManagerHandlerImpl(this), DATA_MANAGER_TYPE);
 	}
@@ -113,6 +112,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //				" ?pxf c:IdentifiedObject.name ?key"+
 //				"} GROUP BY ?key ORDER BY ?key";
 		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
+		
 		try {
 //			String query = "select ?s ?p ?o where {?s r:type c:ConnectivityNode. ?s ?p ?o}";
 //			System.out.println(bg.query("ieee13", query, "JSON"));
@@ -388,10 +388,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public List<String> queryModelNameList() {
 		List<String> models = new ArrayList<String>();
 
-		//Set this to keep RemoteRepositoryManager happy, may fix it by rebuilt bidata jar?
-//		System.setProperty(DefaultHttpClientFactory.Options.FOLLOW_REDIRECTS,"false");
-//		System.out.println(endpointBaseURL);
-		
 		String modelNameQuery = "SELECT ?feeder ?fid  WHERE {"
 				+ "?s r:type c:Feeder."
 				+ "?s c:IdentifiedObject.name ?feeder."
@@ -400,9 +396,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		ResultSet modelNameRS = queryResultSet(null, modelNameQuery);
 		while(modelNameRS.hasNext()){
 			QuerySolution qs = modelNameRS.nextSolution();
-			Resource subjectRes = qs.getResource("fid");
-			String subject = subjectRes.getLocalName();
-			System.out.println("SUBJECT "+subject);
+			models.add(qs.get("fid").toString());
 		}
 
 //		RemoteRepositoryManager repo = new RemoteRepositoryManager(
@@ -434,7 +428,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //				e.printStackTrace();
 //			}
 //		}
-		System.out.println("MODELS "+models);
+//		System.out.println("MODELS "+models);
 		return models;
 	}
 	

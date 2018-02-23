@@ -49,7 +49,7 @@ import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 
 public class BlazegraphQueryHandler implements QueryHandler {
 	String endpoint;
-	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
+	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim17#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
