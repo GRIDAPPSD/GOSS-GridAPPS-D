@@ -22,6 +22,7 @@ COPY ./applications /gridappsd/applications
 COPY ./services /gridappsd/services
 COPY ./gov.pnnl.goss.gridappsd/conf /gridappsd/conf
 COPY ./entrypoint.sh /gridappsd/entrypoint.sh
+COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
 
 COPY ./run-docker.sh /gridappsd/run-docker.sh
@@ -32,8 +33,9 @@ RUN chmod +x /gridappsd/run-docker.sh
 # before executing this script.
 COPY ./gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar /gridappsd/lib/run.bnd.jar
 
-RUN pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
-       rm -rf /root/.cache/pip/wheels
+RUN pip install -r /gridappsd/requirements.txt && \
+  pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
+  rm -rf /root/.cache/pip/wheels
 
 # Should match what is in conf/pnnl.goss.core.server.cfg and
 # conf/pnnl.goss.core.client.cfg
