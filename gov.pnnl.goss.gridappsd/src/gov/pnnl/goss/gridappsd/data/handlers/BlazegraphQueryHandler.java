@@ -49,11 +49,11 @@ import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 
 public class BlazegraphQueryHandler implements QueryHandler {
 	String endpoint;
-	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
+	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim17#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
-	
+	public static final String DEFAULT_ENDPOINT =  "http://blazegraph:8080/bigdata/namespace/kb/sparql";
 	
 	public BlazegraphQueryHandler(String endpoint) {
 		this.endpoint = endpoint;
@@ -68,10 +68,11 @@ public class BlazegraphQueryHandler implements QueryHandler {
 
 	@Override
 	public ResultSet query(String szQuery) { 
-		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
+		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
 		Query query = QueryFactory.create (qPrefix + szQuery);
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 		return qexec.execSelect();
+		
 	}
 
 }

@@ -46,7 +46,6 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -81,8 +80,6 @@ public class ProcessNewSimulationRequestComponentTests {
 	ConfigurationManager configurationManager;
 	@Mock
 	SimulationManager simulationManager;
-	@Mock
-	StatusReporter statusReporter;
 	@Mock
 	DataResponse event;
 	@Mock 

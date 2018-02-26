@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ServiceInstance implements Serializable{
 	
@@ -113,7 +114,7 @@ public class ServiceInstance implements Serializable{
 		Gson  gson = new Gson();
 		ServiceInstance obj = gson.fromJson(jsonString, ServiceInstance.class);
 		if(obj.instance_id==null)
-			throw new RuntimeException("Expected attribute instance_id not found");
+			throw new JsonSyntaxException("Expected attribute instance_id not found");
 		return obj;
 	}
 	

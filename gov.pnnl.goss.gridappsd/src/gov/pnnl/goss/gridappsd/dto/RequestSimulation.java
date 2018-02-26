@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class RequestSimulation implements Serializable {
 	
@@ -98,7 +99,7 @@ public class RequestSimulation implements Serializable {
 		Gson  gson = new Gson();
 		RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
 		if(obj.power_system_config==null)
-			throw new RuntimeException("Expected attribute power_system_config not found");
+			throw new JsonSyntaxException("Expected attribute power_system_config not found");
 		return obj;
 	}
 }

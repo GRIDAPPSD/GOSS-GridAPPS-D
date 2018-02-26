@@ -41,7 +41,6 @@ package gov.pnnl.goss.gridappsd.app;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.AppInfo.AppType;
 import gov.pnnl.goss.gridappsd.dto.AppInstance;
@@ -132,7 +131,7 @@ public class AppManagerImpl implements AppManager {
 	public AppManagerImpl() {
 	}
 
-	public AppManagerImpl(StatusReporter statusReporter, LogManager logManager,
+	public AppManagerImpl(LogManager logManager,
 			ClientFactory clientFactory) {
 		this.logManager = logManager;
 		this.clientFactory = clientFactory;
@@ -228,6 +227,7 @@ public class AppManagerImpl implements AppManager {
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
+		try{
 		logManager.log(new LogMessage(this.getClass().getName(), 
 				null,
 				new Date().getTime(), 
@@ -245,8 +245,10 @@ public class AppManagerImpl implements AppManager {
 				String.format("Found %s applications", apps.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username,
-				GridAppsDConstants.topic_platformLog);
+				true),GridAppsDConstants.username);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	protected void scanForApps() {

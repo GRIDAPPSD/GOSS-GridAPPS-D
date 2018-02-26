@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class AppInfo implements Serializable {
 	
@@ -180,7 +181,7 @@ public class AppInfo implements Serializable {
 		Gson  gson = new Gson();
 		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
 		if(obj.id==null)
-			throw new RuntimeException("Expected attribute app_id not found");
+			throw new JsonSyntaxException("Expected attribute app_id not found");
 		return obj;
 	}
 	

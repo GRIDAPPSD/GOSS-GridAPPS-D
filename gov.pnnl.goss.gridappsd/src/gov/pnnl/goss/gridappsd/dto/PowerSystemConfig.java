@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 // TODO change to be a dto rather than full implementation of getters and setters.
 public class PowerSystemConfig implements Serializable {
@@ -96,7 +97,7 @@ public class PowerSystemConfig implements Serializable {
 		Gson  gson = new Gson();
 		PowerSystemConfig obj = gson.fromJson(jsonString, PowerSystemConfig.class);
 		if(obj.Line_name==null)
-			throw new RuntimeException("Expected attribute line_name not found");
+			throw new JsonSyntaxException("Expected attribute line_name not found");
 		return obj;
 	}
 	

@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class SimulationConfig  implements Serializable {
 	public static final int DEFAULT_SIMULATION_BROKER_PORT = 5570;
@@ -178,7 +179,7 @@ public class SimulationConfig  implements Serializable {
 		Gson  gson = new Gson();
 		SimulationConfig obj = gson.fromJson(jsonString, SimulationConfig.class);
 		if(obj.simulation_name==null)
-			throw new RuntimeException("Expected attribute simulation_name not found");
+			throw new JsonSyntaxException("Expected attribute simulation_name not found");
 		return obj;
 	}
 }
