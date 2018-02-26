@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,78 +36,97 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.data.handlers;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.configuration;
 
-import java.util.Date;
+import java.io.PrintWriter;
+import java.util.Properties;
 
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.ResultSet;
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.Client;
 
-public class BlazegraphQueryHandler implements QueryHandler {
-	String endpoint;
-	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim17#";
-	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
-	public static final String DEFAULT_ENDPOINT =  "http://blazegraph:8080/bigdata/namespace/kb/sparql";
-	String mRID = null;
-	boolean use_mRID;
+@Component
+public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+
+	private static Logger log = LoggerFactory.getLogger(GLDSymbolsConfigurationHandler.class);
+	Client client = null; 
 	
-	public BlazegraphQueryHandler(String endpoint) {
-		this.endpoint = endpoint;
-		this.use_mRID = false;
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
+	
+	public static final String TYPENAME = "GridLAB-D Symbols";
+//	public static final String ZFRACTION = "z_fraction";
+//	public static final String IFRACTION = "i_fraction";
+//	public static final String PFRACTION = "p_fraction";
+//	public static final String SCHEDULENAME = "schedule_name";
+//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
+	public static final String MODELID = "model_id";
+	
+	public GLDSymbolsConfigurationHandler() {
 	}
-	public String getEndpoint() {
-		return endpoint;
+	 
+	public GLDSymbolsConfigurationHandler(LogManager logManager, DataManager dataManager) {
+
 	}
-	public void setEndpoint(String endpoint) {
-		this.endpoint = endpoint;
+	
+	
+	@Start
+	public void start(){
+		if(configManager!=null) {
+			configManager.registerConfigurationHandler(TYPENAME, this);
+		}
+		else { 
+			//TODO send log message and exception
+			log.warn("No Config manager avilable for "+getClass());
+		}
+		
+		if(powergridModelManager == null){
+			//TODO send log message and exception
+		}
 	}
 
 	@Override
-	public ResultSet query(String szQuery) { 
-		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
-		Query query = QueryFactory.create (qPrefix + szQuery);
-		System.out.println("Executing query "+szQuery);
-		long start = new Date().getTime();
-
-		if (mRID!=null && mRID.trim().length()>0) { // try to insert a VALUES block for the feeder mRID of interest
-			String insertion_point = "WHERE {";
-			int idx = szQuery.lastIndexOf (insertion_point);
-			if (idx >= 0) {
-//				System.out.println ("\n***");
-//				System.out.println (szQuery);
-//				System.out.println ("***");
-				StringBuilder buf = new StringBuilder (qPrefix + szQuery.substring (0, idx) + insertion_point + " VALUES ?fdrid {\"");
-				buf.append (mRID + "\"} " + szQuery.substring (idx + insertion_point.length()));
-//				System.out.println ("Sending " + buf.toString());
-				query = QueryFactory.create (buf.toString());
-			} else {
-				query = QueryFactory.create (qPrefix + szQuery);
-			}
-		} //else {
-		//	query = QueryFactory.create (qPrefix + szQuery);
-		//}
-		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
-
-		long end = new Date().getTime();
-		System.out.println("   Took: "+(end-start)+"ms");
-		return qexec.execSelect();
+	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
 		
+		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+		if(modelId==null || modelId.trim().length()==0){
+			throw new Exception("Missing parameter "+MODELID);
+		}
+		
+		
+		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		if(bgHost==null || bgHost.trim().length()==0){
+			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		
+		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		queryHandler.addFeederSelection(modelId);
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.generateJSONSymbolFile(queryHandler, out);
+		
+		return out.toString();
 	}
-	public boolean addFeederSelection (String mRID) {
-		this.mRID = mRID;
-		use_mRID = true;
-		return use_mRID;
-	}
-	public boolean clearFeederSelections () {
-		use_mRID = false;
-		return use_mRID;
-	}
+	
+	
+	
+	
 }

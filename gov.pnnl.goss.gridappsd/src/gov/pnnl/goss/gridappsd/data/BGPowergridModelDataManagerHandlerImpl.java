@@ -41,10 +41,10 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			}
 			return dataManager.queryModelNames(pgDataRequest.getResultFormat());
 		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT.toString().equals(pgDataRequest.requestType)){
-			if (pgDataRequest.getModelId()==null || pgDataRequest.getObjectID()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+			if (pgDataRequest.getModelId()==null || pgDataRequest.getObjectId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryObject(pgDataRequest.getModelId(), pgDataRequest.getObjectID(), pgDataRequest.getResultFormat());
+			return dataManager.queryObject(pgDataRequest.getModelId(), pgDataRequest.getObjectId(), pgDataRequest.getResultFormat());
 		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT_TYPES.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error

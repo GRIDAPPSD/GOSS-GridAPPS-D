@@ -199,7 +199,7 @@ public class ProcessEvent implements GossResponseEvent {
 			}
 			
 		} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
-			System.out.println("CONFIG REQUEST "+message.toString());
+//			System.out.println("CONFIG REQUEST "+message.toString());
 
 			Serializable request;
 			if (message instanceof DataResponse){
@@ -209,7 +209,7 @@ public class ProcessEvent implements GossResponseEvent {
 			}
 			
 			ConfigurationRequest configRequest = null;
-			if(message instanceof ConfigurationRequest){
+			if(request instanceof ConfigurationRequest){
 				configRequest = ((ConfigurationRequest)request);
 			} else{
 				try{
@@ -225,6 +225,7 @@ public class ProcessEvent implements GossResponseEvent {
 				try {
 					configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
 				} catch (Exception e) {
+					e.printStackTrace();
 					//TODO log error
 					sendError(client, event.getReplyDestination(), e.getMessage());
 				}

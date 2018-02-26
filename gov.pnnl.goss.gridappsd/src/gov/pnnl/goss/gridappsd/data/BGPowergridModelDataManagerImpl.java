@@ -118,9 +118,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.query("ieee13", query, "JSON"));
 			
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
-//			System.out.println(bg.queryObjectTypes("ieee13", "JSON"));
+			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON"));
 			System.out.println(bg.queryModelNameList());
-//			System.out.println(bg.queryModel("ieee8500", null, null, "JSON"));
+			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON"));
 //			System.out.println(bg.queryModelNames("XML"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -208,8 +208,12 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	@Override
 	public List<String> queryObjectTypeList(String modelId) {
-		String query = "select DISTINCT  ?type where {?subject rdf:type ?type}";
+		String query = "select DISTINCT  ?type where {?subject rdf:type ?type ";
+		if(modelId!=null && modelId.trim().length()>0){
+			query = query+". ?subject ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
 
+		}
+		query = query + "}";
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
 		ResultSet rs = queryHandler.query(query);
 		
@@ -355,9 +359,14 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	@Override
 	public ResultSet queryModelResultSet(String modelId, String objectType, String filter) {
+		if(modelId==null){
+			throw new RuntimeException("queryModel: model id missing");
+		}
+		
 		String query = "CONSTRUCT   { ?s ?p ?o } WHERE     { ?s ?p ?o ";
+		query = query+". ?s ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
 		if(objectType!=null && objectType.trim().length()>0){
-			query = query+". ?s rdf:type <"+objectType+">";
+			query = query+". ?s rdf:type <"+objectType+"> ";
 		}
 		if(filter!=null && filter.trim().length()>0){
 			if(filter.startsWith(".")){
@@ -366,6 +375,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			query = query+". "+filter;
 		}
 		query = query+"}";
+		System.out.println(query);
 		
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
 		ResultSet rs = queryHandler.query(query);

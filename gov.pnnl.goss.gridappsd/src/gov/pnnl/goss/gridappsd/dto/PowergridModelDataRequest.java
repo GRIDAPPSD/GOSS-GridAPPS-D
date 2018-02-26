@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 public class PowergridModelDataRequest implements Serializable{
+	private static final long serialVersionUID = 8897993506912096791L;
+
 	public enum RequestType {
 	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES
 	}
@@ -25,7 +27,7 @@ public class PowergridModelDataRequest implements Serializable{
 	//For query
 	public String queryString;
 	//For query object
-	public String objectID;
+	public String objectId;
 	//for query model
 	public String filter;
 	//for query model
@@ -51,11 +53,11 @@ public class PowergridModelDataRequest implements Serializable{
 	public void setQueryString(String queryString) {
 		this.queryString = queryString;
 	}
-	public String getObjectID() {
-		return objectID;
+	public String getObjectId() {
+		return objectId;
 	}
-	public void setObjectID(String objectID) {
-		this.objectID = objectID;
+	public void setObjectId(String objectId) {
+		this.objectId = objectId;
 	}
 	public String getFilter() {
 		return filter;
