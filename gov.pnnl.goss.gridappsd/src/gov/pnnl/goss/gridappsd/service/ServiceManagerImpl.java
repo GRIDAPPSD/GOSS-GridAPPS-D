@@ -297,7 +297,8 @@ public class ServiceManagerImpl implements ServiceManager{
 			} else if(serviceInfo.getType().equals(ServiceType.EXE)){
 							
 				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-				processServiceBuilder.directory(serviceDirectory);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
 				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
@@ -312,7 +313,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				commands.add(0,"java -jar");
 				
 				ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-				processServiceBuilder.directory(serviceDirectory);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
 				logManager.log(new LogMessage(this.getClass().getSimpleName(), 

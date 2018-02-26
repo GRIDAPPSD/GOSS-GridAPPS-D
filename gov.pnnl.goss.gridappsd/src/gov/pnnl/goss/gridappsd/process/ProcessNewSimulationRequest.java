@@ -153,6 +153,7 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationFile.getParentFile());
+			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){

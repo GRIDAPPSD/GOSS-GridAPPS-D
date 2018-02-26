@@ -223,12 +223,12 @@ public class SimulationManagerImpl implements SimulationManager{
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
 								Integer.toString(simulationId), 
 								new Date().getTime(), 
-								simulationContext.get("simulationPath").toString()+" "+simulationFile,
+								simulationContext.get("simulatorPath").toString()+" "+simulationFile,
 								LogLevel.INFO, 
 								ProcessStatus.RUNNING, 
 								true),GridAppsDConstants.username,
 								GridAppsDConstants.topic_platformLog);
-						ProcessBuilder gridlabDBuilder = new ProcessBuilder(simulationContext.get("simulationPath").toString(), simulationFile.getAbsolutePath());
+						ProcessBuilder gridlabDBuilder = new ProcessBuilder(simulationContext.get("simulatorPath").toString(), simulationFile.getAbsolutePath());
 						gridlabDBuilder.redirectErrorStream(true);
 						gridlabDBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"simulator.log"));
 						//launch from directory containing simulation files
