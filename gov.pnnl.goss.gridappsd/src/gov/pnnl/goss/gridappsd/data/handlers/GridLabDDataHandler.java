@@ -337,7 +337,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("}");
 				startupFileWriter.println("object multi_recorder {");
 				startupFileWriter.println("          parent "+simulationName+";");
-				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,nd__hvmv_sub_lsb:voltage_A,nd__hvmv_sub_lsb:voltage_B,nd__hvmv_sub_lsb:voltage_C;");
+				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,_hvmv_sub_lsb:voltage_A,_hvmv_sub_lsb:voltage_B,_hvmv_sub_lsb:voltage_C;");
 				startupFileWriter.println("         file "+simulationName+"_debug_states.csv;");
 				startupFileWriter.println("         interval 1;");
 				startupFileWriter.println("         limit 120;");
