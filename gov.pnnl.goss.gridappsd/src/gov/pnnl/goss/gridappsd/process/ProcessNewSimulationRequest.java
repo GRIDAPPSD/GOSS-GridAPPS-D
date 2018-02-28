@@ -153,6 +153,7 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationFile.getParentFile());
+			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
@@ -184,7 +185,7 @@ public class ProcessNewSimulationRequest {
 					String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
 					connectServiceInstanceIds.add(serviceInstanceId);
 					logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-							+ app.getName() + " with instance id "
+							+ prereqs + " with instance id "
 							+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
 							GridAppsDConstants.topic_simulationLog
 									+ simulationId);

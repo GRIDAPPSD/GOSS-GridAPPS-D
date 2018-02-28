@@ -1,0 +1,8 @@
+FROM gridappsd
+
+RUN pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
+	rm -rf /root/.cache/pip/wheels
+	
+WORKDIR /gridappsd
+RUN ls -la
+CMD ["./run-docker.sh"]

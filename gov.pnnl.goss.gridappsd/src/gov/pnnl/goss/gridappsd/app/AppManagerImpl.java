@@ -472,19 +472,22 @@ public class AppManagerImpl implements AppManager {
 			commands.add(appInfo.getExecution_path());
 			
 			 //Check if static args contain any replacement values
-			String staticArgs = appInfo.getOptions();
-		    if(staticArgs!=null){
-		    	if(staticArgs.contains("(")){
-			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArgs, "(", ")");
-			    	 for(String args : replaceArgs){
-			    		staticArgs = staticArgs.replace("("+args+")",simulationContext.get(args).toString());
-			    	 }
-		    	}
-		    	commands.add(staticArgs);
-		    }
+			List<String> staticArgsList = appInfo.getOptions();
+			for(String staticArg : staticArgsList) {
+			    if(staticArg!=null){
+			    	if(staticArg.contains("(")){
+				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+				    	 for(String args : replaceArgs){
+				    		staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
+				    	 }
+			    	}
+			    	commands.add(staticArg);
+			    }
+			}
 		    
 			if(runtimeOptions!=null){
-				commands.add(runtimeOptions);
+				String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
+				commands.add(runTimeString);
 			}
 			
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
@@ -663,14 +666,14 @@ public class AppManagerImpl implements AppManager {
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                	System.out.println("APPRECEIVED "+line);
-	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getRequest_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
+	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
 	                	
 //	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();
 //	                log.error("Error on process "+processName, e);
-                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getRequest_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username, GridAppsDConstants.topic_platformLog);
+                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username, GridAppsDConstants.topic_platformLog);
 
 	            }
 	        }

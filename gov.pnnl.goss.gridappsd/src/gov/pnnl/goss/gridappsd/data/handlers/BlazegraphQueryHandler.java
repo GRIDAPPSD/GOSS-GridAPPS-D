@@ -73,5 +73,15 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 		return qexec.execSelect();
 	}
+	/*@Override
+	public boolean addFeederSelection(String mRID) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	@Override
+	public boolean clearFeederSelections() {
+		// TODO Auto-generated method stub
+		return false;
+	}*/
 
 }
