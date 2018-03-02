@@ -42,13 +42,14 @@ public class LogManagerTest {
 		
 		String destination = "goss.gridappsd.process.log";
 		
-		String process_id = "test";
+		String source = "test";
+		String requestId = "test request";
 		long timestamp = System.currentTimeMillis();
 		String log_message = "this is a test";
 		LogLevel log_level = LogLevel.DEBUG;
 		ProcessStatus process_status = ProcessStatus.RUNNING;
 		Boolean storeToDB = true;
-		LogMessage logMessage = new LogMessage(process_id, timestamp, log_message, log_level, process_status, storeToDB);
+		LogMessage logMessage = new LogMessage(source, requestId,timestamp, log_message, log_level, process_status, storeToDB);
 		
 		String id = client.getResponse(logMessage, destination, null).toString();
 		

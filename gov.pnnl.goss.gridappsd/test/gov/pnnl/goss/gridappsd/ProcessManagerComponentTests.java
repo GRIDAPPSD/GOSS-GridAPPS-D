@@ -116,7 +116,8 @@ public class ProcessManagerComponentTests {
 	 */
 	@Test
 	public void infoCalledWhen_processManagerStarted(){
-		// TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
+
+    // TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
 //
 //		try {
 //			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -138,6 +139,7 @@ public class ProcessManagerComponentTests {
 //		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 //		
 //		assertNotNull(logMessage.getTimestamp());
+
 				
 	}
 
@@ -263,6 +265,7 @@ public class ProcessManagerComponentTests {
 	 */
 	@Test
 	public void loggedStatusWhen_simulationTopicSent(){
+
 		// TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
 //		try {
 //			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -336,7 +339,7 @@ public class ProcessManagerComponentTests {
 
 
 		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), 
-				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt());
+				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt(),Mockito.any(),Mockito.any());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));

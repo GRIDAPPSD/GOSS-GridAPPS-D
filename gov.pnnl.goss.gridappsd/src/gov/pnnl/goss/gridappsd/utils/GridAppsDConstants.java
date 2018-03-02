@@ -53,12 +53,18 @@ public class GridAppsDConstants {
 	
 	//Process Manager topics
 	public static final String topic_process_prefix = topic_prefix+".process";
+	public static final String topic_request = topic_prefix+".process";
+	
+	
 	
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
 	public static final String topic_requestData = topic_process_prefix+".request.data";
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	
+	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";
+	public static final String topic_requestListServicesWithInstances = "goss.gridappsd.process.request.list.services";
 	
 	public static final String topic_responseData = topic_prefix+".response.data";
 	
@@ -83,7 +89,7 @@ public class GridAppsDConstants {
 	public static final String topic_simulation = topic_prefix+".simulation";
 	public static final String topic_simulationInput = topic_simulation+".input";
 	public static final String topic_simulationOutput = topic_simulation+".output";
-	public static final String topic_simulationLog = topic_simulation+".log";
+	public static final String topic_simulationLog = topic_simulation+".log.";
 	
 	//Service Topics
 	public static final String topic_service = topic_prefix+".simulation";

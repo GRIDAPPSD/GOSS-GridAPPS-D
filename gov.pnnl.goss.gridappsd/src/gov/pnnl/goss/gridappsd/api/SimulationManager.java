@@ -39,9 +39,9 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.api;
 
-import java.io.File;
-
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+
+import java.util.Map;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -57,5 +57,5 @@ public interface SimulationManager {
 	 * @param simulationFile
 	 * @param simulationConfig
 	 */
-	void startSimulation(int simulationId, File simulationFile, SimulationConfig simulationConfig);
+	void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext);
 }

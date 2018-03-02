@@ -58,12 +58,27 @@ public class AppInfo implements Serializable {
 	String creator;
 	List<String> inputs;
 	List<String> outputs;
-	String options;
+	List<String> options;
 	String execution_path;
 	AppType type;
 	boolean launch_on_startup;
 	List<String> prereqs;
 	boolean multiple_instances;
+	List<AppInstance> instances;
+	
+
+	public List<AppInstance> getInstances() {
+		return instances;
+	}
+
+	public void setInstances(List<AppInstance> instances) {
+		this.instances = instances;
+	}
+	
+	public void addInstance(AppInstance instance) {
+		this.instances.add(instance);
+	}
+
 	
 
 	public String getId() {
@@ -106,11 +121,12 @@ public class AppInfo implements Serializable {
 		this.outputs = outputs;
 	}
 
-	public String getOptions() {
+
+	public List<String> getOptions() {
 		return options;
 	}
 
-	public void setOptions(String options) {
+	public void setOptions(List<String> options) {
 		this.options = options;
 	}
 

@@ -76,7 +76,7 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	blazegraph.cim2glm
+	blazegraph.cim2glm;version='[1.1.0,1.1.1)'
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\

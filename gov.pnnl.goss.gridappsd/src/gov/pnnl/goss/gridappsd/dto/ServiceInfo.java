@@ -57,7 +57,7 @@ public class ServiceInfo implements Serializable {
 	String creator;
 	List<String> input_topics;
 	List<String> output_topics;
-	String static_args;
+	List<String> static_args;
 	String execution_path;
 	ServiceType type;
 	boolean launch_on_startup;
@@ -106,11 +106,11 @@ public class ServiceInfo implements Serializable {
 		this.output_topics = output_topics;
 	}
 
-	public String getStatic_args() {
+	public List<String> getStatic_args() {
 		return static_args;
 	}
 
-	public void setStatic_args(String static_args) {
+	public void setStatic_args(List<String> static_args) {
 		this.static_args = static_args;
 	}
 

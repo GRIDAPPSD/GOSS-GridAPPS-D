@@ -78,8 +78,8 @@ class VoltVarControl():
             'cap_capbank0c', 'cap_capbank1a', 'cap_capbank1b', 'cap_capbank1c',
              'cap_capbank2a', 'cap_capbank2b', 'cap_capbank2c', 'cap_capbank3']
              ,# List of controllable capacitors, separated by commas
-            'voltage_measurements': ['nd_l2955047,1','nd_l3160107,1',
-            'nd_l2673313,2','nd_l2876814,2','nd_m1047574,3','nd_l3254238,4'],
+            'voltage_measurements': ['l2955047,1','l3160107,1',
+            'l2673313,2','l2876814,2','m1047574,3','l3254238,4'],
             # For example, 'L2955047,1' indicates sensor 'L2955047' is communicated with reg.# 1, which is 'FEEDER_REG'
             'maximum_voltages': [7500, 7500, 7500, 7500],# Minimum allowable 
             voltage of the system
@@ -199,52 +199,52 @@ class VoltVarControl():
                     "switchB":"CLOSED",
                     "switchC":"CLOSED"
                 },
-                "nd_190-7361":{
+                "190-7361":{
                     "voltage_A":"6410.387411-4584.456974j V",
                     "voltage_B":"-7198.592139-3270.308372j V",
                     "voltage_C":"642.547265+7539.531175j V"
                 },
-                "nd_190-8581":{
+                "190-8581":{
                     "voltage_A":"6485.244722-4692.686497j V",
                     "voltage_B":"-7183.641237-3170.693324j V",
                     "voltage_C":"544.875720+7443.341013j V"
                 },
-                "nd_190-8593":{
+                "190-8593":{
                     "voltage_A":"6723.279162-5056.725836j V",
                     "voltage_B":"-7494.205738-3101.034602j V",
                     "voltage_C":"630.475857+7534.534977j V"
                 },
-                "nd__hvmv_sub_lsb":{
+                "_hvmv_sub_lsb":{
                     "voltage_A":"6261.474438-3926.148203j V",
                     "voltage_B":"-6529.409296-3466.545236j V",
                     "voltage_C":"247.131622+7348.295282j V"
                 },
-                "nd_l2673313":{
+                "l2673313":{
                     "voltage_A":"6569.522312-5003.052614j V",
                     "voltage_B":"-7431.486583-3004.840139j V",
                     "voltage_C":"644.553331+7464.115915j V"
                 },
-                "nd_l2876814":{
+                "l2876814":{
                     "voltage_A":"6593.064915-5014.031801j V",
                     "voltage_B":"-7430.572726-3003.995538j V",
                     "voltage_C":"643.473396+7483.558765j V"
                 },
-                "nd_l2955047":{
+                "l2955047":{
                     "voltage_A":"5850.305846-4217.166594j V",
                     "voltage_B":"-6729.652722-2987.617376j V",
                     "voltage_C":"535.302083+7395.127354j V"
                 },
-                "nd_l3160107":{
+                "l3160107":{
                     "voltage_A":"5954.507575-4227.423005j V",
                     "voltage_B":"-6662.357613-3055.346879j V",
                     "voltage_C":"600.213657+7317.832960j V"
                 },
-                "nd_l3254238":{
+                "l3254238":{
                     "voltage_A":"6271.490549-4631.254028j V",
                     "voltage_B":"-7169.987847-3099.952683j V",
                     "voltage_C":"751.609655+7519.062260j V"
                 },
-                "nd_m1047574":{
+                "m1047574":{
                     "voltage_A":"6306.632406-4741.568924j V",
                     "voltage_B":"-7214.626338-2987.055914j V",
                     "voltage_C":"622.058711+7442.125124j V"
@@ -303,7 +303,7 @@ class VoltVarControl():
                     "tap_A":2,
                     "tap_B":2,
                     "tap_C":1,
-                    "to":"nd__hvmv_sub_lsb"
+                    "to":"_hvmv_sub_lsb"
                 },
                 "reg_VREG2":{
                     "configuration":"rcon_VREG2",
@@ -311,7 +311,7 @@ class VoltVarControl():
                     "tap_A":10,
                     "tap_B":6,
                     "tap_C":2,
-                    "to":"nd_190-8593"
+                    "to":"190-8593"
                 },
                 "reg_VREG3":{
                     "configuration":"rcon_VREG3",
@@ -319,7 +319,7 @@ class VoltVarControl():
                     "tap_A":16,
                     "tap_B":10,
                     "tap_C":1,
-                    "to":"nd_190-8581"
+                    "to":"190-8581"
                 },
                 "reg_VREG4":{
                     "configuration":"rcon_VREG4",
@@ -327,7 +327,7 @@ class VoltVarControl():
                     "tap_A":12,
                     "tap_B":12,
                     "tap_C":5,
-                    "to":"nd_190-7361"
+                    "to":"190-7361"
                 },
                 "xf_hvmv_sub":{
                     "power_in_A":"1739729.121744-774784.928874j VA",
@@ -448,7 +448,7 @@ class VoltVarControl():
 ##        'regulator_list': ['reg_FEEDER_REG','reg_VREG2','reg_VREG3','reg_VREG4'],             # List of regulators, separated by commas
 ##        'regulator_configuration_list': ["rcon_FEEDER_REG", "rcon_VREG2", "rcon_VREG3", "rcon_VREG4"],       # List of regulator configurations
 ##        'capacitor_list': ['cap_capbank0a', 'cap_capbank0b', 'cap_capbank0c', 'cap_capbank1a', 'cap_capbank1b', 'cap_capbank1c', 'cap_capbank2a', 'cap_capbank2b', 'cap_capbank2c', 'cap_capbank3'],    # List of controllable capacitors, separated by commas
-##        'voltage_measurements': ['nd_l2955047,1','nd_l3160107,1','nd_l2673313,2','nd_l2876814,2','nd_m1047574,3','nd_l3254238,4'],
+##        'voltage_measurements': ['l2955047,1','l3160107,1','l2673313,2','l2876814,2','m1047574,3','l3254238,4'],
 ##        # For example, 'L2955047,1' indicates sensor 'L2955047' is communicated with reg.# 1, which is 'FEEDER_REG'
 ##        'maximum_voltages': [7500, 7500, 7500, 7500],              # Minimum allowable voltage of the system
 ##        'minimum_voltages': [6500, 6500, 6500, 6500],
@@ -472,7 +472,7 @@ class VoltVarControl():
 ##        'dwell_time' : [60, 60, 60, 60],
 ##        # The below should belong to regulator properties, but be moved to regulator_configuration properties
 ##        'phases' : ['ABC', 'ABC', 'ABC', 'ABC'],
-##        'to' : ['nd__hvmv_sub_lsb', 'nd_190-8593', 'nd_190-8581', 'nd_190-7361']
+##        'to' : ['_hvmv_sub_lsb', '190-8593', '190-8581', '190-7361']
 ##        }
 ##
 ##        self.cap_config = {
@@ -511,20 +511,20 @@ class VoltVarControl():
 ##        }
 ##
 ##        self.meas_nodes = {
-##            'nd_l2955047': {'voltage_A': 7000.91 + 0.9j, 'voltage_B': 7031.07 + 0.0j, 'voltage_C': 7011.013 + 0.1j },
-##            'nd_l2673313': {'voltage_A': 7010.92 + 0.9j, 'voltage_B': 7031.07 + 0.0j, 'voltage_C': 7041.018 + 0.1j },
-##            'nd_l3160107': {'voltage_A': 7020.93 + 0.9j, 'voltage_B': 7021.09 + 0.0j, 'voltage_C': 7021.014 + 0.1j },
-##            'nd_l2876814': {'voltage_A': 7000.94 + 0.9j, 'voltage_B': 7001.01 + 0.0j, 'voltage_C': 7011.013 + 0.1j },
-##            'nd_l3254238': {'voltage_A': 7011.05 + 0.0j, 'voltage_B': 7011.01 + 0.1j, 'voltage_C': 7011.012 + 0.1j },
-##            'nd_m1047574': {'voltage_A': 7021.01 + 0.1j, 'voltage_B': 7021.09 + 0.0j, 'voltage_C': 7021.091 + 0.0j }
+##            'l2955047': {'voltage_A': 7000.91 + 0.9j, 'voltage_B': 7031.07 + 0.0j, 'voltage_C': 7011.013 + 0.1j },
+##            'l2673313': {'voltage_A': 7010.92 + 0.9j, 'voltage_B': 7031.07 + 0.0j, 'voltage_C': 7041.018 + 0.1j },
+##            'l3160107': {'voltage_A': 7020.93 + 0.9j, 'voltage_B': 7021.09 + 0.0j, 'voltage_C': 7021.014 + 0.1j },
+##            'l2876814': {'voltage_A': 7000.94 + 0.9j, 'voltage_B': 7001.01 + 0.0j, 'voltage_C': 7011.013 + 0.1j },
+##            'l3254238': {'voltage_A': 7011.05 + 0.0j, 'voltage_B': 7011.01 + 0.1j, 'voltage_C': 7011.012 + 0.1j },
+##            'm1047574': {'voltage_A': 7021.01 + 0.1j, 'voltage_B': 7021.09 + 0.0j, 'voltage_C': 7021.091 + 0.0j }
 ##        }  # This is a non-sequential list of measurement inputs
 ##            # Need to be stored in the same sequence with BasicConfig['voltage_measurements'] to facilitate operation
 ##
 ##        self.reg_to_nodes = {
-##				'nd__hvmv_sub_lsb': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],   # voltage_A, voltage_B, voltage_C     Note: Regulator to-side must have 3-phase voltages
-##				'nd_190-8593': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],
-##				'nd_190-8581': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],
-##				'nd_190-7361': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ]
+##				'_hvmv_sub_lsb': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],   # voltage_A, voltage_B, voltage_C     Note: Regulator to-side must have 3-phase voltages
+##				'190-8593': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],
+##				'190-8581': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ],
+##				'190-7361': [7000.91 + 0.9j, 7031.07 + 0.0j, 7011.013 + 0.1j ]
 ##        }
 
         ####################################################
