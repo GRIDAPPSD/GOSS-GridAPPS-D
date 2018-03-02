@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Install application python requirements
-for reqfile in `ls /gridappsd/services/*/requirements.txt`; do
+for reqfile in `ls /gridappsd/services/*/requirements.txt 2>/dev/null`; do
   echo "[Entrypoint] Installing requirements $reqfile"
   pip install -r $reqfile
 done
-for reqfile in `ls /gridappsd/applications/*/requirements.txt`; do
+for reqfile in `ls /gridappsd/applications/*/requirements.txt 2>/dev/null`; do
   echo "[Entrypoint] Installing requirements $reqfile"
   pip install -r $reqfile
 done
