@@ -485,7 +485,7 @@ public class AppManagerImpl implements AppManager {
 			    }
 			}
 		    
-			if(runtimeOptions!=null){
+                        if(runtimeOptions!=null && !runtimeOptions.isEmpty()){
 				String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
 				commands.add(runTimeString);
 			}
