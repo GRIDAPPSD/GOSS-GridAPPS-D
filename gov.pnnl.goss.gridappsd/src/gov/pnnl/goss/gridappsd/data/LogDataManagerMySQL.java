@@ -69,8 +69,8 @@ public class LogDataManagerMySQL implements LogDataManager {
 	
 	@ServiceDependency
 	GridAppsDataSources dataSources;
-//	
-//	@ServiceDependency
+
+	@ServiceDependency
 	ClientFactory clientFactory;
 	
 	private Connection connection;
@@ -109,13 +109,14 @@ public class LogDataManagerMySQL implements LogDataManager {
 		if(connection!=null){
 			try {
 				
-				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?)");
-				preparedStatement.setString(1, processId);
-				preparedStatement.setTimestamp(2, new Timestamp(timestamp));
-				preparedStatement.setString(3, log_message);
-				preparedStatement.setString(4, log_level.toString());
-				preparedStatement.setString(5, process_status.toString());
-				preparedStatement.setString(6, username);
+				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?,?)");
+				preparedStatement.setString(1, source);
+				preparedStatement.setString(2, processId);
+				preparedStatement.setTimestamp(3, new Timestamp(timestamp));
+				preparedStatement.setString(4, log_message);
+				preparedStatement.setString(5, log_level.toString());
+				preparedStatement.setString(6, process_status.toString());
+				preparedStatement.setString(7, username);
 				
 				preparedStatement.executeUpdate();
 				

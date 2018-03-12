@@ -114,7 +114,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		try{
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
