@@ -43,6 +43,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class RequestAppStart implements Serializable {
 	
@@ -102,7 +103,7 @@ public class RequestAppStart implements Serializable {
 		Gson  gson = new Gson();
 		RequestAppStart obj = gson.fromJson(jsonString, RequestAppStart.class);
 		if(obj.app_id==null)
-			throw new RuntimeException("Expected attribute app_id not found");
+			throw new JsonSyntaxException("Expected attribute app_id not found");
 		return obj;
 	}
 }

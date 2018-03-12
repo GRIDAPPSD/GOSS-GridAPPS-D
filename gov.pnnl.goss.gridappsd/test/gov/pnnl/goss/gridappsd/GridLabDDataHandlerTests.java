@@ -37,28 +37,103 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.utils;
+package gov.pnnl.goss.gridappsd;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.text.ParseException;
+import java.util.List;
 
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public class SimpleStatusReporterImpl implements StatusReporter {
-	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.GridLabDDataHandler;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import pnnl.goss.core.server.DataSourceRegistry;
+
+@RunWith(MockitoJUnitRunner.class)
+public class GridLabDDataHandlerTests {
+	final String EXPECTED_DESCRIPTION = "Generates GridLABD config files for simulation";
+	@Mock
+	DataSourceRegistry registry;
+	
+	@Mock
+	DataManager dm;
+	
+	@Mock
+	ConfigurationManager cm;
+	@Mock
+	CIMImporter cimImporter; 
+	
+	@Captor
+	ArgumentCaptor<String> argCaptor;
+	@Captor
+	ArgumentCaptor<Long> argLongCaptor;
+	@Captor
+	ArgumentCaptor<LogLevel> argLogLevelCaptor;
+	@Captor
+	ArgumentCaptor<ProcessStatus> argProcessStatusCaptor;
+	@Captor
+	ArgumentCaptor<Object> argObjectCaptor;
+	@Captor
+	ArgumentCaptor<Class<?>> argClassCaptor;
 	
 	
-	@Override
-	public void reportStatus(String status) {
-		log.info(status);
+	
+	@Test
+	public void handlersRegisteredWhen_startCalled() throws ParseException{
+		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
+		handler.start();
+		//verify handlers are registered for String.class and RequestSiulation.class
+		Mockito.verify(dm, Mockito.times(2)).registerHandler(Mockito.any(), argClassCaptor.capture());
+	}	
 
+	@Test
+	public void statusReportedWhen_handleCalled() throws Exception{
+		//handle
+		//   check report status
+		int simulationId = 12345;
+		//   datasourceRegistry.getAvailable() called
+		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
+		handler.start();
+		assertEquals(argCaptor.getAllValues().get(0), GridAppsDConstants.topic_simulationLog+simulationId);
+		assertEquals(argCaptor.getAllValues().get(1),  "Generating GridLABD simulation files");
+		
+	}	
+	
+	
+	
+	
+	@Test
+	public void verifyDescription() throws ParseException{
+		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
+		String desc = handler.getDescription();
+		assertEquals(desc, EXPECTED_DESCRIPTION);
 	}
-
-	@Override
-	public void reportStatus(String topic, String status) throws Exception {
-		log.info(topic+":"+status);
-
+	
+	@Test
+	public void verifyRequestTypes() throws ParseException{
+		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
+		List<Class<?>> types = handler.getSupportedRequestTypes();
+		assertEquals(2, types.size());
+		assertTrue(types.contains(String.class));
+		assertTrue(types.contains(RequestSimulation.class));
 	}
+	
+	
+	
+	
 
 }

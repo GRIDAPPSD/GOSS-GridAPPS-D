@@ -57,7 +57,6 @@ import javax.jms.Destination;
 import static gov.pnnl.goss.gridappsd.TestConstants.*;
 
 import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.client.fluent.Request;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;

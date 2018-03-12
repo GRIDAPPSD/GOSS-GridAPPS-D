@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ModelCreationConfig implements Serializable{
 
@@ -140,7 +141,7 @@ public class ModelCreationConfig implements Serializable{
 		Gson  gson = new Gson();
 		ModelCreationConfig obj = gson.fromJson(jsonString, ModelCreationConfig.class);
 		if(obj.schedule_name==null)
-			throw new RuntimeException("Expected attribute schedule_name not found");
+			throw new JsonSyntaxException("Expected attribute schedule_name not found");
 		return obj;
 	}
 	

@@ -53,6 +53,8 @@ public interface DataManager {
 	List<GridAppsDataHandler> getAllHandlers();
 	
 	void registerHandler(GridAppsDataHandler handler, Class<?> requestClass);
+
+	void registerDataManagerHandler(DataManagerHandler handler, String name);
 	
-	Response processDataRequest(Serializable request, int simulationId, String tempDataPath) throws Exception;
+	Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath) throws Exception;
 }

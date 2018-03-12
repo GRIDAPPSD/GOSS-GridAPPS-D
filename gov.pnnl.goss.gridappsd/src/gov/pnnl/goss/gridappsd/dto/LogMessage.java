@@ -125,7 +125,7 @@ public class LogMessage implements Serializable {
 		Gson  gson = new Gson();
 		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
 		if(obj.logMessage==null)
-			throw new RuntimeException("Expected attribute logMessage not found");
+			throw new JsonSyntaxException("Expected attribute logMessage not found");
 		return obj;
 	}
 	

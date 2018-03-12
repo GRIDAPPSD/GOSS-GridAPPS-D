@@ -49,25 +49,71 @@ import java.util.Map;
 
 public interface ServiceManager {
 
-	void registerService(ServiceInfo appInfo, Serializable appPackage);
+	/**
+	 * Register a new service with GridAPPS-D Service manager, registered services will be persisted
+	 * @param serviceInfo  Service info file that includes details about the service configuration
+	 * @param servicePackage  Zip file containing files required by the service, this includes persistent config files and executable files.  
+	 * 
+	 */
+	void registerService(ServiceInfo serviceInfo, Serializable servicePackage);
 	
+	/**
+	 * Lists the currently registered services
+	 * @return List of ServiceInfo objects describing the configurations of the registered services
+	 */
 	List<ServiceInfo> listServices();  //Would return through message bus list of appInfo objects
 	
+	/**
+	 * Returns service configuration for the requested service ID
+	 * @param service_id  Registered ID of the desired service
+	 * @return ServiceInfo object containing service configuration
+	 */
 	ServiceInfo getService(String service_id); //Would return through message bus appInfo object
 	
+	/**
+	 * Unregisters service with the requested id
+	 * @param service_id  Registered ID of the service to de-register
+	 */
 	void deRegisterService(String service_id); 
 	
+	/**
+	 * Start service instance
+	 * @param service_id  Registered ID of the desired service
+	 * @param runtimeOptions Runtime options for the service instance, in most cases these will be passed in on the command-line 
+	 * @return String containing service instance ID
+	 */
 	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
 	
 	String startServiceForSimultion(String service_id, String runtimeOptions, Map<String,Object> simulationContext);  //may also need input/output topics??
 	
+	/**
+	 * Stops all instances of the service with requested service ID
+	 * @param service_id  Registered ID of the service to 
+	 */
 	void stopService(String service_id);  
 	
+	/**
+	 * Lists currently running service instances
+	 * @return  List of ServiceInstance objects
+	 */
 	List<ServiceInstance> listRunningServices(); 
 
+	/**
+	 * Lists currently running service instances for the requested service ID
+	 * @param serviceId  Registered ID of the service to list
+	 * @return List of ServiceInstance objects
+	 */
 	List<ServiceInstance> listRunningServices(String serviceId);
 
+	/**
+	 * Stops service instance
+	 * @param instanceId  ID of the service instance to stop
+	 */
 	void stopServiceInstance(String instanceId);
 	
+	/**
+	 * Get the directory where the service configurations are stored
+	 * @return File location of the directory containing service configurations
+	 */
 	File getServiceConfigDirectory();
 }

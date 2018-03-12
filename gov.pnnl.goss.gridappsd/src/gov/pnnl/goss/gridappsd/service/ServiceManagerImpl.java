@@ -96,17 +96,26 @@ public class ServiceManagerImpl implements ServiceManager{
 	public ServiceManagerImpl() {
 	}
 	 
+	/**
+	 * 
+	 * @param logManager
+	 * @param clientFactory
+	 */
 	public ServiceManagerImpl(LogManager logManager, ClientFactory clientFactory) {
 		this.logManager = logManager;
 		this.clientFactory = clientFactory;
 
 	}
 	
+	/**
+	 * 
+	 */
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				null,
+		try{
+		logManager.log(new LogMessage(this.getClass().getName(), 
+				simulationId,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
@@ -122,10 +131,15 @@ public class ServiceManagerImpl implements ServiceManager{
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username,
-				GridAppsDConstants.topic_platformLog);
+				true),GridAppsDConstants.username);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 	
+	/**
+	 * 
+	 */
 	protected void scanForServices(){
 		//Get directory for services from the config
 		File serviceConfigDir = getServiceConfigDirectory();
@@ -147,6 +161,9 @@ public class ServiceManagerImpl implements ServiceManager{
 		}
 	}
 	
+	/**
+	 * 
+	 */
 	public File getServiceConfigDirectory(){
 		String configDirStr = getConfigurationProperty(GridAppsDConstants.SERVICES_PATH);
 		if (configDirStr==null){
@@ -165,6 +182,11 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 	}
 	
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 */
 	public String getConfigurationProperty(String key){
 		if(this.configurationProperties!=null){
 			Object value = this.configurationProperties.get(key);
@@ -174,6 +196,11 @@ public class ServiceManagerImpl implements ServiceManager{
 		return null;
 	}
 	
+	/**
+	 * 
+	 * @param serviceConfigFile
+	 * @return
+	 */
 	protected ServiceInfo parseServiceInfo(File serviceConfigFile){
 		ServiceInfo serviceInfo = null;
 		String serviceConfigStr;

@@ -63,7 +63,6 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -109,8 +108,6 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile ProcessManager processManager;
 	
-	@ServiceDependency
-	private volatile StatusReporter statusReporter;
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
@@ -119,12 +116,10 @@ public class TestManagerImpl implements TestManager {
 	public TestManagerImpl(ClientFactory clientFactory, 
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
-			StatusReporter statusReporter,
 			LogManager logManager){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
-		this.statusReporter = statusReporter;
 		this.logManager = logManager;
 	}
 	
@@ -312,7 +307,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	private void requestSimOld(Client client, Serializable message, DataResponse event) {
-		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
+//		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
 		//TODO: create registry mapping between request topics and request handlers.
 		switch(event.getDestination().replace("/queue/", "")){
 			case topic_requestTest : {
@@ -351,7 +346,7 @@ public class TestManagerImpl implements TestManager {
 				}catch (Exception e){
 					e.printStackTrace();
 					try {
-						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
+//						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
 						log.error("Test Initialization error",e);
 					} catch (Exception e1) {
 						e1.printStackTrace();
