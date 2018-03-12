@@ -110,4 +110,8 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		use_mRID = false;
 		return use_mRID;
 	}
+	@Override
+	public String getFeederSelection() {
+		return this.mRID;
+	}
 }
