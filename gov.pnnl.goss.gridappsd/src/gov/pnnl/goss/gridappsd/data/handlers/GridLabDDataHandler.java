@@ -332,6 +332,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("#set minimum_timestep=0.1");
 				
 				startupFileWriter.println("module connection;");
+				startupFileWriter.println("module generators;");
 				startupFileWriter.println("module tape;");
 				startupFileWriter.println("module powerflow {");
 				startupFileWriter.println("     line_capacitance TRUE;");
