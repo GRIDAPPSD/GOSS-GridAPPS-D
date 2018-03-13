@@ -132,7 +132,7 @@ public class ProcessEvent implements GossResponseEvent {
 			try {
 				int simPort = processManger.assignSimulationPort(processId);
 				client.publish(event.getReplyDestination(), processId);
-				newSimulationProcess.process(configurationManager, simulationManager, processId, event, logMessageObj, appManager, serviceManager);
+				newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
 			} catch (Exception e) {
 				e.printStackTrace();
 				logMessageObj.setTimestamp(new Date().getTime());
@@ -238,7 +238,11 @@ public class ProcessEvent implements GossResponseEvent {
 			
 			
 		} else if(event.getDestination().contains("log")){
-			logManager.log(LogMessage.parse(message.toString()), username);
+			try {
+				logManager.log(LogMessage.parse(message.toString()), username, null);
+			}catch(RuntimeException e) {
+					System.out.println(message);
+			}
 		}
 		
 		//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
