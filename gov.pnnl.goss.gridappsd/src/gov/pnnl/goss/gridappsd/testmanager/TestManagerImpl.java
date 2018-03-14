@@ -694,7 +694,6 @@ public class TestManagerImpl implements TestManager {
 	
 	
 	public static void main(String[] args) {
-		TestManagerQueryFactory qf =  new TestManagerQueryFactory();
-		qf.getFeeder();
+
 	}
 }
