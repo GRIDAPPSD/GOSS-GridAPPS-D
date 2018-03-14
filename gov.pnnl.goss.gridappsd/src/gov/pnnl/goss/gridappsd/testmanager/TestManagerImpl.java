@@ -203,7 +203,6 @@ public class TestManagerImpl implements TestManager {
 	public void start(){
 		
 		try{
-			System.out.println("TestMana: Starting 1 ");
 			LogMessage logMessageObj = createLogMessage();
 			
 			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
@@ -213,14 +212,8 @@ public class TestManagerImpl implements TestManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			
-			//TODO: Get Simulation Results from ProcessManager
-			
 			//TODO: Compare Results
 			
-			//TODO: 
-			
-			// Is called directly from process manager Remove on message
 			
 			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
 			client.subscribe(topic_requestTest, new GossResponseEvent() {
@@ -275,10 +268,6 @@ public class TestManagerImpl implements TestManager {
 					try {
 						
 						File defaultLogDir = new File(reqTest.getTestScriptPath()).getParentFile();
-
-//						String RULE_APP_PATH = GridAppsDConstants.RULE_APP_PATH;
-//						String RULE_APP_PATH = "/Users/jsimpson/git/adms-business-rules/durable_rules/";
-//						String RULE_APP_PATH = defaultLogDir.getAbsolutePath();
 						
 						String appRuleName = testScript.getRules().get(0).name;
 						
@@ -289,8 +278,6 @@ public class TestManagerImpl implements TestManager {
 								break;
 							}
 						}
-						
-//						AppInfo appInfo = appManager.listApps().get(0);
 						
 						if(appInfo == null){
 							logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -307,10 +294,6 @@ public class TestManagerImpl implements TestManager {
 						
 						File appDirectory = new File(appManager.getAppConfigDirectory().getAbsolutePath()
 								+ File.separator + appInfo.getId() + File.separator + "tests");
-						
-
-//						String appRuleName = "app_rules.py";
-
 						
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
 								Integer.toString(simulationID), 
@@ -349,40 +332,27 @@ public class TestManagerImpl implements TestManager {
 					// Watch the process
 					watch(rulesProcess, "Rules Application");
 				}
-
 			});
 			
-			client.subscribe(GridAppsDConstants.topic_simulationLog + simulationID+".stop", new GossResponseEvent(){
-//				 client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
-				public void onMessage(Serializable message) {
-					System.out.println("TestMana: Stopping 1 ");
-					DataResponse event = (DataResponse)message;
-					String str = event.getData().toString();
-					rulesProcess.destroy();
-					
-				}
-			});
 			
 //			 /topic/goss.gridappsd.platform.log
 //			{"data":" {\"log_level\": \"DEBUG\", \"timestamp\": 158812, \"process_id\": \"fncs_goss_bridge-1454543646\", \"proces_status\": \"STARTED\", \"log_message\": \"received message {\\\"command\\\": \\\"nextTimeStep\\\", \\\"currentTime\\\": 29}\"}","responseComplete":false,
 //			"destination":"/queue/goss.gridappsd.process.log.simulation.1454543646","id":"a5f879e2-7126-405c-8022-a18c63271d64"}
 
 
-//		   client.subscribe(GridAppsDConstants.topic_FNCS_input, new GossResponseEvent(){
-			   client.subscribe("/topic/goss.gridappsd.fncs.input", new GossResponseEvent(){  
+		   client.subscribe("/topic/"+GridAppsDConstants.topic_FNCS_input, new GossResponseEvent(){
+//			   client.subscribe("/topic/goss.gridappsd.fncs.input", new GossResponseEvent(){  
 	
 				public void onMessage(Serializable message) {
 
-					String stopCommand = "{\"command\":  \"stop\"}";
 					DataResponse event = (DataResponse)message;
 					String str = event.getData().toString();
-					System.out.println("TestMana: Stopping 4 " + str);
+//					System.out.println("TestMana: Stopping 4 " + str);
 					
-					CompareResults compareResults = new CompareResults();
-					JsonObject jsonObject = compareResults.getSimulationJson(str);
+					JsonObject jsonObject = CompareResults.getSimulationJson(str);
 					if ( jsonObject.has("command") && 
 							jsonObject.get("command").getAsString().toLowerCase().equals("stop")){
-						System.out.println("TestMana: Stopping 5 " + jsonObject.has("command"));
+//						System.out.println("TestMana: Stopping 5 " + jsonObject.has("command"));
 
 						if(rulesProcess !=null){
 							logMessageObj.setLogMessage("Stopping rules process");
@@ -390,21 +360,7 @@ public class TestManagerImpl implements TestManager {
 							rulesProcess.destroy();
 						}
 					}
-					
-					if( str.contains("stop")){
-//						System.out.println("TestMana: Stopping 2 ");
-						logMessageObj.setLogMessage("TestMana: Stopping 2 ");
-						logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 
-					}
-					if( str.equals(stopCommand)){
-//						System.out.println("TestMana: Stopping 3 ");
-						logMessageObj.setLogMessage("TestMana: Stopping 3 ");
-						logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-
-						if(rulesProcess !=null)
-							rulesProcess.destroy();
-					}
 				}
 			});
 			
@@ -417,7 +373,7 @@ public class TestManagerImpl implements TestManager {
 				logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
 				
 				CompareResults compareResults = new CompareResults();
-				JsonObject jsonObject = compareResults.getSimulationJson(message.toString()); 
+				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
 				forwardFNCSOutput(jsonObject,rulePort,topic);
 //				logManager.log(logMessageObj, GridAppsDConstants.username);
 				

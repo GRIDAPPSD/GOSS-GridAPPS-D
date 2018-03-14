@@ -414,11 +414,11 @@ public class CompareResults {
 	}
 	
 	/**
-	 * 
+	 * Get the JsonObject from a string
 	 * @param simOutput
 	 * @return
 	 */
-	public JsonObject getSimulationJson(String simOutput) {
+	public static JsonObject getSimulationJson(String simOutput) {
 		JsonObject jsonObject = null;
 
 		JsonParser parser = new JsonParser();
