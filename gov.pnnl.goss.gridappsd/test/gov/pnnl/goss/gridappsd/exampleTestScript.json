@@ -1,7 +1,7 @@
  {
 	"name": "VVO",
 	"test_configuration": "ref_location1233",
-	"application": "VVO",
+	"application": "vvo",
 	"outputs":
    		 {"substation_link": ["xf_hvmv_sub"],
    		  "regulator_list": ["reg_FEEDER_REG", "reg_VREG2", "reg_VREG3", "reg_VREG4"],
