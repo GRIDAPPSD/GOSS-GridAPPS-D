@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
@@ -21,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -43,6 +46,9 @@ public class CompareResultsTest {
 	
 	@Mock
 	Logger logger;
+	
+	@Mock
+	AppManager appManager;
 	
 	@Mock
 	ClientFactory clientFactory;
@@ -111,8 +117,13 @@ public class CompareResultsTest {
 	/**
 	 * Trying to get closer to actual output 10/31/2017
 	 */
-	public void testGetFeeder(){	
-		CompareResults compareResults = new CompareResults();
+	public void testGetFeeder(){
+		try {
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(new File("test"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String feeder = compareResults.getFeeder();
 		assertEquals("ieee8500", feeder);	
 		
@@ -120,7 +131,7 @@ public class CompareResultsTest {
 	
 	@Test
 	public void compare_str_errors(){
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String str_out = "{\"output\": {\"ieee8500\":{\"cap_capbank0a\":{\"capacitor_A\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"OPEN\"},\"cap_capbank0b\":{\"capacitor_B\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"OPEN\"},\"cap_capbank0c\":{\"capacitor_C\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank1a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank1b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank1c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank2a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank2b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank2c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank3\":{\"capacitor_A\":300000.0,\"capacitor_B\":300000.0,\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":0.0,\"phases\":\"ABCN\",\"phases_connected\":\"NCBA\",\"pt_phase\":\"\",\"switchA\":\"OPEN\",\"switchB\":\"OPEN\",\"switchC\":\"OPEN\"},\"nd_190-7361\":{\"voltage_A\":\"5990.768173-3952.329601j V\",\"voltage_B\":\"-6441.772989-3132.820514j V\",\"voltage_C\":\"500.477553+7016.663246j V\"},\"nd_190-8581\":{\"voltage_A\":\"6010.972062-4040.492774j V\",\"voltage_B\":\"-6473.150998-2928.295365j V\",\"voltage_C\":\"560.699231+7031.784680j V\"},\"nd_190-8593\":{\"voltage_A\":\"5950.964041-4083.166058j V\",\"voltage_B\":\"-6576.917479-2779.138161j V\",\"voltage_C\":\"674.850808+7108.610716j V\"},\"nd__hvmv_sub_lsb\":{\"voltage_A\":\"6153.230210-3824.632651j V\",\"voltage_B\":\"-6377.685483-3421.485972j V\",\"voltage_C\":\"218.684419+7071.000685j V\"},\"nd_l2673313\":{\"voltage_A\":\"5796.131280-4048.557299j V\",\"voltage_B\":\"-6516.129376-2687.913627j V\",\"voltage_C\":\"689.648289+7033.263880j V\"},\"nd_l2876814\":{\"voltage_A\":\"5820.549476-4056.651275j V\",\"voltage_B\":\"-6515.382040-2686.397831j V\",\"voltage_C\":\"688.293478+7053.160282j V\"},\"nd_l2955047\":{\"voltage_A\":\"5760.062780-3865.865625j V\",\"voltage_B\":\"-6314.785800-2873.229158j V\",\"voltage_C\":\"562.047666+7158.488643j V\"},\"nd_l3160107\":{\"voltage_A\":\"5857.106356-3863.688419j V\",\"voltage_B\":\"-6259.981912-3046.231363j V\",\"voltage_C\":\"497.292122+6990.999461j V\"},\"nd_l3254238\":{\"voltage_A\":\"5889.015738-3883.750230j V\",\"voltage_B\":\"-6333.193211-3054.096309j V\",\"voltage_C\":\"491.410326+6969.849946j V\"},\"nd_m1047574\":{\"voltage_A\":\"5842.733082-4007.048582j V\",\"voltage_B\":\"-6413.940334-2711.833093j V\",\"voltage_C\":\"670.025093+7066.051553j V\"},\"rcon_FEEDER_REG\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":126.5,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG2\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG3\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG4\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"reg_FEEDER_REG\":{\"configuration\":\"rcon_FEEDER_REG\",\"phases\":\"ABC\",\"tap_A\":1,\"tap_B\":1,\"tap_C\":-4,\"to\":\"nd__hvmv_sub_lsb\"},\"reg_VREG2\":{\"configuration\":\"rcon_VREG2\",\"phases\":\"ABC\",\"tap_A\":3,\"tap_B\":4,\"tap_C\":1,\"to\":\"nd_190-8593\"},\"reg_VREG3\":{\"configuration\":\"rcon_VREG3\",\"phases\":\"ABC\",\"tap_A\":7,\"tap_B\":4,\"tap_C\":-3,\"to\":\"nd_190-8581\"},\"reg_VREG4\":{\"configuration\":\"rcon_VREG4\",\"phases\":\"ABC\",\"tap_A\":4,\"tap_B\":5,\"tap_C\":1,\"to\":\"nd_190-7361\"},\"xf_hvmv_sub\":{\"power_in_A\":\"1581122.900437-54039.972422j VA\",\"power_in_B\":\"1402789.071649-236163.193152j VA\",\"power_in_C\":\"1651079.408985-301389.726115j VA\"}}}\n, \"command\": \"nextTimeStep\"}";
 
 //		str_out = "{\"output\": {\"ieee8500\":{\"cap_capbank0a\":{\"capacitor_A\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank0b\":{\"capacitor_B\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank0c\":{\"capacitor_C\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank1a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank1b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank1c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank2a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank2b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank2c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank3\":{\"capacitor_A\":300000.0,\"capacitor_B\":300000.0,\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":0.0,\"phases\":\"ABCN\",\"phases_connected\":\"NCBA\",\"pt_phase\":\"\",\"switchA\":\"CLOSED\",\"switchB\":\"CLOSED\",\"switchC\":\"CLOSED\"},\"nd_190-7361\":{\"voltage_A\":\"6410.387412-4584.456974j V\",\"voltage_B\":\"-7198.592139-3270.308373j V\",\"voltage_C\":\"642.547265+7539.531175j V\"},\"nd_190-8581\":{\"voltage_A\":\"6485.244723-4692.686497j V\",\"voltage_B\":\"-7183.641236-3170.693325j V\",\"voltage_C\":\"544.875721+7443.341013j V\"},\"nd_190-8593\":{\"voltage_A\":\"6723.279163-5056.725836j V\",\"voltage_B\":\"-7494.205738-3101.034603j V\",\"voltage_C\":\"630.475858+7534.534976j V\"},\"nd__hvmv_sub_lsb\":{\"voltage_A\":\"6261.474438-3926.148203j V\",\"voltage_B\":\"-6529.409296-3466.545236j V\",\"voltage_C\":\"247.131623+7348.295282j V\"},\"nd_l2673313\":{\"voltage_A\":\"6569.522313-5003.052614j V\",\"voltage_B\":\"-7431.486583-3004.840141j V\",\"voltage_C\":\"644.553332+7464.115913j V\"},\"nd_l2876814\":{\"voltage_A\":\"6593.064916-5014.031802j V\",\"voltage_B\":\"-7430.572725-3003.995539j V\",\"voltage_C\":\"643.473398+7483.558764j V\"},\"nd_l2955047\":{\"voltage_A\":\"5850.305847-4217.166594j V\",\"voltage_B\":\"-6729.652722-2987.617377j V\",\"voltage_C\":\"535.302084+7395.127354j V\"},\"nd_l3160107\":{\"voltage_A\":\"5954.507575-4227.423005j V\",\"voltage_B\":\"-6662.357613-3055.346880j V\",\"voltage_C\":\"600.213658+7317.832959j V\"},\"nd_l3254238\":{\"voltage_A\":\"6271.490549-4631.254028j V\",\"voltage_B\":\"-7169.987847-3099.952684j V\",\"voltage_C\":\"751.609656+7519.062259j V\"},\"nd_m1047574\":{\"voltage_A\":\"6306.632407-4741.568925j V\",\"voltage_B\":\"-7214.626338-2987.055915j V\",\"voltage_C\":\"622.058712+7442.125123j V\"},\"rcon_FEEDER_REG\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":126.5,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG2\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG3\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG4\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"reg_FEEDER_REG\":{\"configuration\":\"rcon_FEEDER_REG\",\"phases\":\"ABC\",\"tap_A\":2,\"tap_B\":2,\"tap_C\":1,\"to\":\"nd__hvmv_sub_lsb\"},\"reg_VREG2\":{\"configuration\":\"rcon_VREG2\",\"phases\":\"ABC\",\"tap_A\":10,\"tap_B\":6,\"tap_C\":2,\"to\":\"nd_190-8593\"},\"reg_VREG3\":{\"configuration\":\"rcon_VREG3\",\"phases\":\"ABC\",\"tap_A\":16,\"tap_B\":10,\"tap_C\":1,\"to\":\"nd_190-8581\"},\"reg_VREG4\":{\"configuration\":\"rcon_VREG4\",\"phases\":\"ABC\",\"tap_A\":12,\"tap_B\":12,\"tap_C\":5,\"to\":\"nd_190-7361\"},\"xf_hvmv_sub\":{\"power_in_A\":\"1739729.120858-774784.929430j VA\",\"power_in_B\":\"1659762.622463-785218.730666j VA\",\"power_in_C\":\"1709521.679515-849734.584043j VA\"}}}\n, \"command\": \"nextTimeStep\"}";
@@ -139,7 +150,7 @@ public class CompareResultsTest {
 	
 	@Test
 	public void compare_str(){
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String str_out = "{\"output\": {\"ieee8500\":{\"cap_capbank0a\":{\"capacitor_A\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank0b\":{\"capacitor_B\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank0c\":{\"capacitor_C\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank1a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank1b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank1c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank2a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank2b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank2c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank3\":{\"capacitor_A\":300000.0,\"capacitor_B\":300000.0,\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":0.0,\"phases\":\"ABCN\",\"phases_connected\":\"NCBA\",\"pt_phase\":\"\",\"switchA\":\"CLOSED\",\"switchB\":\"CLOSED\",\"switchC\":\"CLOSED\"},\"nd_190-7361\":{\"voltage_A\":\"6410.387412-4584.456974j V\",\"voltage_B\":\"-7198.592139-3270.308373j V\",\"voltage_C\":\"642.547265+7539.531175j V\"},\"nd_190-8581\":{\"voltage_A\":\"6485.244723-4692.686497j V\",\"voltage_B\":\"-7183.641236-3170.693325j V\",\"voltage_C\":\"544.875721+7443.341013j V\"},\"nd_190-8593\":{\"voltage_A\":\"6723.279163-5056.725836j V\",\"voltage_B\":\"-7494.205738-3101.034603j V\",\"voltage_C\":\"630.475858+7534.534976j V\"},\"nd__hvmv_sub_lsb\":{\"voltage_A\":\"6261.474438-3926.148203j V\",\"voltage_B\":\"-6529.409296-3466.545236j V\",\"voltage_C\":\"247.131623+7348.295282j V\"},\"nd_l2673313\":{\"voltage_A\":\"6569.522313-5003.052614j V\",\"voltage_B\":\"-7431.486583-3004.840141j V\",\"voltage_C\":\"644.553332+7464.115913j V\"},\"nd_l2876814\":{\"voltage_A\":\"6593.064916-5014.031802j V\",\"voltage_B\":\"-7430.572725-3003.995539j V\",\"voltage_C\":\"643.473398+7483.558764j V\"},\"nd_l2955047\":{\"voltage_A\":\"5850.305847-4217.166594j V\",\"voltage_B\":\"-6729.652722-2987.617377j V\",\"voltage_C\":\"535.302084+7395.127354j V\"},\"nd_l3160107\":{\"voltage_A\":\"5954.507575-4227.423005j V\",\"voltage_B\":\"-6662.357613-3055.346880j V\",\"voltage_C\":\"600.213658+7317.832959j V\"},\"nd_l3254238\":{\"voltage_A\":\"6271.490549-4631.254028j V\",\"voltage_B\":\"-7169.987847-3099.952684j V\",\"voltage_C\":\"751.609656+7519.062259j V\"},\"nd_m1047574\":{\"voltage_A\":\"6306.632407-4741.568925j V\",\"voltage_B\":\"-7214.626338-2987.055915j V\",\"voltage_C\":\"622.058712+7442.125123j V\"},\"rcon_FEEDER_REG\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":126.5,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG2\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG3\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG4\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"reg_FEEDER_REG\":{\"configuration\":\"rcon_FEEDER_REG\",\"phases\":\"ABC\",\"tap_A\":2,\"tap_B\":2,\"tap_C\":1,\"to\":\"nd__hvmv_sub_lsb\"},\"reg_VREG2\":{\"configuration\":\"rcon_VREG2\",\"phases\":\"ABC\",\"tap_A\":10,\"tap_B\":6,\"tap_C\":2,\"to\":\"nd_190-8593\"},\"reg_VREG3\":{\"configuration\":\"rcon_VREG3\",\"phases\":\"ABC\",\"tap_A\":16,\"tap_B\":10,\"tap_C\":1,\"to\":\"nd_190-8581\"},\"reg_VREG4\":{\"configuration\":\"rcon_VREG4\",\"phases\":\"ABC\",\"tap_A\":12,\"tap_B\":12,\"tap_C\":5,\"to\":\"nd_190-7361\"},\"xf_hvmv_sub\":{\"power_in_A\":\"1739729.120858-774784.929430j VA\",\"power_in_B\":\"1659762.622463-785218.730666j VA\",\"power_in_C\":\"1709521.679515-849734.584043j VA\"}}}\n, \"command\": \"nextTimeStep\"}";
 		JsonObject jsonObject = compareResults.getSimulationOutput(str_out);
 
@@ -168,7 +179,7 @@ public class CompareResultsTest {
 		JsonElement simOutputObject = parser.parse(str_output);
 		System.out.println("TestMan"+simOutputObject.isJsonPrimitive() +simOutputObject.getAsJsonObject().get("ieee8500"));
 		
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String path = "./test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 		
@@ -187,7 +198,7 @@ public class CompareResultsTest {
 		JsonElement simOutputObject = parser.parse(str_output);
 		System.out.println("TestMan"+simOutputObject.isJsonPrimitive() +simOutputObject.getAsJsonObject().get("ieee8500"));
 			
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 //		String path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/sim_output_object.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
@@ -203,7 +214,7 @@ public class CompareResultsTest {
 	
 	@Test
 	public void compare_error_1(){	
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String path = "./test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 
@@ -221,7 +232,7 @@ public class CompareResultsTest {
 	 * Test if expected output series is loaded 
 	 */
 	public void compare_load_expected(){	
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		
 		String expected_output = "./test/gov/pnnl/goss/gridappsd/expected_output_series.json";
 		Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap("0",expected_output);
@@ -232,7 +243,7 @@ public class CompareResultsTest {
 	
 	@Test 
 	public void test_script_prop(){
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory, 
 				configurationManager, simulationManager, 
 				statusReporter,logManager);
 		
@@ -242,7 +253,7 @@ public class CompareResultsTest {
 		
 		
 		
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		String path = "./test/gov/pnnl/goss/gridappsd/sim_output_object.json";
 		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 		
@@ -258,7 +269,7 @@ public class CompareResultsTest {
 	 * Trying to get closer to actual output 10/31/2017
 	 */
 	public void test_first_series1(){	
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		
 		JsonParser parser = new JsonParser();
 		String str_output = "{\"ieee8500\":{\"cap_capbank0a\":{\"capacitor_A\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank0b\":{\"capacitor_B\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank0c\":{\"capacitor_C\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank1a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank1b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank1c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank2a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank2b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank2c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank3\":{\"capacitor_A\":300000.0,\"capacitor_B\":300000.0,\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":0.0,\"phases\":\"ABCN\",\"phases_connected\":\"NCBA\",\"pt_phase\":\"\",\"switchA\":\"CLOSED\",\"switchB\":\"CLOSED\",\"switchC\":\"CLOSED\"},\"nd_190-7361\":{\"voltage_A\":\"4880.420881-4552.087189j V\",\"voltage_B\":\"-6270.772434-1918.625385j V\",\"voltage_C\":\"1480.382908+6582.002027j V\"},\"nd_190-8581\":{\"voltage_A\":\"4425.740568-4760.070519j V\",\"voltage_B\":\"-6466.587127-1333.944616j V\",\"voltage_C\":\"1478.923270+6818.080038j V\"},\"nd_190-8593\":{\"voltage_A\":\"3873.637297-5061.524827j V\",\"voltage_B\":\"-6493.216700-618.093256j V\",\"voltage_C\":\"1826.776774+6735.529317j V\"},\"nd__hvmv_sub_lsb\":{\"voltage_A\":\"6097.897641-3876.216603j V\",\"voltage_B\":\"-6395.084564-3374.206473j V\",\"voltage_C\":\"285.588913+7223.679479j V\"},\"nd_l2673313\":{\"voltage_A\":\"3273.560830-4785.348257j V\",\"voltage_B\":\"-6147.877528-271.060340j V\",\"voltage_C\":\"1908.494726+6423.602576j V\"},\"nd_l2876814\":{\"voltage_A\":\"3363.317124-4843.946549j V\",\"voltage_B\":\"-6147.462115-269.296512j V\",\"voltage_C\":\"1905.220695+6505.698493j V\"},\"nd_l2955047\":{\"voltage_A\":\"4046.892500-4281.190101j V\",\"voltage_B\":\"-6034.905167-1307.288347j V\",\"voltage_C\":\"1433.878539+6740.744179j V\"},\"nd_l3160107\":{\"voltage_A\":\"4569.997316-4213.224832j V\",\"voltage_B\":\"-5837.296662-1826.602764j V\",\"voltage_C\":\"1405.199210+6416.227554j V\"},\"nd_l3254238\":{\"voltage_A\":\"4383.776858-4331.404601j V\",\"voltage_B\":\"-5865.206491-1529.444197j V\",\"voltage_C\":\"1544.903143+6380.370107j V\"},\"nd_m1047574\":{\"voltage_A\":\"3621.597751-4718.220426j V\",\"voltage_B\":\"-6217.145451-599.360367j V\",\"voltage_C\":\"1789.768136+6617.268110j V\"},\"rcon_FEEDER_REG\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":0.0,\"band_width\":0.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG2\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":0.0,\"band_width\":0.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG3\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":0.0,\"band_width\":0.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG4\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":0.0,\"band_width\":0.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"reg_FEEDER_REG\":{\"configuration\":\"rcon_FEEDER_REG\",\"phases\":\"ABC\",\"tap_A\":3,\"tap_B\":3,\"tap_C\":2,\"to\":\"nd__hvmv_sub_lsb\"},\"reg_VREG2\":{\"configuration\":\"rcon_VREG2\",\"phases\":\"ABC\",\"tap_A\":11,\"tap_B\":7,\"tap_C\":3,\"to\":\"nd_190-8593\"},\"reg_VREG3\":{\"configuration\":\"rcon_VREG3\",\"phases\":\"ABC\",\"tap_A\":16,\"tap_B\":11,\"tap_C\":2,\"to\":\"nd_190-8581\"},\"reg_VREG4\":{\"configuration\":\"rcon_VREG4\",\"phases\":\"ABC\",\"tap_A\":13,\"tap_B\":13,\"tap_C\":6,\"to\":\"nd_190-7361\"},\"xf_hvmv_sub\":{\"power_in_A\":\"7208010.474000+2375848.659577j VA\",\"power_in_B\":\"6619686.765355+1504448.106935j VA\",\"power_in_C\":\"7668524.439602+1430626.309647j VA\"}}}\n";
@@ -284,7 +295,7 @@ public class CompareResultsTest {
 	 * Trying to get closer to actual output 10/31/2017
 	 */
 	public void test_first_series2(){	
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		compareResults.getFeeder();
 			
 		JsonParser parser = new JsonParser();
@@ -311,7 +322,7 @@ public class CompareResultsTest {
 	 * Test closer to full series
 	 */
 	public void test_first_series3(){	
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(clientFactory, logManager);
 		compareResults.getFeeder();
 			
 		JsonParser parser = new JsonParser();

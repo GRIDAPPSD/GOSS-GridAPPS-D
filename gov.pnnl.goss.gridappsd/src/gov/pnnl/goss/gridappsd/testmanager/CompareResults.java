@@ -276,9 +276,9 @@ public class CompareResults {
 	}
 	
 	public String getFeeder() {
-		TestManagerQueryFactory qf = new TestManagerQueryFactory();
-		return qf.getFeeder();
-//		return "ieee8500";
+//		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+//		return qf.getFeeder();
+		return "ieee8500";
 	}
 	
 	/**

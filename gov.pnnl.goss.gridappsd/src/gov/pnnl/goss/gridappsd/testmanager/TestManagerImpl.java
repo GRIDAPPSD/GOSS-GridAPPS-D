@@ -162,11 +162,13 @@ public class TestManagerImpl implements TestManager {
 	Process rulesProcess = null;
 	
 	public TestManagerImpl(){}
-	public TestManagerImpl(ClientFactory clientFactory, 
+	public TestManagerImpl(AppManager appManager,
+			ClientFactory clientFactory, 
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
 			StatusReporter statusReporter,
 			LogManager logManager){
+		this.appManager = appManager;
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
