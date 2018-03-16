@@ -39,6 +39,7 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.util.Properties;
 
@@ -61,9 +62,9 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class GLDAllConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
 
-	private static Logger log = LoggerFactory.getLogger(GLDSymbolsConfigurationHandler.class);
+	private static Logger log = LoggerFactory.getLogger(GLDAllConfigurationHandler.class);
 	Client client = null; 
 	
 	@ServiceDependency
@@ -71,18 +72,22 @@ public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
 	
-	public static final String TYPENAME = "GridLAB-D Symbols";
-//	public static final String ZFRACTION = "z_fraction";
-//	public static final String IFRACTION = "i_fraction";
-//	public static final String PFRACTION = "p_fraction";
-//	public static final String SCHEDULENAME = "schedule_name";
-//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
+	public static final String TYPENAME = "GridLAB-D All";
+	public static final String DIRECTORY = "directory";
+	public static final String SIMULATIONNAME = "simulation_name";
+	public static final String ZFRACTION = "z_fraction";
+	public static final String IFRACTION = "i_fraction";
+	public static final String PFRACTION = "p_fraction";
+	public static final String SCHEDULENAME = "schedule_name";
+	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
 	
-	public GLDSymbolsConfigurationHandler() {
+	public static final String CONFIGTARGET = "glm";
+	
+	public GLDAllConfigurationHandler() {
 	}
 	 
-	public GLDSymbolsConfigurationHandler(LogManager logManager, DataManager dataManager) {
+	public GLDAllConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
 	}
 	
@@ -104,6 +109,33 @@ public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//
 
 	@Override
 	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+		boolean bWantZip = false;
+		boolean bWantSched = false;
+
+		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
+		if(zFraction==0) {
+			zFraction = 0;
+			bWantZip = true;
+		}
+		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
+		if(iFraction==0){
+			iFraction = 1;
+			bWantZip = true;
+		}
+		double pFraction = GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0);
+		if(pFraction==0){
+			pFraction = 0;
+			bWantZip = true;
+		}
+		
+		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 0);
+		
+		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
+		if(scheduleName!=null){
+			bWantSched = true;
+		}
+		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
+		String simulationName = GridAppsDConstants.getStringProperty(parameters, SIMULATIONNAME, null);
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
@@ -120,10 +152,18 @@ public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
 		queryHandler.addFeederSelection(modelId);
 		
-		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.generateJSONSymbolFile(queryHandler, out);
 		
-		return out.toString();
+		File dir = new File(directory);
+		if(!dir.exists()){
+			dir.mkdirs();
+		}
+		String fRoot = dir.getAbsolutePath()+File.separator+simulationName;
+		
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
+		
+		return dir.getAbsolutePath();
 	}
 	
 	
