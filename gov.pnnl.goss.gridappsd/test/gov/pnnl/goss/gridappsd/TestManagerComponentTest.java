@@ -3,6 +3,9 @@ package gov.pnnl.goss.gridappsd;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays; 
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -12,8 +15,10 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -34,6 +39,9 @@ import pnnl.goss.core.ClientFactory;
 public class TestManagerComponentTest {
 	
 	TestManager tm = new TestManagerImpl();
+	
+	@Mock
+	AppManager appManager;
 	
 	@Mock
 	ClientFactory clientFactory;
@@ -72,7 +80,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 		
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+		TestManagerImpl testManager = new TestManagerImpl(appManager,clientFactory, 
 											configurationManager, simulationManager, 
 											statusReporter,logManager);
 		testManager.start();
@@ -97,7 +105,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 		
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory, 
 											configurationManager, simulationManager, 
 											statusReporter,logManager);
 		testManager.start();
@@ -115,7 +123,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 		
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
+		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory, 
 											configurationManager, simulationManager, 
 											statusReporter,logManager);
 		testManager.start();

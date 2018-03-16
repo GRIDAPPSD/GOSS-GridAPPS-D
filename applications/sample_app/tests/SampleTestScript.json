@@ -1,7 +1,7 @@
  {
-	"name": "VVO",
-	"test_configuration": "ref_location1233",
-	"application": "VVO",
+	"name": "Sample_App",
+	"test_configuration": "./SampleTestConfig.json",
+	"application": "Sample_App",
 	"outputs":
    		 {"substation_link": ["xf_hvmv_sub"],
    		  "regulator_list": ["reg_FEEDER_REG", "reg_VREG2", "reg_VREG3", "reg_VREG4"],
@@ -9,12 +9,16 @@
    		  "capacitor_list": ["cap_capbank0a","cap_capbank0b", "cap_capbank0c", "cap_capbank1a", "cap_capbank1b", "cap_capbank1c", "cap_capbank2a", "cap_capbank2b", "cap_capbank2c", "cap_capbank3"],
    		  "voltage_measurements": ["nd_l2955047", "nd_l3160107", "nd_l2673313", "nd_l2876814", "nd_m1047574", "nd_l3254238"]
 	   	},
-
   "log" : {
         "name":"string",
         "location":"ref_location1234"
     },
-    "events" : [{"event_date":"2017-07-21 13:00:00", "event_type":1},
-                {"event_date":"2017-07-21 14:00:00", "event_type":2}
-    ]
+    "events" : [
+
+    ],
+    "rules":[
+       {"name": "app_rules.py",
+        "port": 5000,
+        "topic":"input"
+     }  ]
 }

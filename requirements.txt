@@ -3,3 +3,5 @@
 remote_pdb==1.2.0
 PyYaml==3.12
 stomp.py==4.1.11
+durable-rules==0.33.121
+python-dateutil==2.6.1

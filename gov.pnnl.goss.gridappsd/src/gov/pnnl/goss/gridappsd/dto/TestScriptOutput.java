@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -39,167 +39,38 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 
-public class TestConfiguration implements Serializable {
+public class TestScriptOutput {
 
-
-	private static final long serialVersionUID = 1L;
-
-	public String power_system_configuration;
-
-	public String simulation_configuration;
+	public List<String> output_objects;
 	
-	public Integer durations;
 
-	public Date run_start;
 
-	public Date run_end;
-
-	public String region_name;
-
-	public String subregion_name;
-
-	public String line_name;
-
-	public String getPower_system_configuration() {
-		return power_system_configuration;
+	public List<String> getOutputObjects() {
+		if(output_objects==null)
+			output_objects = new ArrayList<String>();
+		return output_objects;
 	}
 
-	public void setPower_system_configuration(String power_system_configuration) {
-		this.power_system_configuration = power_system_configuration;
-	}
-
-	public String getSimulation_configuration() {
-		return simulation_configuration;
-	}
-
-	public void setSimulation_configuration(String simulation_configuration) {
-		this.simulation_configuration = simulation_configuration;
-	}
-
-	public Integer getDurations() {
-		return durations;
-	}
-
-	public void setDurations(Integer durations) {
-		this.durations = durations;
-	}
-
-	public Date getRun_start() {
-		return run_start;
-	}
-
-	public void setRun_start(Date run_start) {
-		this.run_start = run_start;
-	}
-
-	public Date getRun_end() {
-		return run_end;
-	}
-
-	public void setRun_end(Date run_end) {
-		this.run_end = run_end;
-	}
-
-	public String getRegion_name() {
-		return region_name;
-	}
-
-	public void setRegion_name(String region_name) {
-		this.region_name = region_name;
-	}
-
-	public String getSubregion_name() {
-		return subregion_name;
-	}
-
-	public void setSubregion_name(String subregion_name) {
-		this.subregion_name = subregion_name;
-	}
-
-	public String getLine_name() {
-		return line_name;
-	}
-
-	public void setLine_name(String line_name) {
-		this.line_name = line_name;
-	}
-
-	public Boolean getLogging() {
-		return logging;
-	}
-
-	public void setLogging(Boolean logging) {
-		this.logging = logging;
-	}
-
-	public Map<String, String> getLogging_options() {
-		return logging_options;
-	}
-
-	public void setLogging_options(Map<String, String> logging_options) {
-		this.logging_options = logging_options;
-	}
-
-	public Map<String, String> getInitial_conditions() {
-		return initial_conditions;
-	}
-
-	public void setInitial_conditions(Map<String, String> initial_conditions) {
-		this.initial_conditions = initial_conditions;
-	}
-
-	public Map<String, String> getDefault_values() {
-		return default_values;
-	}
-
-	public void setDefault_values(Map<String, String> default_values) {
-		this.default_values = default_values;
-	}
-
-	public String[] getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(String[] outputs) {
-		this.outputs = outputs;
-	}
-
-	public Boolean logging;
-	
-	public Map<String,String> logging_options;
-	
-	public Map<String,String> initial_conditions;
-	
-	public Map<String,String> default_values;
-	
-	public String[] outputs;
-
-	public TestConfiguration() {
-
+	public void setOutputObjects(List<String> outputObjects) {
+		this.output_objects = outputObjects;
 	}
 	
-	public String getPowerSystemConfiguration(){
-		return power_system_configuration;		
-	}
-
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-	public static TestConfiguration parse(String jsonString){
-	    Gson  gson = new Gson();
-	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
-	    if(obj.power_system_configuration==null)
-	        throw new RuntimeException("Expected attribute power_system_configuration not found");
-	    return obj;
+	public static TestScriptOutput parse(String jsonString){
+		Gson  gson = new Gson();
+		TestScriptOutput obj = gson.fromJson(jsonString, TestScriptOutput.class);
+		if(obj.output_objects==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
+		return obj;
 	}
-
 }
