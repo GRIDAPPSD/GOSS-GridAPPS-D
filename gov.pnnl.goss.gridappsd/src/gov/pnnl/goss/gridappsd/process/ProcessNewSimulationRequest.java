@@ -109,8 +109,8 @@ public class ProcessNewSimulationRequest {
 						new LogMessage(this.getClass().getName(), new Integer(
 								simulationId).toString(), new Date().getTime(),
 								"No simulation file returned for request "
-										+ config, LogLevel.ERROR,
-								ProcessStatus.ERROR, false), username,
+										+ config, LogLevel.INFO,
+								ProcessStatus.RUNNING, false), username,
 						GridAppsDConstants.topic_simulationLog + simulationId);
 				throw new RuntimeException("Invalid configuration received");
 			}
@@ -121,8 +121,8 @@ public class ProcessNewSimulationRequest {
 					 new Date().getTime(),
 					"Creating simulation and power grid model files for simulation Id "
 							+ simulationId,
-							LogLevel.ERROR,
-							ProcessStatus.ERROR,true), simulationLogTopic);
+							LogLevel.INFO,
+							ProcessStatus.RUNNING,true), simulationLogTopic);
 
 			File simulationFile = configurationManager.getSimulationFile(
 					simulationId, config);
