@@ -53,10 +53,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
-import gov.pnnl.goss.gridappsd.utils.StatusReporterImpl;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StatusReporterComponentTests {
@@ -73,20 +71,6 @@ public class StatusReporterComponentTests {
 	@Captor
 	ArgumentCaptor<String> argCaptor;
 	
-	@Test
-	public void debugCalledWhen_reportStatusExecuted(){
-		
-		// ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
-		
-		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
-		
-		statusReporter.reportStatus("Testing Status");
-		
-		Mockito.verify(logger).debug(argCaptor.capture());
-		
-		assertEquals("Testing Status", argCaptor.getValue());
-				
-	}
 	
 	@Test
 	public void whenReportStatusOnTopic_clientPublishCalled(){
@@ -95,15 +79,6 @@ public class StatusReporterComponentTests {
 		
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(), Mockito.any())).thenReturn(client);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		StatusReporter statusReporter = new StatusReporterImpl(clientFactory, logger) ;
-		
-		try {
-			statusReporter.reportStatus("big/status", "Things are good");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

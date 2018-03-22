@@ -40,6 +40,8 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
+import java.util.Date;
+
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -192,5 +194,6 @@ public class LogManagerImpl implements LogManager {
 		logDataManager.query(source, requestId, timestamp, log_level, process_status, username, resultTopic, logTopic);
 		
 	}
+
 
 }

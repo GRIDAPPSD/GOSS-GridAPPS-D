@@ -47,7 +47,6 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -88,9 +87,6 @@ public class ProcessManagerComponentTests {
 	
 	@Mock
 	SimulationManager simulationManager;
-	
-	@Mock 
-	StatusReporter statusReporter;
 	
 	@Mock 
 	AppManager appManager;
@@ -237,7 +233,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -325,7 +321,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
