@@ -39,22 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.Date;
-
-import javax.jms.Destination;
-
-import org.apache.felix.dm.annotation.api.Component;
-
-import com.google.gson.JsonSyntaxException;
-
-import pnnl.goss.core.Client;
-import pnnl.goss.core.DataError;
-import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.core.Response;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -65,12 +49,36 @@ import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.Date;
+
+import javax.jms.Destination;
+
+import pnnl.goss.core.Client;
+import pnnl.goss.core.DataError;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.Response;
+
+import com.google.gson.JsonSyntaxException;
+
 /**
- * SimulationEvent starts a single instance of simulation
+ * ProcessEvent class processes requests received by the Process Manager.
+ * These requests include:
+ * <p>
+ * 1. Start a simulation <br>
+ * 2. Query data <br>
+ * 3. Logg messages <br>
+ * 4. Query platform status
  * 
- * @author shar064
+ * @author Poorva Sharma
+ * @author Tara D Gibson
  *
  */
 public class ProcessEvent implements GossResponseEvent {
@@ -84,8 +92,8 @@ public class ProcessEvent implements GossResponseEvent {
 	LogManager logManager;
 	ServiceManager serviceManager;
 	DataManager dataManager;
-	 
-	
+
+
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
@@ -100,152 +108,122 @@ public class ProcessEvent implements GossResponseEvent {
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
 	}
-	
 
-	/**
-	 * message is in the JSON string format {'SimulationId': 1,
-	 * 'SimulationFile': '/path/name'}
-	 */
+
 	@Override
 	public void onMessage(Serializable message) {
-//System.out.println("PROCESSMANAGER "+message +" "+message.getClass());
-		DataResponse event = (DataResponse)message;
-		//TODO:Get username from message's metadata e.g. event.getUserName()
-		String username  = GridAppsDConstants.username;
-		
-		int processId = ProcessManagerImpl.generateProcessId();
-		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setProcessId(this.getClass().getName());
-		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
-		logMessageObj.setStoreToDb(true);
-		logMessageObj.setTimestamp(new Date().getTime());
-		logMessageObj.setLogMessage("Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
-		client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-		
-		
-		
-		//TODO: create registry mapping between request topics and request handlers.
-		if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-			//generate simulation id and reply to event's reply destination.
-			
-			try {
-				int simPort = processManger.assignSimulationPort(processId);
-				client.publish(event.getReplyDestination(), processId);
-				newSimulationProcess.process(configurationManager, simulationManager, processId, event, logMessageObj, appManager, serviceManager);
-			} catch (Exception e) {
-				e.printStackTrace();
-				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogLevel(LogLevel.ERROR);
-				logMessageObj.setLogMessage(e.getMessage());
-				client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-			}
-		} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
-			try{
-				appManager.process(processId, event, message);
-			}
-			catch(Exception e){
-				e.printStackTrace();
-				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogLevel(LogLevel.ERROR);
-				logMessageObj.setLogMessage(e.getMessage());
-				client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
-			}
-		} else if(event.getDestination().contains(GridAppsDConstants.topic_requestData)){
-			System.out.println("DATA REQUEST "+message.toString());
-			String outputTopics = String.join(".", 
-					GridAppsDConstants.topic_responseData,
-					String.valueOf(processId),
-					"output");
-			System.out.println("OUTPUT TOPICS"+outputTopics);
-			String logTopic = String.join(".", 
-					GridAppsDConstants.topic_responseData,
-					String.valueOf(processId),
-					"log");
-			System.out.println("LOG TOPIC "+logTopic);
 
-			
-			String requestTopicExtension = event.getDestination().substring(event.getDestination().indexOf(GridAppsDConstants.topic_requestData)+GridAppsDConstants.topic_requestData.length());
-			if(requestTopicExtension.length()>0){
-				requestTopicExtension = requestTopicExtension.substring(1);
-			}
-			
-			if(requestTopicExtension.indexOf(".")>0){
-				requestTopicExtension = requestTopicExtension.substring(0, requestTopicExtension.indexOf("."));
-			}
-			String type = requestTopicExtension;
-			
-			System.out.println("PARSE DATA REQUEST "+type);
-			Serializable request;
-			if (message instanceof DataResponse){
-				request = ((DataResponse)message).getData();
-			} else {
-				request = message;
-			}
-			
-//			PowergridModelDataRequest request;
-//			if(message instanceof PowergridModelDataRequest){
-//				request = (PowergridModelDataRequest)message;
-//			}else {
-//				request = PowergridModelDataRequest.parse(message.toString());
-//			}
-//			System.out.println("PARSED DATA REQUEST");
-			try {
+		DataResponse event = (DataResponse)message;
+		String username  = GridAppsDConstants.username;
+
+		int processId = ProcessManagerImpl.generateProcessId();
+		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
+
+
+		try{ 
+
+			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
+				client.publish(event.getReplyDestination(), processId);
+				newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+
+			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
+				appManager.process(processId, event, message);
+
+			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestData)){
+
+				String requestTopicExtension = event.getDestination().substring(event.getDestination().indexOf(GridAppsDConstants.topic_requestData)+GridAppsDConstants.topic_requestData.length());
+				if(requestTopicExtension.length()>0){
+					requestTopicExtension = requestTopicExtension.substring(1);
+				}
+
+				if(requestTopicExtension.indexOf(".")>0){
+					requestTopicExtension = requestTopicExtension.substring(0, requestTopicExtension.indexOf("."));
+				}
+				String type = requestTopicExtension;
+
+				this.debug(processId, "Received data request of type: "+type);
+
+				Serializable request;
+				if (message instanceof DataResponse){
+					request = ((DataResponse)message).getData();
+				} else {
+					request = message;
+				}
+
 				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
 				client.publish(event.getReplyDestination(), r);
-			} catch (Exception e) {
-				e.printStackTrace();
-				//TODO log error and send error response
-			}
-			
-		} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
-			System.out.println("CONFIG REQUEST "+message.toString());
 
-			Serializable request;
-			if (message instanceof DataResponse){
-				request = ((DataResponse)message).getData();
-			} else {
-				request = message;
-			}
-			
-			ConfigurationRequest configRequest = null;
-			if(message instanceof ConfigurationRequest){
-				configRequest = ((ConfigurationRequest)request);
-			} else{
-				try{
-					configRequest = ConfigurationRequest.parse(request.toString());
-				}catch(JsonSyntaxException e){
-					//TODO log error
-					sendError(client, event.getReplyDestination(), e.getMessage());
+
+			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
+
+				Serializable request;
+				if (message instanceof DataResponse){
+					request = ((DataResponse)message).getData();
+				} else {
+					request = message;
 				}
-			}
-			if(configRequest!=null){
-				StringWriter sw = new StringWriter();
-				PrintWriter out = new PrintWriter(sw);
-				try {
-					configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
-				} catch (Exception e) {
-					//TODO log error
-					sendError(client, event.getReplyDestination(), e.getMessage());
+
+				ConfigurationRequest configRequest = null;
+				if(request instanceof ConfigurationRequest){
+					configRequest = ((ConfigurationRequest)request);
+				} else{
+					try{
+						configRequest = ConfigurationRequest.parse(request.toString());
+					}catch(JsonSyntaxException e){
+						//TODO log error
+						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+					}
 				}
-				String result = sw.toString();
-				sendData(client, event.getReplyDestination(), result);
+				if(configRequest!=null){
+					StringWriter sw = new StringWriter();
+					PrintWriter out = new PrintWriter(sw);
+					try {
+						configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
+					} catch (Exception e) {
+						StringWriter sww = new StringWriter();
+						PrintWriter pw = new PrintWriter(sww);
+						e.printStackTrace(pw);
+						this.error(processId,sww.toString());
+						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+					}
+					String result = sw.toString();
+					sendData(client, event.getReplyDestination(), result, processId);
+
+				} else {
+					this.error(processId, "No valid configuration request received, request: "+request);
+					sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request, processId);
+				}
+
+
+			} else if(event.getDestination().contains("log")){
+
+				logManager.log(LogMessage.parse(message.toString()), username, null);
+
+			}
+			else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
 				
-			} else {
-				sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request);
+				RequestPlatformStatus request = RequestPlatformStatus.parse(event.getData().toString());
+				 PlatformStatus platformStatus = new PlatformStatus();
+				if(request.isApplications())
+					platformStatus.setApplications(appManager.listApps());
+				if(request.isServices())
+					platformStatus.setServices(serviceManager.listServices());
+				if(request.isAppInstances())
+					platformStatus.setAppInstances(appManager.listRunningApps());
+				if(request.isServiceInstances())
+					platformStatus.setServiceInstances(serviceManager.listRunningServices());
+				client.publish(event.getReplyDestination(), platformStatus);
 			}
-			
-			
-		} else if(event.getDestination().contains("log")){
-			logManager.log(LogMessage.parse(message.toString()), username);
+		}catch(Exception e ){
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 		}
-		
-		//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
-		//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
 	}
 
 
-	void sendData(Client client, Destination replyDestination, Serializable data){
+	private void sendData(Client client, Destination replyDestination, Serializable data, int processId){
 		try {
 			DataResponse r = new DataResponse();
 			r.setData(data);
@@ -253,21 +231,58 @@ public class ProcessEvent implements GossResponseEvent {
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
 			e.printStackTrace();
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 			//TODO log error and send error response
 		}
 	}
 
-	
-	void sendError(Client client, Destination replyDestination, String error){
+
+	private void sendError(Client client, Destination replyDestination, String error, int processId){
 		try {
 			DataResponse r = new DataResponse();
 			r.setError(new DataError(error));
 			r.setResponseComplete(true);
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
-			e.printStackTrace();
-			//TODO log error and send error response
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 		}
 	}
-	
+
+
+	private void debug(int processId, String message) {
+
+		LogMessage logMessage = new LogMessage();
+		logMessage.setSource(this.getClass().getSimpleName());
+		logMessage.setProcessId(Integer.toString(processId));
+		logMessage.setLogLevel(LogLevel.DEBUG);
+		logMessage.setProcessStatus(ProcessStatus.RUNNING);
+		logMessage.setLogMessage(message);
+		logMessage.setStoreToDb(true);
+		logMessage.setTimestamp(new Date().getTime());
+
+		logManager.log(logMessage, GridAppsDConstants.topic_platformLog);	
+
+	}
+
+	private void error(int processId, String message) {
+
+		LogMessage logMessage = new LogMessage();
+		logMessage.setSource(this.getClass().getSimpleName());
+		logMessage.setProcessId(Integer.toString(processId));
+		logMessage.setLogLevel(LogLevel.ERROR);
+		logMessage.setProcessStatus(ProcessStatus.ERROR);
+		logMessage.setLogMessage(message);
+		logMessage.setStoreToDb(true);
+		logMessage.setTimestamp(new Date().getTime());
+
+		logManager.log(logMessage, GridAppsDConstants.topic_platformLog);	
+
+	}
+
 }

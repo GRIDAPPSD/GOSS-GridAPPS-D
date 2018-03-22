@@ -24,7 +24,8 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import gov.pnnl.goss.gridappsd.configuration.handlers.GridlabDBaseConfigHandler;
+import gov.pnnl.goss.gridappsd.configuration.GLDBaseConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.GLDSymbolsConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -56,8 +57,8 @@ public class ConfigurationManagerTest {
 
 	public static void main (String[] args){
 		ConfigurationManagerTest test = new ConfigurationManagerTest();
-		test.testgetGLMBaseConfiguration();
-		
+//		test.testgetGLMBaseConfiguration();
+		test.testgetGLMSymbolsConfiguration();
 	}
 	
 	
@@ -110,29 +111,31 @@ public class ConfigurationManagerTest {
 	public void testgetGLMBaseConfiguration(){
 
 		try {
+			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
 
 			ConfigurationRequest configRequest = new ConfigurationRequest();
-			configRequest.setConfigurationType(GridlabDBaseConfigHandler.TYPENAME);
+			configRequest.setConfigurationType(GLDBaseConfigurationHandler.TYPENAME);
 			Properties properties = new Properties();
-			properties.setProperty(GridlabDBaseConfigHandler.ZFRACTION, "0.0");
-			properties.setProperty(GridlabDBaseConfigHandler.IFRACTION, "1.0");
-			properties.setProperty(GridlabDBaseConfigHandler.PFRACTION, "0.0");
-			properties.setProperty(GridlabDBaseConfigHandler.SCHEDULENAME, "ieeezipload");
-			properties.setProperty(GridlabDBaseConfigHandler.LOADSCALINGFACTOR, "1.0");
-			properties.setProperty(GridlabDBaseConfigHandler.NAMESPACE, "ieee13");
+			properties.setProperty(GLDBaseConfigurationHandler.ZFRACTION, "0.0");
+			properties.setProperty(GLDBaseConfigurationHandler.IFRACTION, "1.0");
+			properties.setProperty(GLDBaseConfigurationHandler.PFRACTION, "0.0");
+			properties.setProperty(GLDBaseConfigurationHandler.SCHEDULENAME, "ieeezipload");
+			properties.setProperty(GLDBaseConfigurationHandler.LOADSCALINGFACTOR, "1.0");
+			properties.setProperty(GLDBaseConfigurationHandler.MODELID, objectMrid);
 			configRequest.setParameters(properties);
 			
+			System.out.println("CONFIG BASE GLM REQUEST: "+GridAppsDConstants.topic_requestConfig);
 			System.out.println(configRequest);
-			
+			System.out.println();
+			System.out.println();						
 			Client client = getClient();
 			
 			Serializable response = client.getResponse(configRequest.toString(), GridAppsDConstants.topic_requestConfig, RESPONSE_FORMAT.JSON);
 			
 			if(response instanceof String){
 				String responseStr = response.toString();
-				System.out.println(responseStr);
-				
 				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println("Response: ");
 				System.out.println(dataResponse.getData());
 			} else {
 				System.out.println(response);
@@ -145,7 +148,46 @@ public class ConfigurationManagerTest {
 	}
     
     
-    
+	public void testgetGLMSymbolsConfiguration(){
+
+		try {
+			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+			ConfigurationRequest configRequest = new ConfigurationRequest();
+			configRequest.setConfigurationType(GLDSymbolsConfigurationHandler.TYPENAME);
+			Properties properties = new Properties();
+//			properties.setProperty(GLDBaseConfigurationHandler.ZFRACTION, "0.0");
+//			properties.setProperty(GLDBaseConfigurationHandler.IFRACTION, "1.0");
+//			properties.setProperty(GLDBaseConfigurationHandler.PFRACTION, "0.0");
+//			properties.setProperty(GLDBaseConfigurationHandler.SCHEDULENAME, "ieeezipload");
+//			properties.setProperty(GLDBaseConfigurationHandler.LOADSCALINGFACTOR, "1.0");
+			properties.setProperty(GLDBaseConfigurationHandler.MODELID, objectMrid);
+			configRequest.setParameters(properties);
+			
+			System.out.println("CONFIG GLM SYMBOL REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println(configRequest);
+			System.out.println();
+			System.out.println();						
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(configRequest.toString(), GridAppsDConstants.topic_requestConfig, RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println("Response: ");
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
     @After
     public void after() {
       cleanUp(this);

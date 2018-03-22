@@ -39,6 +39,8 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data.handlers;
 
+import java.util.Date;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -54,9 +56,12 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
 	public static final String DEFAULT_ENDPOINT =  "http://blazegraph:8080/bigdata/namespace/kb/sparql";
+	String mRID = null;
+	boolean use_mRID;
 	
 	public BlazegraphQueryHandler(String endpoint) {
 		this.endpoint = endpoint;
+		this.use_mRID = false;
 	}
 	public String getEndpoint() {
 		return endpoint;
@@ -65,14 +70,48 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		this.endpoint = endpoint;
 	}
 
-
 	@Override
 	public ResultSet query(String szQuery) { 
 		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
 		Query query = QueryFactory.create (qPrefix + szQuery);
+		System.out.println("Executing query "+szQuery);
+		long start = new Date().getTime();
+
+		if (mRID!=null && mRID.trim().length()>0) { // try to insert a VALUES block for the feeder mRID of interest
+			String insertion_point = "WHERE {";
+			int idx = szQuery.lastIndexOf (insertion_point);
+			if (idx >= 0) {
+//				System.out.println ("\n***");
+//				System.out.println (szQuery);
+//				System.out.println ("***");
+				StringBuilder buf = new StringBuilder (qPrefix + szQuery.substring (0, idx) + insertion_point + " VALUES ?fdrid {\"");
+				buf.append (mRID + "\"} " + szQuery.substring (idx + insertion_point.length()));
+//				System.out.println ("Sending " + buf.toString());
+				query = QueryFactory.create (buf.toString());
+			} else {
+				query = QueryFactory.create (qPrefix + szQuery);
+			}
+		} //else {
+		//	query = QueryFactory.create (qPrefix + szQuery);
+		//}
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
+
+		long end = new Date().getTime();
+		System.out.println("   Took: "+(end-start)+"ms");
 		return qexec.execSelect();
 		
 	}
-
+	public boolean addFeederSelection (String mRID) {
+		this.mRID = mRID;
+		use_mRID = true;
+		return use_mRID;
+	}
+	public boolean clearFeederSelections () {
+		use_mRID = false;
+		return use_mRID;
+	}
+	@Override
+	public String getFeederSelection() {
+		return this.mRID;
+	}
 }

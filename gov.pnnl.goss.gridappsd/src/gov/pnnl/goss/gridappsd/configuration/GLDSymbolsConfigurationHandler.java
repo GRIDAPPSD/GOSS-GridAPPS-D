@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -37,137 +37,96 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd.configuration;
+
+import java.io.PrintWriter;
+import java.util.Properties;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.Client;
 
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
+@Component
+public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-
-public class AppInfo implements Serializable {
+	private static Logger log = LoggerFactory.getLogger(GLDSymbolsConfigurationHandler.class);
+	Client client = null; 
 	
-	public enum AppType {
-		   PYTHON, JAVA, WEB
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
+	
+	public static final String TYPENAME = "GridLAB-D Symbols";
+//	public static final String ZFRACTION = "z_fraction";
+//	public static final String IFRACTION = "i_fraction";
+//	public static final String PFRACTION = "p_fraction";
+//	public static final String SCHEDULENAME = "schedule_name";
+//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
+	public static final String MODELID = "model_id";
+	
+	public GLDSymbolsConfigurationHandler() {
+	}
+	 
+	public GLDSymbolsConfigurationHandler(LogManager logManager, DataManager dataManager) {
+
+	}
+	
+	
+	@Start
+	public void start(){
+		if(configManager!=null) {
+			configManager.registerConfigurationHandler(TYPENAME, this);
 		}
-	
-	
-	String id;
-	String description;
-	String creator;
-	List<String> inputs;
-	List<String> outputs;
-	List<String> options;
-	String execution_path;
-	AppType type;
-	boolean launch_on_startup;
-	List<String> prereqs;
-	boolean multiple_instances;
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getCreator() {
-		return creator;
-	}
-
-	public void setCreator(String creator) {
-		this.creator = creator;
-	}
-
-	public List<String> getInputs() {
-		return inputs;
-	}
-
-	public void setInputs(List<String> inputs) {
-		this.inputs = inputs;
-	}
-
-	public List<String> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(List<String> outputs) {
-		this.outputs = outputs;
-	}
-
-
-	public List<String> getOptions() {
-		return options;
-	}
-
-	public void setOptions(List<String> options) {
-		this.options = options;
-	}
-
-	public String getExecution_path() {
-		return execution_path;
-	}
-
-	public void setExecution_path(String execution_path) {
-		this.execution_path = execution_path;
-	}
-
-	public AppType getType() {
-		return type;
-	}
-
-	public void setType(AppType type) {
-		this.type = type;
-	}
-
-	public boolean isLaunch_on_startup() {
-		return launch_on_startup;
-	}
-
-	public void setLaunch_on_startup(boolean launch_on_startup) {
-		this.launch_on_startup = launch_on_startup;
-	}
-
-	public List<String> getPrereqs() {
-		return prereqs;
-	}
-
-	public void setPrereqs(List<String> prereqs) {
-		this.prereqs = prereqs;
-	}
-
-	
-	public boolean isMultiple_instances() {
-		return multiple_instances;
-	}
-
-	public void setMultiple_instances(boolean multiple_instances) {
-		this.multiple_instances = multiple_instances;
+		else { 
+			//TODO send log message and exception
+			log.warn("No Config manager avilable for "+getClass());
+		}
+		
+		if(powergridModelManager == null){
+			//TODO send log message and exception
+		}
 	}
 
 	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
+	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+		
+		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+		if(modelId==null || modelId.trim().length()==0){
+			throw new Exception("Missing parameter "+MODELID);
+		}
+		
+		
+		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		if(bgHost==null || bgHost.trim().length()==0){
+			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		
+		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		queryHandler.addFeederSelection(modelId);
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.generateJSONSymbolFile(queryHandler, out);
+		
+		return out.toString();
 	}
 	
-	public static AppInfo parse(String jsonString){
-		Gson  gson = new Gson();
-		AppInfo obj = gson.fromJson(jsonString, AppInfo.class);
-		if(obj.id==null)
-			throw new JsonSyntaxException("Expected attribute app_id not found");
-		return obj;
-	}
+	
+	
 	
 }

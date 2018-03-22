@@ -31,6 +31,7 @@
 	blazegraph.cim2glm;version=latest,\
 	httpclient,\
 	com.bigdata.rdf
+	
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd

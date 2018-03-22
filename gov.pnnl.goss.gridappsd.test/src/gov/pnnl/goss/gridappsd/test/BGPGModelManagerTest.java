@@ -65,71 +65,20 @@ public class BGPGModelManagerTest {
 	Client client;
 	private TestConfiguration testConfig;
 
-	public static final String APPLICATION_OBJECT_CONFIG= "{\\\"static_inputs\\\": {\\\"ieee8500\\\": {\\\"control_method\\\": \\\"ACTIVE\\\",\\\"capacitor_delay\\\": 60,\\\"regulator_delay\\\": 60,\\\"desired_pf\\\": 0.99,\\\"d_max\\\": 0.9,\\\"d_min\\\": 0.1,\\\"substation_link\\\": \\\"xf_hvmv_sub\\\",\\\"regulator_list\\\": [\\\"reg_FEEDER_REG\\\",\\\"reg_VREG2\\\",\\\"reg_VREG3\\\",\\\"reg_VREG4\\\"],\\\"regulator_configuration_list\\\": [\\\"rcon_FEEDER_REG\\\",\\\"rcon_VREG2\\\",\\\"rcon_VREG3\\\",\\\"rcon_VREG4\\\"],\\\"capacitor_list\\\": [\\\"cap_capbank0a\\\",\\\"cap_capbank0b\\\",\\\"cap_capbank0c\\\",\\\"cap_capbank1a\\\",\\\"cap_capbank1b\\\",\\\"cap_capbank1c\\\",\\\"cap_capbank2a\\\",\\\"cap_capbank2b\\\",\\\"cap_capbank2c\\\",\\\"cap_capbank3\\\"],\\\"voltage_measurements\\\": [\\\"nd_l2955047,1\\\",\\\"nd_l3160107,1\\\",\\\"nd_l2673313,2\\\",\\\"nd_l2876814,2\\\",\\\"nd_m1047574,3\\\",\\\"nd_l3254238,4\\\"],\\\"maximum_voltages\\\": 7500,\\\"minimum_voltages\\\": 6500,\\\"max_vdrop\\\": 5200,\\\"high_load_deadband\\\": 100,\\\"desired_voltages\\\": 7000,\\\"low_load_deadband\\\": 100,\\\"pf_phase\\\": \\\"ABC\\\"}}}";
-	
 	public static void main(String[] args) {
 		
-//		
-//    	String str = "{\"data\":\"{\n  \\\"head\\\": {\n    \\\"vars\\\": [ \\\"line_name\\\" , \\\"subregion_name\\\" , "
-//    			+ "\\\"region_name\\\" ]\n  } ,\n  \\\"results\\\": {\n    \\\"bindings\\\": [\n      {\n        \\\"line_name\\\": "
-//    			+ "{ \\\"type\\\": \\\"literal\\\" , \\\"value\\\": \\\"ieee8500\\\" } ,\n        \\\"subregion_name\\\": { \\\"type\\\": \\\"literal\\\" , "
-//    			+ "\\\"value\\\": \\\"ieee8500_SubRegion\\\" } ,\n        \\\"region_name\\\": { \\\"type\\\": \\\"literal\\\" , \\\"value\\\": "
-//    			+ "\\\"ieee8500_Region\\\" }\n      }\n    ]\n  }\n}\n\",\"responseComplete\":true,\"id\":\"c7d32cb0-f02f-4c31-92a9-86ca028292ce\"}";
-
 		
-//		PowergridModelDataRequest datarequest = new PowergridModelDataRequest();
-//		datarequest.setRequestType("OBJECT");
-//		datarequest.setModelId("1234");
-		
-//		String dataStr = "{\n  \"head\": {\n    \"vars\": [ \"line_name\" , \"subregion_name\" , \"region_name\" ]\n  } ,\n  \"results\": {\n    \"bindings\": [\n      {\n        \"line_name\": { \"type\": \"literal\" , \"value\": \"ieee8500\" } ,\n        \"subregion_name\": { \"type\": \"literal\" , \"value\": \"ieee8500_SubRegion\" } ,\n        \"region_name\": { \"type\": \"literal\" , \"value\": \"ieee8500_Region\" }\n      }\n    ]\n  }\n}\n";
-//		DataResponse dr = new DataResponse();
-//		dr.setData(dataStr);
-////		dr.setData(datarequest);
-//		dr.setResponseComplete(true);
-//		dr.setId("TEST c7d32cb0-f02f-4c31-92a9-86ca028292ce");
-//		
-//		String serialized = dr.toString();
-//		System.out.println(serialized);
-//		DataResponse parsed = DataResponse.parse(serialized);
-//		System.out.println(parsed.getId());
-//		System.out.println(parsed.getReplyDestination());
-//		System.out.println(parsed.isResponseComplete());
-//		System.out.println(parsed.isError());
-//		System.out.println(parsed.getData()+" "+parsed.getData().getClass());
-		
-		
-//		Gson gson = new Gson();
-		String dataStr = "{\n  \"head\": {\n    \"vars\": [ \"line_name\" , \"subregion_name\" , \"region_name\" ]\n  } ,\n  \"results\": {\n    \"bindings\": [\n      {\n        \"line_name\": { \"type\": \"literal\" , \"value\": \"ieee8500\" } ,\n        \"subregion_name\": { \"type\": \"literal\" , \"value\": \"ieee8500_SubRegion\" } ,\n        \"region_name\": { \"type\": \"literal\" , \"value\": \"ieee8500_Region\" }\n      }\n    ]\n  }\n}\n";
-//		DataResponse dr = new DataResponse();
-//		dr.setData(dataStr);
-//		dr.setResponseComplete(true);
-//		dr.setId("TEST c7d32cb0-f02f-4c31-92a9-86ca028292ce");
-//		
-//		String serialized = gson.toJson(dr);
-//		System.out.println(serialized);
-//		DataResponse parsed = gson.fromJson(serialized, DataResponse.class);
-		
-//		
-//		
-//		Client client;
-//		try {
-//			client = new BGPGModelManagerTest().getClient();
-//		
-//		DataResponse response = new DataResponse(dataStr);
-//		response.setResponseComplete(true);
-//		response.setId("MYID1234");
-//		client.publish("test", response); 
-////this is the publisher
-//		
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 		
 		BGPGModelManagerTest tester = new BGPGModelManagerTest();
 		
-//		tester.testQuery();
 		tester.testQueryModelNames();
+//		tester.testQuery();
+		tester.testQueryObjectTypes();
+//		tester.testQueryObject();
+		tester.testQueryModel();
+		
+		
+		
 		System.exit(0);
 	}
 	
@@ -140,31 +89,35 @@ public class BGPGModelManagerTest {
 		try {
 
 			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
-			String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
-	                              			 "?line cim:IdentifiedObject.name ?line_name."+
-	                                         "?line cim:Line.Region ?subregion."+
-	                                         "?subregion cim:IdentifiedObject.name ?subregion_name."+
-	                                         "?subregion cim:SubGeographicalRegion.Region ?region."+
-	                                         "?region cim:IdentifiedObject.name ?region_name"+
-	                                        "}";
+			String queryString = "SELECT ?feeder ?fid  WHERE {"
+					+ "?s r:type c:Feeder."
+					+ "?s c:IdentifiedObject.name ?feeder."
+					+ "?s c:IdentifiedObject.mRID ?fid."
+					+ "?s c:Feeder.NormalEnergizingSubstation ?sub."
+					+ "?sub c:IdentifiedObject.name ?station."
+					+ "?sub c:IdentifiedObject.mRID ?sid."
+					+ "?sub c:Substation.Region ?sgr."
+					+ "?sgr c:IdentifiedObject.name ?subregion."
+					+ "?sgr c:IdentifiedObject.mRID ?sgrid."
+					+ "?sgr c:SubGeographicalRegion.Region ?rgn."
+					+ "?rgn c:IdentifiedObject.name ?region."
+					+ "?rgn c:IdentifiedObject.mRID ?rgnid."
+					+ "}  ORDER by ?station ?feeder";
 			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY.toString());
 			pgDataRequest.setQueryString(queryString);
 			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
 			pgDataRequest.setModelId(null);
 			
+			System.out.println("QUERY REQUEST: ");
 			System.out.println(pgDataRequest);
-			
+			System.out.println();
+			System.out.println();
 			Client client = getClient();
 			
-			GsonBuilder gsonbuilder = new GsonBuilder();
-//			gsonbuilder.registerTypeAdapter(Serializable.class, new SerializableInstanceCreator());
-			Gson gson = gsonbuilder.create();
 			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
 			
 			if(response instanceof String){
 				String responseStr = response.toString();
-				System.out.println(responseStr);
-				
 				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println(dataResponse.getData());
 			} else {
@@ -183,21 +136,19 @@ public class BGPGModelManagerTest {
 
 			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL_NAMES.toString());
-			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.CSV.toString());
 			
+			System.out.println("MODEL NAMES REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
 			System.out.println(pgDataRequest);
+			System.out.println();
+			System.out.println();
 			
 			Client client = getClient();
 			
-			GsonBuilder gsonbuilder = new GsonBuilder();
-//			gsonbuilder.registerTypeAdapter(Serializable.class, new SerializableInstanceCreator());
-			Gson gson = gsonbuilder.create();
 			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
 			
 			if(response instanceof String){
 				String responseStr = response.toString();
-				System.out.println(responseStr);
-				
 				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println(dataResponse.getData());
 			} else {
@@ -210,26 +161,105 @@ public class BGPGModelManagerTest {
 		}
 	}
 	
-//	
-//	private void sendMessage(String destination, Serializable message) throws JMSException{
-//		Gson gson = new Gson();
-//		StompJmsConnectionFactory connectionFactory = new StompJmsConnectionFactory();
-//		connectionFactory.setBrokerURI("tcp://localhost:61613");
-//		connectionFactory.setUsername("system");
-//		connectionFactory.setPassword("manager");
-//		Connection connection = connectionFactory.createConnection(); 
-//		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-//		MessageProducer producer = session.createProducer(new StompJmsDestination(destination));
-//		TextMessage textMessage = null;
-//		if(message instanceof String){
-//			textMessage = session.createTextMessage(message.toString());
-//		} else {
-//			textMessage = session.createTextMessage(gson.toJson(message));
-//			
-//		}
-//		producer.send(textMessage);
-//	}
-//	
+	
+	public void testQueryObjectTypes(){
+		try {
+
+			String modelId = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
+			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_OBJECT_TYPES.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
+			pgDataRequest.setModelId(modelId);
+			
+			System.out.println("OBJECT TYPES REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
+			System.out.println(pgDataRequest);
+			System.out.println();
+			System.out.println();			
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	public void testQueryObject(){
+		try {
+			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
+			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_OBJECT.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
+			pgDataRequest.setObjectId(objectMrid);
+			pgDataRequest.setModelId(null);
+			
+			System.out.println("OBJECT REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
+			System.out.println(pgDataRequest);
+			System.out.println();
+			System.out.println();			
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	public void testQueryModel(){
+		try {
+			String modelId = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
+			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
+			pgDataRequest.setModelId(modelId);
+			pgDataRequest.setObjectType("http://iec.ch/TC57/2012/CIM-schema-cim17#ConnectivityNode");
+			pgDataRequest.setFilter("?s cim:IdentifiedObject.name 'q14733'");
+			
+			System.out.println("QUERY MODEL REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
+			System.out.println(pgDataRequest);
+			System.out.println();
+			System.out.println();			
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
 	
 	Client getClient() throws Exception{
 		if(client==null){

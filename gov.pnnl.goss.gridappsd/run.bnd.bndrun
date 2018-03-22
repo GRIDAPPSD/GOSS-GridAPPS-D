@@ -80,6 +80,7 @@
 	javax.servlet-api,\
 	com.bigdata.rdf
 	
+>>>>>>> f0023ef51d786f57a9986faba6437b588e31be23
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
 	broker-name=goss default broker
