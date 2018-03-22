@@ -45,24 +45,18 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Date;
-import java.util.List;
 
 import javax.jms.Destination;
 
@@ -186,12 +180,14 @@ public class ProcessEvent implements GossResponseEvent {
 					try {
 						configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
 					} catch (Exception e) {
-						e.printStackTrace();
-						this.error(processId, e.getStackTrace().toString());
+						StringWriter sww = new StringWriter();
+						PrintWriter pw = new PrintWriter(sww);
+						e.printStackTrace(pw);
+						this.error(processId,sww.toString());
 						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 					}
 					String result = sw.toString();
-					sendData(client, event.getReplyDestination(), result);
+					sendData(client, event.getReplyDestination(), result, processId);
 
 				} else {
 					this.error(processId, "No valid configuration request received, request: "+request);
@@ -219,12 +215,15 @@ public class ProcessEvent implements GossResponseEvent {
 				client.publish(event.getReplyDestination(), platformStatus);
 			}
 		}catch(Exception e ){
-			this.error(processId, e.getMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 		}
 	}
 
 
-	private void sendData(Client client, Destination replyDestination, Serializable data){
+	private void sendData(Client client, Destination replyDestination, Serializable data, int processId){
 		try {
 			DataResponse r = new DataResponse();
 			r.setData(data);
@@ -232,6 +231,10 @@ public class ProcessEvent implements GossResponseEvent {
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
 			e.printStackTrace();
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 			//TODO log error and send error response
 		}
 	}
@@ -244,8 +247,10 @@ public class ProcessEvent implements GossResponseEvent {
 			r.setResponseComplete(true);
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
-			e.printStackTrace();
-			this.error(processId, e.getMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			this.error(processId,sw.toString());
 		}
 	}
 
