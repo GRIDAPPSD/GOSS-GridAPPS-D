@@ -219,7 +219,7 @@ public class ProcessEvent implements GossResponseEvent {
 				client.publish(event.getReplyDestination(), platformStatus);
 			}
 		}catch(Exception e ){
-			this.error(processId, e.getStackTrace().toString());
+			this.error(processId, e.getMessage());
 		}
 	}
 
@@ -245,7 +245,7 @@ public class ProcessEvent implements GossResponseEvent {
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
 			e.printStackTrace();
-			this.error(processId, e.getStackTrace().toString());
+			this.error(processId, e.getMessage());
 		}
 	}
 
