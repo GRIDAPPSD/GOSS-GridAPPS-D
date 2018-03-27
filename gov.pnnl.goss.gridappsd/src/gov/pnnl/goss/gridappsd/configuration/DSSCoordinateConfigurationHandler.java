@@ -103,7 +103,7 @@ public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler 
 	}
 
 	@Override
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
@@ -123,7 +123,6 @@ public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler 
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateDSSCoordinates(queryHandler, out);
 		
-		return out.toString();
 	}
 	
 	

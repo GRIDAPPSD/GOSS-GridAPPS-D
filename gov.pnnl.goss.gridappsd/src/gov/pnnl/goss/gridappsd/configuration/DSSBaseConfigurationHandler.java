@@ -105,7 +105,7 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 	}
 
 	@Override
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
 
@@ -161,7 +161,6 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 		
 		cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
 		
-		return out.toString();
 	}
 	
 	

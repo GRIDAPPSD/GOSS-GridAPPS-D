@@ -72,11 +72,6 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 	private volatile PowergridModelDataManager powergridModelManager;
 	
 	public static final String TYPENAME = "CIM Feeder Index";
-//	public static final String ZFRACTION = "z_fraction";
-//	public static final String IFRACTION = "i_fraction";
-//	public static final String PFRACTION = "p_fraction";
-//	public static final String SCHEDULENAME = "schedule_name";
-//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
 	
 	public CIMFeederIndexConfigurationHandler() {
@@ -103,7 +98,7 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 	}
 
 	@Override
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
 		
 //		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 //		if(modelId==null || modelId.trim().length()==0){
@@ -123,7 +118,6 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateFeederIndexFile(queryHandler, out);
 		
-		return out.toString();
 	}
 	
 	

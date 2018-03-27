@@ -25,6 +25,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import gov.pnnl.goss.gridappsd.configuration.GLDBaseConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.GLDSimulationOutputConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.CIMDictionaryConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.CIMFeederIndexConfigurationHandler;
 import gov.pnnl.goss.gridappsd.configuration.CIMSymbolsConfigurationHandler;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
@@ -58,9 +61,12 @@ public class ConfigurationManagerTest {
 
 	public static void main (String[] args){
 		ConfigurationManagerTest test = new ConfigurationManagerTest();
-		test.testgetGLDAllConfiguration();
+//		test.testgetGLDAllConfiguration();
+//		test.testgetCIMDictConfiguration();
+		test.testgetGLDSimulationOutputConfiguration();
 //		test.testgetGLMBaseConfiguration();
 //		test.testgetGLMSymbolsConfiguration();
+//		test.testgetCIMFeederIndexConfiguration();
 	}
 	
 	
@@ -164,7 +170,16 @@ public class ConfigurationManagerTest {
 			properties.setProperty(GLDAllConfigurationHandler.PFRACTION, "0.0");
 			properties.setProperty(GLDAllConfigurationHandler.SCHEDULENAME, "ieeezipload");
 			properties.setProperty(GLDAllConfigurationHandler.LOADSCALINGFACTOR, "1.0");
+			properties.setProperty(GLDAllConfigurationHandler.SOLVERMETHOD, "NR");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, "2018-02-18 00:00:00");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONDURATION, "60");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONID, "12345");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, "localhost");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, "61616");
+
+
 			properties.setProperty(GLDAllConfigurationHandler.MODELID, objectMrid);
+			
 			configRequest.setParameters(properties);
 			
 			System.out.println("CONFIG BASE GLM REQUEST: "+GridAppsDConstants.topic_requestConfig);
@@ -177,8 +192,46 @@ public class ConfigurationManagerTest {
 			
 			if(response instanceof String){
 				String responseStr = response.toString();
+				System.out.println("Response: "+responseStr);
+
 				DataResponse dataResponse = DataResponse.parse(responseStr);
-				System.out.println("Response: ");
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println("Response: "+response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void testgetGLDSimulationOutputConfiguration(){
+
+		try {
+			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+			ConfigurationRequest configRequest = new ConfigurationRequest();
+			configRequest.setConfigurationType(GLDSimulationOutputConfigurationHandler.TYPENAME);
+			Properties properties = new Properties();
+			
+			properties.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, objectMrid);
+			properties.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, "");
+			configRequest.setParameters(properties);
+			
+			System.out.println("CONFIG BASE GLM REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println(configRequest);
+			System.out.println();
+			System.out.println();						
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(configRequest.toString(), GridAppsDConstants.topic_requestConfig, RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				System.out.println("Response: "+responseStr);
+
+				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println(dataResponse.getData());
 			} else {
 				System.out.println(response);
@@ -192,21 +245,34 @@ public class ConfigurationManagerTest {
     
 	public void testgetGLMSymbolsConfiguration(){
 
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMSymbolsConfigurationHandler.TYPENAME, objectMrid);
+	}
+	public void testgetCIMDictConfiguration(){
+
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMDictionaryConfigurationHandler.TYPENAME, objectMrid);
+	}
+	public void testgetCIMFeederIndexConfiguration(){
+
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMFeederIndexConfigurationHandler.TYPENAME, objectMrid);
+	}
+	
+	
+	void testConfig (String type, String modelId){
 		try {
-			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
 
 			ConfigurationRequest configRequest = new ConfigurationRequest();
-			configRequest.setConfigurationType(CIMSymbolsConfigurationHandler.TYPENAME);
+			configRequest.setConfigurationType(type);
 			Properties properties = new Properties();
-//			properties.setProperty(GLDBaseConfigurationHandler.ZFRACTION, "0.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.IFRACTION, "1.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.PFRACTION, "0.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.SCHEDULENAME, "ieeezipload");
-//			properties.setProperty(GLDBaseConfigurationHandler.LOADSCALINGFACTOR, "1.0");
-			properties.setProperty(GLDBaseConfigurationHandler.MODELID, objectMrid);
+			properties.setProperty(GLDAllConfigurationHandler.MODELID, modelId);
 			configRequest.setParameters(properties);
 			
-			System.out.println("CONFIG GLM SYMBOL REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println("CONFIG "+type+" REQUEST: "+GridAppsDConstants.topic_requestConfig);
 			System.out.println(configRequest);
 			System.out.println();
 			System.out.println();						

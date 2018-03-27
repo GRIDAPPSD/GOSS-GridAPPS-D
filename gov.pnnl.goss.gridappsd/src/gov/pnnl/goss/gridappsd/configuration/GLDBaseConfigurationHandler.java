@@ -103,7 +103,7 @@ public class GLDBaseConfigurationHandler  implements ConfigurationHandler {//imp
 	}
 
 	@Override
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
 
@@ -148,7 +148,6 @@ public class GLDBaseConfigurationHandler  implements ConfigurationHandler {//imp
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
 		
-		return out.toString();
 	}
 	
 	
