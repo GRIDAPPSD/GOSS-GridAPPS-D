@@ -40,7 +40,10 @@
 package gov.pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
@@ -49,10 +52,10 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
@@ -81,20 +84,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-	@ServiceDependency
-	private volatile StatusReporter statusReporter;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
 	@ServiceDependency 
 	private volatile DataManager dataManager;
 	
 	private Dictionary<String, ?> configurationProperties;
 	
+	private HashMap<String, ConfigurationHandler> configHandlers = new HashMap<String, ConfigurationHandler>();
+	
 	
 	public ConfigurationManagerImpl() {
 	}
 	 
-	public ConfigurationManagerImpl(StatusReporter statusReporter, DataManager dataManager) {
-		this.statusReporter = statusReporter;
+	public ConfigurationManagerImpl(LogManager logManager, DataManager dataManager) {
 		this.dataManager = dataManager;
 
 	}
@@ -102,19 +106,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@Start
 	public void start(){
-//		System.out.println("STARTING CONFIGURATION MANAGER");
-		statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		
-//		log.debug("Starting "+this.getClass().getName());
-//		
-//		try{
-//			Credentials credentials = new UsernamePasswordCredentials(
-//					GridAppsDConstants.username, GridAppsDConstants.password);
-//			client = clientFactory.create(PROTOCOL.STOMP,credentials);
-//		}
-//		catch(Exception e){
-//				e.printStackTrace();
-//		}
+		//TODO send log "Starting configuration manager
 		
 	}
 	
@@ -131,11 +123,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		
 		log.debug(powerSystemConfig.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
-		Response resp = dataManager.processDataRequest(powerSystemConfig, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
+		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
 		
 		if(resp!=null && (resp instanceof DataResponse) && (((DataResponse)resp).getData())!=null && (((DataResponse)resp).getData() instanceof File)){
 			//Update simulation status after every step, for example:
-			statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Simulation files created");
+//			statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Simulation files created");
 			return (File)((DataResponse)resp).getData();
 		}
 		
@@ -155,6 +147,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 				return value.toString();
 		}
 		return null;
+	}
+
+	@Override
+	public void registerConfigurationHandler(String type, ConfigurationHandler handler) {
+		//TODO send to log mgr
+		log.info("Registring config "+type+" "+handler.getClass());
+		configHandlers.put(type, handler);
+	}
+
+	@Override
+	public void generateConfiguration(String type, Properties parameters, PrintWriter out) throws Exception {
+		if(configHandlers.containsKey(type) && configHandlers.get(type)!=null){
+			configHandlers.get(type).generateConfig(parameters, out);
+		} else {
+			throw new Exception("No configuration handler registered for '"+type+"'");
+		}
 	}
 	
 }

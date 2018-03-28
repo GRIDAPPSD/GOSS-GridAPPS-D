@@ -68,8 +68,8 @@ def my_fixture():
 		    'capacitor_list': ['cap_capbank0a', 'cap_capbank0b', 'cap_capbank0c', 
 		        'cap_capbank1a', 'cap_capbank1b', 'cap_capbank1c', 
 		        'cap_capbank2a', 'cap_capbank2b', 'cap_capbank2c', 'cap_capbank3'],
-		    'voltage_measurements': ['nd_l2955047,1','nd_l3160107,1',
-		    'nd_l2673313,2','nd_l2876814,2','nd_m1047574,3','nd_l3254238,4'],
+		    'voltage_measurements': ['l2955047,1','l3160107,1',
+		    'l2673313,2','l2876814,2','m1047574,3','l3254238,4'],
 		    'maximum_voltages': [7500, 7500, 7500, 7500],
 		    'minimum_voltages': [6500, 6500, 6500, 6500],
 		    'max_vdrop': [5200, 5200, 5200, 5200],
@@ -185,52 +185,52 @@ def my_fixture():
 	            "switchB":"CLOSED",
 	            "switchC":"CLOSED"
 	        },
-	        "nd_190-7361":{
+	        "190-7361":{
 	            "voltage_A":"6410.387411-4584.456974j V",
 	            "voltage_B":"-7198.592139-3270.308372j V",
 	            "voltage_C":"642.547265+7539.531175j V"
 	        },
-	        "nd_190-8581":{
+	        "190-8581":{
 	            "voltage_A":"6485.244722-4692.686497j V",
 	            "voltage_B":"-7183.641237-3170.693324j V",
 	            "voltage_C":"544.875720+7443.341013j V"
 	        },
-	        "nd_190-8593":{
+	        "190-8593":{
 	            "voltage_A":"6723.279162-5056.725836j V",
 	            "voltage_B":"-7494.205738-3101.034602j V",
 	            "voltage_C":"630.475857+7534.534977j V"
 	        },
-	        "nd__hvmv_sub_lsb":{
+	        "_hvmv_sub_lsb":{
 	            "voltage_A":"6261.474438-3926.148203j V",
 	            "voltage_B":"-6529.409296-3466.545236j V",
 	            "voltage_C":"247.131622+7348.295282j V"
 	        },
-	        "nd_l2673313":{
+	        "l2673313":{
 	            "voltage_A":"6569.522312-5003.052614j V",
 	            "voltage_B":"-7431.486583-3004.840139j V",
 	            "voltage_C":"644.553331+7464.115915j V"
 	        },
-	        "nd_l2876814":{
+	        "l2876814":{
 	            "voltage_A":"6593.064915-5014.031801j V",
 	            "voltage_B":"-7430.572726-3003.995538j V",
 	            "voltage_C":"643.473396+7483.558765j V"
 	        },
-	        "nd_l2955047":{
+	        "l2955047":{
 	            "voltage_A":"5850.305846-4217.166594j V",
 	            "voltage_B":"-6729.652722-2987.617376j V",
 	            "voltage_C":"535.302083+7395.127354j V"
 	        },
-	        "nd_l3160107":{
+	        "l3160107":{
 	            "voltage_A":"5954.507575-4227.423005j V",
 	            "voltage_B":"-6662.357613-3055.346879j V",
 	            "voltage_C":"600.213657+7317.832960j V"
 	        },
-	        "nd_l3254238":{
+	        "l3254238":{
 	            "voltage_A":"6271.490549-4631.254028j V",
 	            "voltage_B":"-7169.987847-3099.952683j V",
 	            "voltage_C":"751.609655+7519.062260j V"
 	        },
-	        "nd_m1047574":{
+	        "m1047574":{
 	            "voltage_A":"6306.632406-4741.568924j V",
 	            "voltage_B":"-7214.626338-2987.055914j V",
 	            "voltage_C":"622.058711+7442.125124j V"
@@ -289,7 +289,7 @@ def my_fixture():
 	            "tap_A":2,
 	            "tap_B":2,
 	            "tap_C":1,
-	            "to":"nd__hvmv_sub_lsb"
+	            "to":"_hvmv_sub_lsb"
 	        },
 	        "reg_VREG2":{
 	            "configuration":"rcon_VREG2",
@@ -297,7 +297,7 @@ def my_fixture():
 	            "tap_A":10,
 	            "tap_B":6,
 	            "tap_C":2,
-	            "to":"nd_190-8593"
+	            "to":"190-8593"
 	        },
 	        "reg_VREG3":{
 	            "configuration":"rcon_VREG3",
@@ -305,7 +305,7 @@ def my_fixture():
 	            "tap_A":16,
 	            "tap_B":10,
 	            "tap_C":1,
-	            "to":"nd_190-8581"
+	            "to":"190-8581"
 	        },
 	        "reg_VREG4":{
 	            "configuration":"rcon_VREG4",
@@ -313,7 +313,7 @@ def my_fixture():
 	            "tap_A":12,
 	            "tap_B":12,
 	            "tap_C":5,
-	            "to":"nd_190-7361"
+	            "to":"190-7361"
 	        },
 	        "xf_hvmv_sub":{
 	            "power_in_A":"1739729.121744-774784.928874j VA",

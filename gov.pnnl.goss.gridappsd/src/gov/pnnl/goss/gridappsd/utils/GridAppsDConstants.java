@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Properties;
 import java.util.TimeZone;
 
 public class GridAppsDConstants {
@@ -53,12 +54,21 @@ public class GridAppsDConstants {
 	
 	//Process Manager topics
 	public static final String topic_process_prefix = topic_prefix+".process";
+	public static final String topic_request = topic_prefix+".process";
+	
+	
 	
 	//Process Manager Request Topics
 	public static final String topic_requestSimulation = topic_process_prefix+".request.simulation";
 	public static final String topic_requestData = topic_process_prefix+".request.data";
+	public static final String topic_requestConfig = topic_process_prefix+".request.config";
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
+	public static final String topic_requestPlatformStatus = topic_process_prefix+".request.status.platform";
+	
+	
+	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";
+	public static final String topic_requestListServicesWithInstances = "goss.gridappsd.process.request.list.services";
 	
 	public static final String topic_responseData = topic_prefix+".response.data";
 	
@@ -83,7 +93,7 @@ public class GridAppsDConstants {
 	public static final String topic_simulation = topic_prefix+".simulation";
 	public static final String topic_simulationInput = topic_simulation+".input";
 	public static final String topic_simulationOutput = topic_simulation+".output";
-	public static final String topic_simulationLog = topic_simulation+".log";
+	public static final String topic_simulationLog = topic_simulation+".log.";
 	
 	//Service Topics
 	public static final String topic_service = topic_prefix+".simulation";
@@ -134,4 +144,35 @@ public class GridAppsDConstants {
 	}
 	
 	
+	
+	/**
+	 * Helper method to get double value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static double getDoubleProperty(Properties props, String keyName, double defaultValue){
+		if(props.containsKey(keyName)){
+			String val = props.getProperty(keyName);
+			return new Double(val).doubleValue();
+		}
+		
+		return defaultValue;
+	}
+	
+	/**
+	 * Helper method to get String value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static String getStringProperty(Properties props, String keyName, String defaultValue){
+		if(props.containsKey(keyName)){
+			return props.getProperty(keyName);
+		}
+		
+		return defaultValue;
+	}
 }

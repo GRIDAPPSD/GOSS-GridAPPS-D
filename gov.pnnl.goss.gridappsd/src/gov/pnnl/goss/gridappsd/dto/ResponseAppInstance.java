@@ -43,6 +43,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ResponseAppInstance implements Serializable {
 	
@@ -78,7 +79,7 @@ public class ResponseAppInstance implements Serializable {
 		Gson  gson = new Gson();
 		ResponseAppInstance obj = gson.fromJson(jsonString, ResponseAppInstance.class);
 		if(obj.app_instance==null)
-			throw new RuntimeException("Expected attribute app_info not found");
+			throw new JsonSyntaxException("Expected attribute app_info not found");
 		return obj;
 	}
 }

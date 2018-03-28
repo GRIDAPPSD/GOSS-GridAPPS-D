@@ -87,31 +87,31 @@ public class DataEvent implements GossResponseEvent {
 		 *		If IsInitialized() does not return in given time then publish error on 'simulation/[id]/status' and send 'die' message to GOSS-FNCS topic simulation/[id]/input
 		*/
 
-		Serializable requestData = null;
-		
-		if(message instanceof DataRequest){
-			requestData = ((DataRequest)message).getRequestContent();
-		} else if(message instanceof DataResponse){
-			//TODO figure out why it is double nested in dataresponse
-			if(((DataResponse)message).getData() instanceof DataResponse){
-				requestData = ((DataResponse)((DataResponse)message).getData()).getData();
-			}else{
-				requestData = ((DataResponse)message).getData();
-			}
-		} else {
-			requestData = message;
-		}
-		
-		try {
-			//TODO set up simulation id and temp data path
-
-			Response r = dataManager.processDataRequest(requestData, 0, ".");
-			//TODO create client and send response on it
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		Serializable requestData = null;
+//		
+//		if(message instanceof DataRequest){
+//			requestData = ((DataRequest)message).getRequestContent();
+//		} else if(message instanceof DataResponse){
+//			//TODO figure out why it is double nested in dataresponse
+//			if(((DataResponse)message).getData() instanceof DataResponse){
+//				requestData = ((DataResponse)((DataResponse)message).getData()).getData();
+//			}else{
+//				requestData = ((DataResponse)message).getData();
+//			}
+//		} else {
+//			requestData = message;
+//		}
+//		
+//		try {
+//			//TODO set up simulation id and temp data path
+//
+//			Response r = dataManager.processDataRequest(requestData, 0, ".");
+//			//TODO create client and send response on it
+//
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		
 		
 	}

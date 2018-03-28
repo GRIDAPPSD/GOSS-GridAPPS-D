@@ -56,7 +56,6 @@
 	pnnl.goss.core.security-propertyfile;version=latest,\
 	com.springsource.javax.jms,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
-	org.eclipse.jetty.aggregate.jetty-all-server;version='[7.6,7.7)',\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
 	com.mysql.jdbc,\
@@ -76,8 +75,12 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	blazegraph.cim2glm
-
+	blazegraph.cim2glm;version=latest,\
+	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
+	javax.servlet-api,\
+	com.bigdata.rdf
+	
+>>>>>>> f0023ef51d786f57a9986faba6437b588e31be23
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
 	broker-name=goss default broker

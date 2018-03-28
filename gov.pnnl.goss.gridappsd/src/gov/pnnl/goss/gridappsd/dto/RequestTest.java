@@ -42,18 +42,11 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class RequestTest implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
-
-	public static RequestTest parse(String jsonString){
-		Gson  gson = new Gson();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-		if(obj.testConfigPath==null)
-			throw new RuntimeException("Expected attribute testConfigPath not found");
-		return obj;
-	}
 
 	public String expectedResult;
 	
@@ -148,6 +141,15 @@ public class RequestTest implements Serializable {
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
+	}
+	
+	
+	public static RequestTest parse(String jsonString){
+		Gson  gson = new Gson();
+		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
+		if(obj.testConfigPath==null)
+			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+		return obj;
 	}
 
 }
