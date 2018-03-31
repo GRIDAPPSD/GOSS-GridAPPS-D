@@ -61,7 +61,7 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
 	private static Logger log = LoggerFactory.getLogger(DSSBaseConfigurationHandler.class);
 	Client client = null; 
@@ -70,6 +70,8 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "DSS Base";
 	public static final String ZFRACTION = "z_fraction";
@@ -105,9 +107,10 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
+		logRunning("Generating Base DSS configuration file using parameters: "+parameters, processId, username, logManager);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
 		if(zFraction==0) {
@@ -134,6 +137,7 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, "", logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -160,7 +164,8 @@ public class DSSBaseConfigurationHandler  implements ConfigurationHandler {//imp
 		PrintWriter outID = new PrintWriter("outid");
 		
 		cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
-		
+		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
+
 	}
 	
 	

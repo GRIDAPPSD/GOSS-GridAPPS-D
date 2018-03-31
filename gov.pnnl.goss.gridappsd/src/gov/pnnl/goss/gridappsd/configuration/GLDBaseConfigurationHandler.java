@@ -61,11 +61,12 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class GLDBaseConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
 
 	private static Logger log = LoggerFactory.getLogger(GLDBaseConfigurationHandler.class);
 	Client client = null; 
-	
+	@ServiceDependency
+	private volatile LogManager logManager;
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
@@ -103,7 +104,9 @@ public class GLDBaseConfigurationHandler  implements ConfigurationHandler {//imp
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating Base GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
+
 		boolean bWantZip = false;
 		boolean bWantSched = false;
 
@@ -147,7 +150,8 @@ public class GLDBaseConfigurationHandler  implements ConfigurationHandler {//imp
 		
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
-		
+		logRunning("Finished generating Base GridLAB-D configuration file.", processId, username, logManager);
+
 	}
 	
 	

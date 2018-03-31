@@ -44,21 +44,25 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
-import java.io.File;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import pnnl.goss.core.DataResponse;
 
@@ -124,9 +128,15 @@ public class ProcessNewSimulationRequest {
 							LogLevel.ERROR,
 							ProcessStatus.ERROR,true), simulationLogTopic);
 
-			File simulationFile = configurationManager.getSimulationFile(
-					simulationId, config);
-			if (simulationFile == null) {
+			
+			StringWriter simulationConfigDirOut = new StringWriter();
+//			File simulationFile = configurationManager.getSimulationFile(
+//					simulationId, config);
+			Properties simulationParams = generateSimulationParameters(config);
+			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(simulationConfigDirOut), new Integer(simulationId).toString(), username);
+			String simulationConfigDir = simulationConfigDirOut.toString();
+
+			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
 								simulationId).toString(), new Date().getTime(),
@@ -152,8 +162,8 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationId",simId);
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
-			simulationContext.put("simulationDir",simulationFile.getParentFile());
-			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
+			simulationContext.put("simulationDir",simulationConfigDir);
+//			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
@@ -230,5 +240,38 @@ public class ProcessNewSimulationRequest {
 				e1.printStackTrace();
 			}
 		}
+	}
+	
+	
+	Properties generateSimulationParameters(RequestSimulation requestSimulation){
+		Properties params = new Properties();
+		
+		//TODO where to get feeder id?
+		params.put(GLDAllConfigurationHandler.MODELID, requestSimulation.power_system_config.Line_name);
+		
+		ModelCreationConfig modelConfig = requestSimulation.getSimulation_config().model_creation_config;
+		double zFraction = modelConfig.z_fraction;
+		double iFraction = modelConfig.i_fraction;
+		if(iFraction==0){
+			iFraction = 1;
+		}
+		double pFraction = modelConfig.p_fraction; 
+			
+		params.put(GLDAllConfigurationHandler.ZFRACTION, zFraction);
+		params.put(GLDAllConfigurationHandler.IFRACTION, iFraction);
+		params.put(GLDAllConfigurationHandler.PFRACTION, pFraction);
+			
+		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
+		params.put(GLDAllConfigurationHandler.SIMULATIONID, requestSimulation.getSimulation_config().simulation_id);
+		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
+		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
+
+		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, requestSimulation.getSimulation_config().getSimulation_broker_location());
+		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, requestSimulation.getSimulation_config().getSimulation_broker_port());
+		
+		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
+		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, requestSimulation.getSimulation_config().duration);
+		
+		return params;
 	}
 }

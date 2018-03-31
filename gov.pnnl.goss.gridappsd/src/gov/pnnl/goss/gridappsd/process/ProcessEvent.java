@@ -223,7 +223,7 @@ public class ProcessEvent implements GossResponseEvent {
 				StringWriter sw = new StringWriter();
 				PrintWriter out = new PrintWriter(sw);
 				try {
-					configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
+					configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out, new Integer(processId).toString(), username);
 				} catch (Exception e) {
 					e.printStackTrace();
 					//TODO log error

@@ -61,7 +61,7 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class CIMSymbolsConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class CIMSymbolsConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
 	private static Logger log = LoggerFactory.getLogger(CIMSymbolsConfigurationHandler.class);
 	Client client = null; 
@@ -70,13 +70,10 @@ public class CIMSymbolsConfigurationHandler  implements ConfigurationHandler {//
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "GridLAB-D Symbols";
-//	public static final String ZFRACTION = "z_fraction";
-//	public static final String IFRACTION = "i_fraction";
-//	public static final String PFRACTION = "p_fraction";
-//	public static final String SCHEDULENAME = "schedule_name";
-//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
 	
 	public CIMSymbolsConfigurationHandler() {
@@ -103,10 +100,12 @@ public class CIMSymbolsConfigurationHandler  implements ConfigurationHandler {//
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
-		
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating Symbols GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
+
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -122,7 +121,8 @@ public class CIMSymbolsConfigurationHandler  implements ConfigurationHandler {//
 		
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateJSONSymbolFile(queryHandler, out);
-		
+		logRunning("Finished generating Symbols GridLAB-D configuration file.", processId, username, logManager);
+
 	}
 	
 	

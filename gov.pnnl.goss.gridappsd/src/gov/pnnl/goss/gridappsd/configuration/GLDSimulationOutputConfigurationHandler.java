@@ -70,7 +70,6 @@ import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
@@ -79,7 +78,7 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
 	private static Logger log = LoggerFactory.getLogger(GLDSimulationOutputConfigurationHandler.class);
 	Client client = null; 
@@ -88,6 +87,8 @@ public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHa
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency
+	volatile LogManager logManager;
 	
 	public static final String TYPENAME = "GridLAB-D Simulation Output";
 	public static final String MODELID = "model_id";
@@ -96,8 +97,11 @@ public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHa
 	public GLDSimulationOutputConfigurationHandler() {
 	}
 	 
-	public GLDSimulationOutputConfigurationHandler(LogManager logManager, DataManager dataManager) {
-
+	public GLDSimulationOutputConfigurationHandler(ConfigurationManager configManager, 
+			PowergridModelDataManager powergridModelManager, LogManager logManager) {
+		this.configManager = configManager;
+		this.powergridModelManager = powergridModelManager;
+		this.logManager = logManager;
 	}
 	
 	
@@ -117,10 +121,12 @@ public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHa
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
-		
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating simulation output configuration file using parameters: "+parameters, processId, username, logManager);
+
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -151,19 +157,21 @@ public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHa
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
 			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput);
 			String dictOut = dictionaryStringOutput.toString();
-			System.out.println("Dictionary file "+dictOut);
 			measurementFileReader = new StringReader(dictOut);
 		}
 		
-		String result = CreateGldPubs(measurementFileReader);
+		String result = CreateGldPubs(measurementFileReader, processId, username);
 		//return result;
 		out.write(result);
+		
+		logRunning("Finished generating simulation output configuration file.", processId, username, logManager);
+
 	}
 	
 	
 	
 	
-	String CreateGldPubs(Reader measurementFileReader) throws FileNotFoundException {
+	String CreateGldPubs(Reader measurementFileReader, String processId, String username) throws FileNotFoundException {
 		String jsonObjStr = "";
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonObject gldConfigObj = new JsonObject();
@@ -191,8 +199,10 @@ public class GLDSimulationOutputConfigurationHandler  implements ConfigurationHa
 			jsonObjStr = gson.toJson(gldConfigObj);
 			
 		} catch (JsonIOException e) {
+			logError("Error while generating simulation output: "+e.getMessage(), processId, username, logManager);
 			throw e;
 		} catch (JsonParseException e) {
+			logError("Error while generating simulation output: "+e.getMessage(), processId, username, logManager);
 			throw e;
 		}
 		return jsonObjStr;

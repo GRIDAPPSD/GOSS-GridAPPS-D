@@ -61,7 +61,7 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
 	private static Logger log = LoggerFactory.getLogger(DSSCoordinateConfigurationHandler.class);
 	Client client = null; 
@@ -70,6 +70,8 @@ public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler 
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "DSS Coordinate";
 //	public static final String ZFRACTION = "z_fraction";
@@ -103,10 +105,12 @@ public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler 
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
-		
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating DSS Coordinate configuration file using parameters: "+parameters, processId, username, logManager);
+
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, "", logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -122,7 +126,8 @@ public class DSSCoordinateConfigurationHandler  implements ConfigurationHandler 
 		
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateDSSCoordinates(queryHandler, out);
-		
+		logRunning("Finished generating DSS Coordinate configuration file.", processId, username, logManager);
+
 	}
 	
 	

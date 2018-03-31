@@ -61,7 +61,7 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
+public class CIMFeederIndexConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
 	private static Logger log = LoggerFactory.getLogger(CIMFeederIndexConfigurationHandler.class);
 	Client client = null; 
@@ -70,6 +70,8 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "CIM Feeder Index";
 	public static final String MODELID = "model_id";
@@ -98,14 +100,10 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		
-//		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-//		if(modelId==null || modelId.trim().length()==0){
-//			throw new Exception("Missing parameter "+MODELID);
-//		}
-		
-		
+		logRunning("Generating Feeder Index GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
+
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 		if(bgHost==null || bgHost.trim().length()==0){
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
@@ -113,11 +111,11 @@ public class CIMFeederIndexConfigurationHandler  implements ConfigurationHandler
 		
 		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
-//		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.generateFeederIndexFile(queryHandler, out);
-		
+		logRunning("Finished generating Feeder Index GridLAB-D configuration file.", processId, username, logManager);
+
 	}
 	
 	
