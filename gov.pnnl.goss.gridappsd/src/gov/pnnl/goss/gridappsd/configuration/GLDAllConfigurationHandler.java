@@ -99,7 +99,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
-	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.glm";
+	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
 	
 	public GLDAllConfigurationHandler() {
 	}
@@ -194,8 +194,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		Properties simOutputParams = new Properties();
 		String dictFile = tempDataPath+File.separator+DICTIONARY_FILENAME;
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
+		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
-		simulationOutputConfig.generateConfig(parameters, simulationOutputs, processId, username);
+		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 		
 		out.write(dir.getAbsolutePath());
 		

@@ -163,6 +163,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		String result = CreateGldPubs(measurementFileReader, processId, username);
 		//return result;
 		out.write(result);
+		out.flush();
 		
 		logRunning("Finished generating simulation output configuration file.", processId, username, logManager);
 
@@ -255,10 +256,16 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
 			} else {
-				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA and PNV.\nmeasurementType = %s.",measurementType));
+				//TODO this is temporary until the output generation is fixed
+				objectName = "";
+				propertyName = "";
+//				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA and PNV.\nmeasurementType = %s.",measurementType));
 			}
 		} else {
-			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
+			//TODO this is temporary until the output generation is fixed
+			objectName = "";
+			propertyName = "";
+//			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
 		}
 		if(measurements.containsKey(objectName)) {
 			measurements.get(objectName).add(new JsonPrimitive(propertyName));

@@ -74,19 +74,16 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 
 	
 	void logRunning(String message, String simulationID, String username, LogManager logManager){
-		System.out.println("LOGGING RUNNING "+logManager+"   "+getClass().getName());
 		logManager.log(
 				new LogMessage(this.getClass().getName(), new Integer(
 						simulationID).toString(), new Date().getTime(),
 						message, LogLevel.INFO,
 						ProcessStatus.RUNNING, false), username,
 				GridAppsDConstants.topic_platformLog);
-		System.out.println("LOGGING RUNNING OK");
 
 	}
 	
 	void logError(String message, String simulationID, String username, LogManager logManager){
-		System.out.println("LOGGING ERROR");
 		logManager.log(
 				new LogMessage(this.getClass().getName(), new Integer(
 						simulationID).toString(), new Date().getTime(),
