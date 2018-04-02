@@ -216,7 +216,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;;
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
 				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;
@@ -247,7 +247,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					
 					//cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
 					//		modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
-					
+					queryHandler.addFeederSelection(dataRequest.getPower_system_config().Line_name);
 					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
 							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction); 
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
@@ -259,7 +259,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					rdfToGLM.process(args);
 					
 					
-				
+				 
 				} else {
 					//Generate GLM, no zipload
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
@@ -268,7 +268,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					log.debug("Generating GLM file with args "+args);
 //					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 //					rdfToGLM.process(args);
-					
+					queryHandler.addFeederSelection(dataRequest.getPower_system_config().Line_name);
 					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
 							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0); 
 				
