@@ -154,7 +154,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bWantSched = true;
 		}
 		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
-		if(directory==null){
+		if(directory==null || directory.trim().length()==0){
 			logError("No "+DIRECTORY+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+DIRECTORY);
 		}
@@ -300,6 +300,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 					startupFileWriter.println("	loop 0;");
 					startupFileWriter.println("}");
 				}
+				startupFileWriter.println("#define VSOURCE=69715.065");
 				startupFileWriter.println("#include \""+baseGLM+"\"");
 				startupFileWriter.flush();
 				startupFileWriter.close();

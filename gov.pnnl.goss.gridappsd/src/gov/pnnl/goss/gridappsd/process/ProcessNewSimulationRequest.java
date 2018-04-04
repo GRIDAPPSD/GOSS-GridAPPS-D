@@ -52,8 +52,13 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -129,12 +134,25 @@ public class ProcessNewSimulationRequest {
 							ProcessStatus.RUNNING,true), simulationLogTopic);
 
 			
-			StringWriter simulationConfigDirOut = new StringWriter();
+//			StringWriter simulationConfigDirOut = new StringWriter();
 //			File simulationFile = configurationManager.getSimulationFile(
 //					simulationId, config);
+//			String simulationConfigDir = simulationConfigDirOut.toString();
+			String simulationConfigDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+			if(!simulationConfigDir.endsWith(File.separator)){
+				simulationConfigDir = simulationConfigDir+File.separator;
+			}
+			simulationConfigDir = simulationConfigDir+simulationId+File.separator;
+			File tempDataPathDir = new File(simulationConfigDir);
+			if(!tempDataPathDir.exists()){
+				tempDataPathDir.mkdirs();
+			}
+			
+			System.out.println("CONFIG DIR "+tempDataPathDir);
 			Properties simulationParams = generateSimulationParameters(config);
-			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(simulationConfigDirOut), new Integer(simulationId).toString(), username);
-			String simulationConfigDir = simulationConfigDirOut.toString();
+			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
+			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
 
 			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
 				logManager.log(
@@ -154,6 +172,10 @@ public class ProcessNewSimulationRequest {
 							simulationLogTopic);
 
 			
+			//Temporary until simulation output config is ready
+			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
+			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
+			
 			
 			// Start Apps and Services
 			
@@ -163,7 +185,7 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationConfigDir);
-//			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
+			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
@@ -257,21 +279,64 @@ public class ProcessNewSimulationRequest {
 		}
 		double pFraction = modelConfig.p_fraction; 
 			
-		params.put(GLDAllConfigurationHandler.ZFRACTION, zFraction);
-		params.put(GLDAllConfigurationHandler.IFRACTION, iFraction);
-		params.put(GLDAllConfigurationHandler.PFRACTION, pFraction);
+		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
+		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
+		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
 			
 		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
-		params.put(GLDAllConfigurationHandler.SIMULATIONID, requestSimulation.getSimulation_config().simulation_id);
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
 		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
 
 		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, requestSimulation.getSimulation_config().getSimulation_broker_location());
-		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, requestSimulation.getSimulation_config().getSimulation_broker_port());
+		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, new Integer(requestSimulation.getSimulation_config().getSimulation_broker_port()).toString());
 		
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
-		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, requestSimulation.getSimulation_config().duration);
+		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
 		
 		return params;
+	}
+	
+	
+	/**
+	 * Create configfile.json string, should look something like 
+	 *   "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+	 * @param simulationOutput
+	 * @return
+	 */
+	protected void generateConfigFile(File configFile , SimulationOutput simulationOutput){
+		StringBuffer configStr = new StringBuffer();
+		boolean isFirst = true;
+		configStr.append("{");
+		for(SimulationOutputObject obj: simulationOutput.getOutputObjects()){
+			if(!isFirst){
+				configStr.append(",");
+			}
+			isFirst = false;
+			
+			configStr.append("\""+obj.getName()+"\": [");
+			boolean isFirstProp = true;
+			for(String property: obj.getProperties()){
+				if(!isFirstProp){
+					configStr.append(",");
+				}
+				isFirstProp = false;
+				configStr.append("\""+property+"\"");
+			}
+			configStr.append("]");
+		}
+		
+		configStr.append("}");
+		
+		FileWriter fOut;
+		try {
+			fOut  = new FileWriter(configFile);
+			fOut.write(configStr.toString());
+		
+		fOut.flush();
+		fOut.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
