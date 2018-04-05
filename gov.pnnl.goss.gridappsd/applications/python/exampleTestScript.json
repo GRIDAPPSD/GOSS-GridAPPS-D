@@ -1,7 +1,6 @@
  {
 	"name": "VVO",
 	"test_configuration": "ref_location1233",
-<<<<<<< HEAD
 	"application": "VVO",
 	"outputs":
    		 {"substation_link": ["xf_hvmv_sub"],
