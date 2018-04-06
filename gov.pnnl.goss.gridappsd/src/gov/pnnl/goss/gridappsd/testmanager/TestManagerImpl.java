@@ -48,6 +48,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -383,15 +384,25 @@ public class TestManagerImpl implements TestManager {
 				}else{
 					return;
 				}
-				
+				// TODO remove
+				expected_output_series = "/home/gridappsd/gridappsd_project/builds/applications/sample_app/tests/expected_result_series.json";
+
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
 				logManager.log(logMessageObj,  GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 				
 //				{"output": null, "command": "isInitialized", "response": "False"}
-				if( jsonObject.get("output").isJsonNull() || jsonObject.get("output") == null){
+				System.out.println("TestMan keys");
+				System.out.println(jsonObject.get("data").getAsString());
+				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
+
+				if( jsonObject.get("output") == null || jsonObject.get("output").isJsonNull() ){
 					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLogMessage("TestManager fncs : null output " + jsonObject.get("output").toString());
+					if (jsonObject.get("output") == null)
+						logMessageObj.setLogMessage("TestManager fncs : null output null");
+					else
+						logMessageObj.setLogMessage("TestManager fncs : null output " + jsonObject.get("output").toString());
+
 					logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 					return;	
 				}
@@ -409,7 +420,22 @@ public class TestManagerImpl implements TestManager {
 				
 				JsonParser parser = new JsonParser();
 				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
+				// Relace simulationid with 1378290079
 
+//				String firstKey = null;
+//				keys = simOutputObject.getAsJsonObject().entrySet()
+//					    .stream()
+//					    .map(i -> i.getKey())
+//					    .collect(Collectors.toCollection(ArrayList::new));
+
+//				keys.forEach(System.out::println);
+				String firstKey = compareResults.getFirstKey(simOutputObject.getAsJsonObject());
+				System.out.println("TestMan compare key " + firstKey);
+
+				String dataStr = jsonObject.get("output").getAsString().replace(firstKey, "1378290079");
+				simOutputObject = parser.parse(dataStr);
+
+				System.out.println("TestMan compare " + dataStr);
 				SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 				compareResults.getProp(simOutProperties);
 //				TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
