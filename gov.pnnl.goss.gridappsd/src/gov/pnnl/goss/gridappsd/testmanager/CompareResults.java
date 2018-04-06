@@ -215,7 +215,7 @@ public class CompareResults {
 				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 		JsonObject jsonObject = getSimulationOutputFile(simOutputPath);
 		
-		return compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 	}
 	
 	/**
@@ -224,13 +224,9 @@ public class CompareResults {
 	 * @param expectedOutputPath
 	 * @param simOutProperties
 	 */
-	public TestResults compareExpectedWithSimulation(JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulation(JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-		
-		return compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 	}
 	
 	
@@ -243,12 +239,12 @@ public class CompareResults {
 	 * @param simOutProperties
 	 * @return
 	 */
-	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutputPath);
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 	
-		return compareExpectedWithSimulationOutput(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 	}
 	
 	/**
@@ -257,28 +253,25 @@ public class CompareResults {
 	 * @param expectedOutputPath
 	 * @param simOutProperties
 	 */
-	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 	
-		return compareExpectedWithSimulationOutput(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulationOutput(expectedOutputMap,  jsonObject);
 	}
 
-	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap,
-			Map<String, List<String>> propMap, JsonObject jsonObject) {
+	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, JsonObject jsonObject) {
 		
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject.get("output").getAsJsonObject();
 		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
+		compareExpectedWithSimulation(expectedOutputMap,  testResults, simOutput);
 		return testResults;
 	}
 	
 	public String getFeeder() {
-		TestManagerQueryFactory qf = new TestManagerQueryFactory();
-		return qf.getFeeder();
-//		return "ieee8500";
+//		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+//		return qf.getFeeder();
+		return "ieee8500";
 	}
 	
 	/**
@@ -329,16 +322,56 @@ public class CompareResults {
 	}
 
 	public TestResults compareExpectedWithSimulationOutput(Map<String, JsonElement> expectedOutputMap,
-			Map<String, List<String>> propMap, JsonObject jsonObject) {
+			 JsonObject jsonObject) {
 
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
 		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
+		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
 		return testResults;
 	}
+	
+	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, 
+			TestResults testResults, JsonObject simOutput) {
+		int countTrue = 0;
+		int countFalse = 0;
+		if (simOutput != null) {
+			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
+			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
+//				System.out.println(simOutputElement);
+				if (simOutputElement.getValue().isJsonObject()) {
+					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
+					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
+					for (Entry<String, JsonElement> entry : expectedOutputttObj.entrySet()) {
+						String prop = entry.getKey();				
+						if (simOutputObj.has(prop)) {
+//					List<String> propsArray = propMap.get(simOutputElement.getKey());
+//					for (String prop : propsArray) {
+//						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
+							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
+							if (comparison)
+								countTrue++;
+							else{
+//								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
+								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
+								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
+								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
+								countFalse++;
+							}
 
-	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
+						} else
+							System.out.println("No property");
+					}
+				} else
+					System.out.println("     Not object" + simOutputElement);
+			}
+		}
+		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
+	}
+	
+
+	public void compareExpectedWithSimulationOld(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
 			TestResults testResults, JsonObject simOutput) {
 		int countTrue = 0;
 		int countFalse = 0;
@@ -414,11 +447,11 @@ public class CompareResults {
 	}
 	
 	/**
-	 * 
+	 * Get the JsonObject from a string
 	 * @param simOutput
 	 * @return
 	 */
-	public JsonObject getSimulationJson(String simOutput) {
+	public static JsonObject getSimulationJson(String simOutput) {
 		JsonObject jsonObject = null;
 
 		JsonParser parser = new JsonParser();
@@ -572,7 +605,7 @@ public class CompareResults {
 
 		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-		compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
+		compareResults.compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 		
 	}
 

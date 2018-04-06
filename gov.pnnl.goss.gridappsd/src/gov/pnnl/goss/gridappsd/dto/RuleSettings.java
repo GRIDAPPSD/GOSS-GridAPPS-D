@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -39,80 +39,15 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
 import com.google.gson.Gson;
 
-public class TestScript implements Serializable {
-
-	private static final long serialVersionUID = 1L;
-
+public class RuleSettings {
 	public String name;
-
-	private String test_configuration;
-
-	private String application;
 	
-	private Map<String,List<String>> outputs;
+	public int port;
 	
-	private List<RuleSettings> rules;
+	public String topic;
 	
-	public List<FailureEvent> getEvents() {
-		return events;
-	}
-
-	public void setEvents(List<FailureEvent> events) {
-		this.events = events;
-	}
-
-	private List<FailureEvent> events;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public List<RuleSettings> getRules() {
-		return rules;
-	}
-
-	public void setRules(List<RuleSettings> rules) {
-		this.rules = rules;
-	}
-
-	public TestScript() {
-
-	}
-
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
-	}
-	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
-	}
-
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
@@ -126,4 +61,5 @@ public class TestScript implements Serializable {
 			throw new RuntimeException("Expected attribute name not found");
 		return obj;
 	}
+
 }
