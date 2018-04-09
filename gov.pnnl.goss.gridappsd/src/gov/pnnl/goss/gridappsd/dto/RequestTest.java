@@ -54,8 +54,6 @@ public class RequestTest implements Serializable {
 	
 	public int simulationID;
 	
-	public String simulationOutputObject;
-	
 	public String testConfigPath;
 	
 	public int testID;
@@ -82,10 +80,6 @@ public class RequestTest implements Serializable {
 	public int getSimulationID() {
 		return simulationID;
 	}	
-	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
-	}
 
 	public String getTestConfigPath() {
 		return testConfigPath;
@@ -113,10 +107,6 @@ public class RequestTest implements Serializable {
 
 	public void setSimulationID(int simulationID) {
 		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
 	}
 
 	public void setTestConfigPath(String testConfigPath) {

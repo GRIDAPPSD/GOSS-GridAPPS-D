@@ -338,10 +338,10 @@ public class CompareResults {
 			TestResults testResults, JsonObject simOutput) {
 		int countTrue = 0;
 		int countFalse = 0;
-		if (simOutput != null) {
+		if (simOutput != null) { 
 			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
 			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
-//				System.out.println(simOutputElement);
+				System.out.println(simOutputElement);
 				if (simOutputElement.getValue().isJsonObject()) {
 					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
 					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
