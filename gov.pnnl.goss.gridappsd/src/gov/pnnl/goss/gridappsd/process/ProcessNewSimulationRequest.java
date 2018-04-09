@@ -139,6 +139,17 @@ public class ProcessNewSimulationRequest {
 //					simulationId, config);
 //			String simulationConfigDir = simulationConfigDirOut.toString();
 			String simulationConfigDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
+				logManager.log(
+						new LogMessage(this.getClass().getName(), new Integer(
+								simulationId).toString(), new Date().getTime(),
+								"No simulation directory returned for request config "
+										+ config, LogLevel.ERROR,
+								ProcessStatus.ERROR, false), username,
+						GridAppsDConstants.topic_platformLog);
+				throw new Exception("No simulation directory returned for request config "
+						+ config);
+			}
 			if(!simulationConfigDir.endsWith(File.separator)){
 				simulationConfigDir = simulationConfigDir+File.separator;
 			}
@@ -148,13 +159,14 @@ public class ProcessNewSimulationRequest {
 				tempDataPathDir.mkdirs();
 			}
 			
-			System.out.println("CONFIG DIR "+tempDataPathDir);
 			Properties simulationParams = generateSimulationParameters(config);
 			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
 			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
 			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
 
-			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
+			
+			File f = new File(simulationConfigDir+GLDAllConfigurationHandler.BASE_FILENAME);
+			if (!f.exists()) {
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
 								simulationId).toString(), new Date().getTime(),
