@@ -1,0 +1,3892 @@
+{
+  "expected_outputs": {
+    "0": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4842.574389-4476.685148j V", 
+          "voltage_B": "-6188.665659-1939.201074j V", 
+          "voltage_C": "1439.949668+6505.686387j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4424.594618-4708.594640j V", 
+          "voltage_B": "-6385.646741-1373.465955j V", 
+          "voltage_C": "1432.367053+6738.674874j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3865.232066-4967.366923j V", 
+          "voltage_B": "-6370.129602-674.013525j V", 
+          "voltage_C": "1761.647813+6618.414389j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.561502-3845.670894j V", 
+          "voltage_B": "-6352.552690-3361.611253j V", 
+          "voltage_C": "276.907055+7179.757016j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3275.878213-4690.132450j V", 
+          "voltage_B": "-6029.444767-334.685034j V", 
+          "voltage_C": "1841.889162+6312.023923j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3363.715868-4748.790714j V", 
+          "voltage_B": "-6029.028098-333.125542j V", 
+          "voltage_C": "1838.833987+6392.625371j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4044.821638-4235.230448j V", 
+          "voltage_B": "-5999.032936-1350.673026j V", 
+          "voltage_C": "1397.787083+6704.224627j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4563.436074-4171.693820j V", 
+          "voltage_B": "-5799.392020-1855.560361j V", 
+          "voltage_C": "1375.873522+6381.975437j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4354.789051-4256.496996j V", 
+          "voltage_B": "-5786.125225-1559.849648j V", 
+          "voltage_C": "1503.404135+6306.629494j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3637.596476-4661.598418j V", 
+          "voltage_B": "-6139.105214-656.801709j V", 
+          "voltage_C": "1736.935866+6543.527824j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "6998344.991251+2349121.405499j VA", 
+          "power_in_B": "6434345.135689+1458653.918560j VA", 
+          "power_in_C": "7487532.339802+1415430.572071j VA"
+        }
+      }
+    }, 
+    "1": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4842.574389-4476.685148j V", 
+          "voltage_B": "-6188.665659-1939.201074j V", 
+          "voltage_C": "1439.949668+6505.686387j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4424.594618-4708.594640j V", 
+          "voltage_B": "-6385.646741-1373.465955j V", 
+          "voltage_C": "1432.367053+6738.674874j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3865.232066-4967.366923j V", 
+          "voltage_B": "-6370.129602-674.013525j V", 
+          "voltage_C": "1761.647813+6618.414389j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.561502-3845.670894j V", 
+          "voltage_B": "-6352.552690-3361.611253j V", 
+          "voltage_C": "276.907055+7179.757016j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3275.878213-4690.132450j V", 
+          "voltage_B": "-6029.444767-334.685034j V", 
+          "voltage_C": "1841.889162+6312.023923j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3363.715868-4748.790714j V", 
+          "voltage_B": "-6029.028098-333.125542j V", 
+          "voltage_C": "1838.833987+6392.625371j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4044.821638-4235.230448j V", 
+          "voltage_B": "-5999.032936-1350.673026j V", 
+          "voltage_C": "1397.787083+6704.224627j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4563.436074-4171.693820j V", 
+          "voltage_B": "-5799.392020-1855.560361j V", 
+          "voltage_C": "1375.873522+6381.975437j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4354.789051-4256.496996j V", 
+          "voltage_B": "-5786.125225-1559.849648j V", 
+          "voltage_C": "1503.404135+6306.629494j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3637.596476-4661.598418j V", 
+          "voltage_B": "-6139.105214-656.801709j V", 
+          "voltage_C": "1736.935866+6543.527824j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "6998344.991251+2349121.405499j VA", 
+          "power_in_B": "6434345.135689+1458653.918560j VA", 
+          "power_in_C": "7487532.339802+1415430.572071j VA"
+        }
+      }
+    }, 
+    "10": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.316589-4490.008068j V", 
+          "voltage_B": "-6204.794743-1914.586252j V", 
+          "voltage_C": "1444.785949+6512.925871j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.903288-4728.715748j V", 
+          "voltage_B": "-6408.499811-1346.974665j V", 
+          "voltage_C": "1432.874328+6748.085306j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.168065-4995.056803j V", 
+          "voltage_B": "-6399.875726-636.608388j V", 
+          "voltage_C": "1762.021117+6630.512190j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490694-3848.481163j V", 
+          "voltage_B": "-6355.048153-3359.500332j V", 
+          "voltage_C": "278.079845+7180.822799j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.297428-4721.566873j V", 
+          "voltage_B": "-6060.298641-291.323292j V", 
+          "voltage_C": "1843.136883+6324.203499j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.381347-4779.619675j V", 
+          "voltage_B": "-6059.794489-289.696082j V", 
+          "voltage_C": "1839.678640+6405.105602j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.198177-4252.856144j V", 
+          "voltage_B": "-6019.892951-1326.558611j V", 
+          "voltage_C": "1398.368599+6713.341649j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.701370-4183.755545j V", 
+          "voltage_B": "-5814.280235-1834.081930j V", 
+          "voltage_C": "1380.115964+6389.114157j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.258677-4271.504275j V", 
+          "voltage_B": "-5802.894832-1527.672682j V", 
+          "voltage_C": "1509.026472+6313.572901j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.171148-4687.466523j V", 
+          "voltage_B": "-6167.701551-620.949687j V", 
+          "voltage_C": "1737.279776+6555.465527j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063961.489208+2309382.694056j VA", 
+          "power_in_B": "6484783.927250+1441093.433506j VA", 
+          "power_in_C": "7526353.324382+1373637.117677j VA"
+        }
+      }
+    }, 
+    "11": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.316589-4490.008068j V", 
+          "voltage_B": "-6204.794743-1914.586252j V", 
+          "voltage_C": "1444.785949+6512.925871j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.903288-4728.715748j V", 
+          "voltage_B": "-6408.499811-1346.974665j V", 
+          "voltage_C": "1432.874328+6748.085306j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.168065-4995.056803j V", 
+          "voltage_B": "-6399.875726-636.608388j V", 
+          "voltage_C": "1762.021117+6630.512190j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490694-3848.481163j V", 
+          "voltage_B": "-6355.048153-3359.500332j V", 
+          "voltage_C": "278.079845+7180.822799j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.297428-4721.566873j V", 
+          "voltage_B": "-6060.298641-291.323292j V", 
+          "voltage_C": "1843.136883+6324.203499j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.381347-4779.619675j V", 
+          "voltage_B": "-6059.794489-289.696082j V", 
+          "voltage_C": "1839.678640+6405.105602j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.198177-4252.856144j V", 
+          "voltage_B": "-6019.892951-1326.558611j V", 
+          "voltage_C": "1398.368599+6713.341649j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.701370-4183.755545j V", 
+          "voltage_B": "-5814.280235-1834.081930j V", 
+          "voltage_C": "1380.115964+6389.114157j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.258677-4271.504275j V", 
+          "voltage_B": "-5802.894832-1527.672682j V", 
+          "voltage_C": "1509.026472+6313.572901j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.171148-4687.466523j V", 
+          "voltage_B": "-6167.701551-620.949687j V", 
+          "voltage_C": "1737.279776+6555.465527j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063961.489208+2309382.694056j VA", 
+          "power_in_B": "6484783.927250+1441093.433506j VA", 
+          "power_in_C": "7526353.324382+1373637.117677j VA"
+        }
+      }
+    }, 
+    "12": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.317316-4490.007850j V", 
+          "voltage_B": "-6204.793743-1914.587427j V", 
+          "voltage_C": "1444.786865+6512.925697j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.904367-4728.715403j V", 
+          "voltage_B": "-6408.498320-1346.976216j V", 
+          "voltage_C": "1432.875571+6748.085070j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.169647-4995.056344j V", 
+          "voltage_B": "-6399.873707-636.610598j V", 
+          "voltage_C": "1762.022863+6630.511837j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490711-3848.481029j V", 
+          "voltage_B": "-6355.048068-3359.500456j V", 
+          "voltage_C": "278.079885+7180.822812j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.299283-4721.566325j V", 
+          "voltage_B": "-6060.296508-291.325855j V", 
+          "voltage_C": "1843.138887+6324.203092j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.383155-4779.619152j V", 
+          "voltage_B": "-6059.792373-289.698648j V", 
+          "voltage_C": "1839.680612+6405.105190j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.199117-4252.855840j V", 
+          "voltage_B": "-6019.891594-1326.560020j V", 
+          "voltage_C": "1398.369796+6713.341423j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.702025-4183.755341j V", 
+          "voltage_B": "-5814.279313-1834.082973j V", 
+          "voltage_C": "1380.116828+6389.113999j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.259500-4271.504073j V", 
+          "voltage_B": "-5802.893817-1527.674123j V", 
+          "voltage_C": "1509.027488+6313.572665j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.172625-4687.466095j V", 
+          "voltage_B": "-6167.699612-620.951806j V", 
+          "voltage_C": "1737.281493+6555.465180j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063957.985634+2309383.947614j VA", 
+          "power_in_B": "6484782.326536+1441092.213599j VA", 
+          "power_in_C": "7526352.914287+1373638.782361j VA"
+        }
+      }
+    }, 
+    "13": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.317316-4490.007850j V", 
+          "voltage_B": "-6204.793743-1914.587427j V", 
+          "voltage_C": "1444.786865+6512.925697j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.904367-4728.715403j V", 
+          "voltage_B": "-6408.498320-1346.976216j V", 
+          "voltage_C": "1432.875571+6748.085070j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.169647-4995.056344j V", 
+          "voltage_B": "-6399.873707-636.610598j V", 
+          "voltage_C": "1762.022863+6630.511837j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490711-3848.481029j V", 
+          "voltage_B": "-6355.048068-3359.500456j V", 
+          "voltage_C": "278.079885+7180.822812j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.299283-4721.566325j V", 
+          "voltage_B": "-6060.296508-291.325855j V", 
+          "voltage_C": "1843.138887+6324.203092j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.383155-4779.619152j V", 
+          "voltage_B": "-6059.792373-289.698648j V", 
+          "voltage_C": "1839.680612+6405.105190j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.199117-4252.855840j V", 
+          "voltage_B": "-6019.891594-1326.560020j V", 
+          "voltage_C": "1398.369796+6713.341423j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.702025-4183.755341j V", 
+          "voltage_B": "-5814.279313-1834.082973j V", 
+          "voltage_C": "1380.116828+6389.113999j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.259500-4271.504073j V", 
+          "voltage_B": "-5802.893817-1527.674123j V", 
+          "voltage_C": "1509.027488+6313.572665j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.172625-4687.466095j V", 
+          "voltage_B": "-6167.699612-620.951806j V", 
+          "voltage_C": "1737.281493+6555.465180j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063957.985634+2309383.947614j VA", 
+          "power_in_B": "6484782.326536+1441092.213599j VA", 
+          "power_in_C": "7526352.914287+1373638.782361j VA"
+        }
+      }
+    }, 
+    "14": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.317202-4490.007846j V", 
+          "voltage_B": "-6204.794062-1914.587135j V", 
+          "voltage_C": "1444.786766+6512.925813j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.904130-4728.715357j V", 
+          "voltage_B": "-6408.498805-1346.975816j V", 
+          "voltage_C": "1432.875413+6748.085241j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.169267-4995.056241j V", 
+          "voltage_B": "-6399.874374-636.610007j V", 
+          "voltage_C": "1762.022638+6630.512049j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490792-3848.481100j V", 
+          "voltage_B": "-6355.048092-3359.500469j V", 
+          "voltage_C": "278.079894+7180.822879j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.298834-4721.566189j V", 
+          "voltage_B": "-6060.297232-291.325153j V", 
+          "voltage_C": "1843.138633+6324.203305j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.382713-4779.619020j V", 
+          "voltage_B": "-6059.793093-289.697947j V", 
+          "voltage_C": "1839.680359+6405.105407j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.198913-4252.855802j V", 
+          "voltage_B": "-6019.892035-1326.559659j V", 
+          "voltage_C": "1398.369645+6713.341589j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.701924-4183.755340j V", 
+          "voltage_B": "-5814.279605-1834.082717j V", 
+          "voltage_C": "1380.116735+6389.114112j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.259361-4271.504053j V", 
+          "voltage_B": "-5802.894155-1527.673747j V", 
+          "voltage_C": "1509.027371+6313.572783j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.172270-4687.465999j V", 
+          "voltage_B": "-6167.700252-620.951239j V", 
+          "voltage_C": "1737.281272+6555.465388j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063958.656485+2309382.429384j VA", 
+          "power_in_B": "6484782.040258+1441091.033332j VA", 
+          "power_in_C": "7526352.813907+1373636.604225j VA"
+        }
+      }
+    }, 
+    "15": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.317202-4490.007846j V", 
+          "voltage_B": "-6204.794062-1914.587135j V", 
+          "voltage_C": "1444.786766+6512.925813j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.904130-4728.715357j V", 
+          "voltage_B": "-6408.498805-1346.975816j V", 
+          "voltage_C": "1432.875413+6748.085241j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.169267-4995.056241j V", 
+          "voltage_B": "-6399.874374-636.610007j V", 
+          "voltage_C": "1762.022638+6630.512049j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490792-3848.481100j V", 
+          "voltage_B": "-6355.048092-3359.500469j V", 
+          "voltage_C": "278.079894+7180.822879j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.298834-4721.566189j V", 
+          "voltage_B": "-6060.297232-291.325153j V", 
+          "voltage_C": "1843.138633+6324.203305j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.382713-4779.619020j V", 
+          "voltage_B": "-6059.793093-289.697947j V", 
+          "voltage_C": "1839.680359+6405.105407j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.198913-4252.855802j V", 
+          "voltage_B": "-6019.892035-1326.559659j V", 
+          "voltage_C": "1398.369645+6713.341589j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.701924-4183.755340j V", 
+          "voltage_B": "-5814.279605-1834.082717j V", 
+          "voltage_C": "1380.116735+6389.114112j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.259361-4271.504053j V", 
+          "voltage_B": "-5802.894155-1527.673747j V", 
+          "voltage_C": "1509.027371+6313.572783j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.172270-4687.465999j V", 
+          "voltage_B": "-6167.700252-620.951239j V", 
+          "voltage_C": "1737.281272+6555.465388j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063958.656485+2309382.429384j VA", 
+          "power_in_B": "6484782.040258+1441091.033332j VA", 
+          "power_in_C": "7526352.813907+1373636.604225j VA"
+        }
+      }
+    }, 
+    "2": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4829.842051-4491.266031j V", 
+          "voltage_B": "-6207.094735-1911.612221j V", 
+          "voltage_C": "1444.180194+6513.678690j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4406.757900-4730.802315j V", 
+          "voltage_B": "-6411.818853-1343.500075j V", 
+          "voltage_C": "1431.676478+6749.046011j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3837.911723-4997.988293j V", 
+          "voltage_B": "-6404.293218-631.662057j V", 
+          "voltage_C": "1760.336322+6631.809114j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.498705-3848.772748j V", 
+          "voltage_B": "-6355.351820-3359.228758j V", 
+          "voltage_C": "278.122561+7180.878213j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3241.246471-4724.979148j V", 
+          "voltage_B": "-6064.940865-285.564112j V", 
+          "voltage_C": "1841.288663+6325.566859j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3330.481798-4782.942022j V", 
+          "voltage_B": "-6064.414289-283.926897j V", 
+          "voltage_C": "1837.824226+6406.495211j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4029.334055-4254.680803j V", 
+          "voltage_B": "-6022.917156-1323.398959j V", 
+          "voltage_C": "1397.221038+6714.268582j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4552.400970-4184.902955j V", 
+          "voltage_B": "-5816.398593-1831.470999j V", 
+          "voltage_C": "1379.522746+6389.836336j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4337.397968-4272.865532j V", 
+          "voltage_B": "-5805.281421-1523.862818j V", 
+          "voltage_C": "1508.364175+6314.384314j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3612.134936-4690.203585j V", 
+          "voltage_B": "-6171.946710-616.209153j V", 
+          "voltage_C": "1735.620002+6556.744041j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7071428.912146+2304358.605434j VA", 
+          "power_in_B": "6490485.509032+1440787.945604j VA", 
+          "power_in_C": "7528851.415404+1369443.173817j VA"
+        }
+      }
+    }, 
+    "3": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4829.842051-4491.266031j V", 
+          "voltage_B": "-6207.094735-1911.612221j V", 
+          "voltage_C": "1444.180194+6513.678690j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4406.757900-4730.802315j V", 
+          "voltage_B": "-6411.818853-1343.500075j V", 
+          "voltage_C": "1431.676478+6749.046011j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3837.911723-4997.988293j V", 
+          "voltage_B": "-6404.293218-631.662057j V", 
+          "voltage_C": "1760.336322+6631.809114j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.498705-3848.772748j V", 
+          "voltage_B": "-6355.351820-3359.228758j V", 
+          "voltage_C": "278.122561+7180.878213j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3241.246471-4724.979148j V", 
+          "voltage_B": "-6064.940865-285.564112j V", 
+          "voltage_C": "1841.288663+6325.566859j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3330.481798-4782.942022j V", 
+          "voltage_B": "-6064.414289-283.926897j V", 
+          "voltage_C": "1837.824226+6406.495211j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4029.334055-4254.680803j V", 
+          "voltage_B": "-6022.917156-1323.398959j V", 
+          "voltage_C": "1397.221038+6714.268582j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4552.400970-4184.902955j V", 
+          "voltage_B": "-5816.398593-1831.470999j V", 
+          "voltage_C": "1379.522746+6389.836336j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4337.397968-4272.865532j V", 
+          "voltage_B": "-5805.281421-1523.862818j V", 
+          "voltage_C": "1508.364175+6314.384314j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3612.134936-4690.203585j V", 
+          "voltage_B": "-6171.946710-616.209153j V", 
+          "voltage_C": "1735.620002+6556.744041j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7071428.912146+2304358.605434j VA", 
+          "power_in_B": "6490485.509032+1440787.945604j VA", 
+          "power_in_C": "7528851.415404+1369443.173817j VA"
+        }
+      }
+    }, 
+    "4": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.522796-4489.880908j V", 
+          "voltage_B": "-6204.475576-1914.974219j V", 
+          "voltage_C": "1444.975743+6512.841612j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4409.207757-4728.496298j V", 
+          "voltage_B": "-6408.034565-1347.451344j V", 
+          "voltage_C": "1433.155282+6747.979634j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.625771-4994.746378j V", 
+          "voltage_B": "-6399.252570-637.287745j V", 
+          "voltage_C": "1762.414463+6630.362868j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.488781-3848.448744j V", 
+          "voltage_B": "-6355.010025-3359.537414j V", 
+          "voltage_C": "278.084221+7180.823200j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.855310-4721.200058j V", 
+          "voltage_B": "-6059.642422-292.113021j V", 
+          "voltage_C": "1843.580903+6324.039218j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.920392-4779.264491j V", 
+          "voltage_B": "-6059.142419-290.487085j V", 
+          "voltage_C": "1840.118364+6404.939218j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.462898-4252.664264j V", 
+          "voltage_B": "-6019.469224-1326.991893j V", 
+          "voltage_C": "1398.638819+6713.240099j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.885031-4183.638996j V", 
+          "voltage_B": "-5813.986118-1834.424083j V", 
+          "voltage_C": "1380.296649+6389.035321j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.505891-4271.370879j V", 
+          "voltage_B": "-5802.567512-1528.161037j V", 
+          "voltage_C": "1509.236007+6313.473131j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.598106-4687.176800j V", 
+          "voltage_B": "-6167.102755-621.600822j V", 
+          "voltage_C": "1737.666926+6555.318471j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063041.823218+2310024.679377j VA", 
+          "power_in_B": "6484097.084080+1440934.193262j VA", 
+          "power_in_C": "7526243.950303+1374080.101361j VA"
+        }
+      }
+    }, 
+    "5": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.522796-4489.880908j V", 
+          "voltage_B": "-6204.475576-1914.974219j V", 
+          "voltage_C": "1444.975743+6512.841612j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4409.207757-4728.496298j V", 
+          "voltage_B": "-6408.034565-1347.451344j V", 
+          "voltage_C": "1433.155282+6747.979634j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.625771-4994.746378j V", 
+          "voltage_B": "-6399.252570-637.287745j V", 
+          "voltage_C": "1762.414463+6630.362868j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.488781-3848.448744j V", 
+          "voltage_B": "-6355.010025-3359.537414j V", 
+          "voltage_C": "278.084221+7180.823200j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.855310-4721.200058j V", 
+          "voltage_B": "-6059.642422-292.113021j V", 
+          "voltage_C": "1843.580903+6324.039218j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.920392-4779.264491j V", 
+          "voltage_B": "-6059.142419-290.487085j V", 
+          "voltage_C": "1840.118364+6404.939218j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.462898-4252.664264j V", 
+          "voltage_B": "-6019.469224-1326.991893j V", 
+          "voltage_C": "1398.638819+6713.240099j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.885031-4183.638996j V", 
+          "voltage_B": "-5813.986118-1834.424083j V", 
+          "voltage_C": "1380.296649+6389.035321j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.505891-4271.370879j V", 
+          "voltage_B": "-5802.567512-1528.161037j V", 
+          "voltage_C": "1509.236007+6313.473131j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.598106-4687.176800j V", 
+          "voltage_B": "-6167.102755-621.600822j V", 
+          "voltage_C": "1737.666926+6555.318471j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063041.823218+2310024.679377j VA", 
+          "power_in_B": "6484097.084080+1440934.193262j VA", 
+          "power_in_C": "7526243.950303+1374080.101361j VA"
+        }
+      }
+    }, 
+    "6": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.288309-4490.021574j V", 
+          "voltage_B": "-6204.838815-1914.534860j V", 
+          "voltage_C": "1444.751419+6512.935951j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.861404-4728.739387j V", 
+          "voltage_B": "-6408.564346-1346.909553j V", 
+          "voltage_C": "1432.826161+6748.097777j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.105460-4995.090403j V", 
+          "voltage_B": "-6399.962470-636.515537j V", 
+          "voltage_C": "1761.953672+6630.530430j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.491059-3848.484853j V", 
+          "voltage_B": "-6355.053070-3359.495336j V", 
+          "voltage_C": "278.078408+7180.822204j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.222148-4721.607193j V", 
+          "voltage_B": "-6060.390118-291.215451j V", 
+          "voltage_C": "1843.060070+6324.224315j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.308415-4779.658488j V", 
+          "voltage_B": "-6059.885310-289.588087j V", 
+          "voltage_C": "1839.602861+6405.126566j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.161748-4252.876818j V", 
+          "voltage_B": "-6019.951713-1326.499445j V", 
+          "voltage_C": "1398.322225+6713.353597j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.676067-4183.767953j V", 
+          "voltage_B": "-5814.320854-1834.036486j V", 
+          "voltage_C": "1380.083252+6389.123404j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.225635-4271.518181j V", 
+          "voltage_B": "-5802.939772-1527.608685j V", 
+          "voltage_C": "1508.988353+6313.585647j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.112732-4687.497869j V", 
+          "voltage_B": "-6167.784900-620.860689j V", 
+          "voltage_C": "1737.213412+6555.483475j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7064076.076989+2309298.585712j VA", 
+          "power_in_B": "6484868.526665+1441129.708766j VA", 
+          "power_in_C": "7526348.662773+1373587.233418j VA"
+        }
+      }
+    }, 
+    "7": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.288309-4490.021574j V", 
+          "voltage_B": "-6204.838815-1914.534860j V", 
+          "voltage_C": "1444.751419+6512.935951j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.861404-4728.739387j V", 
+          "voltage_B": "-6408.564346-1346.909553j V", 
+          "voltage_C": "1432.826161+6748.097777j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.105460-4995.090403j V", 
+          "voltage_B": "-6399.962470-636.515537j V", 
+          "voltage_C": "1761.953672+6630.530430j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.491059-3848.484853j V", 
+          "voltage_B": "-6355.053070-3359.495336j V", 
+          "voltage_C": "278.078408+7180.822204j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.222148-4721.607193j V", 
+          "voltage_B": "-6060.390118-291.215451j V", 
+          "voltage_C": "1843.060070+6324.224315j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.308415-4779.658488j V", 
+          "voltage_B": "-6059.885310-289.588087j V", 
+          "voltage_C": "1839.602861+6405.126566j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.161748-4252.876818j V", 
+          "voltage_B": "-6019.951713-1326.499445j V", 
+          "voltage_C": "1398.322225+6713.353597j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.676067-4183.767953j V", 
+          "voltage_B": "-5814.320854-1834.036486j V", 
+          "voltage_C": "1380.083252+6389.123404j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.225635-4271.518181j V", 
+          "voltage_B": "-5802.939772-1527.608685j V", 
+          "voltage_C": "1508.988353+6313.585647j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.112732-4687.497869j V", 
+          "voltage_B": "-6167.784900-620.860689j V", 
+          "voltage_C": "1737.213412+6555.483475j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7064076.076989+2309298.585712j VA", 
+          "power_in_B": "6484868.526665+1441129.708766j VA", 
+          "power_in_C": "7526348.662773+1373587.233418j VA"
+        }
+      }
+    }, 
+    "8": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.321203-4490.006292j V", 
+          "voltage_B": "-6204.787453-1914.594527j V", 
+          "voltage_C": "1444.792533+6512.924414j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.910087-4728.712662j V", 
+          "voltage_B": "-6408.489141-1346.985382j V", 
+          "voltage_C": "1432.883272+6748.083507j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.178173-4995.052412j V", 
+          "voltage_B": "-6399.861371-636.623682j V", 
+          "voltage_C": "1762.033644+6630.509475j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490638-3848.480606j V", 
+          "voltage_B": "-6355.047348-3359.501126j V", 
+          "voltage_C": "278.080178+7180.822972j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.309455-4721.561512j V", 
+          "voltage_B": "-6060.283501-291.341045j V", 
+          "voltage_C": "1843.151217+6324.200307j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.393023-4779.614550j V", 
+          "voltage_B": "-6059.779465-289.713858j V", 
+          "voltage_C": "1839.692754+6405.102399j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.204092-4252.853442j V", 
+          "voltage_B": "-6019.883235-1326.568348j V", 
+          "voltage_C": "1398.377214+6713.339930j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.705509-4183.753910j V", 
+          "voltage_B": "-5814.273515-1834.089260j V", 
+          "voltage_C": "1380.122188+6389.112842j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.263987-4271.502477j V", 
+          "voltage_B": "-5802.887427-1527.682915j V", 
+          "voltage_C": "1509.033740+6313.570953j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.180582-4687.462428j V", 
+          "voltage_B": "-6167.687758-620.964347j V", 
+          "voltage_C": "1737.292100+6555.462856j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063943.711359+2309396.319122j VA", 
+          "power_in_B": "6484770.781884+1441086.086922j VA", 
+          "power_in_C": "7526356.024763+1373644.268244j VA"
+        }
+      }
+    }, 
+    "9": {
+      "1474434547": {
+        "190-7361": {
+          "voltage_A": "4831.321203-4490.006292j V", 
+          "voltage_B": "-6204.787453-1914.594527j V", 
+          "voltage_C": "1444.792533+6512.924414j V"
+        }, 
+        "190-8581": {
+          "voltage_A": "4408.910087-4728.712662j V", 
+          "voltage_B": "-6408.489141-1346.985382j V", 
+          "voltage_C": "1432.883272+6748.083507j V"
+        }, 
+        "190-8593": {
+          "voltage_A": "3841.178173-4995.052412j V", 
+          "voltage_B": "-6399.861371-636.623682j V", 
+          "voltage_C": "1762.033644+6630.509475j V"
+        }, 
+        "_hvmv_sub_lsb": {
+          "voltage_A": "6064.490638-3848.480606j V", 
+          "voltage_B": "-6355.047348-3359.501126j V", 
+          "voltage_C": "278.080178+7180.822972j V"
+        }, 
+        "cap_capbank0a": {
+          "capacitor_A": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank0b": {
+          "capacitor_B": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank0c": {
+          "capacitor_C": 400000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank1a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank1b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank1c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank2a": {
+          "capacitor_A": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 100.0, 
+          "phases": "AN", 
+          "phases_connected": "NA", 
+          "pt_phase": "A", 
+          "switchA": "CLOSED"
+        }, 
+        "cap_capbank2b": {
+          "capacitor_B": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 101.0, 
+          "phases": "BN", 
+          "phases_connected": "NB", 
+          "pt_phase": "B", 
+          "switchB": "CLOSED"
+        }, 
+        "cap_capbank2c": {
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "BANK", 
+          "dwell_time": 102.0, 
+          "phases": "CN", 
+          "phases_connected": "NC", 
+          "pt_phase": "C", 
+          "switchC": "CLOSED"
+        }, 
+        "cap_capbank3": {
+          "capacitor_A": 300000.0, 
+          "capacitor_B": 300000.0, 
+          "capacitor_C": 300000.0, 
+          "control": "MANUAL", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 0.0, 
+          "phases": "ABCN", 
+          "phases_connected": "NCBA", 
+          "pt_phase": "", 
+          "switchA": "CLOSED", 
+          "switchB": "CLOSED", 
+          "switchC": "CLOSED"
+        }, 
+        "l2673313": {
+          "voltage_A": "3245.309455-4721.561512j V", 
+          "voltage_B": "-6060.283501-291.341045j V", 
+          "voltage_C": "1843.151217+6324.200307j V"
+        }, 
+        "l2876814": {
+          "voltage_A": "3334.393023-4779.614550j V", 
+          "voltage_B": "-6059.779465-289.713858j V", 
+          "voltage_C": "1839.692754+6405.102399j V"
+        }, 
+        "l2955047": {
+          "voltage_A": "4031.204092-4252.853442j V", 
+          "voltage_B": "-6019.883235-1326.568348j V", 
+          "voltage_C": "1398.377214+6713.339930j V"
+        }, 
+        "l3160107": {
+          "voltage_A": "4553.705509-4183.753910j V", 
+          "voltage_B": "-5814.273515-1834.089260j V", 
+          "voltage_C": "1380.122188+6389.112842j V"
+        }, 
+        "l3254238": {
+          "voltage_A": "4339.263987-4271.502477j V", 
+          "voltage_B": "-5802.887427-1527.682915j V", 
+          "voltage_C": "1509.033740+6313.570953j V"
+        }, 
+        "m1047574": {
+          "voltage_A": "3615.180582-4687.462428j V", 
+          "voltage_B": "-6167.687758-620.964347j V", 
+          "voltage_C": "1737.292100+6555.462856j V"
+        }, 
+        "rcon_FEEDER_REG": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG2": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG3": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "rcon_VREG4": {
+          "Control": "MANUAL", 
+          "PT_phase": "CBA", 
+          "band_center": 0.0, 
+          "band_width": 0.0, 
+          "connect_type": "WYE_WYE", 
+          "control_level": "INDIVIDUAL", 
+          "dwell_time": 15.0, 
+          "lower_taps": 16, 
+          "raise_taps": 16, 
+          "regulation": 0.1
+        }, 
+        "reg_FEEDER_REG": {
+          "configuration": "rcon_FEEDER_REG", 
+          "phases": "ABC", 
+          "tap_A": 2, 
+          "tap_B": 2, 
+          "tap_C": 1, 
+          "to": "_hvmv_sub_lsb"
+        }, 
+        "reg_VREG2": {
+          "configuration": "rcon_VREG2", 
+          "phases": "ABC", 
+          "tap_A": 10, 
+          "tap_B": 6, 
+          "tap_C": 2, 
+          "to": "190-8593"
+        }, 
+        "reg_VREG3": {
+          "configuration": "rcon_VREG3", 
+          "phases": "ABC", 
+          "tap_A": 16, 
+          "tap_B": 10, 
+          "tap_C": 1, 
+          "to": "190-8581"
+        }, 
+        "reg_VREG4": {
+          "configuration": "rcon_VREG4", 
+          "phases": "ABC", 
+          "tap_A": 12, 
+          "tap_B": 12, 
+          "tap_C": 5, 
+          "to": "190-7361"
+        }, 
+        "xf_hvmv_sub": {
+          "power_in_A": "7063943.711359+2309396.319122j VA", 
+          "power_in_B": "6484770.781884+1441086.086922j VA", 
+          "power_in_C": "7526356.024763+1373644.268244j VA"
+        }
+      }
+    }
+  }
+}
