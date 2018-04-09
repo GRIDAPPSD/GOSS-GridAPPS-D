@@ -75,6 +75,7 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613', simul
             "simulationID": 1234,
             "rulePort": 5000,
             "topic":"input",
+            "expectedResult":loc+"/expected_result_series.json"
             }
     testCfg =json.dumps(testCfg)
     print(testCfg)
@@ -97,7 +98,7 @@ def _startTest(username,password,gossServer='localhost',stompPort='61613', simul
     gossConnection.subscribe(destination=responseQueueTopic,id=2)
     gossConnection.send(body=testCfg, destination=test_topic, headers={'reply-to': '/queue/reply'})
 
-    time.sleep(1)
+    time.sleep(3)
     print('sent test request')
 
 
