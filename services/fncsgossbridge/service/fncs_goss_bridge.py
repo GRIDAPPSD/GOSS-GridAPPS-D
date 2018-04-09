@@ -63,10 +63,10 @@ except:
 
 
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
-input_from_goss_queue = '/queue/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 
-output_to_goss_topic = '/topic/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
-output_to_goss_queue = '/queue/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
+
+output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
+
 goss_connection= None
 is_initialized = False 
 simulation_id = None
@@ -97,8 +97,8 @@ class GOSSListener(object):
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
-                goss_connection.send(output_to_goss_topic , json.dumps(message))
-                goss_connection.send(output_to_goss_queue , json.dumps(message))
+                message['timestamp'] = datetime.utcnow().microsecond
+                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
                 _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
@@ -115,11 +115,11 @@ class GOSSListener(object):
                 message_str = 'simulation id '+str(simulation_id)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
+                message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                goss_connection.send(output_to_goss_topic , response_msg)
-                goss_connection.send(output_to_goss_queue , response_msg)
+                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('stopped', message_str, 'INFO')
@@ -407,7 +407,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "goss.gridappsd.process.log.simulation."+str(simulation_id)
+    simulation_status_topic = "/topic/goss.gridappsd.simulation.log."+str(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -416,15 +416,35 @@ def _send_simulation_status(status, message, log_level):
             log_level = 'INFO'
         t_now = datetime.utcnow()
         status_message = {
-            "processId" : "fncs_goss_bridge-"+str(simulation_id),
+            "source" : __file__,
+            "processId" : str(simulation_id),
             "timestamp" : t_now.microsecond,
             "procesStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
+            "storeToDb" : True
         }
         status_str = json.dumps(status_message)
         goss_connection.send(simulation_status_topic, status_str)
- 
+
+
+def _byteify(data, ignore_dicts = False):
+    # if this is a unicode string, return its string representation
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    # if this is a list of values, return list of byteified values
+    if isinstance(data, list):
+        return [ _byteify(item, ignore_dicts=True) for item in data ]
+    # if this is a dictionary, return dictionary of byteified keys and values
+    # but only if we haven't already byteified it
+    if isinstance(data, dict) and not ignore_dicts:
+        return {
+            _byteify(key, ignore_dicts=True): _byteify(value, ignore_dicts=True)
+            for key, value in data.iteritems()
+        }
+    # if it's anything else, return it in its original form
+    return data
+
 
 def _keep_alive():
     while 1:
@@ -433,6 +453,7 @@ def _keep_alive():
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570'):
     
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
+    _create_cim_object_map()
     _register_with_fncs_broker(simulation_broker_location)
     _keep_alive()
         
