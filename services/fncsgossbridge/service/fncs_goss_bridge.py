@@ -1,4 +1,3 @@
-#-------------------------------------------------------------------------------
 # Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
@@ -37,6 +36,7 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
+import traceback
 """
 Created on Jan 6, 2017
 
@@ -58,6 +58,8 @@ try:
     import fncs
 except:
     if not os.environ.get("CI"):
+     sys.stdout.write("Not CI.\n")
+     fncs = {}
     else:
         sys.stdout.write("Running tests.\n")
         fncs = {}
@@ -99,6 +101,7 @@ class GOSSListener(object):
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['timestamp'] = datetime.utcnow().microsecond
+                #print (output_to_goss_topic + "{}".format(simulation_id)+'  '+json.dumps(message))
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
@@ -120,6 +123,7 @@ class GOSSListener(object):
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #print(output_to_goss_topic + "{}".format(simulation_id)+'   '+ response_msg)
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
@@ -273,8 +277,15 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
     message_str = 'fncs input topic '+fncs_input_topic
     _send_simulation_status('RUNNING', message_str, 'DEBUG')
-    fncs.publish_anon(fncs_input_topic, goss_message)
+    gridlabd_message = goss_message
+    #gridlabd_message = _convert_to_gld(goss_message)
+    print("gridlabd_message "+gridlabd_message)
+    fncs.publish_anon(fncs_input_topic, gridlabd_message)
     
+def _convert_to_gld(goss_message):
+    
+    
+    return ""
     
 def _get_fncs_bus_messages(simulation_id):
     """publish a message received from the GOSS bus to the FNCS bus.
@@ -293,6 +304,8 @@ def _get_fncs_bus_messages(simulation_id):
         fncs_output = None
         cim_str = None
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
+            print("ERR")
+
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + 'simulation_id = {0}'.format(simulation_id))
@@ -309,9 +322,12 @@ def _get_fncs_bus_messages(simulation_id):
                     "measurements" : []
                 }
             }
+            
             fncs_output = fncs.get_value(simulation_id)
             fncs_output_dict = json_loads_byteified(fncs_output)
+
             sim_dict = fncs_output_dict.get(simulation_id, None)
+
             if sim_dict != None:
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
@@ -322,45 +338,60 @@ def _get_fncs_bus_messages(simulation_id):
                         property_name = y["property"]
                         measurement["measurement_mrid"] = y["measurement_mrid"]
                         phases = y["phases"]
-                        conducting_equipment_type = y["conducting_equipment_type"]
+                        conducting_equipment_type_str = y["conducting_equipment_type"]
                         prop_val_str = gld_properties_dict.get(property_name, None)
                         if prop_val_str == None:
-                            raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
-                        val_str = prop_val_str.split(" ")[0]
-                        if conducting_equipment_type == "LinearShuntCompensator":
-                            if property_name in ["shunt_"+phases,"voltage_"+phases]:
-                                val = complex(val_str)
-                                (mag,ang_rad) = cmath.polar(val)
-                                ang_deg = math.degrees(ang_rad)
-                                measurement["magnitude"] = mag
-                                measurement["angle"] = ang_deg
-                            else:
-                                if val_str == "OPEN":
-                                    measurement["value"] = 0
+                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                            print("WARN: {} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                        else:
+                            val_str = str(prop_val_str).split(" ")[0]
+                            conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
+                            
+                            #measurement["type"] = conducting_equipment_type
+                            #measurement["prop_name"] = property_name
+                            if conducting_equipment_type == "LinearShuntCompensator":
+                                if property_name in ["shunt_"+phases,"voltage_"+phases]:
+                                    val = complex(val_str)
+                                    (mag,ang_rad) = cmath.polar(val)
+                                    ang_deg = math.degrees(ang_rad)
+                                    measurement["magnitude"] = mag
+                                    measurement["angle"] = ang_deg
                                 else:
-                                    measurement["value"] = 1
-                        if conducting_equipment_type == "PowerTransformer":
-                            if property_name in ["power_in_"+phases,"voltage_"+phases,"current_int_"+phases]:
+                                    if val_str == "OPEN":
+                                        measurement["value"] = 0
+                                    else:
+                                        measurement["value"] = 1
+                            elif conducting_equipment_type == "PowerTransformer":
+                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_int_"+phases]:
+                                    val = complex(val_str)
+                                    (mag,ang_rad) = cmath.polar(val)
+                                    ang_deg = math.degrees(ang_rad)
+                                    measurement["magnitude"] = mag
+                                    measurement["angle"] = ang_deg
+                                else:
+                                    measurement["value"] = int(val_str)
+                            elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch"]:
                                 val = complex(val_str)
                                 (mag,ang_rad) = cmath.polar(val)
                                 ang_deg = math.degrees(ang_rad)
                                 measurement["magnitude"] = mag
                                 measurement["angle"] = ang_deg
-                            else:
+                            elif conducting_equipment_type == "RatioTapChanger":
+                                #TODO ask Tom
                                 measurement["value"] = int(val_str)
-                        if conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch"]:
-                            val = complex(val_str)
-                            (mag,ang_rad) = cmath.polar(val)
-                            ang_deg = math.degrees(ang_rad)
-                            measurement["magnitude"] = mag
-                            measurement["angle"] = ang_deg
-                        cim_measurements_dict["message"]["measurements"].append(measurement)
-            cim_str = json.dumps(cim_measurements_dict)                
+                            else:
+                                print("WARN "+conducting_equipment_type+" not recognized")
+                                # Should it raise runtime?
+                            cim_measurements_dict["message"]["measurements"].append(measurement)
+            cim_str = str(json.dumps(cim_measurements_dict))               
         message_str = 'fncs_output '+str(cim_str)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
-        return fncs_output
+        print('cim output '+cim_str)
+        _send_simulation_status('RUNNING', cim_str, 'DEBUG')
+        return cim_str
     except Exception as e:
         message_str = 'Error on get FncsBusMessages for '+str(simulation_id)+' '+str(e)
+        print(message_str)
+        traceback.print_exc()
         _send_simulation_status('ERROR', message_str, 'ERROR')
         
         
@@ -439,7 +470,6 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
     goss_connection.connect(username,password, wait=True)
     goss_connection.set_listener('GOSSListener', GOSSListener())
     goss_connection.subscribe(input_from_goss_topic,1)
-    goss_connection.subscribe(input_from_goss_queue,2)
 
     message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.is_connected())
     _send_simulation_status('STARTED', message_str, 'INFO')
@@ -471,7 +501,7 @@ def _send_simulation_status(status, message, log_level):
             log_level = 'INFO'
         t_now = datetime.utcnow()
         status_message = {
-            "source" : __file__,
+            "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
             "timestamp" : int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond,
             "procesStatus" : status,
@@ -480,6 +510,7 @@ def _send_simulation_status(status, message, log_level):
             "storeToDb" : True
         }
         status_str = json.dumps(status_message)
+        #print (simulation_status_topic+'   '+status_str)
         goss_connection.send(simulation_status_topic, status_str)
 
 def _create_cim_object_map(map_file=None):
@@ -620,7 +651,7 @@ def _keep_alive():
     while 1:
         time.sleep(0.1)
          
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_file):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_file=None):
     
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
     _create_cim_object_map(measurement_map_file)

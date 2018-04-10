@@ -139,21 +139,6 @@ public class ProcessNewSimulationRequest {
 //					simulationId, config);
 //			String simulationConfigDir = simulationConfigDirOut.toString();
 			String simulationConfigDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
-			if(!simulationConfigDir.endsWith(File.separator)){
-				simulationConfigDir = simulationConfigDir+File.separator;
-			}
-			simulationConfigDir = simulationConfigDir+simulationId+File.separator;
-			File tempDataPathDir = new File(simulationConfigDir);
-			if(!tempDataPathDir.exists()){
-				tempDataPathDir.mkdirs();
-			}
-			
-			System.out.println("CONFIG DIR "+tempDataPathDir);
-			Properties simulationParams = generateSimulationParameters(config);
-			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
-			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
-
 			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
@@ -165,6 +150,21 @@ public class ProcessNewSimulationRequest {
 				throw new Exception("No simulation file returned for request "
 						+ config);
 			}
+			if(!simulationConfigDir.endsWith(File.separator)){
+				simulationConfigDir = simulationConfigDir+File.separator;
+			}
+			simulationConfigDir = simulationConfigDir+simulationId+File.separator;
+			File tempDataPathDir = new File(simulationConfigDir);
+			if(!tempDataPathDir.exists()){
+				tempDataPathDir.mkdirs();
+			}
+			
+			Properties simulationParams = generateSimulationParameters(config);
+			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
+			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+
+			
 
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
