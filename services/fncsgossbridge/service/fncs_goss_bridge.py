@@ -1,3 +1,4 @@
+#-------------------------------------------------------------------------------
 # Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
@@ -58,18 +59,17 @@ try:
     import fncs
 except:
     if not os.environ.get("CI"):
-     sys.stdout.write("Not CI.\n")
-     fncs = {}
+        raise ValueError("fncs.py is unavailable on the python path.")
     else:
         sys.stdout.write("Running tests.\n")
         fncs = {}
 
 
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
+input_from_goss_queue = '/queue/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 
-
-output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
-
+output_to_goss_topic = '/topic/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
+output_to_goss_queue = '/queue/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
 goss_connection= None
 is_initialized = False 
 simulation_id = None
@@ -100,9 +100,8 @@ class GOSSListener(object):
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
-                message['timestamp'] = datetime.utcnow().microsecond
-                #print (output_to_goss_topic + "{}".format(simulation_id)+'  '+json.dumps(message))
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), json.dumps(message))
+                goss_connection.send(output_to_goss_topic , json.dumps(message))
+                goss_connection.send(output_to_goss_queue , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
                 _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
@@ -119,12 +118,11 @@ class GOSSListener(object):
                 message_str = 'simulation id '+str(simulation_id)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
-                message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                #print(output_to_goss_topic + "{}".format(simulation_id)+'   '+ response_msg)
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), response_msg)
+                goss_connection.send(output_to_goss_topic , response_msg)
+                goss_connection.send(output_to_goss_queue , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('stopped', message_str, 'INFO')
@@ -277,15 +275,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
     message_str = 'fncs input topic '+fncs_input_topic
     _send_simulation_status('RUNNING', message_str, 'DEBUG')
-    gridlabd_message = goss_message
-    #gridlabd_message = _convert_to_gld(goss_message)
-    print("gridlabd_message "+gridlabd_message)
-    fncs.publish_anon(fncs_input_topic, gridlabd_message)
+    fncs.publish_anon(fncs_input_topic, goss_message)
     
-def _convert_to_gld(goss_message):
-    
-    
-    return ""
     
 def _get_fncs_bus_messages(simulation_id):
     """publish a message received from the GOSS bus to the FNCS bus.
@@ -304,8 +295,6 @@ def _get_fncs_bus_messages(simulation_id):
         fncs_output = None
         cim_str = None
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
-            print("ERR")
-
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + 'simulation_id = {0}'.format(simulation_id))
@@ -380,16 +369,18 @@ def _get_fncs_bus_messages(simulation_id):
                                 #TODO ask Tom
                                 measurement["value"] = int(val_str)
                             else:
+                                _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
                                 print("WARN "+conducting_equipment_type+" not recognized")
                                 # Should it raise runtime?
                             cim_measurements_dict["message"]["measurements"].append(measurement)
             cim_str = str(json.dumps(cim_measurements_dict))               
         message_str = 'fncs_output '+str(cim_str)
-        print('cim output '+cim_str)
+        print('cim output '+str(cim_str))
         _send_simulation_status('RUNNING', cim_str, 'DEBUG')
         return cim_str
+        #return fncs_output
     except Exception as e:
-        message_str = 'Error on get FncsBusMessages for '+str(simulation_id)+' '+str(e)
+        message_str = 'Error on get FncsBusMessages for '+str(simulation_id)+' '+str(traceback.format_exc())
         print(message_str)
         traceback.print_exc()
         _send_simulation_status('ERROR', message_str, 'ERROR')
@@ -470,6 +461,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
     goss_connection.connect(username,password, wait=True)
     goss_connection.set_listener('GOSSListener', GOSSListener())
     goss_connection.subscribe(input_from_goss_topic,1)
+    goss_connection.subscribe(input_from_goss_queue,2)
 
     message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.is_connected())
     _send_simulation_status('STARTED', message_str, 'INFO')
@@ -492,7 +484,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "/topic/goss.gridappsd.simulation.log."+str(simulation_id)
+    simulation_status_topic = "goss.gridappsd.process.log.simulation."+str(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -510,8 +502,8 @@ def _send_simulation_status(status, message, log_level):
             "storeToDb" : True
         }
         status_str = json.dumps(status_message)
-        #print (simulation_status_topic+'   '+status_str)
         goss_connection.send(simulation_status_topic, status_str)
+ 
 
 def _create_cim_object_map(map_file=None):
     global object_property_to_measurement_id
@@ -651,8 +643,9 @@ def _keep_alive():
     while 1:
         time.sleep(0.1)
          
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_file=None):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
     
+    measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
     _create_cim_object_map(measurement_map_file)
     _register_with_fncs_broker(simulation_broker_location)
@@ -663,5 +656,6 @@ if __name__ == "__main__":
     #stomp_port, username and password as commmand line arguments
     simulation_id = sys.argv[1]
     sim_broker_location = sys.argv[2]
-    _main(simulation_id, sim_broker_location) 
+    sim_dir = sys.argv[3]
+    _main(simulation_id, sim_broker_location, sim_dir) 
     
