@@ -61,29 +61,32 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
+public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
-	private static Logger log = LoggerFactory.getLogger(GLDBaseConfigurationHandler.class);
+	private static Logger log = LoggerFactory.getLogger(DSSBaseConfigurationHandler.class);
 	Client client = null; 
-	@ServiceDependency
-	private volatile LogManager logManager;
+	
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
-	public static final String TYPENAME = "GridLAB-D Base GLM";
+	public static final String TYPENAME = "DSS Base";
 	public static final String ZFRACTION = "z_fraction";
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
+	public static final String BUSCOORDS = "buscoords";
+	public static final String GUIDS = "guids";
 	
-	public GLDBaseConfigurationHandler() {
+	public DSSBaseConfigurationHandler() {
 	}
 	 
-	public GLDBaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
+	public DSSBaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
 	}
 	
@@ -105,10 +108,9 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating Base GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
-
 		boolean bWantZip = false;
 		boolean bWantSched = false;
+		logRunning("Generating Base DSS configuration file using parameters: "+parameters, processId, username, logManager);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
 		if(zFraction==0) {
@@ -135,6 +137,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, "", logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -144,13 +147,24 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
 		}
 		
+		String buscoords = GridAppsDConstants.getStringProperty(parameters, BUSCOORDS, null);
+		if(buscoords==null || buscoords.trim().length()==0){
+			//TODO need to figure out the correct default
+		}
+		String guids = GridAppsDConstants.getStringProperty(parameters, GUIDS, null);
+		if(guids==null || guids.trim().length()==0){
+			//TODO need to figure out the correct default
+		}
+		
 		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
-		logRunning("Finished generating Base GridLAB-D configuration file.", processId, username, logManager);
+		PrintWriter outID = new PrintWriter("outid");
+		
+		cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
+		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
 
 	}
 	

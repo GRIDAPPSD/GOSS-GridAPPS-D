@@ -48,7 +48,6 @@ __version__ = "0.0.1"
 
 import logging
 import os
-import shutil
 import sys
 import time
 import traceback

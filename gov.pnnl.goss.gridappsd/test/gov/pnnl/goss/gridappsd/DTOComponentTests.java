@@ -308,6 +308,7 @@ public class DTOComponentTests {
 		config.timestep_increment = 1000;
 		config.simulation_name = "ieee8500";
 		config.power_flow_solver_method = "NR";
+		config.simulation_id = "12345";
 		
 		config.simulation_output = configOutput;
 		config.model_creation_config = generateModelCreationConfig();

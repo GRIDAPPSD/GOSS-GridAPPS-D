@@ -97,16 +97,6 @@ public class ConfigurationManagerComponentTests {
 		
 	
 	
-	//report status on start
-	@Test
-	public void statusReportedWhen_configManagerStarted() {
-		ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
-		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
-		configManager.start();
-//		Mockito.verify(logManager).reportStatus(argCaptor.capture());
-		assertEquals("Starting gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl", argCaptor.getValue());
-		
-	}
 	
 	//test updated and get configuration property
 	@Test

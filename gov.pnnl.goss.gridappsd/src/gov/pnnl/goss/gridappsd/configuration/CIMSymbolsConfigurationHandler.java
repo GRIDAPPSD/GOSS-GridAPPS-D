@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,39 +36,96 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/   
-package gov.pnnl.goss.gridappsd.api;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.configuration;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.util.Properties;
 
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * This class implements subset of functionalities for Internal Functions
- * 405 Simulation Manager and 406 Power System Model Manager.
- * ConfigurationManager is responsible for:
- * - subscribing to configuration topics and 
- * - converting configuration message into simulation configuration files
- *   and power grid model files.
- * @author shar064
- *
- */
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.Client;
 
-public interface ConfigurationManager {
+
+@Component
+public class CIMSymbolsConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
+
+	private static Logger log = LoggerFactory.getLogger(CIMSymbolsConfigurationHandler.class);
+	Client client = null; 
 	
-	/**
-	 * This method returns simulation file path with name.
-	 * Return GridLAB-D file path with name for RC1.
-	 * @param simulationId
-	 * @param configRequest
-	 * @return
-	 * @throws Exception 
-	 */
-	File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception;
-	String getConfigurationProperty(String key);
-	void registerConfigurationHandler(String type, ConfigurationHandler handler);
-	void generateConfiguration(String type, Properties parameters, PrintWriter out, String processId, String username) throws Exception;
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
+	
+	public static final String TYPENAME = "GridLAB-D Symbols";
+	public static final String MODELID = "model_id";
+	
+	public CIMSymbolsConfigurationHandler() {
+	}
+	 
+	public CIMSymbolsConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
+	}
+	
+	
+	@Start
+	public void start(){
+		if(configManager!=null) {
+			configManager.registerConfigurationHandler(TYPENAME, this);
+		}
+		else { 
+			//TODO send log message and exception
+			log.warn("No Config manager avilable for "+getClass());
+		}
+		
+		if(powergridModelManager == null){
+			//TODO send log message and exception
+		}
+	}
+
+	@Override
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating Symbols GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
+
+		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+MODELID);
+		}
+		
+		
+		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		if(bgHost==null || bgHost.trim().length()==0){
+			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		
+		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		queryHandler.addFeederSelection(modelId);
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.generateJSONSymbolFile(queryHandler, out);
+		logRunning("Finished generating Symbols GridLAB-D configuration file.", processId, username, logManager);
+
+	}
+	
+	
+	
+	
 }

@@ -117,6 +117,7 @@ public class ProcessManagerImpl implements ProcessManager {
 		this.simulationManager = simulationManager;
 		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
+		this.logManager = logManager;
 	}
 
 	

@@ -178,7 +178,7 @@ public class ProcessEvent implements GossResponseEvent {
 					StringWriter sw = new StringWriter();
 					PrintWriter out = new PrintWriter(sw);
 					try {
-						configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out);
+						configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out, new Integer(processId).toString(), username);
 					} catch (Exception e) {
 						StringWriter sww = new StringWriter();
 						PrintWriter pw = new PrintWriter(sww);
@@ -196,8 +196,15 @@ public class ProcessEvent implements GossResponseEvent {
 
 
 			} else if(event.getDestination().contains("log")){
+				System.out.println("LOG CLASS "+message.getClass());
+				Serializable request;
+				if (message instanceof DataResponse){
+					request = ((DataResponse)message).getData();
+				} else {
+					request = message;
+				}
 
-				logManager.log(LogMessage.parse(message.toString()), username, null);
+				logManager.log(LogMessage.parse(request.toString()), username, null);
 
 			}
 			else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){

@@ -100,18 +100,6 @@ public class GridLabDDataHandlerTests {
 		Mockito.verify(dm, Mockito.times(2)).registerHandler(Mockito.any(), argClassCaptor.capture());
 	}	
 
-	@Test
-	public void statusReportedWhen_handleCalled() throws Exception{
-		//handle
-		//   check report status
-		int simulationId = 12345;
-		//   datasourceRegistry.getAvailable() called
-		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
-		handler.start();
-		assertEquals(argCaptor.getAllValues().get(0), GridAppsDConstants.topic_simulationLog+simulationId);
-		assertEquals(argCaptor.getAllValues().get(1),  "Generating GridLABD simulation files");
-		
-	}	
 	
 	
 	
