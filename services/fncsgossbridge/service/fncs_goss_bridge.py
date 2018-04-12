@@ -44,10 +44,8 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 """
-import cmath
 from datetime import datetime
 import json
-import math
 import os
 import sys
 import time
@@ -66,10 +64,10 @@ except:
 
 
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
+input_from_goss_queue = '/queue/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 
-
-output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
-
+output_to_goss_topic = '/topic/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
+output_to_goss_queue = '/queue/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
 goss_connection= None
 is_initialized = False 
 simulation_id = None
@@ -101,7 +99,8 @@ class GOSSListener(object):
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['timestamp'] = datetime.utcnow().microsecond
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), json.dumps(message))
+                goss_connection.send(output_to_goss_topic , json.dumps(message))
+                goss_connection.send(output_to_goss_queue , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
                 _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
@@ -122,7 +121,8 @@ class GOSSListener(object):
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), response_msg)
+                goss_connection.send(output_to_goss_topic , response_msg)
+                goss_connection.send(output_to_goss_queue , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('stopped', message_str, 'INFO')
@@ -293,7 +293,6 @@ def _get_fncs_bus_messages(simulation_id):
     """
     try:
         fncs_output = None
-        cim_str = None
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
@@ -484,7 +483,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "/topic/goss.gridappsd.simulation.log."+str(simulation_id)
+    simulation_status_topic = "goss.gridappsd.process.log.simulation."+str(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -499,7 +498,6 @@ def _send_simulation_status(status, message, log_level):
             "procesStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
-            "storeToDb" : True
         }
         status_str = json.dumps(status_message)
         goss_connection.send(simulation_status_topic, status_str)
@@ -655,17 +653,12 @@ def _byteify(data, ignore_dicts = False):
         }
     # if it's anything else, return it in its original form
     return data
+ 
 
-
-def _keep_alive():
-    while 1:
-        time.sleep(0.1)
-         
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
-    
+ 
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
-    _create_cim_object_map(measurement_map_file)
     _register_with_fncs_broker(simulation_broker_location)
     _keep_alive()
         

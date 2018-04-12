@@ -39,19 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -63,6 +50,19 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -171,48 +171,21 @@ public class ProcessManagerImpl implements ProcessManager {
 		return Math.abs(new Random().nextInt());
 	}
 	
-	/**
-	 * Generates and returns the port for a co-simulation designated by simulationId to run on.
-	 * @param simulationId
-	 * @return the port number
-	 * @throws Exception
-	 */
 	public int assignSimulationPort(int simulationId) throws Exception {
 		Integer simIdKey = new Integer(simulationId);
-		boolean portIsAvailable = false;
-		int tempPort = 0;
-		AtomicInteger tempPortObj = null;
-		Socket testSocket = null;
 		if (!simulationPorts.containsKey(simIdKey)) {
-			while (!portIsAvailable) {
-				tempPort = 49152 + randPort.nextInt(16384);
-				tempPortObj = new AtomicInteger(tempPort);
-				while (simulationPorts.containsValue(tempPortObj)) {
-					tempPort = 49152 + randPort.nextInt(16384);
-					tempPortObj.set(tempPort);
-				}
-				try {
-					testSocket = new Socket("localhost", tempPort);
-					portIsAvailable = false;
-				} catch (IOException e) {
-					portIsAvailable = true;
-				} finally {
-					if (testSocket != null) {
-						try {
-							testSocket.close();
-						} catch (IOException e1) {
-							throw new Exception("While testing that the port was available for co-simulation it was "
-									+ "found out that the port was already in use but the test socket connection "
-									+ "created couldn't be closed.");
-						}
-					}
-				}
+			int tempPort = 49152 + randPort.nextInt(16384);
+			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
+			while (simulationPorts.containsValue(tempPortObj)) {
+				int newTempPort = 49152 + randPort.nextInt(16384);
+				tempPortObj.set(newTempPort);
 			}
 			simulationPorts.put(simIdKey, tempPortObj);
 			return tempPortObj.get();
+			//TODO: test host:port is available
 		} else {
 			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
-					+ " simulation in progress.");
+					+ "simulation in progress.");
 		}
 	}
 	

@@ -236,7 +236,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		Mockito.verify(logManager, Mockito.times(3)).log(argCaptorLogMessage.capture(), argCaptor.capture(),argCaptor.capture()); // GridAppsDConstants.username);
 		List<LogMessage> messages = argCaptorLogMessage.getAllValues();
 		LogMessage capturedMessage = messages.get(1);
-		assertEquals(true, capturedMessage.getLogMessage().startsWith("No simulation file returned for request"));
+		assertEquals(true, capturedMessage.getLogMessage().startsWith("No simulation directory returned for request config"));
 		assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
 		assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
 		assertEquals(false, capturedMessage.getStoreToDb());

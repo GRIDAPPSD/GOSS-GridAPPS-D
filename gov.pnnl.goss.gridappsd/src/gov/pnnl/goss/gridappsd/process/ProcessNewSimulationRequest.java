@@ -164,8 +164,6 @@ public class ProcessNewSimulationRequest {
 			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
 			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
 
-			
-
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
