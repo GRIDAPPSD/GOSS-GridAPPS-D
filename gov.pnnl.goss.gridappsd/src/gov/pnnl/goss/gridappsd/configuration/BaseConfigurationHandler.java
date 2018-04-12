@@ -39,94 +39,58 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
-import java.io.PrintWriter;
-import java.util.Properties;
+import java.util.Date;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
-import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.core.Client;
 
 
-@Component
-public class GLDSymbolsConfigurationHandler  implements ConfigurationHandler {//implements ConfigurationManager{
-
-	private static Logger log = LoggerFactory.getLogger(GLDSymbolsConfigurationHandler.class);
-	Client client = null; 
+//@Component
+public abstract class BaseConfigurationHandler  implements ConfigurationHandler {
 	
-	@ServiceDependency
-	private volatile ConfigurationManager configManager;
-	@ServiceDependency
-	private volatile PowergridModelDataManager powergridModelManager;
+//	private static Logger log = LoggerFactory.getLogger(BaseConfigurationHandler.class);
 	
-	public static final String TYPENAME = "GridLAB-D Symbols";
-//	public static final String ZFRACTION = "z_fraction";
-//	public static final String IFRACTION = "i_fraction";
-//	public static final String PFRACTION = "p_fraction";
-//	public static final String SCHEDULENAME = "schedule_name";
-//	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
-	public static final String MODELID = "model_id";
+//	private volatile LogManager logManager;
 	
-	public GLDSymbolsConfigurationHandler() {
+	
+	public BaseConfigurationHandler() {
 	}
 	 
-	public GLDSymbolsConfigurationHandler(LogManager logManager, DataManager dataManager) {
+	public BaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
 	}
 	
 	
 	@Start
 	public void start(){
-		if(configManager!=null) {
-			configManager.registerConfigurationHandler(TYPENAME, this);
-		}
-		else { 
-			//TODO send log message and exception
-			log.warn("No Config manager avilable for "+getClass());
-		}
-		
-		if(powergridModelManager == null){
-			//TODO send log message and exception
-		}
 	}
 
-	@Override
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception {
-		
-		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-		if(modelId==null || modelId.trim().length()==0){
-			throw new Exception("Missing parameter "+MODELID);
-		}
-		
-		
-		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
-		if(bgHost==null || bgHost.trim().length()==0){
-			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
-		}
-		
-		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
-		queryHandler.addFeederSelection(modelId);
-		
-		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.generateJSONSymbolFile(queryHandler, out);
-		
-		return out.toString();
+	
+	void logRunning(String message, String simulationID, String username, LogManager logManager){
+		logManager.log(
+				new LogMessage(this.getClass().getName(), new Integer(
+						simulationID).toString(), new Date().getTime(),
+						message, LogLevel.INFO,
+						ProcessStatus.RUNNING, false), username,
+				GridAppsDConstants.topic_platformLog);
+
 	}
 	
-	
+	void logError(String message, String simulationID, String username, LogManager logManager){
+		logManager.log(
+				new LogMessage(this.getClass().getName(), new Integer(
+						simulationID).toString(), new Date().getTime(),
+						message, LogLevel.ERROR,
+						ProcessStatus.ERROR, false), username,
+				GridAppsDConstants.topic_platformLog);
+	}
 	
 	
 }
