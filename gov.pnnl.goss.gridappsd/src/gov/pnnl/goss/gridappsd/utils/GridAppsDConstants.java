@@ -153,8 +153,10 @@ public class GridAppsDConstants {
 	 * @return
 	 */
 	public static double getDoubleProperty(Properties props, String keyName, double defaultValue){
+		System.out.println(props);
 		if(props.containsKey(keyName)){
 			String val = props.getProperty(keyName);
+			System.out.println("GOT "+val+" for "+keyName);
 			return new Double(val).doubleValue();
 		}
 		
