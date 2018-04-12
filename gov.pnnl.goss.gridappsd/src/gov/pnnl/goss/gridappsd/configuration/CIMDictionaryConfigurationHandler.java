@@ -61,29 +61,25 @@ import pnnl.goss.core.Client;
 
 
 @Component
-public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
+public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
-	private static Logger log = LoggerFactory.getLogger(GLDBaseConfigurationHandler.class);
+	private static Logger log = LoggerFactory.getLogger(CIMDictionaryConfigurationHandler.class);
 	Client client = null; 
-	@ServiceDependency
-	private volatile LogManager logManager;
+	
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
-	public static final String TYPENAME = "GridLAB-D Base GLM";
-	public static final String ZFRACTION = "z_fraction";
-	public static final String IFRACTION = "i_fraction";
-	public static final String PFRACTION = "p_fraction";
-	public static final String SCHEDULENAME = "schedule_name";
-	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
+	public static final String TYPENAME = "CIM Dictionary";
 	public static final String MODELID = "model_id";
 	
-	public GLDBaseConfigurationHandler() {
+	public CIMDictionaryConfigurationHandler() {
 	}
 	 
-	public GLDBaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
+	public CIMDictionaryConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
 	}
 	
@@ -105,36 +101,11 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating Base GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
+		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
 
-		boolean bWantZip = false;
-		boolean bWantSched = false;
-
-		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
-		if(zFraction==0) {
-			zFraction = 0;
-			bWantZip = true;
-		}
-		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
-		if(iFraction==0){
-			iFraction = 1;
-			bWantZip = true;
-		}
-		double pFraction = GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0);
-		if(pFraction==0){
-			pFraction = 0;
-			bWantZip = true;
-		}
-		
-		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 0);
-		
-		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
-		if(scheduleName!=null){
-			bWantSched = true;
-		}
-		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -149,8 +120,8 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
-		logRunning("Finished generating Base GridLAB-D configuration file.", processId, username, logManager);
+		cimImporter.generateDictionaryFile(queryHandler, out);
+		logRunning("Finished generating Dictionary GridLAB-D configuration file.", processId, username, logManager);
 
 	}
 	

@@ -97,6 +97,7 @@ class GOSSListener(object):
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
+                message['timestamp'] = datetime.utcnow().microsecond
                 goss_connection.send(output_to_goss_topic , json.dumps(message))
                 goss_connection.send(output_to_goss_queue , json.dumps(message))
             elif json_msg['command'] == 'update':
@@ -115,6 +116,7 @@ class GOSSListener(object):
                 message_str = 'simulation id '+str(simulation_id)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
+                message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -416,6 +418,7 @@ def _send_simulation_status(status, message, log_level):
             log_level = 'INFO'
         t_now = datetime.utcnow()
         status_message = {
+            "source" : __file__,
             "processId" : "fncs_goss_bridge-"+str(simulation_id),
             "timestamp" : t_now.microsecond,
             "procesStatus" : status,

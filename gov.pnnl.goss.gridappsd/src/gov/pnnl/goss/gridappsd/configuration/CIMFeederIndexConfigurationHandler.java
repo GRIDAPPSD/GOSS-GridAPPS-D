@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,59 +36,89 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.configuration;
 
+import java.io.PrintWriter;
+import java.util.Properties;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
-import pnnl.goss.core.ClientFactory;
 
-@RunWith(MockitoJUnitRunner.class)
-public class StatusReporterComponentTests {
+
+@Component
+public class CIMFeederIndexConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
+
+	private static Logger log = LoggerFactory.getLogger(CIMFeederIndexConfigurationHandler.class);
+	Client client = null; 
 	
-	@Mock
-	Logger logger;
+	@ServiceDependency
+	private volatile ConfigurationManager configManager;
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
-	@Mock
-	ClientFactory clientFactory;
+	public static final String TYPENAME = "CIM Feeder Index";
+	public static final String MODELID = "model_id";
 	
-	@Mock
-	Client client;
-	
-	@Captor
-	ArgumentCaptor<String> argCaptor;
-	
-	//status reporter no longer exists
-	@Test
-	public void whenReportStatusOnTopic_clientPublishCalled(){
-//
-//		// ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
-//		
-//		try {
-//			Mockito.when(clientFactory.create(Mockito.any(), Mockito.any())).thenReturn(client);
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		Mockito.verify(client).publish(argCaptor.capture(), argCaptor.capture());
-//		
-//		List<String> allValues = argCaptor.getAllValues();
-//		assertEquals(2, allValues.size());
-//		assertEquals("big/status", allValues.get(0));
-//		assertEquals("Things are good", allValues.get(1));
-//				
+	public CIMFeederIndexConfigurationHandler() {
+	}
+	 
+	public CIMFeederIndexConfigurationHandler(LogManager logManager, DataManager dataManager) {
+
 	}
 	
 	
+	@Start
+	public void start(){
+		if(configManager!=null) {
+			configManager.registerConfigurationHandler(TYPENAME, this);
+		}
+		else { 
+			//TODO send log message and exception
+			log.warn("No Config manager avilable for "+getClass());
+		}
+		
+		if(powergridModelManager == null){
+			//TODO send log message and exception
+		}
+	}
 
+	@Override
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		
+		logRunning("Generating Feeder Index GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
+
+		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		if(bgHost==null || bgHost.trim().length()==0){
+			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		
+		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.generateFeederIndexFile(queryHandler, out);
+		logRunning("Finished generating Feeder Index GridLAB-D configuration file.", processId, username, logManager);
+
+	}
+	
+	
+	
+	
 }

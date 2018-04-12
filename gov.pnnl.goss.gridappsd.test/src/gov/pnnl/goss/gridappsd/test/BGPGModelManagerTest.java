@@ -71,11 +71,11 @@ public class BGPGModelManagerTest {
 		
 		BGPGModelManagerTest tester = new BGPGModelManagerTest();
 		
-		tester.testQueryModelNames();
-//		tester.testQuery();
-		tester.testQueryObjectTypes();
+//		tester.testQueryModelNames();
+		tester.testQuery();
+//		tester.testQueryObjectTypes();
 //		tester.testQueryObject();
-		tester.testQueryModel();
+//		tester.testQueryModel();
 		
 		
 		
@@ -89,20 +89,34 @@ public class BGPGModelManagerTest {
 		try {
 
 			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
-			String queryString = "SELECT ?feeder ?fid  WHERE {"
+//			String queryString = "SELECT ?feeder ?fid  WHERE {"
+//					+ "?s r:type c:Feeder."
+//					+ "?s c:IdentifiedObject.name ?feeder."
+//					+ "?s c:IdentifiedObject.mRID ?fid."
+//					+ "?s c:Feeder.NormalEnergizingSubstation ?sub."
+//					+ "?sub c:IdentifiedObject.name ?station."
+//					+ "?sub c:IdentifiedObject.mRID ?sid."
+//					+ "?sub c:Substation.Region ?sgr."
+//					+ "?sgr c:IdentifiedObject.name ?subregion."
+//					+ "?sgr c:IdentifiedObject.mRID ?sgrid."
+//					+ "?sgr c:SubGeographicalRegion.Region ?rgn."
+//					+ "?rgn c:IdentifiedObject.name ?region."
+//					+ "?rgn c:IdentifiedObject.mRID ?rgnid."
+//					+ "}  ORDER by ?station ?feeder";
+			String queryString = "SELECT ?name ?mRID ?substationName ?substationID ?subregionName ?subregionID ?regionName ?regionID WHERE {"
 					+ "?s r:type c:Feeder."
-					+ "?s c:IdentifiedObject.name ?feeder."
-					+ "?s c:IdentifiedObject.mRID ?fid."
-					+ "?s c:Feeder.NormalEnergizingSubstation ?sub."
-					+ "?sub c:IdentifiedObject.name ?station."
-					+ "?sub c:IdentifiedObject.mRID ?sid."
-					+ "?sub c:Substation.Region ?sgr."
-					+ "?sgr c:IdentifiedObject.name ?subregion."
-					+ "?sgr c:IdentifiedObject.mRID ?sgrid."
-					+ "?sgr c:SubGeographicalRegion.Region ?rgn."
-					+ "?rgn c:IdentifiedObject.name ?region."
-					+ "?rgn c:IdentifiedObject.mRID ?rgnid."
-					+ "}  ORDER by ?station ?feeder";
+					+ "?s c:IdentifiedObject.name ?name."
+					+ "?s c:IdentifiedObject.mRID ?mRID."
+					+ "?s c:Feeder.NormalEnergizingSubstation ?subStation."
+					+ "?subStation c:IdentifiedObject.name ?substationName."
+					+ "?subStation c:IdentifiedObject.mRID ?substationID."
+					+ "?subStation c:Substation.Region ?subRegion."
+					+ "?subRegion c:IdentifiedObject.name ?subregionName."
+					+ "?subRegion c:IdentifiedObject.mRID ?subregionID."
+					+ "?subRegion c:SubGeographicalRegion.Region ?region."
+					+ "?region c:IdentifiedObject.name ?regionName."
+					+ "?region c:IdentifiedObject.mRID ?regionID."
+					+ "}  ORDER by ?name ";
 			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY.toString());
 			pgDataRequest.setQueryString(queryString);
 			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
