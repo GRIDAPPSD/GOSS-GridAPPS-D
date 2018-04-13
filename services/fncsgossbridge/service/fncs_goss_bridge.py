@@ -44,8 +44,10 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 """
+import cmath
 from datetime import datetime
 import json
+import math
 import os
 import sys
 import time
@@ -57,7 +59,9 @@ try:
     import fncs
 except:
     if not os.environ.get("CI"):
-        raise ValueError("fncs.py is unavailable on the python path.")
+        print ("CI ENVIRON "+str(os.environ.get("CI")))
+        fncs = {}
+        #raise ValueError("fncs.py is unavailable on the python path.")
     else:
         sys.stdout.write("Running tests.\n")
         fncs = {}
@@ -275,7 +279,15 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
     message_str = 'fncs input topic '+fncs_input_topic
     _send_simulation_status('RUNNING', message_str, 'DEBUG')
-    fncs.publish_anon(fncs_input_topic, goss_message)
+    #fncs.publish_anon(fncs_input_topic, goss_message)
+    gridlabd_message = _convert_to_gld(goss_message)
+    print("gridlabd_message "+gridlabd_message)
+    fncs.publish_anon(fncs_input_topic, gridlabd_message)
+    
+def _convert_to_gld(goss_message):
+    
+    
+    return ""
     
     
 def _get_fncs_bus_messages(simulation_id):
@@ -293,6 +305,7 @@ def _get_fncs_bus_messages(simulation_id):
     """
     try:
         fncs_output = None
+        cim_str = None
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
@@ -491,10 +504,13 @@ def _send_simulation_status(status, message, log_level):
         if log_level not in valid_level:
             log_level = 'INFO'
         t_now = datetime.utcnow()
+        print("TNOW "+str(t_now.timetuple()))
+        ts = int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond
+        print("TIMESTAMP "+str(ts))
         status_message = {
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
-            "timestamp" : int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond,
+            "timestamp" : "",#int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond,
             "procesStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
@@ -655,10 +671,16 @@ def _byteify(data, ignore_dicts = False):
     return data
  
 
+def _keep_alive():
+    while 1:
+        time.sleep(0.1)
+
+
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
  
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
+    _create_cim_object_map(measurement_map_file)
     _register_with_fncs_broker(simulation_broker_location)
     _keep_alive()
         
