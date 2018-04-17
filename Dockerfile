@@ -2,15 +2,14 @@ ARG GRIDAPPSD_VERSION_LABEL=:dev
 
 FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
 
-# Add specific pip requirements files for installation onto this image in
-# the following location. 
-#
-# NOTE: as an example the fncsgossbridge requirements file can be used as a
-#       reference point.
-RUN apt-get update && \
-  apt-get install -y python-pip && \
-  rm -rf /var/cache/apt/archives/* && \
-  rm -rf /root/.cache/pip/wheels
+# Get the gridappsd-python from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
+  && cd gridappsd-python \
+  && python setup.py sdist \
+  && pip3 install dist/gridappsd-0.2.tar.gz \
+  && pip install dist/gridappsd-0.2.tar.gz \
+  && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
 # 
