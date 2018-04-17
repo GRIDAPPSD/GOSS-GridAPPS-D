@@ -291,7 +291,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "power_in_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
-				propertyName = "measured_voltage_" + phases;
+				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
 				objectName = "swt_"+conductingEquipmentName;
 				propertyName = "current_in_" + phases;
@@ -304,7 +304,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "measured_power_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
-				propertyName = "measured_voltage_" + phases;
+				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
 				objectName = connectivityNode;
 				propertyName = "measured_current_" + phases;
@@ -317,7 +317,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "measured_power_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
-				propertyName = "measured_voltage_" + phases;
+				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
 				objectName = connectivityNode;
 				propertyName = "measured_current_" + phases;
