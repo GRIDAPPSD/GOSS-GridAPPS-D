@@ -1,6 +1,7 @@
-ARG GRIDAPPSD_VERSION_LABEL=:rc2
+ARG GRIDAPPSD_VERSION_LABEL=:dev
 
 FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
+ARG TIMESTAMP
 
 # Add specific pip requirements files for installation onto this image in
 # the following location. 
@@ -28,6 +29,15 @@ RUN chmod +x /gridappsd/entrypoint.sh
 COPY ./run-docker.sh /gridappsd/run-docker.sh
 RUN chmod +x /gridappsd/run-docker.sh
 
+# Add the opendss command and library to the container
+COPY ./opendss/opendsscmd /usr/local/bin
+COPY ./opendss/liblinenoise.so /usr/local/lib
+RUN chmod +x /usr/local/bin/opendsscmd && \
+  ldconfig
+
+# Add mysql configuration 
+RUN echo "[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql" > /root/.my.cnf
+
 # This is the location that is built using the ./gradlew export command from
 # the command line.  When building this image we must make sure to have run that
 # before executing this script.
@@ -42,6 +52,8 @@ RUN pip install -r /gridappsd/requirements.txt && \
 EXPOSE 61616 61613 61614 8000-9000
 
 WORKDIR /gridappsd
+
+RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
 
 ENTRYPOINT ["/gridappsd/entrypoint.sh"]
 CMD ["gridappsd"]
