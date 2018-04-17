@@ -185,8 +185,8 @@ public class ProcessNewSimulationRequest {
 
 			
 			//Temporary until simulation output config is ready
-			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
-			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
+			//File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
+			//generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
 			
 			
 			// Start Apps and Services

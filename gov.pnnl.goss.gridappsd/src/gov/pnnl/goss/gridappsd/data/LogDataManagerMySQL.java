@@ -45,6 +45,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.sql.Connection;
+import java.sql.DataTruncation;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -121,7 +122,13 @@ public class LogDataManagerMySQL implements LogDataManager {
 				preparedStatement.executeUpdate();
 				
 				
-			} catch (SQLException e) {
+			} catch(DataTruncation e) {
+				log.error("Error while storing log:");
+				log.error("error = "+e.getMessage());
+				log.error("source = "+source);
+				log.error("message = "+log_message);
+			}
+			catch (SQLException e) {
 				e.printStackTrace();
 			}
 		} else {
