@@ -143,11 +143,11 @@ public class ProcessNewSimulationRequest {
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
 								simulationId).toString(), new Date().getTime(),
-								"No simulation directory returned for request config "
+								"No simulation file returned for request "
 										+ config, LogLevel.ERROR,
 								ProcessStatus.ERROR, false), username,
 						GridAppsDConstants.topic_platformLog);
-				throw new Exception("No simulation directory returned for request config "
+				throw new Exception("No simulation file returned for request "
 						+ config);
 			}
 			if(!simulationConfigDir.endsWith(File.separator)){
@@ -164,33 +164,13 @@ public class ProcessNewSimulationRequest {
 			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
 			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
 
-			
-			File f = new File(simulationConfigDir+GLDAllConfigurationHandler.BASE_FILENAME);
-			if (!f.exists()) {
-				logManager.log(
-						new LogMessage(this.getClass().getName(), new Integer(
-								simulationId).toString(), new Date().getTime(),
-								"No simulation file returned for request "
-										+ config, LogLevel.ERROR,
-								ProcessStatus.ERROR, false), username,
-						GridAppsDConstants.topic_platformLog);
-				throw new Exception("No simulation file returned for request "
-						+ config);
-			}
-
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 							simulationLogTopic);
 
 			
-			//Temporary until simulation output config is ready
-			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
-			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
-			
-			
 			// Start Apps and Services
-			
 			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
 			simulationContext.put("simulationId",simId);

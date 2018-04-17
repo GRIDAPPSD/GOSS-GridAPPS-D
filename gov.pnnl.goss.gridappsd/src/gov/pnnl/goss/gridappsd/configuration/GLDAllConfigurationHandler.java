@@ -274,7 +274,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("object fncs_msg {");
 				startupFileWriter.println("     name "+simulationID+";");
 				startupFileWriter.println("     message_type JSON;");
-				startupFileWriter.println("     configure configfile.json;");
+				startupFileWriter.println("     configure model_outputs.json;");
 				startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
 				startupFileWriter.println("}");
 				startupFileWriter.println("object recorder {");
