@@ -339,7 +339,7 @@ public class TestManagerImpl implements TestManager {
 					
 					//start simulation
 					log.debug("Starting simulation for id "+ testId);
-					simulationManager.startSimulation(testId, config.getSimulation_config(),null);
+					simulationManager.startSimulation(testId, config.getSimulation_config(),null,null);
 					log.debug("Starting simulation for id "+ testId);
 						
 //								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;

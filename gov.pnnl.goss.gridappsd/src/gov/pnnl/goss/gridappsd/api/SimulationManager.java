@@ -42,8 +42,6 @@ package gov.pnnl.goss.gridappsd.api;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
-import java.util.Map;
-
 /**
  * This represents Internal Function 405 Simulation Control Manager.
  * This is the management function that controls the running/execution of the Distribution Simulator (401).
@@ -58,7 +56,7 @@ public interface SimulationManager {
 	 * @param simulationFile
 	 * @param simulationConfig	
 	 */
-	void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext, SimulationContext simContext);
+	void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext);
 	
 	SimulationContext getSimulationContextForId(String simulationId);
 }

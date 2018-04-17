@@ -200,16 +200,7 @@ public class ProcessNewSimulationRequest {
 							simulationLogTopic);
 
 			
-			//Temporary until simulation output config is ready
-			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
-			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
-			
-			configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"model_outputs.json");
-			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
-			
-			
 			// Start Apps and Services
-			
 			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
 			simulationContext.put("simulationId",simId);
@@ -274,7 +265,7 @@ public class ProcessNewSimulationRequest {
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Starting simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
-			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simulationContext,simContext);
+			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simContext);
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Started simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);

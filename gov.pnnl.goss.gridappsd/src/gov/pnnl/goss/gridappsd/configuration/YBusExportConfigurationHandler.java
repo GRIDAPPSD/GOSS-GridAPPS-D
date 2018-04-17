@@ -39,23 +39,23 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+import java.io.File;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -63,6 +63,8 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
 
 import pnnl.goss.core.Client;
 
@@ -78,6 +80,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {//i
 	
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
+	
+	@ServiceDependency
+	DSSBaseConfigurationHandler baseConfigurationHandler;
 	
 	@ServiceDependency 
 	private volatile LogManager logManager;
@@ -112,50 +117,99 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {//i
 	}
 
 	@Override
-	public void generateConfig(Properties parameters, PrintWriter out, String simulationId, String username) throws Exception {
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		
+		
+		String simulationId = parameters.getProperty("simulationId");
+		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+		parameters.remove("simulationId");
+		
+		parameters.put("i_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction());
+		parameters.put("z_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction());
+		parameters.put("p_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction());
+		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
+		parameters.put("load_scaling_factor", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor());
+		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
+		
+		
+		//Create DSS base file
+		baseConfigurationHandler.generateConfig(parameters, out, processId, username);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Generating Y Bus matrix for simulation Id : "+simulationId, 
+				processId, new Date().getTime(), 
+				"Generating commands file for opendsscmd for simulation Id : "+processId, 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_platformLog);
 		
 		
+		//Create file with commands for opendsscmd
+		String tempDirPath = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+		File commandFile = new File(tempDirPath+File.separator+"opendsscmdInput.txt");
+		PrintWriter fileWriter = new PrintWriter(commandFile);
+		fileWriter.println("redirect model_base.dss");
+		fileWriter.println("solve");
+		fileWriter.println("export y triplet base_ysparse.csv");
+		fileWriter.println("export ynodelist base_nodelist.csv");
+		fileWriter.println("export summary base_summary.csv");
+		fileWriter.flush();
+		fileWriter.close();
 		
-		SimulationContext simcontext = simulationManager.getSimulationContextForId(simulationId);
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				processId, new Date().getTime(), 
+				"Generated commands file for opendsscmd for simulation Id : "+processId, 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_platformLog);
 		
-		simcontext.getRequest().getSimulation_config().getModel_creation_config().
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				processId, new Date().getTime(), 
+				"Generating Y Bus matrix for simulation Id : "+processId, 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_platformLog);
 		
+		ProcessBuilder processServiceBuilder = new ProcessBuilder();
+		processServiceBuilder.directory(commandFile.getParentFile());
+		List<String> commands = new ArrayList<String>();
+		commands.add("opendsscmd");
+		commands.add(commandFile.getName());
+		processServiceBuilder.command("opendsscmd");
+		processServiceBuilder.command(commandFile.getName());
+		processServiceBuilder.start();
 		
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				processId, new Date().getTime(), 
+				"Generating Y Bus matrix for simulation Id : "+processId, 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_platformLog);
+	
+		YBusExportResponse response = new YBusExportResponse();
+		response.yParseFilePath = tempDirPath+File.separator+"base_ysparse.csv";
+		response.nodeListFilePath = tempDirPath+File.separator+"base_nodelist.csv";
+		response.summaryFilePath = tempDirPath+File.separator+"base_summary.csv";
 		
+		out.write(response.toString());
 		
-		
-		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
-		if(bgHost==null || bgHost.trim().length()==0){
-			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
-		}
-		
-		String buscoords = GridAppsDConstants.getStringProperty(parameters, BUSCOORDS, null);
-		if(buscoords==null || buscoords.trim().length()==0){
-			//TODO need to figure out the correct default
-		}
-		String guids = GridAppsDConstants.getStringProperty(parameters, GUIDS, null);
-		if(guids==null || guids.trim().length()==0){
-			//TODO need to figure out the correct default
-		}
-		
-		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
-		queryHandler.addFeederSelection(modelId);
-		
-		CIMImporter cimImporter = new CIMImporter(); 
-		PrintWriter outID = new PrintWriter("outid");
-		
-		cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
-		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
 
 	}
+	
+class YBusExportResponse implements Serializable{
+	
+	private static final long serialVersionUID = 1L;
+
+	String yParseFilePath;
+	String nodeListFilePath;
+	String summaryFilePath;
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+}
 	
 	
 	

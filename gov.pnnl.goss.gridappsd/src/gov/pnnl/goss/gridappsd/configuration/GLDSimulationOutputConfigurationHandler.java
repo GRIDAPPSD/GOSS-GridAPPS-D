@@ -222,6 +222,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		}
 		measurementType = measurement.get("measurementType").getAsString();
 		phases = measurement.get("phases").getAsString();
+		if(phases.equals("s1")) {
+			phases = "1";
+		} else if (phases.equals("s2")) {
+			phases = "2";
+		}
 		conductingEquipmentType = measurement.get("name").getAsString();
 		conductingEquipmentName = measurement.get("ConductingEquipment_name").getAsString();
 		connectivityNode = measurement.get("ConnectivityNode").getAsString();
@@ -241,31 +246,86 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		} else if (conductingEquipmentType.contains("PowerTransformer")) {
 			if(measurementType.equals("VA")) {
 				objectName = "tx_"+conductingEquipmentName;
-				propertyName = "power_out_" + phases;
-			} else if (measurementType.equals("Pos")) {
+				propertyName = "power_in_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "voltage_" + phases;
+			} else if (measurementType.equals("A")) {
 				objectName = "tx_"+conductingEquipmentName;
+				propertyName = "current_in_" + phases;
+			} else {
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerTransformers are VA, PNV, and A.\nmeasurementType = %s.",measurementType));
+			}
+		} else if (conductingEquipmentType.contains("RatioTapChanger")) {
+			if(measurementType.equals("VA")) {
+				objectName = "reg_"+conductingEquipmentName;
+				propertyName = "power_in_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = "reg_"+conductingEquipmentName;
+				propertyName = "current_in_" + phases;
+			} else if (measurementType.equals("Pos")) {
+				objectName = "reg_"+conductingEquipmentName;
 				propertyName = "tap_" + phases;
 			} else {
-				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerTransformers are VA and Pos.\nmeasurementType = %s.",measurementType));
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for RatioTapChanger are VA, PNV, A, and Pos.\nmeasurementType = %s.",measurementType));
 			}
 		} else if (conductingEquipmentType.contains("ACLineSegment")) {
 			if(measurementType.equals("VA")) {
 				objectName = "line_"+conductingEquipmentName;
-				propertyName = "power_out_" + phases;
+				propertyName = "power_in_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = "line_"+conductingEquipmentName;
+				propertyName = "current_in_" + phases;
 			} else {
-				//TODO this is temporary until the output generation is fixed
-				objectName = "";
-				propertyName = "";
-//				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA and PNV.\nmeasurementType = %s.",measurementType));
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+			}
+		} else if (conductingEquipmentType.contains("LoadBreakSwitch")) {
+			if(measurementType.equals("VA")) {
+				objectName = "swt_"+conductingEquipmentName;
+				propertyName = "power_in_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "measured_voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = "swt_"+conductingEquipmentName;
+				propertyName = "current_in_" + phases;
+			} else {
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for LoadBreakSwitch are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+			}
+		} else if (conductingEquipmentType.contains("EnergyConsumer")) {
+			if(measurementType.equals("VA")) {
+				objectName = connectivityNode;
+				propertyName = "measured_power_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "measured_voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = connectivityNode;
+				propertyName = "measured_current_" + phases;
+			} else {
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+			}
+		} else if (conductingEquipmentType.contains("PowerElectronicsConnection")) {
+			if(measurementType.equals("VA")) {
+				objectName = connectivityNode;
+				propertyName = "measured_power_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "measured_voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = connectivityNode;
+				propertyName = "measured_current_" + phases;
+			} else {
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
 		} else {
-			//TODO this is temporary until the output generation is fixed
-			objectName = "";
-			propertyName = "";
-//			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
+			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, RatioTapChanger, LoadBreakSwitch, EnergyConsumer, PowerElectronicsConnection, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
 		}
 		if(measurements.containsKey(objectName)) {
 			measurements.get(objectName).add(new JsonPrimitive(propertyName));
