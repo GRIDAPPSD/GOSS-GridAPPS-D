@@ -52,6 +52,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -159,6 +160,35 @@ public class ProcessNewSimulationRequest {
 				tempDataPathDir.mkdirs();
 			}
 			
+			
+			SimulationContext simContext = new SimulationContext();
+			simContext.simulationId = simId;
+			simContext.simulationPort = simulationPort;
+			simContext.simulationDir = simulationConfigDir;
+			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			try{
+				simContext.simulatorPath = serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path();
+			}catch(NullPointerException e){
+				if(serviceManager.getService(config.getSimulation_config().getSimulator()) == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}
+				e.printStackTrace();
+			}
+			 
+			
+			
+			
+			
 			Properties simulationParams = generateSimulationParameters(config);
 			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
 			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
@@ -172,6 +202,9 @@ public class ProcessNewSimulationRequest {
 			
 			//Temporary until simulation output config is ready
 			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
+			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
+			
+			configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"model_outputs.json");
 			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
 			
 			
@@ -234,12 +267,14 @@ public class ProcessNewSimulationRequest {
 			
 			simulationContext.put("connectedServiceInstanceIds",connectServiceInstanceIds);
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
+			simContext.serviceInstanceIds = connectServiceInstanceIds;
+			simContext.appInstanceIds = connectedAppInstanceIds;
 
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Starting simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
-			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simulationContext);
+			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simulationContext,simContext);
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Started simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);

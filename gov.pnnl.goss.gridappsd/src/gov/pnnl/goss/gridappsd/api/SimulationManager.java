@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.api;
 
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
 import java.util.Map;
 
@@ -55,7 +56,9 @@ public interface SimulationManager {
 	 * This method is called by Process Manager to start a simulation
 	 * @param simulationId
 	 * @param simulationFile
-	 * @param simulationConfig
+	 * @param simulationConfig	
 	 */
-	void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext);
+	void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext, SimulationContext simContext);
+	
+	SimulationContext getSimulationContextForId(String simulationId);
 }

@@ -46,6 +46,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +69,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.Client;
@@ -108,6 +110,8 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	@ServiceDependency
 	LogManager logManager;
+	
+	private Map<String, SimulationContext> simContexts  = new HashMap<String, SimulationContext>();
 
 	public SimulationManagerImpl(){ }
 
@@ -144,7 +148,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext){
+	public void startSimulation(int simulationId, SimulationConfig simulationConfig, Map simulationContext, SimulationContext simContext){
 
 			try {
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -158,6 +162,8 @@ public class SimulationManagerImpl implements SimulationManager{
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
 			}
+			
+			simContexts.put(simContext.getSimulationId(), simContext);
 
 
 			Thread thread = new Thread(new Runnable() {
@@ -520,4 +526,16 @@ public class SimulationManagerImpl implements SimulationManager{
 	        }
 	    }.start();
 	}
+
+	
+	public Map<String, SimulationContext> getSimContexts() {
+		return simContexts;
+	}
+
+	@Override
+	public SimulationContext getSimulationContextForId(String simulationId){
+		return this.simContexts.get(simulationId);
+	}
+	
+	
 }
