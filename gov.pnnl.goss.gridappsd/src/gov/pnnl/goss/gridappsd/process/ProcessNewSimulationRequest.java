@@ -170,13 +170,7 @@ public class ProcessNewSimulationRequest {
 							simulationLogTopic);
 
 			
-			//Temporary until simulation output config is ready
-			File configFile = new File(tempDataPathDir.getAbsolutePath()+File.separator+"configfile.json");
-			generateConfigFile(configFile, config.getSimulation_config().getSimulation_output());
-			
-			
 			// Start Apps and Services
-			
 			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
 			simulationContext.put("simulationId",simId);
