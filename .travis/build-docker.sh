@@ -6,17 +6,21 @@ usage () {
   exit 2
 }
 
-IMAGE="gridappsd/gridappsd:dev"
+IMAGE="gridappsd/gridappsd"
+TAG="dev"
+TIMESTAMP=`date +'%y%m%d%H'`
 
 # parse options
 while getopts bp option ; do
   case $option in
     b) # Pass gridappsd tag to docker-compose
       # Docker file on travis relative from root.
-      docker build -t $IMAGE .
+      docker build --build-arg TIMESTAMP="$TIMESTAMP $TRAVIS_BRANCH" -t ${IMAGE}:$TAG .
       ;;
     p) # Pass gridappsd tag to docker-compose
-      docker push $IMAGE
+      docker tag ${IMAGE}:$TAG ${IMAGE}:$TIMESTAMP
+      docker push ${IMAGE}:$TIMESTAMP
+      docker push ${IMAGE}:$TAG
       ;;
     *) # Print Usage
       usage
