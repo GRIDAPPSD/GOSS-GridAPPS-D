@@ -139,10 +139,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				true), username, GridAppsDConstants.topic_platformLog);
 		
 		//Create DSS base file
-		StringWriter sw = new StringWriter();
-		PrintWriter basePrintWriterOut = new PrintWriter(sw);
+		PrintWriter basePrintWriter = new PrintWriter(dssBaseFile);
 		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
-		baseConfigurationHandler.generateConfig(parameters, basePrintWriterOut, processId, username);
+		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, processId, username);
 		
 		if(!dssBaseFile.exists()){
 			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
