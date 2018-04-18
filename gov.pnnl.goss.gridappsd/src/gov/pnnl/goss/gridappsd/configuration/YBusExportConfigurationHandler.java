@@ -122,7 +122,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		//Create DSS base file
-		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,dataManager);
+		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
 		baseConfigurationHandler.generateConfig(parameters, out, processId, username);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
