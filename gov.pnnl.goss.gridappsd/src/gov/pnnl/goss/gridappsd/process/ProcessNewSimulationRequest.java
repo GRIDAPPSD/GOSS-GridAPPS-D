@@ -162,9 +162,10 @@ public class ProcessNewSimulationRequest {
 			
 			
 			SimulationContext simContext = new SimulationContext();
+			simContext.setRequest(config);
 			simContext.simulationId = simId;
 			simContext.simulationPort = simulationPort;
-			simContext.simulationDir = simulationConfigDir;
+			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
 			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
 			try{
 				simContext.simulatorPath = serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path();
