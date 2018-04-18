@@ -120,6 +120,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		parameters.put("load_scaling_factor", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor());
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
 		
+		for(Object key: parameters.keySet().toArray()){
+			log.debug(key.toString() + " = "+ parameters.getProperty(key.toString()));
+		}
 		
 		//Create DSS base file
 		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
