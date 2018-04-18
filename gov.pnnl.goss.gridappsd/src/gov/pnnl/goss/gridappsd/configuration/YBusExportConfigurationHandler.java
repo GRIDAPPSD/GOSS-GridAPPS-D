@@ -39,10 +39,20 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -56,17 +66,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-
-import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 
 @Component
@@ -112,15 +111,22 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		String simulationId = parameters.getProperty("simulationId");
-		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
-		parameters.remove("simulationId");
 		
+		if(simulationId==null)
+			throw new Exception("Simulation Id not provided in request paramters.");
+		
+		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+		
+		if(simulationContext==null)
+			throw new Exception("Simulation Id not provided in request paramters.");
+		
+		parameters.remove("simulationId");
 		parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
 		parameters.put("z_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction()));
 		parameters.put("p_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction()));
-		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
 		parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
+		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
 		
 		File simulationDir = new File(simulationContext.getSimulationDir());
 		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
@@ -132,40 +138,33 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		}
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
+				simulationId, new Date().getTime(), 
 				"Generating DSS base file", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
+				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
 		//Create DSS base file
 		PrintWriter basePrintWriter = new PrintWriter(dssBaseFile);
 		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
-		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, processId, username);
+		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
-		if(!dssBaseFile.exists()){
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					processId, new Date().getTime(), 
-					"Error: Could not create DSS base file to export YBus matrix", 
-					LogLevel.ERROR, 
-					ProcessStatus.ERROR, 
-					true), username, GridAppsDConstants.topic_platformLog);
-			throw new Exception("Error: Could not create DSS base file to export YBus matrix");
-		}
+		if(!dssBaseFile.exists())
+				throw new Exception("Error: Could not create DSS base file to export YBus matrix");
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
-				"Generated DSS base file", 
+				simulationId, new Date().getTime(), 
+				"Finished generating DSS base file", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_platformLog);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
-				"Generating commands file for opendsscmd for simulation Id : "+processId, 
+				simulationId, new Date().getTime(), 
+				"Generating commands file for opendsscmd", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
+				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
 		
 		//Create file with commands for opendsscmd
@@ -179,18 +178,18 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		fileWriter.close();
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
-				"Generated commands file for opendsscmd for simulation Id : "+processId, 
+				simulationId, new Date().getTime(), 
+				"Finished generating commands file for opendsscmd", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_platformLog);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
-				"Generating Y Bus matrix for simulation Id : "+processId, 
+				simulationId, new Date().getTime(), 
+				"Generating Y Bus matrix", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
+				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
 		ProcessBuilder processServiceBuilder = new ProcessBuilder();
 		processServiceBuilder.directory(simulationDir);
@@ -199,19 +198,21 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		commands.add(commandFile.getName());
 		
 		processServiceBuilder.command(new ArrayList<>(Arrays.asList("opendsscmd", commandFile.getName())));
+		processServiceBuilder.redirectErrorStream(true);
+		processServiceBuilder.redirectOutput();
 		processServiceBuilder.start();
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				processId, new Date().getTime(), 
-				"Generating Y Bus matrix for simulation Id : "+processId, 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
-	
 		YBusExportResponse response = new YBusExportResponse();
 		response.yParseFilePath = simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv";
 		response.nodeListFilePath = simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv";
 		response.summaryFilePath = simulationDir.getAbsolutePath()+File.separator+"base_summary.csv";
+		
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				simulationId, new Date().getTime(), 
+				"Finished generating Y Bus matrix", 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
 		out.write(response.toString());
 		
