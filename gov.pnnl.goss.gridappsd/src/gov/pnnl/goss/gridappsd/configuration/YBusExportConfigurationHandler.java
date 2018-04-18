@@ -57,6 +57,7 @@ import com.google.gson.Gson;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -76,6 +77,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 	
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
+	
+	@ServiceDependency
+	private volatile DataManager dataManager;
 	
 	@ServiceDependency 
 	volatile LogManager logManager;
@@ -118,7 +122,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		//Create DSS base file
-		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler();
+		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,dataManager);
 		baseConfigurationHandler.generateConfig(parameters, out, processId, username);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 

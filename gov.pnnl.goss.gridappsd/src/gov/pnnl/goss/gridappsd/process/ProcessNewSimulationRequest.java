@@ -162,6 +162,7 @@ public class ProcessNewSimulationRequest {
 			
 			
 			SimulationContext simContext = new SimulationContext();
+			simContext.setRequest(config);
 			simContext.simulationId = simId;
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = simulationConfigDir;
