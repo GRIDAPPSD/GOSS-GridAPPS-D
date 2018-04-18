@@ -113,11 +113,11 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 		parameters.remove("simulationId");
 		
-		parameters.put("i_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction());
-		parameters.put("z_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction());
-		parameters.put("p_fraction", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction());
+		parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
+		parameters.put("z_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction()));
+		parameters.put("p_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction()));
 		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
-		parameters.put("load_scaling_factor", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor());
+		parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
 		
 		for(Object key: parameters.keySet().toArray()){
