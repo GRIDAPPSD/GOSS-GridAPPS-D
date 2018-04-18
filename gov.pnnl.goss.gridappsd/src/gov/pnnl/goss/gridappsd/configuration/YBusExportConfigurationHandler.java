@@ -137,7 +137,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		//Create file with commands for opendsscmd
-		String simulationDir = simulationContext.getSimulationDir();
+		File simulationDir = new File(simulationContext.getSimulationDir());
 		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
 		PrintWriter fileWriter = new PrintWriter(commandFile);
 		fileWriter.println("redirect model_base.dss");
@@ -179,9 +179,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				true), username, GridAppsDConstants.topic_platformLog);
 	
 		YBusExportResponse response = new YBusExportResponse();
-		response.yParseFilePath = tempDirPath+File.separator+"base_ysparse.csv";
-		response.nodeListFilePath = tempDirPath+File.separator+"base_nodelist.csv";
-		response.summaryFilePath = tempDirPath+File.separator+"base_summary.csv";
+		response.yParseFilePath = simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv";
+		response.nodeListFilePath = simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv";
+		response.summaryFilePath = simulationDir.getAbsolutePath()+File.separator+"base_summary.csv";
 		
 		out.write(response.toString());
 		
