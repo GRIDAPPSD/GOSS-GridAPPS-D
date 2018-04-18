@@ -39,17 +39,6 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
-import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -66,14 +55,21 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import pnnl.goss.core.Client;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 
 @Component
-public class YBusExportConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
+public class YBusExportConfigurationHandler implements ConfigurationHandler {
 
 	private static Logger log = LoggerFactory.getLogger(YBusExportConfigurationHandler.class);
-	Client client = null; 
 	
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
@@ -81,26 +77,15 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {//i
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
 	
-	@ServiceDependency
-	DSSBaseConfigurationHandler baseConfigurationHandler;
-	
 	@ServiceDependency 
-	private volatile LogManager logManager;
+	volatile LogManager logManager;
 	
 	public static final String TYPENAME = "YBus Export";
-	public static final String ZFRACTION = "z_fraction";
-	public static final String IFRACTION = "i_fraction";
-	public static final String PFRACTION = "p_fraction";
-	public static final String SCHEDULENAME = "schedule_name";
-	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
-	public static final String MODELID = "model_id";
-	public static final String BUSCOORDS = "buscoords";
-	public static final String GUIDS = "guids";
 	
 	public YBusExportConfigurationHandler() {
 	}
 	 
-	public YBusExportConfigurationHandler(LogManager logManager, DataManager dataManager) {
+	public YBusExportConfigurationHandler(LogManager logManager) {
 
 	}
 	
@@ -133,6 +118,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {//i
 		
 		
 		//Create DSS base file
+		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler();
 		baseConfigurationHandler.generateConfig(parameters, out, processId, username);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
