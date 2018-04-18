@@ -184,7 +184,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		response.nodeListFilePath = simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv";
 		response.summaryFilePath = simulationDir.getAbsolutePath()+File.separator+"base_summary.csv";
 		
-		out.write(response.toString());
+		out.write(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
 		
 
 	}
