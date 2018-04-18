@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -167,8 +168,8 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		List<String> commands = new ArrayList<String>();
 		commands.add("opendsscmd");
 		commands.add(commandFile.getName());
-		processServiceBuilder.command("opendsscmd");
-		processServiceBuilder.command(commandFile.getName());
+		
+		processServiceBuilder.command(new ArrayList<>(Arrays.asList("opendsscmd", commandFile.getName())));
 		processServiceBuilder.start();
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
