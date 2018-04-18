@@ -137,8 +137,8 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		//Create file with commands for opendsscmd
-		String tempDirPath = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
-		File commandFile = new File(tempDirPath+File.separator+"opendsscmdInput.txt");
+		String simulationDir = simulationContext.getSimulationDir();
+		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
 		PrintWriter fileWriter = new PrintWriter(commandFile);
 		fileWriter.println("redirect model_base.dss");
 		fileWriter.println("solve");
@@ -163,7 +163,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				true), username, GridAppsDConstants.topic_platformLog);
 		
 		ProcessBuilder processServiceBuilder = new ProcessBuilder();
-		processServiceBuilder.directory(commandFile.getParentFile());
+		processServiceBuilder.directory(simulationDir);
 		List<String> commands = new ArrayList<String>();
 		commands.add("opendsscmd");
 		commands.add(commandFile.getName());
