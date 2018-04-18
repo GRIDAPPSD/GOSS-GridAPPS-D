@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.configuration;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -121,13 +122,44 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
 		
+		File simulationDir = new File(simulationContext.getSimulationDir());
+		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
+		File dssBaseFile = new File(simulationDir,"model_base.dss");
+		
+		
 		for(Object key: parameters.keySet().toArray()){
 			log.debug(key.toString() + " = "+ parameters.getProperty(key.toString()));
 		}
 		
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				processId, new Date().getTime(), 
+				"Generating DSS base file", 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_platformLog);
+		
 		//Create DSS base file
+		StringWriter sw = new StringWriter();
+		PrintWriter basePrintWriterOut = new PrintWriter(sw);
 		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
-		baseConfigurationHandler.generateConfig(parameters, out, processId, username);
+		baseConfigurationHandler.generateConfig(parameters, basePrintWriterOut, processId, username);
+		
+		if(!dssBaseFile.exists()){
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					processId, new Date().getTime(), 
+					"Error: Could not create DSS base file to export YBus matrix", 
+					LogLevel.ERROR, 
+					ProcessStatus.ERROR, 
+					true), username, GridAppsDConstants.topic_platformLog);
+			throw new Exception("Error: Could not create DSS base file to export YBus matrix");
+		}
+		
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				processId, new Date().getTime(), 
+				"Generated DSS base file", 
+				LogLevel.DEBUG, 
+				ProcessStatus.RUNNING, 
+				true), username, GridAppsDConstants.topic_platformLog);
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				processId, new Date().getTime(), 
@@ -138,8 +170,6 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		//Create file with commands for opendsscmd
-		File simulationDir = new File(simulationContext.getSimulationDir());
-		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
 		PrintWriter fileWriter = new PrintWriter(commandFile);
 		fileWriter.println("redirect model_base.dss");
 		fileWriter.println("solve");
@@ -184,7 +214,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		response.nodeListFilePath = simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv";
 		response.summaryFilePath = simulationDir.getAbsolutePath()+File.separator+"base_summary.csv";
 		
-		out.write(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
+		out.write(response.toString());
 		
 
 	}
