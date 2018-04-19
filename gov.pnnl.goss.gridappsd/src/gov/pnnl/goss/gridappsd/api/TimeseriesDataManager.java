@@ -1,5 +1,8 @@
 package gov.pnnl.goss.gridappsd.api;
 
+import java.io.Serializable;
+import java.rmi.ServerError;
+
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 
 public interface TimeseriesDataManager {
@@ -9,8 +12,8 @@ public interface TimeseriesDataManager {
 	
 	String query(RequestTimeseriesData requestTimeseriesData) throws Exception;
 	
-	String store(RequestTimeseriesData requestTimeseriesData) throws Exception;
+	void storeSimulationOutput(Serializable simulationOutput) throws Exception;
 	
-	String store(String requestTimeseriesData) throws Exception;
+	void storeSimulationInput(Serializable simulationIput) throws Exception;
 
 }
