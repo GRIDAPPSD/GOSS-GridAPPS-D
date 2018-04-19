@@ -78,7 +78,8 @@
 	blazegraph.cim2glm;version=latest,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	javax.servlet-api,\
-	com.bigdata.rdf
+	com.bigdata.rdf,\
+	proven-api
 	
 >>>>>>> f0023ef51d786f57a9986faba6437b588e31be23
 # Add broker name to the properties defined in shared.runprops
