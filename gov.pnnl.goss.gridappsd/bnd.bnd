@@ -31,7 +31,7 @@
 	blazegraph.cim2glm;version=latest,\
 	httpclient,\
 	com.bigdata.rdf,\
-	proven-api,\
+	gridappsd-proven-client.api,\
 	proven-message
 	
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug

@@ -72,7 +72,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 			GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			client.subscribe(GridAppsDConstants.topic_simulation+".>", new GossResponseEvent() {
+			client.subscribe("/topic/"+GridAppsDConstants.topic_simulation+".>", new GossResponseEvent() {
 				@Override
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
