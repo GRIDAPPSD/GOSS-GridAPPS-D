@@ -86,8 +86,9 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 	public DSSBaseConfigurationHandler() {
 	}
 	 
-	public DSSBaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
-
+	public DSSBaseConfigurationHandler(LogManager logManager, ConfigurationManager configManager) {
+		this.logManager = logManager;
+		this.configManager = configManager;
 	}
 	
 	
