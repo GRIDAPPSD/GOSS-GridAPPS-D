@@ -44,8 +44,10 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 """
+import cmath
 from datetime import datetime
 import json
+import math
 import os
 import sys
 import time
@@ -54,7 +56,7 @@ import stomp
 import yaml
 
 try:
-    import fncs
+    from fncs import fncs
 except:
     if not os.environ.get("CI"):
         raise ValueError("fncs.py is unavailable on the python path.")
@@ -62,12 +64,12 @@ except:
         sys.stdout.write("Running tests.\n")
         fncs = {}
 
-
+debugFile = open("/tmp/fncs_bridge_log.txt", "w")
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
-input_from_goss_queue = '/queue/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
+output_to_simulation_manager = '/topic/goss.gridappsd.fncs.output'
+output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
+simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
 
-output_to_goss_topic = '/topic/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
-output_to_goss_queue = '/queue/goss.gridappsd.fncs.output' #this should match GridAppsDConstants.topic_FNCS_output
 goss_connection= None
 is_initialized = False 
 simulation_id = None
@@ -78,11 +80,13 @@ class GOSSListener(object):
         message = {}
         try:
             message_str = 'received message '+str(msg)
+            
             if fncs.is_initialized():
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
             else:
                 _send_simulation_status('STARTED', message_str, 'DEBUG')
             json_msg = yaml.safe_load(str(msg))
+            print("\n{}\n".format(json_msg['command']))
             if json_msg['command'] == 'isInitialized':
                 message_str = 'isInitialized check: '+str(is_initialized)
                 if fncs.is_initialized():
@@ -99,8 +103,7 @@ class GOSSListener(object):
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['timestamp'] = datetime.utcnow().microsecond
-                goss_connection.send(output_to_goss_topic , json.dumps(message))
-                goss_connection.send(output_to_goss_queue , json.dumps(message))
+                goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
                 _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
@@ -121,8 +124,7 @@ class GOSSListener(object):
                 response_msg = json.dumps(message)
                 message_str = 'sending fncs output message '+str(response_msg)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                goss_connection.send(output_to_goss_topic , response_msg)
-                goss_connection.send(output_to_goss_queue , response_msg)
+                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('stopped', message_str, 'INFO')
@@ -302,6 +304,7 @@ def _get_fncs_bus_messages(simulation_id):
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        cim_str = ""
         if simulation_id in message_events:
             cim_measurements_dict = {
                 "simulation_id": simulation_id,
@@ -372,7 +375,9 @@ def _get_fncs_bus_messages(simulation_id):
                                 print("WARN "+conducting_equipment_type+" not recognized")
                                 # Should it raise runtime?
                             cim_measurements_dict["message"]["measurements"].append(measurement)
-            cim_str = str(json.dumps(cim_measurements_dict))               
+                cim_str = str(json.dumps(cim_measurements_dict))
+            else:
+                raise RuntimeError("The message recieved from the simulator did not have the simulation id as a key in the json message.")
         message_str = 'fncs_output '+str(cim_str)
         print('cim output '+str(cim_str))
         _send_simulation_status('RUNNING', cim_str, 'DEBUG')
@@ -460,7 +465,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
     goss_connection.connect(username,password, wait=True)
     goss_connection.set_listener('GOSSListener', GOSSListener())
     goss_connection.subscribe(input_from_goss_topic,1)
-    goss_connection.subscribe(input_from_goss_queue,2)
+    goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
 
     message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.is_connected())
     _send_simulation_status('STARTED', message_str, 'INFO')
@@ -483,7 +488,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "goss.gridappsd.process.log.simulation."+str(simulation_id)
+    simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -495,11 +500,13 @@ def _send_simulation_status(status, message, log_level):
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
             "timestamp" : int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond,
-            "procesStatus" : status,
+            "processStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
+            "storeToDb" : True
         }
         status_str = json.dumps(status_message)
+        debugFile.write("{}\n\n".format(status_str))
         goss_connection.send(simulation_status_topic, status_str)
 
 
@@ -536,75 +543,108 @@ def _create_cim_object_map(map_file=None):
                 for y in measurements:
                     measurement_type = y.get("measurementType")
                     phases = y.get("phases")
+                    if phases == "s1":
+                        phases = "1"
+                    elif phases == "s2":
+                        phases = "2"
                     conducting_equipment_type = y.get("name")
                     conducting_equipment_name = y.get("ConductingEquipment_name")
                     connectivity_node = y.get("ConnectivityNode")
                     measurement_mrid = y.get("mRID")
                     if "LinearShuntCompensator" in conducting_equipment_type:
-                        if(measurement_type == "VA"):
+                        if measurement_type == "VA":
                             object_name = "cap_" + conducting_equipment_name;
                             property_name = "shunt_" + phases;
-                        elif (measurement_type == "Pos"):
+                        elif measurement_type == "Pos":
                             object_name = "cap_" + conducting_equipment_name;
                             property_name = "switch" + phases;
-                        elif (measurement_type == "PNV"):
+                        elif measurement_type == "PNV":
                             object_name = "cap_" + conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {}.".format(measurement_type))
                     elif "PowerTransformer" in conducting_equipment_type:
-                        if(measurement_type == "VA"):
+                        if measurement_type == "VA":
                             object_name = "xf_" + conducting_equipment_name;
                             property_name = "power_in_" + phases;
-                        elif (measurement_type == "PNV"):
+                        elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
-                        elif(measurement_type == "A"):
+                        elif measurement_type == "A":
                             object_name = "xf_" + conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "RatioTapChanger" in conducting_equipment_type:
-                        if(measurement_type == "VA"):
+                        if measurement_type == "VA":
                             object_name = "reg_" + conducting_equipment_name;
                             property_name = "power_in_" + phases;
-                        elif (measurement_type == "PNV"):
+                        elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
-                        elif(measurement_type == "Pos"):
+                        elif measurement_type == "Pos":
                             object_name = "reg_" + conducting_equipment_name;
                             property_name = "tap_" + phases;
-                        elif(measurement_type == "A"):
+                        elif measurement_type == "A":
                             object_name = "reg_" + conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {}.".format(measurement_type))
-                    elif ("ACLineSegment" in conducting_equipment_type):
-                        if(measurement_type == "VA"):
-                            object_name = "line_" + conducting_equipment_name;
+                    elif "ACLineSegment" in conducting_equipment_type:
+                        if phases in ["1","2"]:
+                            prefix = "tpx_"
+                        else:
+                            prefix = "line_"
+                        if measurement_type == "VA":
+                            object_name = prefix + conducting_equipment_name;
                             property_name = "power_in_" + phases;
-                        elif (measurement_type == "PNV"):
+                        elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
-                        elif(measurement_type == "A"):
-                            object_name = "line_" + conducting_equipment_name;
+                        elif measurement_type == "A":
+                            object_name = prefix + conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
-                    elif ("LoadBreakSwitch" in conducting_equipment_type):
-                        if(measurement_type == "VA"):
+                    elif "LoadBreakSwitch" in conducting_equipment_type:
+                        if measurement_type == "VA":
                             object_name = "swt_" + conducting_equipment_name;
                             property_name = "power_in_" + phases;
-                        elif (measurement_type == "PNV"):
+                        elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
-                        elif(measurement_type == "A"):
+                        elif measurement_type == "A":
                             object_name = "swt_" + conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
+                    elif "EnergyConsumer" in conducting_equipment_type:
+                        if measurement_type == "VA":
+                            object_name = connectivityNode;
+                            property_name = "measured_power_" + phases;
+                        elif measurement_type == "PNV":
+                            object_name = connectivityNode;
+                            property_name = "voltage_" + phases;
+                        elif measurement_type == "A":
+                            object_name = connectivityNode;
+                            property_name = "measured_current_" + phases;
+                        else:
+                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
+                    elif "PowerElectronicsConnection" in conducting_equipment_type:
+                        if measurement_type == "VA":
+                            object_name = connectivityNode;
+                            property_name = "measured_power_" + phases;
+                        elif measurement_type == "PNV":
+                            object_name = connectivityNode;
+                            property_name = "voltage_" + phases;
+                        elif measurement_type == "A":
+                            object_name = connectivityNode;
+                            property_name = "measured_current_" + phases;
+                        else:
+                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     else:
-                        raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, and PowerTransformer.\conducting_equipment_type = {}.".format(conducting_equipment_type))
+                        raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\conducting_equipment_type = {}.".format(conducting_equipment_type))
+                    
                     property_dict = {
                         "property" : property_name,
                         "conducting_equipment_type" : conducting_equipment_type,
@@ -654,13 +694,20 @@ def _byteify(data, ignore_dicts = False):
     # if it's anything else, return it in its original form
     return data
  
-
+ 
+def _keep_alive():
+    while 1:
+        time.sleep(0.1)
+        
+        
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
  
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
     _register_with_fncs_broker(simulation_broker_location)
+    _create_cim_object_map(measurement_map_file)
     _keep_alive()
+    
         
 if __name__ == "__main__":
     #TODO: send simulation_id, fncsBrokerLocation, gossLocation, 
@@ -669,4 +716,5 @@ if __name__ == "__main__":
     sim_broker_location = sys.argv[2]
     sim_dir = sys.argv[3]
     _main(simulation_id, sim_broker_location, sim_dir) 
+    debugFile.close()
     
