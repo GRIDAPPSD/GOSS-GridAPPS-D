@@ -133,7 +133,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "SimulationOutput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(gson.toJson(message), requestId);
+		provenProducer.sendMessage(message.toString().replace("\\\"", "\""), requestId);
 	}
 	
 	
@@ -143,7 +143,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(gson.toJson(message), requestId);
+		provenProducer.sendMessage(message.toString().replace("\\\"", "\""), requestId);
 	}
 
 }
