@@ -108,22 +108,16 @@ class GOSSListener(object):
                 message['command'] = 'update'
                 _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
             elif json_msg['command'] == 'nextTimeStep':
-                message_str = 'is next timestep'
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['command'] = 'nextTimeStep'
                 current_time = json_msg['currentTime']
-                message_str = 'incrementing to '+str(current_time)
+                message_str = 'incrementing to '+str(current_time + 1)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                message_str = 'simulation id '+str(simulation_id)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
                 message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
-                message_str = 'sending fncs output message '+str(response_msg)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
@@ -318,12 +312,16 @@ def _get_fncs_bus_messages(simulation_id):
             fncs_output_dict = json_loads_byteified(fncs_output)
 
             sim_dict = fncs_output_dict.get(simulation_id, None)
-
+            
             if sim_dict != None:
+                a = time.time()
+                c = 0
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
-                        raise RuntimeError("All measurements for object {} are missing from the simulator output.".format(x))
+                        err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
+                        _send_simulation_status('ERROR', err_msg, 'ERROR')
+                        raise RuntimeError(err_msg)
                     for y in object_property_to_measurement_id[x]:
                         measurement = {}
                         property_name = y["property"]
@@ -332,14 +330,12 @@ def _get_fncs_bus_messages(simulation_id):
                         conducting_equipment_type_str = y["conducting_equipment_type"]
                         prop_val_str = gld_properties_dict.get(property_name, None)
                         if prop_val_str == None:
-                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
-                            print("WARN: {} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                            err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
+                            _send_simulation_status('ERROR', err_msg, 'ERROR')
+                            raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                         else:
                             val_str = str(prop_val_str).split(" ")[0]
                             conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
-                            
-                            #measurement["type"] = conducting_equipment_type
-                            #measurement["prop_name"] = property_name
                             if conducting_equipment_type == "LinearShuntCompensator":
                                 if property_name in ["shunt_"+phases,"voltage_"+phases]:
                                     val = complex(val_str)
@@ -372,15 +368,19 @@ def _get_fncs_bus_messages(simulation_id):
                                 measurement["value"] = int(val_str)
                             else:
                                 _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                print("WARN "+conducting_equipment_type+" not recognized")
+                                raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                 # Should it raise runtime?
                             cim_measurements_dict["message"]["measurements"].append(measurement)
-                cim_str = str(json.dumps(cim_measurements_dict))
+                            c+=1
+                            #_send_simulation_status('RUNNING', "number of measurements parsed = {}".format(c), 'DEBUG')
+                _send_simulation_status('RUNNING', 'it took {} seconds to translate the simulation message.'.format(time.time() - a),'DEBUG')
+                cim_str = json.dumps(cim_measurements_dict)
             else:
-                raise RuntimeError("The message recieved from the simulator did not have the simulation id as a key in the json message.")
-        message_str = 'fncs_output '+str(cim_str)
-        print('cim output '+str(cim_str))
-        _send_simulation_status('RUNNING', cim_str, 'DEBUG')
+                err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
+                _send_simulation_status('ERROR', err_msg, 'ERROR')
+                raise RuntimeError(err_msg)
+        message_str = 'Simulation Output: {}'.format(cim_str)
+        _send_simulation_status('RUNNING', message_str, 'DEBUG')
         return cim_str
         #return fncs_output
     except Exception as e:
