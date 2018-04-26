@@ -6,13 +6,16 @@ import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.proven.api.producer.ProvenProducer;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -28,7 +31,6 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 
-import com.bigdata.service.Event;
 import com.google.gson.Gson;
 
 @Component
@@ -82,8 +84,14 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 						else if(event.getDestination().contains("input"))
 							storeSimulationInput(event.getData());
 					}catch(Exception e){
+						
+						StringWriter sw = new StringWriter();
+						PrintWriter pw = new PrintWriter(sw);
+						e.printStackTrace(pw);
+						String sStackTrace = sw.toString(); // stack trace as a string
+						System.out.println(sStackTrace);
 						logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
-								new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination(), 
+								new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace, 
 								LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
 								GridAppsDConstants.topic_platformLog);
 					}

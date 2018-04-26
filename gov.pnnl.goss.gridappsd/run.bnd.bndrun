@@ -80,7 +80,8 @@
 	com.bigdata.rdf,\
 	proven-message,\
 	gridappsd-proven-client.api,\
-	javax.ws.rs-api
+	javax.ws.rs-api,\
+	shacl
 	
 
 # Add broker name to the properties defined in shared.runprops
