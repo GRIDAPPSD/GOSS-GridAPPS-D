@@ -66,9 +66,9 @@ except:
 
 debugFile = open("/tmp/fncs_bridge_log.txt", "w")
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
-output_to_simulation_manager = '/topic/goss.gridappsd.fncs.output'
-output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
-simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
+output_to_simulation_manager = 'goss.gridappsd.fncs.output'
+output_to_goss_topic = 'goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
+simulation_input_topic = 'goss.gridappsd.simulation.input.'
 
 goss_connection= None
 is_initialized = False 
@@ -314,8 +314,6 @@ def _get_fncs_bus_messages(simulation_id):
             sim_dict = fncs_output_dict.get(simulation_id, None)
             
             if sim_dict != None:
-                a = time.time()
-                c = 0
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
@@ -371,16 +369,13 @@ def _get_fncs_bus_messages(simulation_id):
                                 raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                 # Should it raise runtime?
                             cim_measurements_dict["message"]["measurements"].append(measurement)
-                            c+=1
-                            #_send_simulation_status('RUNNING', "number of measurements parsed = {}".format(c), 'DEBUG')
-                _send_simulation_status('RUNNING', 'it took {} seconds to translate the simulation message.'.format(time.time() - a),'DEBUG')
                 cim_str = json.dumps(cim_measurements_dict)
             else:
                 err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
                 _send_simulation_status('ERROR', err_msg, 'ERROR')
                 raise RuntimeError(err_msg)
         message_str = 'Simulation Output: {}'.format(cim_str)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        _send_simulation_status('RUNNING', message_str, 'INFO')
         return cim_str
         #return fncs_output
     except Exception as e:
@@ -388,6 +383,7 @@ def _get_fncs_bus_messages(simulation_id):
         print(message_str)
         traceback.print_exc()
         _send_simulation_status('ERROR', message_str, 'ERROR')
+        return ""
         
         
 def _done_with_time_step(current_time):
@@ -488,7 +484,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
+    simulation_status_topic = "goss.gridappsd.simulation.log.{}".format(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
