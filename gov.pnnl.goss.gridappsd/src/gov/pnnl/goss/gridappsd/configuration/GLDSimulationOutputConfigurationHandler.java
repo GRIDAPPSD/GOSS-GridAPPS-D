@@ -245,13 +245,13 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			}
 		} else if (conductingEquipmentType.contains("PowerTransformer")) {
 			if(measurementType.equals("VA")) {
-				objectName = "tx_"+conductingEquipmentName;
+				objectName = "xf_"+conductingEquipmentName;
 				propertyName = "power_in_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
-				objectName = "tx_"+conductingEquipmentName;
+				objectName = "xf_"+conductingEquipmentName;
 				propertyName = "current_in_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerTransformers are VA, PNV, and A.\nmeasurementType = %s.",measurementType));
@@ -273,14 +273,20 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for RatioTapChanger are VA, PNV, A, and Pos.\nmeasurementType = %s.",measurementType));
 			}
 		} else if (conductingEquipmentType.contains("ACLineSegment")) {
+			String prefix = "";
+			if(phases.equals("1") || phases.equals("2")) {
+				prefix = "tpx_";
+			} else {
+				prefix = "line_";
+			}
 			if(measurementType.equals("VA")) {
-				objectName = "line_"+conductingEquipmentName;
+				objectName = prefix+conductingEquipmentName;
 				propertyName = "power_in_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
-				objectName = "line_"+conductingEquipmentName;
+				objectName = prefix+conductingEquipmentName;
 				propertyName = "current_in_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
