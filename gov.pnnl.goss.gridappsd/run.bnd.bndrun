@@ -81,7 +81,12 @@
 	proven-message,\
 	gridappsd-proven-client.api,\
 	javax.ws.rs-api,\
-	shacl
+	shacl,\
+	org.glassfish.jersey.core.jersey-client,\
+	javax.annotation-api,\
+	javax.inject,\
+	org.glassfish.jersey.bundles.repackaged.jersey-guava,\
+	org.glassfish.hk2.api
 	
 
 # Add broker name to the properties defined in shared.runprops
