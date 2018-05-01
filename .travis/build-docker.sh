@@ -15,7 +15,7 @@ while getopts bp option ; do
   case $option in
     b) # Pass gridappsd tag to docker-compose
       # Docker file on travis relative from root.
-      docker build --build-arg TIMESTAMP="$TIMESTAMP $TRAVIS_BRANCH" -t ${IMAGE}:$TAG .
+      docker build --build-arg TIMESTAMP="${TIMESTAMP}:${TRAVIS_BRANCH}" -t ${IMAGE}:$TAG .
       ;;
     p) # Pass gridappsd tag to docker-compose
       docker tag ${IMAGE}:$TAG ${IMAGE}:$TIMESTAMP
