@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ServiceInfo implements Serializable {
 	
@@ -57,7 +58,7 @@ public class ServiceInfo implements Serializable {
 	String creator;
 	List<String> input_topics;
 	List<String> output_topics;
-	String static_args;
+	List<String> static_args;
 	String execution_path;
 	ServiceType type;
 	boolean launch_on_startup;
@@ -106,11 +107,11 @@ public class ServiceInfo implements Serializable {
 		this.output_topics = output_topics;
 	}
 
-	public String getStatic_args() {
+	public List<String> getStatic_args() {
 		return static_args;
 	}
 
-	public void setStatic_args(String static_args) {
+	public void setStatic_args(List<String> static_args) {
 		this.static_args = static_args;
 	}
 
@@ -172,7 +173,7 @@ public class ServiceInfo implements Serializable {
 		Gson  gson = new Gson();
 		ServiceInfo obj = gson.fromJson(jsonString, ServiceInfo.class);
 		if(obj.id==null)
-			throw new RuntimeException("Expected attribute service_id not found");
+			throw new JsonSyntaxException("Expected attribute service_id not found");
 		return obj;
 	}
 	

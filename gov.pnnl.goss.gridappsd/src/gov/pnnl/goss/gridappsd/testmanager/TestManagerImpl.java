@@ -63,7 +63,6 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -109,8 +108,6 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile ProcessManager processManager;
 	
-	@ServiceDependency
-	private volatile StatusReporter statusReporter;
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
@@ -119,12 +116,10 @@ public class TestManagerImpl implements TestManager {
 	public TestManagerImpl(ClientFactory clientFactory, 
 			ConfigurationManager configurationManager,
 			SimulationManager simulationManager,
-			StatusReporter statusReporter,
 			LogManager logManager){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
-		this.statusReporter = statusReporter;
 		this.logManager = logManager;
 	}
 	
@@ -135,7 +130,7 @@ public class TestManagerImpl implements TestManager {
 			LogMessage logMessageObj = createLogMessage();
 			
 			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj,GridAppsDConstants.username);
+			logManager.log(logMessageObj,GridAppsDConstants.username, null);
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -175,7 +170,7 @@ public class TestManagerImpl implements TestManager {
 					DataResponse event = (DataResponse)message;
 					logMessageObj.setTimestamp(new Date().getTime());
 					logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj,GridAppsDConstants.username);
+					logManager.log(logMessageObj,GridAppsDConstants.username,null);
 					
 					RequestTest reqTest = RequestTest.parse(message.toString());
 					
@@ -201,8 +196,9 @@ public class TestManagerImpl implements TestManager {
 	
 	private LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setSource(this.getClass().getSimpleName());
 		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setProcessId(this.getClass().getName());
+		logMessageObj.setSource(this.getClass().getSimpleName());
 		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
 		logMessageObj.setStoreToDb(true);
 		logMessageObj.setTimestamp(new Date().getTime());
@@ -213,7 +209,7 @@ public class TestManagerImpl implements TestManager {
 	public TestConfiguration loadTestConfig(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLogMessage("Loading TestCofiguration from:" + path);
-		logManager.log(logMessageObj,GridAppsDConstants.username);
+		logManager.log(logMessageObj,GridAppsDConstants.username,null);
 //		path = "/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig2.json";
 //		Gson  gson = new Gson().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
@@ -243,7 +239,7 @@ public class TestManagerImpl implements TestManager {
 //			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Error" + e.getMessage());
-			logManager.log(logMessageObj,GridAppsDConstants.username);
+			logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		}
 		return testConfig;
 	}
@@ -251,7 +247,7 @@ public class TestManagerImpl implements TestManager {
 	public TestScript loadTestScript(String path){
 		LogMessage logMessageObj = createLogMessage();
 		logMessageObj.setLogMessage("Loading TestScript from:" + path);
-		logManager.log(logMessageObj,GridAppsDConstants.username);
+		logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		JsonReader jsonReader;
 		TestScript testScript = null;
@@ -265,7 +261,7 @@ public class TestManagerImpl implements TestManager {
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Error" + e.getMessage());
-			logManager.log(logMessageObj,GridAppsDConstants.username);
+			logManager.log(logMessageObj,GridAppsDConstants.username,null);
 		}
 		return testScript;
 	}
@@ -311,7 +307,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	private void requestSimOld(Client client, Serializable message, DataResponse event) {
-		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
+//		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
 		//TODO: create registry mapping between request topics and request handlers.
 		switch(event.getDestination().replace("/queue/", "")){
 			case topic_requestTest : {
@@ -343,14 +339,14 @@ public class TestManagerImpl implements TestManager {
 					
 					//start simulation
 					log.debug("Starting simulation for id "+ testId);
-					simulationManager.startSimulation(testId, simulationFile, config.getSimulation_config());
+					simulationManager.startSimulation(testId, config.getSimulation_config(),null);
 					log.debug("Starting simulation for id "+ testId);
 						
 //								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
 				}catch (Exception e){
 					e.printStackTrace();
 					try {
-						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
+//						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
 						log.error("Test Initialization error",e);
 					} catch (Exception e1) {
 						e1.printStackTrace();

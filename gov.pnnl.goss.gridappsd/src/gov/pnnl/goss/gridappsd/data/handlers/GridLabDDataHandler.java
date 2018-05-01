@@ -60,7 +60,6 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
@@ -68,20 +67,20 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 //import gov.pnnl.goss.cim2glm.queryhandler.impl.HTTPBlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.Response;
 //import pnnl.goss.core.server.DataSourcePooledJdbc;
 import pnnl.goss.core.server.DataSourceRegistry;
 import pnnl.goss.core.server.DataSourceType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.SimpleStatusReporterImpl;
 
 
 @Component
@@ -127,7 +126,9 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 		try {
 			GridAppsDataHandler handler = new GridLabDDataHandler();
 			
-			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new SimpleStatusReporterImpl());
+			
+			
+			handler.handle(request, 12345, "d:\\tmp\\gridlabd-tmp\\", new LogManagerImpl());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -147,8 +148,10 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 	
 	
 	@Override
-	public Response handle(Serializable request, int simulationId, String tempDataPath, StatusReporter statusReporter) throws Exception {
-		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
+	public Response handle(Serializable request, int simulationId, String tempDataPath, LogManager logManager) throws Exception {
+//		statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "Generating GridLABD simulation files");
+		//TODO log message
+		
 		//TODO check content in the request for validity
 		if(request instanceof String){
 			request = RequestSimulation.parse((String)request);
@@ -210,11 +213,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				
 				String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 				if(bgHost==null || bgHost.trim().length()==0){
-					bgHost = "http://localhost:9999";
+					bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;;
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
-				
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;
 				boolean bWantZip = false;
@@ -242,8 +245,11 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					}
 					
 					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					//cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
+					//		modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction, fXY);
+					queryHandler.addFeederSelection(dataRequest.getPower_system_config().Line_name);
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, zFraction, iFraction, pFraction); 
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
 //										"-v="+modelConfig.voltage_multiplier, "-s="+modelConfig.power_unit_conversion, "-q="+modelConfig.unique_names, "-n="+modelConfig.schedule_name, 
 //										"-z="+zFraction, "-i="+iFraction, "-p="+pFraction,		
@@ -253,7 +259,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					rdfToGLM.process(args);
 					
 					
-				
+				 
 				} else {
 					//Generate GLM, no zipload
 //					String[] args = {"-l="+modelConfig.load_scaling_factor,"-t="+modelConfig.triplex, "-e="+modelConfig.encoding, "-f="+modelConfig.system_frequency,
@@ -262,12 +268,12 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 //					log.debug("Generating GLM file with args "+args);
 //					CIMDataRDFToGLM rdfToGLM = new CIMDataRDFToGLM();
 //					rdfToGLM.process(args);
-					
-					cim2glm.start(queryHandler, outBaseFile, modelConfig.schedule_name, 
-							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0, fXY);
+					queryHandler.addFeederSelection(dataRequest.getPower_system_config().Line_name);
+					cim2glm.start(queryHandler, "glm", tempDataPathDir.getAbsolutePath()+File.separator+simulationName, modelConfig.schedule_name, 
+							modelConfig.load_scaling_factor, bWantSched, bWantZip, 0, 0, 0); 
 				
 				}
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD base file generated");
 				//cleanup rdf file
 //				rdfFile.delete();
 				
@@ -296,7 +302,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				configFileOut.write(configFileValue.getBytes());
 				configFileOut.flush();
 				configFileOut.close();
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD output config file generated");
 
 				
 				//generate simulation config startup file
@@ -326,6 +332,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("#set minimum_timestep=0.1");
 				
 				startupFileWriter.println("module connection;");
+				startupFileWriter.println("module generators;");
 				startupFileWriter.println("module tape;");
 				startupFileWriter.println("module powerflow {");
 				startupFileWriter.println("     line_capacitance TRUE;");
@@ -333,24 +340,24 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.println("}");
 				
 				startupFileWriter.println("object fncs_msg {");
-				startupFileWriter.println("     name "+simulationName+";");
+				startupFileWriter.println("     name "+simulationId+";");
 				startupFileWriter.println("     message_type JSON;");
 				startupFileWriter.println("     configure configfile.json;");
 				startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
 				startupFileWriter.println("}");
 				startupFileWriter.println("object recorder {");
-				startupFileWriter.println("     parent "+simulationName+";");
+				startupFileWriter.println("     parent "+simulationId+";");
 				startupFileWriter.println("     property message_type;");
-				startupFileWriter.println("     file "+simulationName+".csv;");
+				startupFileWriter.println("     file "+simulationId+".csv;");
 				startupFileWriter.println("     interval 60;");
 				startupFileWriter.println("}");
-				startupFileWriter.println("object multi_recorder {");
+				/*startupFileWriter.println("object multi_recorder {");
 				startupFileWriter.println("          parent "+simulationName+";");
-				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,nd__hvmv_sub_lsb:voltage_A,nd__hvmv_sub_lsb:voltage_B,nd__hvmv_sub_lsb:voltage_C;");
+				startupFileWriter.println("          property xf_hvmv_sub:power_in_A,xf_hvmv_sub:power_in_B,xf_hvmv_sub:power_in_C,reg_FEEDER_REG:tap_A,reg_FEEDER_REG:tap_B,reg_FEEDER_REG:tap_C,_hvmv_sub_lsb:voltage_A,_hvmv_sub_lsb:voltage_B,_hvmv_sub_lsb:voltage_C;");
 				startupFileWriter.println("         file "+simulationName+"_debug_states.csv;");
 				startupFileWriter.println("         interval 1;");
 				startupFileWriter.println("         limit 120;");
-				startupFileWriter.println("}");
+				startupFileWriter.println("}");*/
 				if(modelConfig.schedule_name!=null && modelConfig.schedule_name.trim().length()>0){
 					startupFileWriter.println("class player {");
 					startupFileWriter.println("	double value;");
@@ -369,16 +376,16 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				startupFileWriter.flush();
 				startupFileWriter.close();
 				
-				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
+//				statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+simulationId, "GridLABD startup file generated");
 
 				
 				return new DataResponse(startupFile);
 				
 				
 				
-			} catch (SQLException e) {
-				log.error("Error while generating GridLABD config files", e);
-				throw new Exception("SQL error while generating GLM configuration",e);
+//			} catch (SQLException e) {
+//				log.error("Error while generating GridLABD config files", e);
+//				throw new Exception("SQL error while generating GLM configuration",e);
 			} catch (IOException e) {
 				log.error("Error while generating GridLABD config files", e);
 				throw new Exception("IO error while generating GLM configuration",e);

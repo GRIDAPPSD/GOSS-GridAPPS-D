@@ -39,13 +39,17 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
-public class SimulationOutput {
+public class SimulationOutput implements Serializable{
 
+	private static final long serialVersionUID = 1L;
+	
 	public List<SimulationOutputObject> output_objects;
 
 	
@@ -71,7 +75,7 @@ public class SimulationOutput {
 		Gson  gson = new Gson();
 		SimulationOutput obj = gson.fromJson(jsonString, SimulationOutput.class);
 		if(obj.output_objects==null)
-			throw new RuntimeException("Expected attribute output_objects not found");
+			throw new JsonSyntaxException("Expected attribute output_objects not found");
 		return obj;
 	}
 }

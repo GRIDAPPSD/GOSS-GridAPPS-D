@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class RequestAppRegister implements Serializable {
 	
@@ -89,7 +90,7 @@ public class RequestAppRegister implements Serializable {
 		Gson  gson = new Gson();
 		RequestAppRegister obj = gson.fromJson(jsonString, RequestAppRegister.class);
 		if(obj.app_info==null)
-			throw new RuntimeException("Expected attribute app_info not found");
+			throw new JsonSyntaxException("Expected attribute app_info not found");
 		return obj;
 	}
 }

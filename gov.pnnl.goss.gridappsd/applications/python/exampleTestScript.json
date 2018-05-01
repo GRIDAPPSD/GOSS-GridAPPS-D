@@ -15,7 +15,7 @@
 	   		  "regulator_list": ["reg_FEEDER_REG", "reg_VREG2", "reg_VREG3", "reg_VREG4"],
 	   		  "regulator_configuration_list": ["rcon_FEEDER_REG", "rcon_VREG2", "rcon_VREG3", "rcon_VREG4"],
 	   		  "capacitor_list": ["cap_capbank0a","cap_capbank0b", "cap_capbank0c", "cap_capbank1a", "cap_capbank1b", "cap_capbank1c", "cap_capbank2a", "cap_capbank2b", "cap_capbank2c", "cap_capbank3"],
-	   		  "voltage_measurements": ["nd_l2955047,1", "nd_l3160107,1", "nd_l2673313,2", "nd_l2876814,2", "nd_m1047574,3", "nd_l3254238,4"],
+	   		  "voltage_measurements": ["l2955047,1", "l3160107,1", "l2673313,2", "l2876814,2", "m1047574,3", "l3254238,4"],
 	   		  "maximum_voltages": 7500,
 	   		  "minimum_voltages": 6500,
 	   		  "max_vdrop": 5200,

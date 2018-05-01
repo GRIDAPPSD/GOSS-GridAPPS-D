@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class FncsBridgeResponse {
 	public long timestamp;
@@ -84,7 +85,7 @@ public class FncsBridgeResponse {
 		Gson  gson = new Gson();
 		FncsBridgeResponse obj = gson.fromJson(jsonString, FncsBridgeResponse.class);
 		if(obj.command==null)
-			throw new RuntimeException("Expected attribute command not found");
+			throw new JsonSyntaxException("Expected attribute command not found");
 		return obj;
 	}
 }

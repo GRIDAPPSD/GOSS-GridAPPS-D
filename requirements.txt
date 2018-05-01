@@ -1,0 +1,5 @@
+# Base requirements to work with the message bus and debugging
+# of python applications.
+remote_pdb==1.2.0
+PyYaml==3.12
+stomp.py==4.1.11

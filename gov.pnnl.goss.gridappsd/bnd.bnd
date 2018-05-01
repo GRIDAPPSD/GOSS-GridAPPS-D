@@ -6,16 +6,14 @@
 	pnnl.goss.core.core-api;version=latest,\
 	pnnl.goss.core.goss-core-security,\
 	pnnl.goss.core.goss-core-server-api,\
-	pnnl.goss.core.goss-client,\
+	pnnl.goss.core.goss-client;version=latest,\
 	pnnl.goss.core.goss-core-server,\
 	pnnl.goss.core.goss-core-server-web,\
 	pnnl.goss.core.goss-core-server-registry,\
-	org.apache.httpcomponents.httpclient,\
 	com.springsource.javax.jms,\
 	slf4j.api,\
 	org.apache.activemq.activemq-osgi,\
 	com.springsource.javax.management.j2ee,\
-	org.apache.felix.http.jetty,\
 	com.google.gson,\
 	org.fusesource.stompjms.stompjms-client,\
 	org.apache.commons.math3,\
@@ -30,8 +28,10 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	blazegraph.cim2glm
-
+	blazegraph.cim2glm;version=latest,\
+	httpclient,\
+	com.bigdata.rdf
+	
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd
