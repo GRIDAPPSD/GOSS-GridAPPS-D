@@ -80,7 +80,7 @@ def test_get_fncs_bus_messages(  mock_sys,mock__keep_alive, mock_fncs, mock_goss
     #offset to avoid timestamp
     assert res[70] == expected_cim_output[70]
         
-@mock.patch('service.fncs_goss_bridge.datetime')
+#@mock.patch('service.fncs_goss_bridge.datetime')
 @mock.patch('service.fncs_goss_bridge.stomp')
 @mock.patch('service.fncs_goss_bridge.goss_connection')
 @mock.patch('service.fncs_goss_bridge.fncs')

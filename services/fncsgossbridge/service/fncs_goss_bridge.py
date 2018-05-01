@@ -285,9 +285,9 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     fncs.publish_anon(fncs_input_topic, gridlabd_message)
     
 def _convert_to_gld(goss_message):
+    gld_message = ''
     
-    
-    return ""
+    return goss_message
     
     
 def _get_fncs_bus_messages(simulation_id):
@@ -387,7 +387,6 @@ def _get_fncs_bus_messages(simulation_id):
                             cim_measurements_dict["message"]["measurements"].append(measurement)
             cim_str = str(json.dumps(cim_measurements_dict))               
         message_str = 'fncs_output '+str(cim_str)
-        print('cim output '+str(cim_str))
         _send_simulation_status('RUNNING', cim_str, 'DEBUG')
         return cim_str
         #return fncs_output
@@ -504,9 +503,7 @@ def _send_simulation_status(status, message, log_level):
         if log_level not in valid_level:
             log_level = 'INFO'
         t_now = datetime.utcnow()
-        print("TNOW "+str(t_now.timetuple()))
         ts = int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond
-        print("TIMESTAMP "+str(ts))
         status_message = {
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
