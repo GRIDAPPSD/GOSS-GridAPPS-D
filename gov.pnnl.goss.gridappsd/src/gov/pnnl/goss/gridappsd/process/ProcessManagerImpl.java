@@ -150,7 +150,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 			
 			
-			client.subscribe(GridAppsDConstants.topic_prefix+".>", new ProcessEvent(this, 
+			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this, 
 					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager));
 		}
 		catch(Exception e){

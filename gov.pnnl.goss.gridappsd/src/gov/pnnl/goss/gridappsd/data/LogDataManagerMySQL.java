@@ -39,16 +39,12 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data;
 
-import gov.pnnl.goss.gridappsd.api.LogDataManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.DataTruncation;
 import java.sql.Timestamp;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -59,6 +55,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -120,7 +120,11 @@ public class LogDataManagerMySQL implements LogDataManager {
 				
 				preparedStatement.executeUpdate();
 				
-				
+			} catch (DataTruncation e) {
+				log.error("Error while storing log:");
+				log.error("error = " + e.getMessage());
+				log.error("source = " + source);
+				log.error("message = " + log_message);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
