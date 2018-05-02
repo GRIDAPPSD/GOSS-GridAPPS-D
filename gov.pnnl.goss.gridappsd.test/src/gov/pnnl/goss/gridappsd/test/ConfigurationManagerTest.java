@@ -74,7 +74,12 @@ public class ConfigurationManagerTest {
 			e.printStackTrace();
 		}
 		System.out.println("SIMULATION ID "+test.simulationId);
-		
+//		try {
+//			Thread.sleep(35000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 //		test.testgetGLDAllConfiguration();
 //		test.testgetCIMDictConfiguration();
 //		test.testgetGLDSimulationOutputConfiguration();
@@ -272,7 +277,7 @@ public class ConfigurationManagerTest {
 			
 			if(response instanceof String){
 				String responseStr = response.toString();
-				System.out.println("Response: "+responseStr);
+//				System.out.println("Response: "+responseStr);
 
 				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println(dataResponse.isError());

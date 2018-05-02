@@ -132,7 +132,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 				GridAppsDConstants.topic_platformLog);
 		log.debug(powerSystemConfig.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
-		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
+		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), "");
 		
 		if(resp!=null && (resp instanceof DataResponse) && (((DataResponse)resp).getData())!=null && (((DataResponse)resp).getData() instanceof File)){
 			//Update simulation status after every step, for example:
