@@ -202,7 +202,7 @@ class GOSSListener(object):
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
-                _send_simulation_status('stopped', message_str, 'INFO')
+                _send_simulation_status('CLOSED', message_str, 'INFO')
                 fncs.die()
                 sys.exit()
         
@@ -242,7 +242,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
     configuration_zpl = ''
     try:
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
-        _send_simulation_status('STARTED', message_str, 'INFO')
+        ('STARTED', message_str, 'INFO')
         
         message_str = 'still connected to goss 1 '+str(goss_connection.is_connected())
         _send_simulation_status('STARTED', message_str, 'INFO')
@@ -525,7 +525,7 @@ def _get_fncs_bus_messages(simulation_id):
                 _send_simulation_status('ERROR', err_msg, 'ERROR')
                 raise RuntimeError(err_msg)
         message_str = 'Simulation Output: {}'.format(cim_str)
-        _send_simulation_status('RUNNING', message_str, 'INFO')
+        #_send_simulation_status('RUNNING', message_str, 'INFO')
         return cim_str
         #return fncs_output
     except Exception as e:
@@ -634,7 +634,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "goss.gridappsd.simulation.log.{}".format(simulation_id)
+    simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']

@@ -8,8 +8,8 @@ RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
   && cd gridappsd-python \
   && python setup.py sdist \
-  && pip3 install dist/gridappsd-0.2.tar.gz \
-  && pip install dist/gridappsd-0.2.tar.gz \
+  && pip3 install dist/gridappsd-0.4.tar.gz \
+  && pip install dist/gridappsd-0.4.tar.gz \
   && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
