@@ -162,7 +162,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@Override
 	public ResultSet queryResultSet(String modelId, String query) {
 		String endpoint = getEndpointURL(modelId);
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, "", "");
 		return  queryHandler.query(query);
 		
 	}
@@ -194,7 +194,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public ResultSet queryObjectResultSet(String modelId, String mrid) {
 		String query = "select ?property ?value where {<"+getEndpointURL(modelId)+"#"+mrid+"> ?property ?value}";
 
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, "", "");
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 
@@ -214,7 +214,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 		}
 		query = query + "}";
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, "", "");
 		ResultSet rs = queryHandler.query(query);
 		
 		List<String> objectTypes = new ArrayList<String>(); 
@@ -377,7 +377,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		query = query+"}";
 		System.out.println(query);
 		
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, "", "");
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 	}

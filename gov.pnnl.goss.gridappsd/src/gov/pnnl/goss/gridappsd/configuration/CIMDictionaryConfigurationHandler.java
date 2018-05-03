@@ -39,6 +39,8 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Properties;
 
@@ -55,7 +57,10 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -69,12 +74,15 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
+	private volatile SimulationManager simulationManager;
+	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
 	@ServiceDependency 
 	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "CIM Dictionary";
 	public static final String MODELID = "model_id";
+	public static final String SIMULATIONID = "simulation_id";
 	
 	public CIMDictionaryConfigurationHandler() {
 	}
@@ -103,6 +111,25 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
 
+		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		File configFile = null;
+		if(simulationId!=null){
+			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+			if(simulationContext!=null){
+				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
+				//If the config file already has been created for this simulation then return it
+				if(configFile.exists()){
+					printFileToOutput(configFile, out);
+					logRunning("Dictionary GridLAB-D configuration file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					return;
+				}
+			} else {
+				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+			}
+		}
+		
+		
+		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
 			logError("No "+MODELID+" parameter provided", processId, username, logManager);
@@ -116,13 +143,22 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		}
 		
 		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.generateDictionaryFile(queryHandler, out);
+		//If the simulation info is available also write to file
+		if(configFile!=null){
+			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)));
+		} else {
+			cimImporter.generateDictionaryFile(queryHandler, out);
+		}
+		if(configFile!=null){
+			//config was written to file, so return that
+			printFileToOutput(configFile, out);
+		}
+		
 		logRunning("Finished generating Dictionary GridLAB-D configuration file.", processId, username, logManager);
-
 	}
 	
 	

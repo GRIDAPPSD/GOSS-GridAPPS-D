@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.configuration;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
@@ -72,7 +73,10 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -86,6 +90,8 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
+	private volatile SimulationManager simulationManager;
+	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
 	@ServiceDependency
 	volatile LogManager logManager;
@@ -93,7 +99,8 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String TYPENAME = "GridLAB-D Simulation Output";
 	public static final String MODELID = "model_id";
 	public static final String DICTIONARY_FILE = "dictionary_file";
-	
+	public static final String SIMULATIONID = "simulation_id";
+
 	public GLDSimulationOutputConfigurationHandler() {
 	}
 	 
@@ -123,7 +130,25 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		logRunning("Generating simulation output configuration file using parameters: "+parameters, processId, username, logManager);
-
+		File dictFile = null;
+		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		File configFile = null;
+		if(simulationId!=null){
+			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+			if(simulationContext!=null){
+				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.MEASUREMENTOUTPUTS_FILENAME);
+				dictFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
+				//If the config file already has been created for this simulation then return it
+				if(configFile.exists()){
+					printFileToOutput(configFile, out);
+					logRunning("Dictionary GridLAB-D simulation outputs file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					return;
+				}
+			} else {
+				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+			}
+		}
+		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
 			logError("No "+MODELID+" parameter provided", processId, username, logManager);
@@ -131,7 +156,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		}
 		
 		//If passed in, use location of dictionary file, otherwise it will attempt to generate it
-		File dictFile = null;
 		String dictFilePath = GridAppsDConstants.getStringProperty(parameters, DICTIONARY_FILE, null);
 		if(dictFilePath!=null){
 			dictFile = new File(dictFilePath);
@@ -146,21 +170,34 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		
 		Reader measurementFileReader;
 		
-		if(dictFile!=null && dictFile.exists()){
+		if(dictFile!=null && dictFile.getName().length()>0 && dictFile.exists()){
 			measurementFileReader = new FileReader(dictFile);
 		} else {
 			//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-			QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+			QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 			queryHandler.addFeederSelection(modelId);
 			CIMImporter cimImporter = new CIMImporter(); 
 			StringWriter dictionaryStringOutput = new StringWriter();
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
+			
 			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput);
 			String dictOut = dictionaryStringOutput.toString();
+			measurementFileReader = null;
+			if(dictFile!=null && dictFile.getName().length()>0 && !dictFile.exists()){
+				FileWriter fw = new FileWriter(dictFile);
+				fw.write(dictOut);
+				fw.close();
+			}
 			measurementFileReader = new StringReader(dictOut);
 		}
 		
 		String result = CreateGldPubs(measurementFileReader, processId, username);
+
+		if(configFile!=null){
+			FileWriter fw = new FileWriter(configFile);
+			fw.write(result);
+			fw.close();
+		}
 		//return result;
 		out.write(result);
 		out.flush();
