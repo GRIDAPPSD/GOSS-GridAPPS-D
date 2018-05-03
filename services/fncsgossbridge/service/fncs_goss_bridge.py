@@ -177,7 +177,7 @@ class GOSSListener(object):
                 message['command'] = 'isInitialized'
                 message['response'] = str(is_initialized)
                 if (simulation_id != None):
-                    message['output'] = _get_fncs_bus_messages(simulation_id)
+                    message['output'] = "{}".format(_get_fncs_bus_messages(simulation_id))
                 message_str = 'Added isInitialized output, sending message '+str(message)+' connection '+str(goss_connection)
                 if fncs.is_initialized():
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -196,7 +196,7 @@ class GOSSListener(object):
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                message['output'] = _get_fncs_bus_messages(simulation_id)
+                message['output'] = "{}".format(_get_fncs_bus_messages(simulation_id))
                 message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
@@ -448,7 +448,7 @@ def _get_fncs_bus_messages(simulation_id):
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
-        cim_str = ""
+        cim_output = {}
         if simulation_id in message_events:
             cim_measurements_dict = {
                 "simulation_id": simulation_id,
@@ -519,21 +519,20 @@ def _get_fncs_bus_messages(simulation_id):
                                 raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                 # Should it raise runtime?
                             cim_measurements_dict["message"]["measurements"].append(measurement)
-                cim_str = json.dumps(cim_measurements_dict)
+                cim_output = cim_measurements_dict
             else:
                 err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
                 _send_simulation_status('ERROR', err_msg, 'ERROR')
                 raise RuntimeError(err_msg)
-        message_str = 'Simulation Output: {}'.format(cim_str)
         #_send_simulation_status('RUNNING', message_str, 'INFO')
-        return cim_str
+        return cim_output
         #return fncs_output
     except Exception as e:
         message_str = 'Error on get FncsBusMessages for '+str(simulation_id)+' '+str(traceback.format_exc())
         print(message_str)
         traceback.print_exc()
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        return ""
+        return {}
         
         
 def _done_with_time_step(current_time):
