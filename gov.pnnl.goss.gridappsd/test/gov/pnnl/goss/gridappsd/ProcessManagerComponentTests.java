@@ -40,24 +40,19 @@
 package gov.pnnl.goss.gridappsd;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
 import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
-import java.text.ParseException;
 
 import javax.jms.Destination;
 
@@ -90,9 +85,6 @@ public class ProcessManagerComponentTests {
 	SimulationManager simulationManager;
 	
 	@Mock 
-	StatusReporter statusReporter;
-	
-	@Mock 
 	AppManager appManager;
 	
 	@Mock
@@ -116,7 +108,8 @@ public class ProcessManagerComponentTests {
 	 */
 	@Test
 	public void infoCalledWhen_processManagerStarted(){
-		// TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
+
+    // TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
 //
 //		try {
 //			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -138,6 +131,7 @@ public class ProcessManagerComponentTests {
 //		assertEquals(logMessage.getProcessStatus(), ProcessStatus.RUNNING);
 //		
 //		assertNotNull(logMessage.getTimestamp());
+
 				
 	}
 
@@ -235,7 +229,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -263,6 +257,7 @@ public class ProcessManagerComponentTests {
 	 */
 	@Test
 	public void loggedStatusWhen_simulationTopicSent(){
+
 		// TODO the clientFactory doesn't return a satisfactory client so that there is a null pointer exception that is thrown in start of manager.
 //		try {
 //			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -322,21 +317,20 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter, logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
 
 
 		DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
-		dr.setDestination("goss.gridappsd.process.request.simulation");
+		dr.setDestination(GridAppsDConstants.topic_requestSimulation);
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
 		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
 
-
 		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), 
-				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt());
+				Mockito.anyInt(),Mockito.any(),argCaptorSerializable.capture(), Mockito.any(),Mockito.any());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));

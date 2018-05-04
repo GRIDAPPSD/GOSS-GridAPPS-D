@@ -40,9 +40,9 @@
 package gov.pnnl.goss.gridappsd.api;
 
 import java.io.File;
-import java.io.Serializable;
+import java.io.PrintWriter;
+import java.util.Properties;
 
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 
 /**
@@ -68,5 +68,7 @@ public interface ConfigurationManager {
 	 */
 	File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception;
 	String getConfigurationProperty(String key);
+	void registerConfigurationHandler(String type, ConfigurationHandler handler);
+	void generateConfiguration(String type, Properties parameters, PrintWriter out, String processId, String username) throws Exception;
 
 }

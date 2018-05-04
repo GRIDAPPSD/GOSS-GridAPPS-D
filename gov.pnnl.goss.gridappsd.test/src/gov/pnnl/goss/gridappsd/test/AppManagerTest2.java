@@ -42,7 +42,7 @@ public class AppManagerTest2 {
 	Client client;
 	private TestConfiguration testConfig;
 
-	public static final String APPLICATION_OBJECT_CONFIG= "{\\\"static_inputs\\\": {\\\"ieee8500\\\": {\\\"control_method\\\": \\\"ACTIVE\\\",\\\"capacitor_delay\\\": 60,\\\"regulator_delay\\\": 60,\\\"desired_pf\\\": 0.99,\\\"d_max\\\": 0.9,\\\"d_min\\\": 0.1,\\\"substation_link\\\": \\\"xf_hvmv_sub\\\",\\\"regulator_list\\\": [\\\"reg_FEEDER_REG\\\",\\\"reg_VREG2\\\",\\\"reg_VREG3\\\",\\\"reg_VREG4\\\"],\\\"regulator_configuration_list\\\": [\\\"rcon_FEEDER_REG\\\",\\\"rcon_VREG2\\\",\\\"rcon_VREG3\\\",\\\"rcon_VREG4\\\"],\\\"capacitor_list\\\": [\\\"cap_capbank0a\\\",\\\"cap_capbank0b\\\",\\\"cap_capbank0c\\\",\\\"cap_capbank1a\\\",\\\"cap_capbank1b\\\",\\\"cap_capbank1c\\\",\\\"cap_capbank2a\\\",\\\"cap_capbank2b\\\",\\\"cap_capbank2c\\\",\\\"cap_capbank3\\\"],\\\"voltage_measurements\\\": [\\\"nd_l2955047,1\\\",\\\"nd_l3160107,1\\\",\\\"nd_l2673313,2\\\",\\\"nd_l2876814,2\\\",\\\"nd_m1047574,3\\\",\\\"nd_l3254238,4\\\"],\\\"maximum_voltages\\\": 7500,\\\"minimum_voltages\\\": 6500,\\\"max_vdrop\\\": 5200,\\\"high_load_deadband\\\": 100,\\\"desired_voltages\\\": 7000,\\\"low_load_deadband\\\": 100,\\\"pf_phase\\\": \\\"ABC\\\"}}}";
+	public static final String APPLICATION_OBJECT_CONFIG= "{\\\"static_inputs\\\": {\\\"ieee8500\\\": {\\\"control_method\\\": \\\"ACTIVE\\\",\\\"capacitor_delay\\\": 60,\\\"regulator_delay\\\": 60,\\\"desired_pf\\\": 0.99,\\\"d_max\\\": 0.9,\\\"d_min\\\": 0.1,\\\"substation_link\\\": \\\"xf_hvmv_sub\\\",\\\"regulator_list\\\": [\\\"reg_FEEDER_REG\\\",\\\"reg_VREG2\\\",\\\"reg_VREG3\\\",\\\"reg_VREG4\\\"],\\\"regulator_configuration_list\\\": [\\\"rcon_FEEDER_REG\\\",\\\"rcon_VREG2\\\",\\\"rcon_VREG3\\\",\\\"rcon_VREG4\\\"],\\\"capacitor_list\\\": [\\\"cap_capbank0a\\\",\\\"cap_capbank0b\\\",\\\"cap_capbank0c\\\",\\\"cap_capbank1a\\\",\\\"cap_capbank1b\\\",\\\"cap_capbank1c\\\",\\\"cap_capbank2a\\\",\\\"cap_capbank2b\\\",\\\"cap_capbank2c\\\",\\\"cap_capbank3\\\"],\\\"voltage_measurements\\\": [\\\"l2955047,1\\\",\\\"l3160107,1\\\",\\\"l2673313,2\\\",\\\"l2876814,2\\\",\\\"m1047574,3\\\",\\\"l3254238,4\\\"],\\\"maximum_voltages\\\": 7500,\\\"minimum_voltages\\\": 6500,\\\"max_vdrop\\\": 5200,\\\"high_load_deadband\\\": 100,\\\"desired_voltages\\\": 7000,\\\"low_load_deadband\\\": 100,\\\"pf_phase\\\": \\\"ABC\\\"}}}";
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -134,9 +134,11 @@ public class AppManagerTest2 {
 		
 		appInfo.setLaunch_on_startup(false);
 		appInfo.setMultiple_instances(true);
-		appInfo.setOptions("SIMULATION_ID");
+		List<String> options = new ArrayList<String>();
+		options.add("SIMULATION_ID");
+		appInfo.setOptions(options);
 		List<String> prereqs = new ArrayList<String>();
-		prereqs.add("fncs-goss-bridge");
+		prereqs.add("fncsgossbridge");
 		appInfo.setPrereqs(prereqs);
 		appInfo.setType(AppType.PYTHON);
 		

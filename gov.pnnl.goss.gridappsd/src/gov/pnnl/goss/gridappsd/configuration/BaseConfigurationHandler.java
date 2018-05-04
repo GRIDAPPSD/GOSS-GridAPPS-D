@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,29 +36,61 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.utils;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.configuration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Date;
 
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import org.apache.felix.dm.annotation.api.Start;
 
-public class SimpleStatusReporterImpl implements StatusReporter {
-	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
+
+//@Component
+public abstract class BaseConfigurationHandler  implements ConfigurationHandler {
+	
+//	private static Logger log = LoggerFactory.getLogger(BaseConfigurationHandler.class);
+	
+//	private volatile LogManager logManager;
 	
 	
-	@Override
-	public void reportStatus(String status) {
-		log.info(status);
+	public BaseConfigurationHandler() {
+	}
+	 
+	public BaseConfigurationHandler(LogManager logManager, DataManager dataManager) {
 
 	}
-
-	@Override
-	public void reportStatus(String topic, String status) throws Exception {
-		log.info(topic+":"+status);
-
+	
+	
+	@Start
+	public void start(){
 	}
 
+	
+	void logRunning(String message, String simulationID, String username, LogManager logManager){
+		logManager.log(
+				new LogMessage(this.getClass().getName(), new Integer(
+						simulationID).toString(), new Date().getTime(),
+						message, LogLevel.INFO,
+						ProcessStatus.RUNNING, false), username,
+				GridAppsDConstants.topic_platformLog);
+
+	}
+	
+	void logError(String message, String simulationID, String username, LogManager logManager){
+		logManager.log(
+				new LogMessage(this.getClass().getName(), new Integer(
+						simulationID).toString(), new Date().getTime(),
+						message, LogLevel.ERROR,
+						ProcessStatus.ERROR, false), username,
+				GridAppsDConstants.topic_platformLog);
+	}
+	
+	
 }

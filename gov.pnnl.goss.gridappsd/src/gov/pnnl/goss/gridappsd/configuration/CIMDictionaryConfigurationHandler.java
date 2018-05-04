@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,89 +36,96 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.utils;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.configuration;
+
+import java.io.PrintWriter;
+import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-import org.apache.felix.dm.annotation.api.Stop;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
+import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.Client.PROTOCOL;
 
-/**
- * The StatusReporterImpl class is a single point for writing data to the message bus.
- * 
- * During component startup the 
- *
- */
+
 @Component
-public class StatusReporterImpl implements StatusReporter {
+public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {//implements ConfigurationManager{
 
-	private static Logger log = LoggerFactory.getLogger(StatusReporterImpl.class);
-	
+	private static Logger log = LoggerFactory.getLogger(CIMDictionaryConfigurationHandler.class);
 	Client client = null; 
 	
 	@ServiceDependency
-	private volatile ClientFactory clientFactory;
+	private volatile ConfigurationManager configManager;
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency 
+	private volatile LogManager logManager;
 	
-	public StatusReporterImpl() { }
+	public static final String TYPENAME = "CIM Dictionary";
+	public static final String MODELID = "model_id";
 	
-	public StatusReporterImpl(ClientFactory clientFactory, Logger logger){
-		this.clientFactory = clientFactory;
-		StatusReporterImpl.log = logger;
+	public CIMDictionaryConfigurationHandler() {
 	}
-		
-	/**
-	 * Lifecycle method that connects a Client to the message bus.
-	 * 
-	 * An exception is thrown and the component will fail if the user name
-	 * and password for connecting to the bus is incorrect.
-	 * @throws Exception
-	 */
+	 
+	public CIMDictionaryConfigurationHandler(LogManager logManager, DataManager dataManager) {
+
+	}
+	
+	
 	@Start
-	public void start() throws Exception {
-		
-		getClient();
-	}
-	
-	@Stop
-	public void finish(){
-		try{
-			if (client != null){
-				client.close();
-			}
+	public void start(){
+		if(configManager!=null) {
+			configManager.registerConfigurationHandler(TYPENAME, this);
 		}
-		finally{
-			client = null;
-		}		
-	}
-	
-	public void reportStatus(String status) {
-		log.debug(status);		
-	}
-
-	public void reportStatus(String topic, String status) throws Exception{
-		if(client==null){
-			getClient();
+		else { 
+			//TODO send log message and exception
+			log.warn("No Config manager avilable for "+getClass());
 		}
 		
-		log.debug(String.format("%s %s", topic,  status));
-		client.publish(topic, status);
+		if(powergridModelManager == null){
+			//TODO send log message and exception
+		}
 	}
-	
 
-	
-	protected void getClient() throws Exception{
-		Credentials credentials = new UsernamePasswordCredentials(
-				GridAppsDConstants.username, GridAppsDConstants.password);
-		client = clientFactory.create(PROTOCOL.STOMP,credentials);
+	@Override
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
+		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
+
+		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+MODELID);
+		}
+		
+		
+		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+		if(bgHost==null || bgHost.trim().length()==0){
+			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		
+		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		queryHandler.addFeederSelection(modelId);
+		
+		CIMImporter cimImporter = new CIMImporter(); 
+		cimImporter.generateDictionaryFile(queryHandler, out);
+		logRunning("Finished generating Dictionary GridLAB-D configuration file.", processId, username, logManager);
+
 	}
+	
+	
+	
+	
 }

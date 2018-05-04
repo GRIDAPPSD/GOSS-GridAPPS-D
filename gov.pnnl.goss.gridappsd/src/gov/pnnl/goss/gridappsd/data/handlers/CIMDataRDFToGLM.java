@@ -312,7 +312,7 @@ public class CIMDataRDFToGLM {
 	}
 
 	static String GldPrefixedNodeName (String arg) {
-		return "nd_" + arg;
+		return arg;
 	}
 
 	static String GLD_Name (String arg, boolean bus) {	// GLD conversion

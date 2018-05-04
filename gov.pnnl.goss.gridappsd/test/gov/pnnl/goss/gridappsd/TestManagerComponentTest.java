@@ -17,7 +17,6 @@ import com.google.gson.JsonParser;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.StatusReporter;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -47,8 +46,6 @@ public class TestManagerComponentTest {
 	@Mock
 	SimulationManager simulationManager;
 	
-	@Mock 
-	StatusReporter statusReporter;
 	
 	@Mock
 	LogManager logManager;
@@ -74,10 +71,11 @@ public class TestManagerComponentTest {
 		
 		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter,logManager);
+											logManager);
 		testManager.start();
 		
-		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture()); //GridAppsDConstants.username);
+
+		Mockito.verify(logManager).log(argCaptorLogMessage.capture(), argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
 		
 		LogMessage logMessage = argCaptorLogMessage.getAllValues().get(0);
 
@@ -98,7 +96,7 @@ public class TestManagerComponentTest {
 		
 		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter,logManager);
+											logManager);
 		testManager.start();
 		String path = "./applications/python/exampleTestConfig.json";
 //		/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json
@@ -116,7 +114,7 @@ public class TestManagerComponentTest {
 		
 		TestManagerImpl testManager = new TestManagerImpl(clientFactory, 
 											configurationManager, simulationManager, 
-											statusReporter,logManager);
+											logManager);
 		testManager.start();
 		String path = "./applications/python/exampleTestScript.json";
 		TestScript testScript = testManager.loadTestScript(path);

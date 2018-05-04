@@ -42,14 +42,18 @@ package gov.pnnl.goss.gridappsd.service;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -57,6 +61,7 @@ import org.apache.felix.dm.annotation.api.Start;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.dto.EnvironmentVariable;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -83,6 +88,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	
 	private HashMap<String, ServiceInstance> serviceInstances = new HashMap<String, ServiceInstance>();
 	
+	public String simulationId;
+	public String simulationPort;
+	
+	
+	
 	public ServiceManagerImpl() {
 	}
 	 
@@ -103,21 +113,28 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Start
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		try{
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				simulationId,
 				new Date().getTime(), 
 				"Starting "+this.getClass().getName(), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username);
+				true),GridAppsDConstants.username,
+				GridAppsDConstants.topic_platformLog);
 		
 		scanForServices();
 		
-		logManager.log(new LogMessage(this.getClass().getName(), 
+		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+				null,
 				new Date().getTime(), 
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
 				true),GridAppsDConstants.username);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -218,7 +235,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions, String simulationId) {
+	public String startServiceForSimultion(String serviceId, String runtimeOptions, Map<String, Object> simulationContext) {
 		
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
@@ -233,71 +250,143 @@ public class ServiceManagerImpl implements ServiceManager{
 			throw new RuntimeException("Service is already running and multiple instances are not allowed: "+serviceId);
 		}
 
-		//build options
-		//might need a standard method for replacing things like SIMULATION_ID in the input/output options
+		File serviceDirectory = new File(getServiceConfigDirectory().getAbsolutePath()
+				+ File.separator + serviceId);
 		
+		
+		ProcessBuilder processServiceBuilder = new ProcessBuilder();
 		Process process = null;
-		//something like 
-		if(serviceInfo.getType().equals(ServiceType.PYTHON)){
-			List<String> commands = new ArrayList<String>();
-			commands.add("python");
-			commands.add(serviceInfo.getExecution_path());
-			//TODO add other options
-			
-			
-			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-			processServiceBuilder.redirectErrorStream(true);
-			processServiceBuilder.redirectOutput();
-			
-//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//		fncsBridgeBuilder.redirectErrorStream(true);
-//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//		fncsBridgeProcess = fncsBridgeBuilder.start();
-//		// Watch the process
-//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-		//during watch, send stderr/out to logmanager
-			
-		} else if(serviceInfo.getType().equals(ServiceType.EXE)){
-			List<String> commands = new ArrayList<String>();
-			commands.add(serviceInfo.getExecution_path());
+	    List<String> commands = new ArrayList<String>();
+	    Map<String, String> envVars = processServiceBuilder.environment();
+	    
+		
+	    //set environment variables
+	    List<EnvironmentVariable> envVarList = serviceInfo.getEnvironmentVariables();
+	    for(EnvironmentVariable envVar : envVarList) {
+	    	String value = envVar.getEnvValue();
+	    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+	    	if(simulationContext!=null){
+	    		if(value.contains("(")){
+	    			String[] replaceValue = StringUtils.substringsBetween(envVar.getEnvValue(), "(", ")");
+	    			for(String args : replaceValue){
+	    				value = value.replace("("+args+")",simulationContext.get(args).toString());
+	    			}
+	    		}
+	    	}
+	    	envVars.put(envVar.getEnvName(), value);
+	    }
+		
+		//add executation command	        
+	    commands.add(serviceInfo.getExecution_path());
+	    
+	    //Check if static args contain any replacement values
+		List<String> staticArgsList = serviceInfo.getStatic_args();
+		for(String staticArg : staticArgsList) {
+		    if(staticArg!=null){
+		    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+				if(simulationContext!=null){
+			    	if(staticArg.contains("(")){
+				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+				    	 for(String args : replaceArgs){
+				    		 staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
+				    	 }
+			    	}
+				}
+		    	commands.add(staticArg);
+		    }
+		}
+	    
+		if(runtimeOptions!=null){
 			commands.add(runtimeOptions);
-			//TODO add other options
-			
-			
-			ProcessBuilder processServiceBuilder = new ProcessBuilder(commands);
-			processServiceBuilder.redirectErrorStream(true);
-			processServiceBuilder.redirectOutput();
-			
-//		ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//		fncsBridgeBuilder.redirectErrorStream(true);
-//		fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//		fncsBridgeProcess = fncsBridgeBuilder.start();
-//		// Watch the process
-//		watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-		//during watch, send stderr/out to logmanager
-			
-		} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
-//			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//			fncsBridgeBuilder.redirectErrorStream(true);
-//			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//			fncsBridgeProcess = fncsBridgeBuilder.start();
-//			// Watch the process
-//			watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-			//during watch, send stderr/out to logmanager
-				
-		} else if(serviceInfo.getType().equals(ServiceType.WEB)){
-//			ProcessBuilder fncsBridgeBuilder = new ProcessBuilder("python", getPath(GridServicesDConstants.FNCS_BRIDGE_PATH), simulationConfig.getSimulation_name());
-//			fncsBridgeBuilder.redirectErrorStream(true);
-//			fncsBridgeBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"fncs_goss_bridge.log"));
-//			fncsBridgeProcess = fncsBridgeBuilder.start();
-//			// Watch the process
-//			watch(fncsBridgeProcess, "FNCS GOSS Bridge");
-			//during watch, send stderr/out to logmanager
-				
-		} else {
-			throw new RuntimeException("Type not recognized "+serviceInfo.getType());
 		}
 		
+	    
+		try{
+			if(serviceInfo.getType().equals(ServiceType.PYTHON)){
+				
+				commands.add(0,"python");
+				processServiceBuilder.command(commands);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
+				process = processServiceBuilder.start();
+				
+				
+			} else if(serviceInfo.getType().equals(ServiceType.EXE)){
+							
+				processServiceBuilder.command(commands);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
+				process = processServiceBuilder.start();
+				
+			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
+				
+				commands.add(0,"java -jar");
+				processServiceBuilder.command(commands);
+				if(serviceDirectory.exists())
+					processServiceBuilder.directory(serviceDirectory);
+				processServiceBuilder.redirectErrorStream(true);
+				processServiceBuilder.redirectOutput();
+				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+						simulationId, new Date().getTime(),
+						"Starting service with command "+ String.join(" ",commands), 
+						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						GridAppsDConstants.topic_simulationLog+simulationId);
+				process = processServiceBuilder.start();
+	
+					
+			} else if(serviceInfo.getType().equals(ServiceType.WEB)){
+	
+					
+			} else {
+				throw new RuntimeException("Type not recognized "+serviceInfo.getType());
+			}
+		} catch (IOException e) {
+			
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			String sStackTrace = sw.toString(); // stack trace as a string
+			System.out.println(sStackTrace);
+			
+			StringBuilder commandString = new StringBuilder();
+			for (String s : commands)
+			{
+				commandString.append(s);
+				commandString.append(" ");
+			}
+
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					simulationId, 
+					new Date().getTime(), 
+					"Error running command + "+ commandString,
+					LogLevel.ERROR,
+					ProcessStatus.ERROR,
+					true), 
+					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+					simulationId, 
+					new Date().getTime(), 
+					sStackTrace,
+					LogLevel.ERROR,
+					ProcessStatus.ERROR,
+					true), 
+					GridAppsDConstants.topic_simulationLog+simulationId);
+		}
 		
 		//create serviceinstance object
 		ServiceInstance serviceInstance = new ServiceInstance(instanceId, serviceInfo, runtimeOptions, simulationId, process);
@@ -350,7 +439,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public void registerService(ServiceInfo appInfo, Serializable appPackage) {
+	public void registerService(ServiceInfo serviceInfo, Serializable servicePackage) {
 		// TODO Implement this method when service registration request comes on message bus	
 	}
 	

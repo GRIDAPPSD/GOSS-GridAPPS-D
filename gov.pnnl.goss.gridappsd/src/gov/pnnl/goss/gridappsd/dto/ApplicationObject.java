@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class ApplicationObject {
 	public String name;
@@ -70,7 +71,7 @@ public class ApplicationObject {
 		Gson  gson = new Gson();
 		ApplicationObject obj = gson.fromJson(jsonString, ApplicationObject.class);
 		if(obj.name==null)
-			throw new RuntimeException("Expected attribute name not found");
+			throw new JsonSyntaxException("Expected attribute name not found");
 		return obj;
 	}
 }
