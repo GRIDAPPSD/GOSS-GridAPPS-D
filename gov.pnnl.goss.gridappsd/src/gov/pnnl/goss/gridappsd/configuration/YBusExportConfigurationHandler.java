@@ -86,6 +86,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 	volatile LogManager logManager;
 	
 	public static final String TYPENAME = "YBus Export";
+	public static final String SIMULATIONID = "simulation_id";
 	
 	public YBusExportConfigurationHandler() {
 	}
@@ -110,7 +111,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		
 		
-		String simulationId = parameters.getProperty("simulationId");
+		String simulationId = parameters.getProperty(SIMULATIONID);
 		
 		if(simulationId==null)
 			throw new Exception("Simulation Id not provided in request paramters.");

@@ -39,6 +39,11 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
 
 import org.apache.felix.dm.annotation.api.Start;
@@ -72,12 +77,14 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	public void start(){
 	}
 
-	
 	void logRunning(String message, String simulationID, String username, LogManager logManager){
+		logRunning(message, simulationID, username, logManager, LogLevel.INFO);
+	}
+	void logRunning(String message, String simulationID, String username, LogManager logManager, LogLevel logLevel){
 		logManager.log(
 				new LogMessage(this.getClass().getName(), new Integer(
 						simulationID).toString(), new Date().getTime(),
-						message, LogLevel.INFO,
+						message, logLevel,
 						ProcessStatus.RUNNING, false), username,
 				GridAppsDConstants.topic_platformLog);
 
@@ -92,5 +99,15 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 				GridAppsDConstants.topic_platformLog);
 	}
 	
+	
+	void printFileToOutput(File configFile, PrintWriter out) throws IOException{
+		BufferedReader reader = new BufferedReader(new FileReader(configFile));
+		String line;
+		while ((line = reader.readLine()) != null) {
+	            out.println(line);
+	        }
+		out.flush();
+		reader.close();
+	}
 	
 }

@@ -118,9 +118,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.query("ieee13", query, "JSON"));
 			
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
-			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON"));
-			System.out.println(bg.queryModelNameList());
-			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON"));
+			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON", "12345", "user"));
+			System.out.println(bg.queryModelNameList("12345", "user"));
+			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON", "12345", "user"));
 //			System.out.println(bg.queryModelNames("XML"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -136,9 +136,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	//,  String requestId/processId
 	@Override
-	public String query(String modelId, String query, String resultFormat) throws Exception {
+	public String query(String modelId, String query, String resultFormat, String processId, String username) throws Exception {
 		
-		ResultSet rs = queryResultSet(modelId, query);
+		ResultSet rs = queryResultSet(modelId, query, processId, username);
 		ByteArrayOutputStream resultString = new ByteArrayOutputStream();
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			ResultSetFormatter.outputAsJSON(resultString, rs);
@@ -160,18 +160,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return result;
 	}
 	@Override
-	public ResultSet queryResultSet(String modelId, String query) {
+	public ResultSet queryResultSet(String modelId, String query, String processId, String username) {
 		String endpoint = getEndpointURL(modelId);
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, processId, username);
 		return  queryHandler.query(query);
 		
 	}
 	
 	@Override
-	public String queryObject(String modelId, String mrid, String resultFormat) throws Exception {
+	public String queryObject(String modelId, String mrid, String resultFormat, String processId, String username) throws Exception {
 		// TODO Auto-generated method stub
 		
-		ResultSet rs = queryObjectResultSet(modelId, mrid);
+		ResultSet rs = queryObjectResultSet(modelId, mrid, processId, username);
 		ByteArrayOutputStream resultString = new ByteArrayOutputStream();
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			ResultSetFormatter.outputAsJSON(resultString, rs);
@@ -191,10 +191,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return result;
 	}
 	@Override
-	public ResultSet queryObjectResultSet(String modelId, String mrid) {
+	public ResultSet queryObjectResultSet(String modelId, String mrid, String processId, String username) {
 		String query = "select ?property ?value where {<"+getEndpointURL(modelId)+"#"+mrid+"> ?property ?value}";
 
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 
@@ -203,18 +203,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public String queryObjectTypes(String modelId, String resultFormat) {
-		return formatStringList(queryObjectTypeList(modelId), "objectTypes", resultFormat);
+	public String queryObjectTypes(String modelId, String resultFormat, String processId, String username) {
+		return formatStringList(queryObjectTypeList(modelId, processId, username), "objectTypes", resultFormat);
 	}
 	@Override
-	public List<String> queryObjectTypeList(String modelId) {
+	public List<String> queryObjectTypeList(String modelId, String processId, String username) {
 		String query = "select DISTINCT  ?type where {?subject rdf:type ?type ";
 		if(modelId!=null && modelId.trim().length()>0){
 			query = query+". ?subject ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
 
 		}
 		query = query + "}";
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		
 		List<String> objectTypes = new ArrayList<String>(); 
@@ -229,9 +229,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 
 	@Override
-	public String queryModel(String modelId, String objectType, String filter, String resultFormat) throws Exception {
+	public String queryModel(String modelId, String objectType, String filter, String resultFormat, String processId, String username) throws Exception {
 		String result = null;
-		ResultSet rs = queryModelResultSet(modelId, objectType, filter);
+		ResultSet rs = queryModelResultSet(modelId, objectType, filter, processId, username);
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			JsonArray resultArr = new JsonArray();
 			String baseUrl = getEndpointURL(modelId);
@@ -358,7 +358,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 	}
 	@Override
-	public ResultSet queryModelResultSet(String modelId, String objectType, String filter) {
+	public ResultSet queryModelResultSet(String modelId, String objectType, String filter, String processId, String username) {
 		if(modelId==null){
 			throw new RuntimeException("queryModel: model id missing");
 		}
@@ -377,15 +377,15 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		query = query+"}";
 		System.out.println(query);
 		
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 	}
 	
 	
 	@Override
-	public String queryModelNames(String resultFormat) {
-		return formatStringList(queryModelNameList(), "modelNames", resultFormat);
+	public String queryModelNames(String resultFormat, String processId, String username) {
+		return formatStringList(queryModelNameList(processId, username), "modelNames", resultFormat);
 	}
 	
 	
@@ -395,7 +395,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public List<String> queryModelNameList() {
+	public List<String> queryModelNameList(String processId, String username) {
 		List<String> models = new ArrayList<String>();
 
 		String modelNameQuery = "SELECT ?feeder ?fid  WHERE {"
@@ -403,7 +403,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				+ "?s c:IdentifiedObject.name ?feeder."
 				+ "?s c:IdentifiedObject.mRID ?fid	}"
 				+ " ORDER by ?fid";
-		ResultSet modelNameRS = queryResultSet(null, modelNameQuery);
+		ResultSet modelNameRS = queryResultSet(null, modelNameQuery, processId, username);
 		while(modelNameRS.hasNext()){
 			QuerySolution qs = modelNameRS.nextSolution();
 			models.add(qs.get("fid").toString());
@@ -478,7 +478,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	@Override
-	public void putModel(String modelId, String model, String inputFormat) {
+	public void putModel(String modelId, String model, String inputFormat, String processId, String username) {
 		// TODO Auto-generated method stub
 		//if model id is null throw error
 		//if namespace already exists throw error 

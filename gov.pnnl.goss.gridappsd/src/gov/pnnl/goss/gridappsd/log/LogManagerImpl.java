@@ -137,7 +137,7 @@ public class LogManagerImpl implements LogManager {
 		else
 			logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, source,
 					processStatus, username, logLevel, log_message);
-		if(logString.length() > 200) {
+		if(logString.length() > 200 && message.getLogLevel()!=LogLevel.ERROR) {
 			logString = logString.substring(0,200);
 		}
 		switch(message.getLogLevel()) {

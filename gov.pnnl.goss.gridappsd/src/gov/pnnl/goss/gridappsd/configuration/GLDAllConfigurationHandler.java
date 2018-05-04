@@ -169,7 +169,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
 		}
 		
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
 		
 		File dir = new File(directory);
