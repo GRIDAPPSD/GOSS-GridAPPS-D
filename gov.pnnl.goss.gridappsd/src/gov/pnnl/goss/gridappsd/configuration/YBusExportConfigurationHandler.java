@@ -54,6 +54,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -148,7 +149,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
 		//Create DSS base file
-		PrintWriter basePrintWriter = new PrintWriter(dssBaseFile);
+		PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
 		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager, simulationManager, powergridModelManager);
 		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
@@ -216,8 +217,8 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
-				
-		out.print(response);
+			
+		out.print("sdf");
 		
 
 	}
