@@ -218,7 +218,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 			
-		out.print("sdf");
+		out.print(response);
 		
 
 	}
