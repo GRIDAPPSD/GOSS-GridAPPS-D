@@ -101,9 +101,11 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 	public DSSBaseConfigurationHandler() {
 	}
 	 
-	public DSSBaseConfigurationHandler(LogManager logManager, ConfigurationManager configManager) {
+	public DSSBaseConfigurationHandler(LogManager logManager, ConfigurationManager configManager, SimulationManager simulationManager, PowergridModelDataManager powergridModelDataManager) {
 		this.logManager = logManager;
 		this.configManager = configManager;
+		this.simulationManager = simulationManager;
+		this.powergridModelManager = powergridModelDataManager;
 	}
 	
 	

@@ -43,16 +43,17 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -64,8 +65,6 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
 
 
 @Component
@@ -81,6 +80,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 	
 	@ServiceDependency
 	private volatile DataManager dataManager;
+	
+	@ServiceDependency
+	private volatile PowergridModelDataManager powergridModelManager;
 	
 	@ServiceDependency 
 	volatile LogManager logManager;
@@ -119,7 +121,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 		
 		if(simulationContext==null)
-			throw new Exception("Simulation Id not provided in request paramters.");
+			throw new Exception("Simulation context not found for simulation_id = "+simulationId);
 		
 		parameters.remove("simulationId");
 		parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
@@ -147,7 +149,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		//Create DSS base file
 		PrintWriter basePrintWriter = new PrintWriter(dssBaseFile);
-		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager);
+		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager, simulationManager, powergridModelManager);
 		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
 		if(!dssBaseFile.exists())
@@ -204,9 +206,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		processServiceBuilder.start();
 		
 		YBusExportResponse response = new YBusExportResponse();
-		response.yParseFilePath = simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv";
-		response.nodeListFilePath = simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv";
-		response.summaryFilePath = simulationDir.getAbsolutePath()+File.separator+"base_summary.csv";
+		response.setyParseFilePath(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
+		response.setNodeListFilePath(simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv");
+		response.setSummaryFilePath(simulationDir.getAbsolutePath()+File.separator+"base_summary.csv");
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
@@ -214,28 +216,11 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
-		
-		out.write(response.toString());
+				
+		out.print(response);
 		
 
 	}
-	
-class YBusExportResponse implements Serializable{
-	
-	private static final long serialVersionUID = 1L;
-
-	String yParseFilePath;
-	String nodeListFilePath;
-	String summaryFilePath;
-	
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-}
-	
 	
 	
 	
