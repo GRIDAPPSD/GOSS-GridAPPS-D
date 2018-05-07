@@ -17,7 +17,7 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 	
 	
 	@Override
-	public Serializable handle(Serializable requestContent) throws Exception {
+	public Serializable handle(Serializable requestContent, String processId, String username) throws Exception {
 		PowergridModelDataRequest pgDataRequest = null;
 		if(requestContent instanceof PowergridModelDataRequest){
 			pgDataRequest = (PowergridModelDataRequest)requestContent;
@@ -29,27 +29,27 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			if (pgDataRequest.getQueryString()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.query(pgDataRequest.getModelId(), pgDataRequest.getQueryString(), pgDataRequest.getResultFormat());
+			return dataManager.query(pgDataRequest.getModelId(), pgDataRequest.getQueryString(), pgDataRequest.getResultFormat(), processId, username);
 		} else if(PowergridModelDataRequest.RequestType.QUERY_MODEL.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryModel(pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getFilter(), pgDataRequest.getResultFormat());
+			return dataManager.queryModel(pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getFilter(), pgDataRequest.getResultFormat(), processId, username);
 		} else if(PowergridModelDataRequest.RequestType.QUERY_MODEL_NAMES.toString().equals(pgDataRequest.requestType)){
 			if (!verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryModelNames(pgDataRequest.getResultFormat());
+			return dataManager.queryModelNames(pgDataRequest.getResultFormat(), processId, username);
 		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null || pgDataRequest.getObjectId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryObject(pgDataRequest.getModelId(), pgDataRequest.getObjectId(), pgDataRequest.getResultFormat());
+			return dataManager.queryObject(pgDataRequest.getModelId(), pgDataRequest.getObjectId(), pgDataRequest.getResultFormat(), processId, username);
 		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT_TYPES.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryObjectTypes(pgDataRequest.getModelId(), pgDataRequest.getResultFormat());
+			return dataManager.queryObjectTypes(pgDataRequest.getModelId(), pgDataRequest.getResultFormat(), processId, username);
 		} else {
 			//TODO report error, request type not recognized
 			System.out.println("DOESNT RECOGNIZE REQUEST TYPE "+pgDataRequest.requestType);

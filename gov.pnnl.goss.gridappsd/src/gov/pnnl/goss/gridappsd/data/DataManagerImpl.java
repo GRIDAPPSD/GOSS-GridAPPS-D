@@ -130,18 +130,18 @@ public class DataManagerImpl implements DataManager {
 	}
 
 	@Override
-	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath) throws Exception {
+	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception {
 				
 		
 		if(request!=null && type!=null){
 			DataResponse r = new DataResponse();
 			Serializable responseData = null;
 			if(dataManagers.containsKey(type)){
-				responseData = dataManagers.get(type).handle(request);
+				responseData = dataManagers.get(type).handle(request, ""+simulationId, username);
 			} else {
 				System.out.println("TYPE NOT SUPPORTED");
 				//TODO throw error that type not supported
-			}
+			} 
 			r.setData(responseData);
 			r.setResponseComplete(true);
 			return r;

@@ -217,7 +217,7 @@ public class ProcessNewSimulationRequest {
 							simId, 
 							new Date().getTime(),
 							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
 					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 							simId, 
