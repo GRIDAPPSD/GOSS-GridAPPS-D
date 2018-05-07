@@ -204,7 +204,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		processServiceBuilder.command(new ArrayList<>(Arrays.asList("opendsscmd", commandFile.getName())));
 		processServiceBuilder.redirectErrorStream(true);
 		processServiceBuilder.redirectOutput();
-		processServiceBuilder.start();
+		Process process = processServiceBuilder.start();
+		process.waitFor();
+		
 		
 		YBusExportResponse response = new YBusExportResponse();
 		response.setyParseFilePath(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
