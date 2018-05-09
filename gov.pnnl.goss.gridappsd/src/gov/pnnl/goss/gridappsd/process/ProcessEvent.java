@@ -45,12 +45,14 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.configuration.YBusExportConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
+import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
@@ -66,6 +68,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -187,7 +190,14 @@ public class ProcessEvent implements GossResponseEvent {
 						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 					}
 					String result = sw.toString();
-					sendData(client, event.getReplyDestination(), result, processId);
+					
+					if(configRequest.getConfigurationType().equals("YBus Export")){
+						Gson gson = new Gson();
+						YBusExportResponse response = gson.fromJson(result, YBusExportResponse.class);
+						sendData(client, event.getReplyDestination(), response, processId);
+					}
+					else
+						sendData(client, event.getReplyDestination(), result, processId);
 
 				} else {
 					this.error(processId, "No valid configuration request received, request: "+request);

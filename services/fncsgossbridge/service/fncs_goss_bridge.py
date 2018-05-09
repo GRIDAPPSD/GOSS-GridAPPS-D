@@ -67,8 +67,8 @@ except:
 debugFile = open("/tmp/fncs_bridge_log.txt", "w")
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 output_to_simulation_manager = 'goss.gridappsd.fncs.output'
-output_to_goss_topic = 'goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
-simulation_input_topic = 'goss.gridappsd.simulation.input.'
+output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
+simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
 
 goss_connection= None
 is_initialized = False 
@@ -88,7 +88,7 @@ difference_attribute_map = {
         },
         "regulator" : {
             "property" : ["band_width"],
-            "prefix" : "reg_"
+            "prefix" : "rcon_"
         }
     },
     "RegulatingControl.targetValue" : {
@@ -98,7 +98,7 @@ difference_attribute_map = {
         },
         "regulator" : {
             "property" : ["band_center"],
-            "prefix" : "reg_"
+            "prefix" : "rcon_"
         }
     },
     "ShuntCompensator.aVRDelay" : {
@@ -110,14 +110,12 @@ difference_attribute_map = {
     "ShuntCompensator.sections" : {
         "capacitor" : {
             "property" : ["switch{}"],
-            "phase_sensitive" : True,
-            "prefix" : "swt_"
+            "prefix" : "cap_"
         }
     },
     "Switch.open" : {
         "switch" : {
             "property" : ["phase_{}_state"],
-            "phase_sensitive" : True,
             "prefix" : "swt_"
         }
     },
@@ -130,7 +128,6 @@ difference_attribute_map = {
     "TapChanger.step" : {
         "regulator" : {
             "property" : ["tap{}"],
-            "phase_sensitive" : True,
             "prefix" : "reg_"
         }
     },
@@ -143,14 +140,14 @@ difference_attribute_map = {
     "TapChanger.lineDropR" : {
         "regulator" : {
             "property" : ["compensator_r_setting_{}"],
-            "phase_sensitive" : True,
+
             "prefix" : "rcon_"
         }
     },
     "TapChanger.lineDropX" : {
         "regulator" : {
             "property" : ["compensator_x_setting_{}"],
-            "phase_sensitive" : True,
+
             "prefix" : "rcon_"
         }
     }
@@ -187,7 +184,7 @@ class GOSSListener(object):
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
-                _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['message'])) #does not return
+                _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
             elif json_msg['command'] == 'nextTimeStep':
                 message['command'] = 'nextTimeStep'
                 current_time = json_msg['currentTime']
@@ -322,8 +319,9 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
         RuntimeError()
         ValueError()
     """
-    message_str = 'publish to fncs bus '+simulation_id+' '+str(goss_message)
+    message_str = 'translating following message for fncs simulation '+simulation_id+' '+str(goss_message)
     _send_simulation_status('RUNNING', message_str, 'DEBUG')
+    print(message_str)
 
     if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
         raise ValueError(
@@ -355,7 +353,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
             cim_attribute = x.get("attribute")
             object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
             phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
-            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
+            if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
+                fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
             if cim_attribute == "RegulatingControl.mode":
                 val = x.get("value")
                 if val == 0:
@@ -413,14 +412,12 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
             
                 
         goss_message_converted = json.dumps(fncs_input_message)
-        _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}","INFO")
+        _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
-    except:
-        raise RuntimeError(
-            'Unexpected error occured while executing yaml.safe_load(goss_message'
-            + '{0}'.format(sys.exc_info()[0]))
+    except Exception as ex:
+        raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
     
     
     
@@ -821,7 +818,7 @@ def _create_cim_object_map(map_file=None):
                     object_phases = y.get("endPhase",[])
                     for z in range(len(object_mrids)):
                         object_mrid_to_name[object_mrids[z]] = {
-                            "name" : y.get("name"),
+                            "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
                             "type" : "regulator"
