@@ -153,7 +153,8 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), username);
-				client.publish(event.getReplyDestination(), r);
+				//client.publish(event.getReplyDestination(), r);
+				sendData(client, event.getReplyDestination(), ((DataResponse)r).getData(), processId);
 
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){

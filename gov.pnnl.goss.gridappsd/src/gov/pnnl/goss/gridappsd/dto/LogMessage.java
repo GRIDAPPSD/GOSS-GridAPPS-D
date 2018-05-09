@@ -59,8 +59,8 @@ public class LogMessage implements Serializable {
 	String processId;
 	long timestamp;
 	String logMessage;
-	LogLevel logLevel = LogLevel.DEBUG;
-	ProcessStatus processStatus = ProcessStatus.RUNNING;
+	LogLevel logLevel;
+	ProcessStatus processStatus;
 	Boolean storeToDb = true;
 	
 	public LogMessage(){}
