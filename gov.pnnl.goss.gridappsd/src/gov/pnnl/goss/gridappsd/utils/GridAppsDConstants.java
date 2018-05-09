@@ -40,8 +40,14 @@
 package gov.pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 public class GridAppsDConstants {
 	
@@ -177,5 +183,28 @@ public class GridAppsDConstants {
 		}
 		
 		return defaultValue;
+	}
+	
+	
+	public static void logMessage(LogManager logManager, String fromClass, String message, String simulationID, String username, LogLevel logLevel){
+		
+		if(logManager!=null){
+			if(logLevel==LogLevel.ERROR){
+				logManager.log(
+						new LogMessage(fromClass, simulationID, new Date().getTime(),
+								message, LogLevel.ERROR,
+								ProcessStatus.ERROR, false), username,
+						GridAppsDConstants.topic_platformLog);
+			} else {
+				logManager.log(
+						new LogMessage(fromClass, simulationID, new Date().getTime(),
+								message, logLevel,
+								ProcessStatus.RUNNING, false), username,
+						GridAppsDConstants.topic_platformLog);
+			}
+			
+		} else {
+			//???  what to do if they didn't set a log manager?
+		}
 	}
 }

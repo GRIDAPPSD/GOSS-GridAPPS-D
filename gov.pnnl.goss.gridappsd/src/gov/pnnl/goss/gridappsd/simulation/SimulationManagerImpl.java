@@ -403,7 +403,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                    log.info(processName+": "+line);
+	                    log.info(processName+": "+line.substring(0,200));
 	                }
 	            } catch (IOException e) {
 	                log.error("Error on process "+processName, e);

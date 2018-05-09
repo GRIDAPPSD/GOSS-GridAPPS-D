@@ -37,43 +37,34 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+package gov.pnnl.goss.gridappsd.dto;
 
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
-public interface LogManager {
+public class RequestLogMessage extends LogMessage {
 	
-	/**
-	 * Implementation of this method should writes the message in log file. And
-	 * calls LogDataManager to save the log message in data store if store_to_db
-	 * is true in LogMessage object.
-	 * 
-	 * @param message
-	 *            an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
-	 * @param username
-	 *            username of the user logging the message
-	 * @param topic
-	 *            Message should be published on this topic if topic is not null. 
-	 */
-	void log(LogMessage message, String username, String topic);
+	private static final long serialVersionUID = 1L;
 	
-	/**
-	 * Use platform's default username and call previous log method. 
-	 * 
-	 * @param message
-	 *            an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
-	 * @param topic
-	 *            Message should be published on this topic if topic is not null. 
-	 */
-	void log(LogMessage message, String topic);
-
-	/**
-	 * Implementation of this method should call an implementation of
-	 * LogDataManager and get the log messages from data store based on the not
-	 * null values in LogMessage object.
-	 */
-	void get(LogMessage message, String outputTopics, String LogTopic);
+	String username;
 	
-	LogDataManager getLogDataManager();
+	public String getUsername() {
+		return username;
+	}
 
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public static RequestLogMessage parse(String jsonString) throws JsonSyntaxException {
+		Gson  gson = new Gson();
+		RequestLogMessage obj = gson.fromJson(jsonString, RequestLogMessage.class);
+		return obj;
+	}
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 }

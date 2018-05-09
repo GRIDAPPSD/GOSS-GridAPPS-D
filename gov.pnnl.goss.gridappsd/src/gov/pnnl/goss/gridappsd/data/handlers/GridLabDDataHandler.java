@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 //import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -216,7 +215,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 					bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;;
 				}
 				//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost);
+				QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, ""+simulationId, "");
 				CIMImporter cim2glm = new CIMImporter();
 				//Generate GLM using zipload
 				boolean bWantSched = false;
