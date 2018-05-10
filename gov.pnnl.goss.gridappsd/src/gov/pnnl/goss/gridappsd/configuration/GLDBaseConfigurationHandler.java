@@ -151,7 +151,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 			bWantZip = true;
 		}
 		
-		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 0);
+		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		if(scheduleName!=null){
