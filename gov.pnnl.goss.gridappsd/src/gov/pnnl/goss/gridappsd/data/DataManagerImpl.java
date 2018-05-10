@@ -93,6 +93,8 @@ public class DataManagerImpl implements DataManager {
 	@Start
 	public void start(){
 		log.info("Starting "+getClass());
+		//This is done here instead of in @Start method of LogDataManagerMySQL to avoid circular service dependency
+		this.registerDataManagerHandler((LogDataManagerMySQL)logManager.getLogDataManager(), LogDataManagerMySQL.DATA_MANAGER_TYPE);
 //		try{
 //			Credentials credentials = new UsernamePasswordCredentials(
 //					GridAppsDConstants.username, GridAppsDConstants.password);

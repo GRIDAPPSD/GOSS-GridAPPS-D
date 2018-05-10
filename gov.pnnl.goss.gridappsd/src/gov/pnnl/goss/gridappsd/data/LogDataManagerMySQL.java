@@ -39,13 +39,25 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data;
 
+import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.DataTruncation;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.DataTruncation;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -55,17 +67,15 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.gridappsd.api.LogDataManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 
 
 @Component
-public class LogDataManagerMySQL implements LogDataManager {
+public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 	
 	@ServiceDependency
 	GridAppsDataSources dataSources;
@@ -76,6 +86,8 @@ public class LogDataManagerMySQL implements LogDataManager {
 	private Connection connection;
 	private PreparedStatement preparedStatement;
 	Client client;
+	
+	public static final String DATA_MANAGER_TYPE = "log";
 	
 	public LogDataManagerMySQL(){
 		System.out.println("CREATING LOG DATA MGR MYSQL");
@@ -139,39 +151,85 @@ public class LogDataManagerMySQL implements LogDataManager {
 	}
 
 	@Override
-	public void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,
-			String username, String resultTopic, String logTopic) {
+	public Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,
+			String username) {
+		
+		if(connection==null){
+			try {
+				connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		if(connection!=null){
 		
 		try {
 			String queryString = "SELECT * FROM gridappsd.log WHERE";
-			if(source!=null)
-				queryString+=" source="+source;
+			
+			boolean where = false;
+			
+			if(source!=null){
+				queryString+="source=\'"+source+"\'";
+				where = true;
+			}
+				
 			if(processId!=null)
-				queryString+=" process_id="+processId;
+				if(where)
+					queryString+=" and process_id=\'"+processId+"\'";
+				else{
+					queryString+=" process_id=\'"+processId+"\'";
+					where = true;
+				}
+			
 			if(log_level!=null)
-				queryString+=" log_level="+log_level;
+				if(where)
+					queryString+=" and log_level=\'"+log_level+"\'";
+				else{
+					queryString+=" log_level=\'"+log_level+"\'";
+					where = true;
+				}
+			
 			if(process_status!=null)
-				queryString+=" process_status="+process_status;
+				if(where)
+					queryString+=" and process_status=\'"+process_status+"\'";
+				else{
+				queryString+=" process_status=\'"+process_status+"\'";
+					where = true;
+				}
+			
 			if(username!=null)
-				queryString+=" username="+username;
-			if(timestamp!=new Long("OL"))
-				queryString+=" timestamp="+timestamp;
-					
+				if(where)
+					queryString+=" and username=\'"+username+"\'";
+				else{
+					queryString+=" username=\'"+username+"\'";
+					where = true;
+				}
+			
+			if(timestamp!=new Long("0"))
+				if(where)
+					queryString+=" and timestamp="+timestamp;
+				else{
+					queryString+=" timestamp="+timestamp;
+				}
+
 			preparedStatement = connection.prepareStatement(queryString);
 			
 			ResultSet rs = preparedStatement.executeQuery();
 			
-			ResultSetMetaData rsmd = rs.getMetaData();
+			return this.getJSONFromResultSet(rs);
+			
+			
+			/*ResultSetMetaData rsmd = rs.getMetaData();
 			int columnsNumber = rsmd.getColumnCount();
 			String rowResult="";
 
 			while (rs.next()) {
 			    for(int i = 1; i < columnsNumber; i++)
 			    	rowResult = rowResult + " " + rs.getString(i);
-			    client.publish(resultTopic, rowResult);
-			}
+			    //client.publish(resultTopic, rowResult);
+			}*/
 			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -180,8 +238,50 @@ public class LogDataManagerMySQL implements LogDataManager {
 		} else {
 			//Need a way to log warning to file that connection does not exist
 			log.warn("Mysql connection not initialized for query");
-		}		
+		}	
+		
+		return null;
 
+	}
+
+	@Override
+	public Serializable handle(Serializable requestContent, String processId,
+			String username) throws Exception {
+		
+		RequestLogMessage request;
+		
+		if(requestContent instanceof RequestLogMessage)
+			 request = (RequestLogMessage) requestContent;
+		else 
+			 request = RequestLogMessage.parse(requestContent.toString());
+		
+		return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
+
+	}
+	
+	public Serializable getJSONFromResultSet(ResultSet rs) {
+	    List list = new ArrayList();
+	    if(rs!=null)
+	    {
+	        try {
+	            ResultSetMetaData metaData = rs.getMetaData();
+	            while(rs.next())
+	            {
+	                Map<String,Object> columnMap = new HashMap<String, Object>();
+	                for(int columnIndex=1;columnIndex<=metaData.getColumnCount();columnIndex++)
+	                {
+	                    if(rs.getString(metaData.getColumnName(columnIndex))!=null)
+	                        columnMap.put(metaData.getColumnLabel(columnIndex),     rs.getString(metaData.getColumnName(columnIndex)));
+	                    else
+	                        columnMap.put(metaData.getColumnLabel(columnIndex), "");
+	                }
+	                list.add(columnMap);
+	            }
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+	     }
+	     return new Gson().toJson(list);
 	}
 
 

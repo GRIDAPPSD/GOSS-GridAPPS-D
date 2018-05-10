@@ -45,7 +45,6 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.configuration.YBusExportConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -154,7 +153,8 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), username);
-				client.publish(event.getReplyDestination(), r);
+				//client.publish(event.getReplyDestination(), r);
+				sendData(client, event.getReplyDestination(), ((DataResponse)r).getData(), processId);
 
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
@@ -242,9 +242,10 @@ public class ProcessEvent implements GossResponseEvent {
 
 	private void sendData(Client client, Destination replyDestination, Serializable data, int processId){
 		try {
-			DataResponse r = new DataResponse();
+			String r = "{\"data\":"+data+",\"responseComplete\":true,\"id\":\""+processId+"\"}";
+			/*DataResponse r = new DataResponse();
 			r.setData(data);
-			r.setResponseComplete(true);
+			r.setResponseComplete(true);*/
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
 			e.printStackTrace();
