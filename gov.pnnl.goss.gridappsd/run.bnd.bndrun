@@ -86,7 +86,14 @@
 	javax.annotation-api,\
 	javax.inject,\
 	org.glassfish.jersey.bundles.repackaged.jersey-guava,\
-	org.glassfish.hk2.api
+	org.glassfish.hk2.api,\
+	aopalliance,\
+	org.glassfish.hk2.utils,\
+	org.glassfish.jersey.core.jersey-common,\
+	org.glassfish.hk2.locator,\
+	javassist,\
+	org.glassfish.hk2.osgi-resource-locator
+	
 	
 
 # Add broker name to the properties defined in shared.runprops

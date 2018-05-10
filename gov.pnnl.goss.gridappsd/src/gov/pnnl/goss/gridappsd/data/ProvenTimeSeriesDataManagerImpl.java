@@ -102,21 +102,20 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		}
 	}
 	
-	
 	@Override
-	public Serializable handle(Serializable request) throws Exception {
-	
-		if(request instanceof RequestTimeseriesData){
-			return query((RequestTimeseriesData)request);
+	public Serializable handle(Serializable requestContent, String processId,
+			String username) throws Exception {
+		if(requestContent instanceof RequestTimeseriesData){
+			return query((RequestTimeseriesData)requestContent);
 		}
-		else if(request instanceof String){
-			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String)request);
+		else if(requestContent instanceof String){
+			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String)requestContent);
 			return query(timeSeriesRequest);
 		}
 		
 		return null;
 	}
-
+	
 	@Override
 	public String query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
@@ -145,5 +144,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
 		provenProducer.sendMessage(message.toString().replace("\\\"", "\""), requestId);
 	}
+
+
+
 
 }
