@@ -72,9 +72,10 @@ public class BGPGModelManagerTest {
 		BGPGModelManagerTest tester = new BGPGModelManagerTest();
 		
 //		tester.testQueryModelNames();
-		tester.testQuery();
+		tester.testQueryModelInfo();
+//		tester.testQuery();
 //		tester.testQueryObjectTypes();
-//		tester.testQueryObject();
+		tester.testQueryObject();
 //		tester.testQueryModel();
 		
 		
@@ -150,9 +151,39 @@ public class BGPGModelManagerTest {
 
 			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL_NAMES.toString());
-			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.CSV.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
 			
 			System.out.println("MODEL NAMES REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
+			System.out.println(pgDataRequest);
+			System.out.println();
+			System.out.println();
+			
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(pgDataRequest.toString(), GridAppsDConstants.topic_requestData+".powergridmodel", RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	public void testQueryModelInfo(){
+
+		try {
+
+			PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
+			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL_INFO.toString());
+			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
+			
+			System.out.println("MODEL INFO REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
 			System.out.println(pgDataRequest);
 			System.out.println();
 			System.out.println();

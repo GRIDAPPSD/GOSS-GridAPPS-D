@@ -48,6 +48,9 @@ import java.util.Properties;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Literal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,7 +150,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bWantZip = true;
 		}
 		
-		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 0);
+		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		if(scheduleName!=null){
@@ -187,7 +190,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
 		PrintWriter startupFileWriter = new PrintWriter(startupFile);
-		generateStartupFile(parameters, tempDataPath, startupFileWriter, processId, username);
+		generateStartupFile(parameters, tempDataPath, startupFileWriter, modelId, processId, username);
 		
 		//Generate outputs file
 		PrintWriter simulationOutputs = new PrintWriter(tempDataPath+File.separator+MEASUREMENTOUTPUTS_FILENAME);
@@ -205,7 +208,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	}
 	
 	
-	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String processId, String username) throws Exception{
+	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username) throws Exception{
 		logRunning("Generating startup file for GridLAB-D configuration using parameters: "+parameters, processId, username, logManager);
 
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
@@ -239,6 +242,21 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
+		
+		String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
+				+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
+				+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
+				+ "?s c:ConductingEquipment.BaseVoltage ?lev."
+				+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
+				+ "} ORDER by ?vnom";
+		
+		ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
+		QuerySolution binding = rs.nextSolution();
+		String vnom = ((Literal) binding.get("vnom")).toString();
+		double root = Math.sqrt(3);
+		double vnomdbl = new Double(vnom).doubleValue();
+		double nominalv = vnomdbl/root;
+		//TODO send error and fail in vnom not found in model or bad format
 		
 		//add an include reference to the base glm 
 				String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
@@ -300,7 +318,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 					startupFileWriter.println("	loop 0;");
 					startupFileWriter.println("}");
 				}
-				startupFileWriter.println("#define VSOURCE=69715.065");
+				startupFileWriter.println("#define VSOURCE="+nominalv);
 				startupFileWriter.println("#include \""+baseGLM+"\"");
 				startupFileWriter.flush();
 				startupFileWriter.close();

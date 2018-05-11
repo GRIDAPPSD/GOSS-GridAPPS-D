@@ -307,6 +307,7 @@ public class ProcessNewSimulationRequest {
 		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
 		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
 		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
+		params.put(GLDAllConfigurationHandler.LOADSCALINGFACTOR, new Double(modelConfig.load_scaling_factor).toString());
 			
 		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);

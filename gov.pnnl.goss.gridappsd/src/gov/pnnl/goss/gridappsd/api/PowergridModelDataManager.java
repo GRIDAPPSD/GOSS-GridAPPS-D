@@ -23,7 +23,10 @@ public interface PowergridModelDataManager {
 	
 	String queryModelNames(String resultFormat, String processId, String username);
 	List<String> queryModelNameList( String processId, String username);
-	
+
+	String queryModelNamesAndIds(String resultFormat, String processId, String username);
+	ResultSet queryModelNamesAndIdsResultSet(String processId, String username);
+
 	void putModel(String modelId, String model, String inputFormat, String processId, String username);
 	
 	//Also will need putObject and deleteObject  (will need to support the right security permissions)
