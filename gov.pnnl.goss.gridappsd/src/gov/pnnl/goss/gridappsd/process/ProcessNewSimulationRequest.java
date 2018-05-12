@@ -204,6 +204,7 @@ public class ProcessNewSimulationRequest {
 			// Start Apps and Services
 			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
+			simulationContext.put("request",config);
 			simulationContext.put("simulationId",simId);
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
