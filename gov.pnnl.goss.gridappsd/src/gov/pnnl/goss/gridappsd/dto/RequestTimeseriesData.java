@@ -60,10 +60,6 @@ public class RequestTimeseriesData implements Serializable {
 	public static RequestTimeseriesData parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
-		if(obj.startTime==null)
-			throw new JsonSyntaxException("Expected attribute startTime not found");
-		if(obj.endTime==null)
-			throw new JsonSyntaxException("Expected attribute endTime not found");
 		if(obj.simulationId==null)
 			throw new JsonSyntaxException("Expected attribute simulationId not found");
 		return obj;

@@ -120,7 +120,6 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	public String query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
 		provenProducer.restProducer(provenUri, null, null);
-		provenProducer.sendMessage(null, requestTimeseriesData.toString());
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		
@@ -142,7 +141,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString().replace("\\\"", "\""), requestId);
+		provenProducer.sendMessage(message.toString(), requestId);
 	}
 
 
