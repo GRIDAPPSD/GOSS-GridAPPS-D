@@ -83,16 +83,22 @@
 	javax.ws.rs-api,\
 	shacl,\
 	org.glassfish.jersey.core.jersey-client,\
-	javax.annotation-api,\
-	javax.inject,\
+	javax.annotation-api;version=1.2.0,\
+	javax.inject;version=1.0.0,\
 	org.glassfish.jersey.bundles.repackaged.jersey-guava,\
-	org.glassfish.hk2.api,\
+	org.glassfish.hk2.api;version=2.4.0,\
 	aopalliance,\
-	org.glassfish.hk2.utils,\
+	org.glassfish.hk2.utils;version=2.5.0,\
 	org.glassfish.jersey.core.jersey-common,\
-	org.glassfish.hk2.locator,\
-	javassist,\
-	org.glassfish.hk2.osgi-resource-locator
+	org.glassfish.hk2.osgi-resource-locator,\
+	org.glassfish.jersey.media.jersey-media-json-jackson;version=2.18.0,\
+	com.fasterxml.jackson.module.jackson-module-jaxb-annotations,\
+	org.glassfish.jersey.ext.jersey-entity-filtering,\
+	com.google.guava;version=14.0.0,\
+	org.glassfish.jersey.core.jersey-server;version=2.26.0,\
+	org.glassfish.jersey.inject.jersey-hk2,\
+	org.glassfish.hk2.locator;version=2.5.0,\
+	javassist
 	
 	
 
