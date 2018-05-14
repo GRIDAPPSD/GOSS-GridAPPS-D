@@ -16,7 +16,7 @@ public class RequestTimeseriesData implements Serializable {
 	String startTime;
 	String endTime;
 	String simulationId;
-	List<String> objectMrids;
+	String mrid;
 	RESPONSE_FORMAT responseFormat = RESPONSE_FORMAT.JSON;
 	
 	
@@ -38,11 +38,11 @@ public class RequestTimeseriesData implements Serializable {
 	public void setSimulationId(String simulationId) {
 		this.simulationId = simulationId;
 	}
-	public List<String> getObjectMrids() {
-		return objectMrids;
+	public String getMrid() {
+		return mrid;
 	}
-	public void setObjectMrids(List<String> objectMrids) {
-		this.objectMrids = objectMrids;
+	public void setMrid(String mrid) {
+		this.mrid = mrid;
 	}
 	public RESPONSE_FORMAT getResponseFormat() {
 		return responseFormat;
