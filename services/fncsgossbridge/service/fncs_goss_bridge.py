@@ -641,7 +641,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "/topic/goss.gridappsd.process.simulation.log.{}".format(simulation_id)
+    simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
