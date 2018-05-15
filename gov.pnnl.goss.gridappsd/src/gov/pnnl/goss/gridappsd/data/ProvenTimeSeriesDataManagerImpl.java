@@ -1,17 +1,5 @@
 package gov.pnnl.goss.gridappsd.data;
 
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.proven.api.producer.ProvenProducer;
-
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -24,13 +12,25 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.proven.api.producer.ProvenProducer;
+import gov.pnnl.proven.api.producer.ProvenResponse;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-
-import com.google.gson.Gson;
 
 @Component
 public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler{
@@ -135,9 +135,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		ProvenQuery provenQuery = new ProvenQuery();
 		provenQuery.queryFilter = queryFilter;
 		
-		provenProducer.sendMessage(provenQuery.toString(), requestId);
+		ProvenResponse response = provenProducer.sendMessage(provenQuery.toString(), requestId);
+		return response.toString();
 		
-		return null;
 	}
 	
 	@Override
@@ -145,7 +145,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "SimulationOutput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString().replace("\\\"", "\""), requestId);
+		provenProducer.sendMessage(message.toString(), requestId);
 	}
 	
 	

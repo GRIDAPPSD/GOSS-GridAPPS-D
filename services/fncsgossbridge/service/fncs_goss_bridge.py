@@ -424,11 +424,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                 
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
-        fncs.publish_anon(fncs_input_topic, goss_message_converted)
+        if fncs.is_initialized():
+		fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-        raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
+	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
     
     
     
@@ -641,7 +643,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "/topic/goss.gridappsd.process.simulation.log.{}".format(simulation_id)
+    simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
 	
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
