@@ -428,7 +428,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-        raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
+	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
     
     
     
