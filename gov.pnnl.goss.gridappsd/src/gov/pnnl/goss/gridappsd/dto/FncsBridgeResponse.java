@@ -39,6 +39,9 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -46,7 +49,7 @@ public class FncsBridgeResponse {
 	public long timestamp;
 	public String command;
 	public String response;
-	public String output;
+	public Map<String,String> output = new HashMap<String, String>();
 	
 	
 	public long getTimestamp() {
@@ -67,14 +70,12 @@ public class FncsBridgeResponse {
 	public void setResponse(String response) {
 		this.response = response;
 	}
-	public String getOutput() {
+	public Map<String, String> getOutput() {
 		return output;
 	}
-	public void setOutput(String output) {
+	public void setOutput(Map<String, String> output) {
 		this.output = output;
 	}
-	
-	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
