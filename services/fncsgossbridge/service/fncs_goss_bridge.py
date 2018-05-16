@@ -73,6 +73,7 @@ simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
 goss_connection= None
 is_initialized = False 
 simulation_id = None
+stop_simulation = False
 
 difference_attribute_map = {
     "RegulatingControl.mode" : {
@@ -155,6 +156,7 @@ difference_attribute_map = {
 
 class GOSSListener(object):
     def on_message(self, headers, msg):
+        global stop_simulation
         message = {}
         try:
             message_str = 'received message '+str(msg)
@@ -174,7 +176,7 @@ class GOSSListener(object):
                 message['command'] = 'isInitialized'
                 message['response'] = str(is_initialized)
                 if (simulation_id != None):
-                    message['output'] = "{}".format(_get_fncs_bus_messages(simulation_id))
+                    message['output'] = _get_fncs_bus_messages(simulation_id)
                 message_str = 'Added isInitialized output, sending message '+str(message)+' connection '+str(goss_connection)
                 if fncs.is_initialized():
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -193,31 +195,37 @@ class GOSSListener(object):
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                message['output'] = "{}".format(_get_fncs_bus_messages(simulation_id))
+                message['output'] = _get_fncs_bus_messages(simulation_id)
                 message['timestamp'] = datetime.utcnow().microsecond
                 response_msg = json.dumps(message)
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
-                fncs.die()
-                sys.exit()
+                stop_simulation = True
+                fncs.finalize()
+                
         
         except Exception as e:
             message_str = 'Error in command '+str(e)
             _send_simulation_status('ERROR', message_str, 'ERROR')
+            stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
            
         
     def on_error(self, headers, message):
+        global stop_simulation
         message_str = 'Error in goss listener '+str(message)
         _send_simulation_status('ERROR', message_str, 'ERROR')
+        stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
     
     
     def on_disconnected(self):
+        global stop_simulation
+        stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
   
@@ -236,6 +244,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
         ValueError()
     """
     global is_initialized
+    global stop_simulation
     configuration_zpl = ''
     try:
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
@@ -292,12 +301,14 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
     except Exception as e:
         message_str = 'Error while registering with fncs broker '+str(e)
         _send_simulation_status('ERROR', message_str, 'ERROR')
+        stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
 
     if not fncs.is_initialized():
         message_str = 'fncs.initialize(configuration_zpl) failed!\n' + 'configuration_zpl = {0}'.format(configuration_zpl)
         _send_simulation_status('ERROR', message_str, 'ERROR')
+        stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
         raise RuntimeError(
@@ -413,11 +424,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                 
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
-        fncs.publish_anon(fncs_input_topic, goss_message_converted)
+        if fncs.is_initialized():
+		fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-        raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
+	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
     
     
     
@@ -869,9 +882,9 @@ def _byteify(data, ignore_dicts = False):
  
  
 def _keep_alive():
-    while 1:
+    while stop_simulation == False:
         time.sleep(0.1)
-        
+   
         
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
  

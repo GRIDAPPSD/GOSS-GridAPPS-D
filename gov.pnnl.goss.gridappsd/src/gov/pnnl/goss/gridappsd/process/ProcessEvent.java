@@ -126,7 +126,8 @@ public class ProcessEvent implements GossResponseEvent {
 
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				client.publish(event.getReplyDestination(), processId);
-				newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+				//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+				newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 				appManager.process(processId, event, message);
