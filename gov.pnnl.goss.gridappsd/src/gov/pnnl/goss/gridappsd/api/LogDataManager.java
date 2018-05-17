@@ -39,6 +39,8 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
+import java.io.Serializable;
+
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
@@ -47,6 +49,6 @@ public interface LogDataManager {
 	void store (String source, String processId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username);
 	
-	void query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username, String resultTopic, String logTopic);
+	Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username);
 	
 }
