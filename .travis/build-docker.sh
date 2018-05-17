@@ -7,20 +7,23 @@ usage () {
 }
 
 IMAGE="gridappsd/gridappsd"
-TAG="dev"
+TAG="${TRAVIS_BRANCH}"
 TIMESTAMP=`date +'%y%m%d%H'`
+GITHASH=`git log -1 --pretty=format:"%h"`
+
+BUILD_VERSION="${TIMESTAMP}_${GITHASH}${TRAVIS_BRANCH:+:$TRAVIS_BRANCH}"
 
 # parse options
 while getopts bp option ; do
   case $option in
     b) # Pass gridappsd tag to docker-compose
       # Docker file on travis relative from root.
-      docker build --build-arg TIMESTAMP="${TIMESTAMP}:${TRAVIS_BRANCH}" -t ${IMAGE}:$TAG .
+      docker build --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:$TIMESTAMP .
       ;;
     p) # Pass gridappsd tag to docker-compose
-      docker tag ${IMAGE}:$TAG ${IMAGE}:$TIMESTAMP
-      docker push ${IMAGE}:$TIMESTAMP
-      docker push ${IMAGE}:$TAG
+      echo "docker push ${IMAGE}:$TIMESTAMP"
+      [-n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
+      [-n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
       ;;
     *) # Print Usage
       usage
