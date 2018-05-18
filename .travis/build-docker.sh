@@ -21,9 +21,11 @@ while getopts bp option ; do
       docker build --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:$TIMESTAMP .
       ;;
     p) # Pass gridappsd tag to docker-compose
-      echo "docker push ${IMAGE}:$TIMESTAMP"
-      [-n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
-      [-n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
+      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TIMESTAMP"
+      [ -n "$TAG" ] && docker push ${IMAGE}:$TIMESTAMP
+      [ -n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
+      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
+      [ -n "$TAG" ] && docker push ${IMAGE}:$TAG
       ;;
     *) # Print Usage
       usage
