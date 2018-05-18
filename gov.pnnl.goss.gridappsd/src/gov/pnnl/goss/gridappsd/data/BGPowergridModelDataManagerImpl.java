@@ -54,6 +54,14 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	final String PREDICATE = "predicate";
 	final String OBJECT = "object";
 	
+	final String FEEDER_NAME = "modelName";
+	final String FEEDER_ID = "modelId";
+	final String STATION_NAME = "stationName";
+	final String STATION_ID = "stationId";
+	final String SUBREGION_NAME = "subRegionName";
+	final String SUBREGION_ID = "subRegionId";
+	final String REGION_NAME = "regionName";
+	final String REGION_ID = "regionId";
 	
 	public static final String DATA_MANAGER_TYPE = "powergridmodel";
 	 
@@ -118,10 +126,11 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.query("ieee13", query, "JSON"));
 			
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
-			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON"));
-			System.out.println(bg.queryModelNameList());
-			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON"));
+//			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON", "12345", "user"));
+//			System.out.println(bg.queryModelNameList("12345", "user"));
+//			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON", "12345", "user"));
 //			System.out.println(bg.queryModelNames("XML"));
+			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -136,9 +145,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	//,  String requestId/processId
 	@Override
-	public String query(String modelId, String query, String resultFormat) throws Exception {
+	public String query(String modelId, String query, String resultFormat, String processId, String username) throws Exception {
 		
-		ResultSet rs = queryResultSet(modelId, query);
+		ResultSet rs = queryResultSet(modelId, query, processId, username);
 		ByteArrayOutputStream resultString = new ByteArrayOutputStream();
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			ResultSetFormatter.outputAsJSON(resultString, rs);
@@ -160,18 +169,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return result;
 	}
 	@Override
-	public ResultSet queryResultSet(String modelId, String query) {
+	public ResultSet queryResultSet(String modelId, String query, String processId, String username) {
 		String endpoint = getEndpointURL(modelId);
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, processId, username);
 		return  queryHandler.query(query);
 		
 	}
 	
 	@Override
-	public String queryObject(String modelId, String mrid, String resultFormat) throws Exception {
+	public String queryObject(String modelId, String mrid, String resultFormat, String processId, String username) throws Exception {
 		// TODO Auto-generated method stub
 		
-		ResultSet rs = queryObjectResultSet(modelId, mrid);
+		ResultSet rs = queryObjectResultSet(modelId, mrid, processId, username);
 		ByteArrayOutputStream resultString = new ByteArrayOutputStream();
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			ResultSetFormatter.outputAsJSON(resultString, rs);
@@ -191,10 +200,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return result;
 	}
 	@Override
-	public ResultSet queryObjectResultSet(String modelId, String mrid) {
+	public ResultSet queryObjectResultSet(String modelId, String mrid, String processId, String username) {
 		String query = "select ?property ?value where {<"+getEndpointURL(modelId)+"#"+mrid+"> ?property ?value}";
 
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 
@@ -203,18 +212,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public String queryObjectTypes(String modelId, String resultFormat) {
-		return formatStringList(queryObjectTypeList(modelId), "objectTypes", resultFormat);
+	public String queryObjectTypes(String modelId, String resultFormat, String processId, String username) {
+		return formatStringList(queryObjectTypeList(modelId, processId, username), "objectTypes", resultFormat);
 	}
 	@Override
-	public List<String> queryObjectTypeList(String modelId) {
+	public List<String> queryObjectTypeList(String modelId, String processId, String username) {
 		String query = "select DISTINCT  ?type where {?subject rdf:type ?type ";
 		if(modelId!=null && modelId.trim().length()>0){
 			query = query+". ?subject ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
 
 		}
 		query = query + "}";
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		
 		List<String> objectTypes = new ArrayList<String>(); 
@@ -229,9 +238,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 
 	@Override
-	public String queryModel(String modelId, String objectType, String filter, String resultFormat) throws Exception {
+	public String queryModel(String modelId, String objectType, String filter, String resultFormat, String processId, String username) throws Exception {
 		String result = null;
-		ResultSet rs = queryModelResultSet(modelId, objectType, filter);
+		ResultSet rs = queryModelResultSet(modelId, objectType, filter, processId, username);
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			JsonArray resultArr = new JsonArray();
 			String baseUrl = getEndpointURL(modelId);
@@ -358,7 +367,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 	}
 	@Override
-	public ResultSet queryModelResultSet(String modelId, String objectType, String filter) {
+	public ResultSet queryModelResultSet(String modelId, String objectType, String filter, String processId, String username) {
 		if(modelId==null){
 			throw new RuntimeException("queryModel: model id missing");
 		}
@@ -377,15 +386,15 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		query = query+"}";
 		System.out.println(query);
 		
-		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId));
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
 		return rs;
 	}
 	
 	
 	@Override
-	public String queryModelNames(String resultFormat) {
-		return formatStringList(queryModelNameList(), "modelNames", resultFormat);
+	public String queryModelNames(String resultFormat, String processId, String username) {
+		return formatStringList(queryModelNameList(processId, username), "modelNames", resultFormat);
 	}
 	
 	
@@ -395,7 +404,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public List<String> queryModelNameList() {
+	public List<String> queryModelNameList(String processId, String username) {
 		List<String> models = new ArrayList<String>();
 
 		String modelNameQuery = "SELECT ?feeder ?fid  WHERE {"
@@ -403,7 +412,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				+ "?s c:IdentifiedObject.name ?feeder."
 				+ "?s c:IdentifiedObject.mRID ?fid	}"
 				+ " ORDER by ?fid";
-		ResultSet modelNameRS = queryResultSet(null, modelNameQuery);
+		
+		
+		ResultSet modelNameRS = queryResultSet(null, modelNameQuery, processId, username);
 		while(modelNameRS.hasNext()){
 			QuerySolution qs = modelNameRS.nextSolution();
 			models.add(qs.get("fid").toString());
@@ -478,7 +489,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	@Override
-	public void putModel(String modelId, String model, String inputFormat) {
+	public void putModel(String modelId, String model, String inputFormat, String processId, String username) {
 		// TODO Auto-generated method stub
 		//if model id is null throw error
 		//if namespace already exists throw error 
@@ -548,6 +559,129 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			//TODO send unrecognized type error
 		}
 		return null;
+	}
+	@Override
+	public String queryModelNamesAndIds(String resultFormat, String processId, String username) {
+		ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+		String rootElementName = "models";
+		if(resultFormat.equals(ResultFormat.JSON.toString())){
+			JsonObject obj = new JsonObject();
+			JsonArray resultArr = new JsonArray();
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				String stationName = qs.getLiteral(STATION_NAME).getString();
+				String stationId = qs.getLiteral(STATION_ID).getString();
+				String subregionName = qs.getLiteral(SUBREGION_NAME).getString();
+				String subRegionId = qs.getLiteral(SUBREGION_ID).getString();
+				String regionName = qs.getLiteral(REGION_NAME).getString();
+				String regionId = qs.getLiteral(REGION_ID).getString(); 
+				
+				JsonObject feederobj = new JsonObject();
+				feederobj.add(FEEDER_NAME, new JsonPrimitive(feederName));
+				feederobj.add(FEEDER_ID, new JsonPrimitive(feederId));
+				feederobj.add(STATION_NAME, new JsonPrimitive(stationName));
+				feederobj.add(STATION_ID, new JsonPrimitive(stationId));
+				feederobj.add(SUBREGION_NAME, new JsonPrimitive(subregionName));
+				feederobj.add(SUBREGION_ID, new JsonPrimitive(subRegionId));
+				feederobj.add(REGION_NAME, new JsonPrimitive(regionName));
+				feederobj.add(REGION_ID, new JsonPrimitive(regionId));
+
+				resultArr.add(feederobj);
+			}
+			obj.add(rootElementName, resultArr);
+			return obj.toString();
+
+		} else if(resultFormat.equals(ResultFormat.XML.toString())){
+			try{
+			DocumentBuilderFactory factory =
+			        DocumentBuilderFactory.newInstance();
+			factory.setNamespaceAware(true);
+			
+
+			 DocumentBuilder builder =
+			            factory.newDocumentBuilder();
+			 Document rootDoc = builder.newDocument();
+			 Element rootElement = rootDoc.createElement(rootElementName);
+//			 rootElement.setAttribute("xmlns:cim", nsCIM);
+//			 ROOTELEMENT.SETATTRIBUTE("XMLNS:RDF", NSRDF);
+			 rootDoc.appendChild(rootElement);
+			 while( rs.hasNext()) {
+				 Element modelElement = rootDoc.createElement("model");
+				
+				 QuerySolution qs = rs.nextSolution();
+				 String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				 String feederId = qs.getLiteral(FEEDER_ID).getString();
+				 String stationName = qs.getLiteral(STATION_NAME).getString();
+				 String stationId = qs.getLiteral(STATION_ID).getString();
+				 String subregionName = qs.getLiteral(SUBREGION_NAME).getString();
+				 String subRegionId = qs.getLiteral(SUBREGION_ID).getString();
+				 String regionName = qs.getLiteral(REGION_NAME).getString();
+				 String regionId = qs.getLiteral(REGION_ID).getString(); 
+				 modelElement.setAttribute(FEEDER_NAME, feederName);
+				 modelElement.setAttribute(FEEDER_ID, feederId);
+				 modelElement.setAttribute(STATION_NAME, stationName);
+				 modelElement.setAttribute(STATION_ID, stationId);
+				 modelElement.setAttribute(SUBREGION_NAME, subregionName);
+				 modelElement.setAttribute(SUBREGION_ID, subRegionId);
+				 modelElement.setAttribute(REGION_NAME, regionName);
+				 modelElement.setAttribute(REGION_ID, regionId);
+				 rootElement.appendChild(modelElement);
+			 }
+			 TransformerFactory tranFactory = TransformerFactory.newInstance();
+			    Transformer transformer = tranFactory.newTransformer();
+		        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+			    StringWriter resultWriter = new StringWriter();
+			    transformer.transform(new DOMSource(rootDoc), new StreamResult(resultWriter));
+				return resultWriter.toString();
+			}catch(Exception e){
+				e.printStackTrace();
+				//todo thrw a parsing error
+			}
+		} else if(resultFormat.equals(ResultFormat.CSV.toString())){
+			List<String> values = new ArrayList<String>();
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				String stationName = qs.getLiteral(STATION_NAME).getString();
+				String stationId = qs.getLiteral(STATION_ID).getString();
+				String subregionName = qs.getLiteral(SUBREGION_NAME).getString();
+				String subRegionId = qs.getLiteral(SUBREGION_ID).getString();
+				String regionName = qs.getLiteral(REGION_NAME).getString();
+				String regionId = qs.getLiteral(REGION_ID).getString(); 
+				
+				String value = feederName+"|"+feederId+"|"+stationName+"|"+stationId+"|"+subregionName+"|"+subRegionId+"|"+regionName+"|"+regionId;
+				values.add(value);
+			}
+			return String.join(",", values);
+		} else {
+			//TODO send unrecognized type error
+		}
+		return null;
+		
+	}
+	@Override
+	public ResultSet queryModelNamesAndIdsResultSet(String processId, String username) {
+		String modelNameQuery = "SELECT ?"+FEEDER_NAME+" ?"+FEEDER_ID+" ?"+STATION_NAME+" ?"+
+				STATION_ID+" ?"+SUBREGION_NAME+" ?"+SUBREGION_ID+" ?"+REGION_NAME+" ?"+REGION_ID+" WHERE {"
+				+ " ?s r:type c:Feeder."
+				+ " ?s c:IdentifiedObject.name ?"+FEEDER_NAME+"."
+				+ " ?s c:IdentifiedObject.mRID ?"+FEEDER_ID+"."
+				+ " ?s c:Feeder.NormalEnergizingSubstation ?sub."
+				+ "?sub c:IdentifiedObject.name ?"+STATION_NAME+"."
+				+ " ?sub c:IdentifiedObject.mRID ?"+STATION_ID+"."
+				+ " ?sub c:Substation.Region ?sgr."
+				+ " ?sgr c:IdentifiedObject.name ?"+SUBREGION_NAME+"."
+				+ " ?sgr c:IdentifiedObject.mRID ?"+SUBREGION_ID+"."
+				+ " ?sgr c:SubGeographicalRegion.Region ?rgn."
+				+ " ?rgn c:IdentifiedObject.name ?"+REGION_NAME+"."
+				+ " ?rgn c:IdentifiedObject.mRID ?"+REGION_ID+"."
+				+ "} ORDER by  ?"+FEEDER_NAME;
+		return queryResultSet(null, modelNameQuery, processId, username);
 	}
 
 }

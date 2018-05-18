@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.api;
 
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
 import java.io.File;
 import java.io.Serializable;
@@ -84,7 +85,7 @@ public interface ServiceManager {
 	 */
 	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
 	
-	String startServiceForSimultion(String service_id, String runtimeOptions, Map<String,Object> simulationContext);  //may also need input/output topics??
+	String startServiceForSimultion(String service_id, String runtimeOptions, Map<String, Object> simulationContext);  //may also need input/output topics??
 	
 	/**
 	 * Stops all instances of the service with requested service ID

@@ -40,8 +40,6 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
-import java.util.Date;
-
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -137,7 +135,9 @@ public class LogManagerImpl implements LogManager {
 		else
 			logString = String.format("%s|%s|%s|%s|%s\n%s\n", timestamp, source,
 					processStatus, username, logLevel, log_message);
-		
+		if(logString.length() > 200 && message.getLogLevel()!=LogLevel.ERROR) {
+			logString = logString.substring(0,200);
+		}
 		switch(message.getLogLevel()) {
 			case TRACE:	log.trace(logString);
 						break;
@@ -191,9 +191,13 @@ public class LogManagerImpl implements LogManager {
 		LogLevel log_level = message.getLogLevel();
 		ProcessStatus process_status = message.getProcessStatus();
 		String username = "system";
-		logDataManager.query(source, requestId, timestamp, log_level, process_status, username, resultTopic, logTopic);
+		logDataManager.query(source, requestId, timestamp, log_level, process_status, username);
 		
 	}
 
+	@Override
+	public LogDataManager getLogDataManager() {
+		return this.logDataManager;
+	}
 
 }

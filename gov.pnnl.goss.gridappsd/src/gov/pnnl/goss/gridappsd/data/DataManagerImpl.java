@@ -93,6 +93,8 @@ public class DataManagerImpl implements DataManager {
 	@Start
 	public void start(){
 		log.info("Starting "+getClass());
+		//This is done here instead of in @Start method of LogDataManagerMySQL to avoid circular service dependency
+		this.registerDataManagerHandler((LogDataManagerMySQL)logManager.getLogDataManager(), LogDataManagerMySQL.DATA_MANAGER_TYPE);
 //		try{
 //			Credentials credentials = new UsernamePasswordCredentials(
 //					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -130,18 +132,18 @@ public class DataManagerImpl implements DataManager {
 	}
 
 	@Override
-	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath) throws Exception {
+	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception {
 				
 		
 		if(request!=null && type!=null){
 			DataResponse r = new DataResponse();
 			Serializable responseData = null;
 			if(dataManagers.containsKey(type)){
-				responseData = dataManagers.get(type).handle(request);
+				responseData = dataManagers.get(type).handle(request, ""+simulationId, username);
 			} else {
 				System.out.println("TYPE NOT SUPPORTED");
 				//TODO throw error that type not supported
-			}
+			} 
 			r.setData(responseData);
 			r.setResponseComplete(true);
 			return r;
