@@ -40,8 +40,14 @@
 package gov.pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 public class GridAppsDConstants {
 	
@@ -131,6 +137,7 @@ public class GridAppsDConstants {
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
+	public static final String PROVEN_PATH = "proven.path";
 
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -153,8 +160,10 @@ public class GridAppsDConstants {
 	 * @return
 	 */
 	public static double getDoubleProperty(Properties props, String keyName, double defaultValue){
+		System.out.println(props);
 		if(props.containsKey(keyName)){
 			String val = props.getProperty(keyName);
+			System.out.println("GOT "+val+" for "+keyName);
 			return new Double(val).doubleValue();
 		}
 		
@@ -174,5 +183,28 @@ public class GridAppsDConstants {
 		}
 		
 		return defaultValue;
+	}
+	
+	
+	public static void logMessage(LogManager logManager, String fromClass, String message, String simulationID, String username, LogLevel logLevel){
+		
+		if(logManager!=null){
+			if(logLevel==LogLevel.ERROR){
+				logManager.log(
+						new LogMessage(fromClass, simulationID, new Date().getTime(),
+								message, LogLevel.ERROR,
+								ProcessStatus.ERROR, false), username,
+						GridAppsDConstants.topic_platformLog);
+			} else {
+				logManager.log(
+						new LogMessage(fromClass, simulationID, new Date().getTime(),
+								message, logLevel,
+								ProcessStatus.RUNNING, false), username,
+						GridAppsDConstants.topic_platformLog);
+			}
+			
+		} else {
+			//???  what to do if they didn't set a log manager?
+		}
 	}
 }

@@ -260,20 +260,21 @@ public class ServiceManagerImpl implements ServiceManager{
 	    Map<String, String> envVars = processServiceBuilder.environment();
 	    
 		
-		
-		//set environment variables
-		List<EnvironmentVariable> envVarList = serviceInfo.getEnvironmentVariables();
-		for(EnvironmentVariable envVar : envVarList) {
-			String value = envVar.getEnvValue();
-		    	if(value.contains("(")){
-		    		 String[] replaceValue = StringUtils.substringsBetween(envVar.getEnvValue(), "(", ")");
-			    	 for(String args : replaceValue){
-			    		 value = value.replace("("+args+")",simulationContext.get(args).toString());
-			    	 }
-		    	}
-		    	envVars.put(envVar.getEnvName(), value);
-		}
-		
+	    //set environment variables
+	    List<EnvironmentVariable> envVarList = serviceInfo.getEnvironmentVariables();
+	    for(EnvironmentVariable envVar : envVarList) {
+	    	String value = envVar.getEnvValue();
+	    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+	    	if(simulationContext!=null){
+	    		if(value.contains("(")){
+	    			String[] replaceValue = StringUtils.substringsBetween(envVar.getEnvValue(), "(", ")");
+	    			for(String args : replaceValue){
+	    				value = value.replace("("+args+")",simulationContext.get(args).toString());
+	    			}
+	    		}
+	    	}
+	    	envVars.put(envVar.getEnvName(), value);
+	    }
 		
 		//add executation command	        
 	    commands.add(serviceInfo.getExecution_path());
@@ -282,12 +283,15 @@ public class ServiceManagerImpl implements ServiceManager{
 		List<String> staticArgsList = serviceInfo.getStatic_args();
 		for(String staticArg : staticArgsList) {
 		    if(staticArg!=null){
-		    	if(staticArg.contains("(")){
-			    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
-			    	 for(String args : replaceArgs){
-			    		 staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
-			    	 }
-		    	}
+		    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+				if(simulationContext!=null){
+			    	if(staticArg.contains("(")){
+				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+				    	 for(String args : replaceArgs){
+				    		 staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
+				    	 }
+			    	}
+				}
 		    	commands.add(staticArg);
 		    }
 		}

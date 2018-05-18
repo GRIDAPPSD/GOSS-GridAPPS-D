@@ -73,5 +73,7 @@ public interface LogManager {
 	 * null values in LogMessage object.
 	 */
 	void get(LogMessage message, String outputTopics, String LogTopic);
+	
+	LogDataManager getLogDataManager();
 
 }

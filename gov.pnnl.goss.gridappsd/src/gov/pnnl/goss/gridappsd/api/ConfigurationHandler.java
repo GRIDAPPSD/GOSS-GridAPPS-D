@@ -4,5 +4,5 @@ import java.io.PrintWriter;
 import java.util.Properties;
 
 public interface ConfigurationHandler {
-	public String generateConfig(Properties parameters, PrintWriter out) throws Exception;
+	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception;
 }

@@ -40,7 +40,6 @@
 package gov.pnnl.goss.gridappsd;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
@@ -48,15 +47,12 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
 import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
-import java.text.ParseException;
 
 import javax.jms.Destination;
 
@@ -328,14 +324,13 @@ public class ProcessManagerComponentTests {
 
 
 		DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
-		dr.setDestination("goss.gridappsd.process.request.simulation");
+		dr.setDestination(GridAppsDConstants.topic_requestSimulation);
 		GossResponseEvent response = gossResponseEventArgCaptor.getValue();
 		response.onMessage(dr);
 		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
 
-
 		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(), 
-				Mockito.anyInt(),argCaptorSerializable.capture(), Mockito.anyInt(),Mockito.any(),Mockito.any());
+				Mockito.anyInt(),Mockito.any(),argCaptorSerializable.capture(), Mockito.any(),Mockito.any());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));
