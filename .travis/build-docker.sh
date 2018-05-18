@@ -10,6 +10,7 @@ TAG="$TRAVIS_BRANCH"
 
 if [ -n "$DOCKER_PROJECT" ]; then
   echo "Travis variable DOCKER_PROJECT is not set"
+  env | grep DOCKER
   echo "Exiting..."
   exit 1
 fi
