@@ -21,6 +21,7 @@ TIMESTAMP=`date +'%y%m%d%H'`
 GITHASH=`git log -1 --pretty=format:"%h"`
 
 BUILD_VERSION="${TIMESTAMP}_${GITHASH}${TRAVIS_BRANCH:+:$TRAVIS_BRANCH}"
+echo "BUILD_VERSION $BUILD_VERSION"
 
 # parse options
 while getopts bp option ; do
