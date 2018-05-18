@@ -6,8 +6,9 @@ usage () {
   exit 2
 }
 
-IMAGE="gridappsd/gridappsd"
-TAG="${TRAVIS_BRANCH}"
+TAG="$TRAVIS_BRANCH"
+ORG=`echo $TRAVIS_ORGANIZATION | tr '[:upper:]' '[:lower:]'`
+IMAGE="${ORG}/gridappsd"
 TIMESTAMP=`date +'%y%m%d%H'`
 GITHASH=`git log -1 --pretty=format:"%h"`
 
