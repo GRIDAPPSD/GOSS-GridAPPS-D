@@ -7,7 +7,14 @@ usage () {
 }
 
 TAG="$TRAVIS_BRANCH"
-ORG=`echo $TRAVIS_ORGANIZATION | tr '[:upper:]' '[:lower:]'`
+
+if [ -n "$DOCKER_PROJECT" ]; then
+  echo "Travis variable DOCKER_PROJECT is not set"
+  echo "Exiting..."
+  exit 1
+fi
+
+ORG=`echo $DOCKER_PROJECT | tr '[:upper:]' '[:lower:]'`
 IMAGE="${ORG}/gridappsd"
 TIMESTAMP=`date +'%y%m%d%H'`
 GITHASH=`git log -1 --pretty=format:"%h"`
