@@ -9,8 +9,7 @@ usage () {
 TAG="$TRAVIS_BRANCH"
 
 if [ -n "$DOCKER_PROJECT" ]; then
-  echo "Travis variable DOCKER_PROJECT is not set"
-  echo "Exiting..."
+  echo "Error travis variable DOCKER_PROJECT is not set"
   exit 1
 fi
 
