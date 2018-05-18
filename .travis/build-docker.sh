@@ -6,12 +6,20 @@ usage () {
   exit 2
 }
 
-IMAGE="gridappsd/gridappsd"
-TAG="${TRAVIS_BRANCH}"
+TAG="$TRAVIS_BRANCH"
+
+if [ -n "$DOCKER_PROJECT" ]; then
+  echo "Error travis variable DOCKER_PROJECT is not set"
+  exit 1
+fi
+
+ORG=`echo $DOCKER_PROJECT | tr '[:upper:]' '[:lower:]'`
+IMAGE="${ORG}/gridappsd"
 TIMESTAMP=`date +'%y%m%d%H'`
 GITHASH=`git log -1 --pretty=format:"%h"`
 
 BUILD_VERSION="${TIMESTAMP}_${GITHASH}${TRAVIS_BRANCH:+:$TRAVIS_BRANCH}"
+echo "BUILD_VERSION $BUILD_VERSION"
 
 # parse options
 while getopts bp option ; do
@@ -21,9 +29,11 @@ while getopts bp option ; do
       docker build --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:$TIMESTAMP .
       ;;
     p) # Pass gridappsd tag to docker-compose
-      echo "docker push ${IMAGE}:$TIMESTAMP"
-      [-n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
-      [-n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
+      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TIMESTAMP"
+      [ -n "$TAG" ] && docker push ${IMAGE}:$TIMESTAMP
+      [ -n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
+      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
+      [ -n "$TAG" ] && docker push ${IMAGE}:$TAG
       ;;
     *) # Print Usage
       usage
