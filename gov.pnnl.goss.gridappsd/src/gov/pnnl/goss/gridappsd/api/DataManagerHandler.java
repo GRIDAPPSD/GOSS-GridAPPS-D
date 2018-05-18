@@ -2,10 +2,9 @@ package gov.pnnl.goss.gridappsd.api;
 
 import java.io.Serializable;
 
-import gov.pnnl.goss.gridappsd.data.DataRequest;
 
 public interface DataManagerHandler {
 
-	public Serializable handle(Serializable request) throws Exception; 
+	public Serializable handle(Serializable requestContent, String processId, String username) throws Exception; 
 	
 }

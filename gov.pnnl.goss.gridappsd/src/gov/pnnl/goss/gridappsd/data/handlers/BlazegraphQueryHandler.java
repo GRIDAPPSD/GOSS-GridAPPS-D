@@ -48,6 +48,9 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
 
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class BlazegraphQueryHandler implements QueryHandler {
 	String endpoint;
@@ -57,11 +60,21 @@ public class BlazegraphQueryHandler implements QueryHandler {
 
 	public static final String DEFAULT_ENDPOINT =  "http://blazegraph:8080/bigdata/namespace/kb/sparql";
 	String mRID = null;
+	String processID = null;
+	String username = null;
 	boolean use_mRID;
+	LogManager logManager;
 	
-	public BlazegraphQueryHandler(String endpoint) {
+//	public BlazegraphQueryHandler(String endpoint) {
+//		this(endpoint, null);
+//	}
+	
+	public BlazegraphQueryHandler(String endpoint, LogManager logManager, String processId, String userName) {
 		this.endpoint = endpoint;
 		this.use_mRID = false;
+		this.logManager = logManager;
+		this.processID = processId;
+		this.username = userName;
 	}
 	public String getEndpoint() {
 		return endpoint;
@@ -70,11 +83,18 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		this.endpoint = endpoint;
 	}
 
+	public LogManager getLogManager() {
+		return logManager;
+	}
+	public void setLogManager(LogManager logManager) {
+		this.logManager = logManager;
+	}
 	@Override
 	public ResultSet query(String szQuery) { 
 		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
 		Query query = QueryFactory.create (qPrefix + szQuery);
-		System.out.println("Executing query "+szQuery);
+		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
+
 		long start = new Date().getTime();
 
 		if (mRID!=null && mRID.trim().length()>0) { // try to insert a VALUES block for the feeder mRID of interest
@@ -97,7 +117,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 
 		long end = new Date().getTime();
-		System.out.println("   Took: "+(end-start)+"ms");
+		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
 		return qexec.execSelect();
 		
 	}
@@ -114,4 +134,6 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	public String getFeederSelection() {
 		return this.mRID;
 	}
+	
+	
 }

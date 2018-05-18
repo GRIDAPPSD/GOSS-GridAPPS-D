@@ -56,5 +56,6 @@ public interface DataManager {
 
 	void registerDataManagerHandler(DataManagerHandler handler, String name);
 	
-	Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath) throws Exception;
+	Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception;
+
 }

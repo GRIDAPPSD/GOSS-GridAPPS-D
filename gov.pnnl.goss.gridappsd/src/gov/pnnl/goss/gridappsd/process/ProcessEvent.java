@@ -51,6 +51,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
+import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
@@ -66,6 +67,7 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -124,7 +126,8 @@ public class ProcessEvent implements GossResponseEvent {
 
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				client.publish(event.getReplyDestination(), processId);
-				newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+				//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+				newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 				appManager.process(processId, event, message);
@@ -150,8 +153,9 @@ public class ProcessEvent implements GossResponseEvent {
 					request = message;
 				}
 
-				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
-				client.publish(event.getReplyDestination(), r);
+				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), username);
+				//client.publish(event.getReplyDestination(), r);
+				sendData(client, event.getReplyDestination(), ((DataResponse)r).getData(), processId);
 
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
@@ -187,7 +191,14 @@ public class ProcessEvent implements GossResponseEvent {
 						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 					}
 					String result = sw.toString();
-					sendData(client, event.getReplyDestination(), result, processId);
+					
+					if(configRequest.getConfigurationType().equals("YBus Export")){
+						Gson gson = new Gson();
+						YBusExportResponse response = gson.fromJson(result, YBusExportResponse.class);
+						sendData(client, event.getReplyDestination(), response, processId);
+					}
+					else
+						sendData(client, event.getReplyDestination(), result, processId);
 
 				} else {
 					this.error(processId, "No valid configuration request received, request: "+request);
@@ -232,9 +243,10 @@ public class ProcessEvent implements GossResponseEvent {
 
 	private void sendData(Client client, Destination replyDestination, Serializable data, int processId){
 		try {
-			DataResponse r = new DataResponse();
+			String r = "{\"data\":"+data+",\"responseComplete\":true,\"id\":\""+processId+"\"}";
+			/*DataResponse r = new DataResponse();
 			r.setData(data);
-			r.setResponseComplete(true);
+			r.setResponseComplete(true);*/
 			client.publish(replyDestination, r);
 		} catch (Exception e) {
 			e.printStackTrace();

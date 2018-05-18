@@ -47,6 +47,7 @@ import static org.junit.Assert.*;
 import static gov.pnnl.goss.gridappsd.TestConstants.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -374,7 +375,7 @@ public class DTOComponentTests {
 	private FncsBridgeResponse generateFncsBridgeResponse(){
 		FncsBridgeResponse config = new FncsBridgeResponse();
 		config.command = "isInitialized";
-		config.output = "Any messages from simulator regarding initialization";
+		config.output = new HashMap<String,String>();
 		config.response = "true";
 		return config;
 	}
