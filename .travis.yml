@@ -30,7 +30,7 @@ script:
 # page of your repository and then change the 
 # environment in the settings pannel.
 after_success:
-  - if [[ "$TRAVIS_BRANCH" == "master" ]]; then
+  - if [[ -n "$DOCKER_USERNAME" -a -n "$DOCKER_PASSWORD" ]]; then
       docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
       ./.travis/build-docker.sh -p ;
     fi

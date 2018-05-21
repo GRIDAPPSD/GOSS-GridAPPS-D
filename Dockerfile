@@ -1,7 +1,7 @@
-ARG GRIDAPPSD_VERSION_LABEL=:dev
-
-FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
+ARG GRIDAPPSD_BASE_VERSION=:v1.0
 ARG TIMESTAMP
+
+FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
