@@ -380,8 +380,8 @@ public class TestManagerImpl implements TestManager {
 				}
 			});
 			
-		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
-//		client.subscribe(GridAppsDConstants.topic_simulationLog + simulationID, new GossResponseEvent(){
+//		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+		client.subscribe(GridAppsDConstants.topic_simulationOutput + simulationID, new GossResponseEvent(){
 				
 			public void onMessage(Serializable message) {
 				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";

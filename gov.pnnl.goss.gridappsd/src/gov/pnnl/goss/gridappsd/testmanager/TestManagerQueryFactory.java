@@ -65,7 +65,8 @@ public class TestManagerQueryFactory {
 //			bgHost = "http://localhost:9999";
 //		}
 		String bgHost = "http://localhost:9999";
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
+//		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
+		QueryHandler queryHandler = null;
 		return queryHandler;
 	}
 	

@@ -43,6 +43,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,9 +58,11 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -329,46 +332,102 @@ public class CompareResults {
 		JsonObject output = jsonObject;
 //		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
 		String firstKey = getFirstKey(output);
-		JsonObject simOutput = output.get(firstKey).getAsJsonObject();
+
+		JsonObject simOutput = null;
+		System.out.println(firstKey);
+		if (output.get(firstKey).isJsonObject()){
+			simOutput = output.get(firstKey).getAsJsonObject();
+		} else { 
+			// CIM: new sim output 
+			JsonParser parser = new JsonParser();
+			simOutput= parser.parse(output.get(firstKey).getAsString()).getAsJsonObject();
+			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
+			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
+			return testResults;
+			
+		}
 		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
 		return testResults;
 	}
 	
 	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, 
 			TestResults testResults, JsonObject simOutput) {
-		int countTrue = 0;
-		int countFalse = 0;
+
 		if (simOutput != null) { 
 			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
-			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
-				System.out.println(simOutputElement);
-				if (simOutputElement.getValue().isJsonObject()) {
-					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
-					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
-					for (Entry<String, JsonElement> entry : expectedOutputttObj.entrySet()) {
-						String prop = entry.getKey();				
-						if (simOutputObj.has(prop)) {
+			
+			compareExpectedAndSimOld(expectedOutputMap, testResults, simOutputSet);
+			
+		}else{
+			System.out.println("Sim output is null");
+		}
+
+	}
+	
+	public void compareExpectedAndSim(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+			Map<String, JsonElement> simOutputMap) {
+		int countTrue = 0;
+		int countFalse = 0;
+		for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
+			System.out.println(entry);
+			if (entry.getValue().isJsonObject()) {
+				JsonObject expectedOutputObj = expectedOutputMap.get(entry.getKey()).getAsJsonObject();
+				if ( simOutputMap.containsKey(entry.getKey()) ){
+					JsonObject simOutputObj = simOutputMap.get(entry.getKey()).getAsJsonObject(); 
+					// Check each property of the object
+					for(Entry<String, JsonElement> simentry : simOutputMap.get(entry.getKey()).getAsJsonObject().entrySet()){
+						String prop = simentry.getKey();
+						Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+						if (comparison)
+							countTrue++;
+						else{
+							System.out.println("\nFor "+entry.getKey() +":"+prop);
+							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+							testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+							countFalse++;
+						}
+					}
+					} else
+						System.out.println("No property for "+ entry.getKey());
+				}else
+					System.out.println("     Not object" + entry);
+		}
+		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
+	}
+	
+	public void compareExpectedAndSimOld(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+			Set<Entry<String, JsonElement>> simOutputSet) {
+		int countTrue = 0;
+		int countFalse = 0;
+		for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
+			System.out.println(simOutputElement);
+			if (simOutputElement.getValue().isJsonObject()) {
+				JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
+				JsonObject expectedOutputObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
+				for (Entry<String, JsonElement> entry : expectedOutputObj.entrySet()) {
+					String prop = entry.getKey();				
+					if (simOutputObj.has(prop)) {
 //					List<String> propsArray = propMap.get(simOutputElement.getKey());
 //					for (String prop : propsArray) {
 //						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
-							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
-							if (comparison)
-								countTrue++;
-							else{
+						Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+						if (comparison)
+							countTrue++;
+						else{
 //								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
-								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
-								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
-								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
-								countFalse++;
-							}
+							System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
+							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+							testResults.add(simOutputElement.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+							countFalse++;
+						}
 
-						} else
-							System.out.println("No property");
-					}
-				} else
-					System.out.println("     Not object" + simOutputElement);
-			}
+					} else
+						System.out.println("No property");
+				}
+			} else
+				System.out.println("     Not object" + simOutputElement);
 		}
 		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
 	}
@@ -527,10 +586,27 @@ public class CompareResults {
 	public Map<String, JsonElement> getOutputMap(JsonObject output) {
 		Map<String, JsonElement> expectedOutputMap;
 		String firstKey = getFirstKey(output);
-//		JsonObject outputs = output.get(getFeeder()).getAsJsonObject();
+		// CIM
+		if (output.has("message") ){
+			return getMeasurmentsMap(output);
+			
+		}
 		JsonObject outputs = output.get(firstKey).getAsJsonObject();
 		expectedOutputMap = outputs.entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
+		return expectedOutputMap;
+	}
+	
+	
+	public Map<String, JsonElement> getMeasurmentsMap(JsonObject output) {
+		Map<String, JsonElement> expectedOutputMap;
+		JsonObject tempObj = output.getAsJsonObject("message");
+		JsonArray temp = tempObj.getAsJsonArray("measurements");
+		expectedOutputMap = new HashMap<String, JsonElement>();
+		for (JsonElement jsonElement : temp) {
+//				System.out.println(jsonElement);
+			expectedOutputMap.put(jsonElement.getAsJsonObject().get("measurement_mrid").getAsString(), jsonElement);
+		}
 		return expectedOutputMap;
 	}
 	
@@ -570,8 +646,15 @@ public class CompareResults {
 			Complex c2 = cf.parse(expectedOutputObj.get(prop).getAsString());
 //			System.out.println("              Complex" + c1 + c2 + equals(c1,c2));
 			comparison = equals(c1,c2);
+			return comparison;
 		}
-		
+		JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
+		JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
+		if (obj1.isNumber() && obj2.isNumber()){
+			float f1 = simOutputObj.get(prop).getAsFloat();
+			float f2 = expectedOutputObj.get(prop).getAsFloat(); 
+			comparison = equals(f1,f2);
+		}
 		return comparison;
 	}
 	
