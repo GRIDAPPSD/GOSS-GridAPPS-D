@@ -8,13 +8,9 @@ usage () {
 
 TAG="$TRAVIS_BRANCH"
 
-if [ -n "$DOCKER_PROJECT" ]; then
-  echo "Error travis variable DOCKER_PROJECT is not set"
-  exit 1
-fi
-
 ORG=`echo $DOCKER_PROJECT | tr '[:upper:]' '[:lower:]'`
-IMAGE="${ORG}/gridappsd"
+ORG="${ORG:+${ORG}/}"
+IMAGE="${ORG}gridappsd"
 TIMESTAMP=`date +'%y%m%d%H'`
 GITHASH=`git log -1 --pretty=format:"%h"`
 
@@ -29,11 +25,13 @@ while getopts bp option ; do
       docker build --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:$TIMESTAMP .
       ;;
     p) # Pass gridappsd tag to docker-compose
-      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TIMESTAMP"
-      [ -n "$TAG" ] && docker push ${IMAGE}:$TIMESTAMP
-      [ -n "$TAG" ] && docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
-      [ -n "$TAG" ] && echo "docker push ${IMAGE}:$TAG"
-      [ -n "$TAG" ] && docker push ${IMAGE}:$TAG
+      if [ -n "$TAG" -a -n "$ORG" ]; then
+        echo "docker push ${IMAGE}:$TIMESTAMP"
+        docker push ${IMAGE}:$TIMESTAMP
+        docker tag ${IMAGE}:$TIMESTAMP ${IMAGE}:$TAG
+        echo "docker push ${IMAGE}:$TAG"
+        docker push ${IMAGE}:$TAG
+      fi
       ;;
     *) # Print Usage
       usage
