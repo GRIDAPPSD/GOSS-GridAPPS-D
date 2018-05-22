@@ -1,6 +1,6 @@
+ARG GRIDAPPSD_BASE_VERSION=:v1.0
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
-ARG GRIDAPPSD_BASE_VERSION=:v1.0
 ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
