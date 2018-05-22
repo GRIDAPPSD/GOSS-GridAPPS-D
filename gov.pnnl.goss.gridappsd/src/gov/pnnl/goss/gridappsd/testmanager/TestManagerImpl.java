@@ -152,7 +152,7 @@ public class TestManagerImpl implements TestManager {
 	
 	protected TestScript testScript;
 	
-	protected boolean testMode=false;
+	protected boolean testMode=true;
 
 	protected String expectedResultSeriesPath;
 	
@@ -256,12 +256,24 @@ public class TestManagerImpl implements TestManager {
 					DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
 					df.setTimeZone(TimeZone.getTimeZone("UTC"));
 					
-					String startDateStr= df.format(testConfig.getRun_start());
-							
-					String endDateStr = df.format(testConfig.getRun_end());
+//					String startDateStr= df.format(testConfig.getRun_start());
+//							
+//					String endDateStr = df.format(testConfig.getRun_end());
 			
 //				    System.out.println(startDateStr); 
 //				    System.out.println(endDateStr);
+					
+					client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput +"."+ simulationID, new GossResponseEvent(){
+						public void onMessage(Serializable message) {
+							if( !(testMode && message != null)){
+								return;
+							}
+							JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
+							jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
+							JsonObject forwardObject = jsonObject.get("input").getAsJsonObject();
+							forwardFNCSOutput(forwardObject,rulePort,topic);
+						}
+					});
 				    
 
 					processExpectedResults=true;
@@ -379,9 +391,13 @@ public class TestManagerImpl implements TestManager {
 
 				}
 			});
-			
+		
+		   
+
+				   
+		
 //		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
-		client.subscribe(GridAppsDConstants.topic_simulationOutput + simulationID, new GossResponseEvent(){
+		client.subscribe("/topic/" +GridAppsDConstants.topic_simulationOutput +"."+  simulationID, new GossResponseEvent(){
 				
 			public void onMessage(Serializable message) {
 				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
@@ -398,7 +414,8 @@ public class TestManagerImpl implements TestManager {
 				
 				CompareResults compareResults = new CompareResults();
 				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
-				forwardFNCSOutput(jsonObject,rulePort,topic);
+//				forwardFNCSOutput(jsonObject,rulePort,topic);
+				
 //				logManager.log(logMessageObj, GridAppsDConstants.username);
 				
 //				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
@@ -442,6 +459,8 @@ public class TestManagerImpl implements TestManager {
 			// The output is a string not s JSON object
 				
 				JsonParser parser = new JsonParser();
+				JsonObject forwardObject = jsonObject.get("output").getAsJsonObject();
+				forwardFNCSOutput(forwardObject,rulePort,topic);
 				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
 				// Relace simulationid with 1378290079
 

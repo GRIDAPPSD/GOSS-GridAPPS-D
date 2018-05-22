@@ -335,17 +335,22 @@ public class CompareResults {
 
 		JsonObject simOutput = null;
 		System.out.println(firstKey);
-		if (output.get(firstKey).isJsonObject()){
+		JsonObject x = output.get(firstKey).getAsJsonObject();
+		System.out.println(x);
+//		if (output.get(firstKey).isJsonObject()){
+		if ( ! firstKey.equals("output") ){
 			simOutput = output.get(firstKey).getAsJsonObject();
 		} else { 
 			// CIM: new sim output 
 			JsonParser parser = new JsonParser();
-			simOutput= parser.parse(output.get(firstKey).getAsString()).getAsJsonObject();
+//			simOutput = parser.parse(output.get(firstKey).getAsString()).getAsJsonObject();
+			simOutput = output.get(firstKey).getAsJsonObject();
 			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
 			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
 			return testResults;
-			
 		}
+//		Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
+//		compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);	
 		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
 		return testResults;
 	}
