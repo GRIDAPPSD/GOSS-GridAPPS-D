@@ -306,6 +306,12 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("Pos")) {
 				objectName = "reg_"+conductingEquipmentName;
 				propertyName = "tap_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "voltage_"+phases;
+			} else if (measurementType.equals("A")) {
+				objectName = "tx_"+conductingEquipmentName;
+				propertyName = "current_out_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for RatioTapChanger are VA, PNV, A, and Pos.\nmeasurementType = %s.",measurementType));
 			}
@@ -369,6 +375,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			}
 		} else {
 			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, RatioTapChanger, LoadBreakSwitch, EnergyConsumer, PowerElectronicsConnection, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
+
 		}
 		if(measurements.containsKey(objectName)) {
 			measurements.get(objectName).add(new JsonPrimitive(propertyName));

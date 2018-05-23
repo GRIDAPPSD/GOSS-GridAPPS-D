@@ -180,7 +180,7 @@ class ProvenQuery implements Serializable{
 
 class QueryFilter implements Serializable{
 	 	String hasSimulationId;
-	    String hasSimulationMessageType = "INPUT";
+	    String hasSimulationMessageType;
 	    String hasMrid;
 	    String startTime;
 	    String endTime;

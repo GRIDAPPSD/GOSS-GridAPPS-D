@@ -1,6 +1,6 @@
-ARG GRIDAPPSD_VERSION_LABEL=:dev
+ARG GRIDAPPSD_BASE_VERSION=:v1.0
+FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
-FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
 ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
@@ -25,8 +25,9 @@ COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
 
-COPY ./run-docker.sh /gridappsd/run-docker.sh
-RUN chmod +x /gridappsd/run-docker.sh
+COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
+RUN chmod +x /gridappsd/run-gridappsd.sh
+RUN ln -s run-gridappsd.sh run-docker.sh
 
 # Add the opendss command and library to the container
 COPY ./opendss/opendsscmd /usr/local/bin
