@@ -48,19 +48,15 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.jms.JMSException;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-import org.apache.felix.dm.annotation.api.Stop;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -74,9 +70,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
@@ -93,8 +89,6 @@ import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -172,15 +166,7 @@ public class TestManagerImpl implements TestManager {
 		this.simulationManager = simulationManager;
 		this.logManager = logManager;
 	}
-	
-	private String getPath(String key){
-		String path = configurationManager.getConfigurationProperty(key);
-		if(path==null){
-			log.warn("Configuration property not found, defaulting to .: "+key);
-			path = ".";
-		}
-		return path;
-	}
+
 	
 	private void watch(final Process process, String processName) {
 	    new Thread() {
@@ -390,122 +376,92 @@ public class TestManagerImpl implements TestManager {
 		}	
 	}
 	
-//	client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
 	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
-		client.subscribe("/topic/" +GridAppsDConstants.topic_simulationOutput +"."+  simulationID, new GossResponseEvent(){
-				
+		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
+		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
-
 				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
 
-				if(testMode && message != null){
+				if (testMode && message != null) {
 					expected_output_series = expectedResultSeriesPath;
-				}else{
+				} else {
 					return;
 				}
 
-				DataResponse event = (DataResponse)message;
+				DataResponse event = (DataResponse) message;
 				logMessageObj.setTimestamp(new Date().getTime());
 				String subMsg = event.getData().toString();
-				if ( subMsg.length() >= 200 ) subMsg = subMsg.substring(0, 200);
-				logMessageObj.setLogMessage("TestManager recevied message: "+ subMsg +" on topic "+event.getDestination());
-				
+				if (subMsg.length() >= 200)
+					subMsg = subMsg.substring(0, 200);
+				logMessageObj.setLogMessage("TestManager recevied message: " + subMsg + " on topic " + event.getDestination());
+
 				CompareResults compareResults = new CompareResults();
-				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
-//				forwardFNCSOutput(jsonObject,rulePort,topic);
-				
-//				logManager.log(logMessageObj, GridAppsDConstants.username);
-				
-//				String path = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output_object.json";
-//				String sim_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/sim_output.json";
-//				String expected_output = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output.json";
-
-				if( ! processExpectedResults){
-					return;
-				}
-
-//				expected_output_series = "/home/gridappsd/gridappsd_project/builds/applications/sample_app/tests/expected_result_series.json";
-
-				logMessageObj.setTimestamp(new Date().getTime());
-//				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
-				logManager.log(logMessageObj,  GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-				
-//				{"output": null, "command": "isInitialized", "response": "False"}
-//				System.out.println("TestMan keys");
-//				System.out.println(jsonObject.get("data").getAsString());
-				
-				// TODO double check
+				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString());
 				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
 
-				if( jsonObject.get("output") == null || jsonObject.get("output").isJsonNull() ){
+				if (jsonObject.get("output") == null || jsonObject.get("output").isJsonNull()) {
 					logMessageObj.setTimestamp(new Date().getTime());
 					if (jsonObject.get("output") == null)
 						logMessageObj.setLogMessage("TestManager output is null.");
 					else
 						logMessageObj.setLogMessage("TestManager output is Json null" + jsonObject.get("output").toString());
-					logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-					return;	
+					
+					logManager.log(logMessageObj, GridAppsDConstants.username,
+							GridAppsDConstants.topic_platformLog);
+					return;
 				}
-				
-//				gridappsd_project/builds/log/karaf.log.1:TestManager fncs : not outputtruefalse{"ieee8500":{"cap_capbank0a":{"capacitor_A":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":100.0,"phases":"AN","phases_connected":"NA","pt_phase":"A","switchA":"CLOSED"},"cap_capbank0b":{"capacitor_B":400000.0,"control":"MANUAL","control_level":"BANK","dwell_time":101.0,"phases":"BN","phases_connected":"NB","pt_phase":"B","switchB":"CLOSED"},"cap_capbank0c":{"capacit
-//				if( ! jsonObject.get("output").isJsonObject()){
-//				JsonParser parser = new JsonParser();
-//				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
-//				logMessageObj.setTimestamp(new Date().getTime());
-//				logMessageObj.setLog_message("TestManager fncs : not output" + simOutputObject.isJsonObject() + simOutputObject.isJsonPrimitive() +simOutputObject.getAsJsonObject().get("ieee8500"));
-//				logManager.log(logMessageObj);
-//				simOutputObject.getAsJsonObject().get("cap_capbank0a");				
-//			}
-			// The output is a string not s JSON object
-				
-				JsonParser parser = new JsonParser();
-				JsonObject forwardObject = jsonObject.get("output").getAsJsonObject();
-				forwardFNCSOutput(forwardObject,rulePort,topic);
+				JsonObject temp = CompareResults.getSimulationJson(message.toString());
+				temp = CompareResults.getSimulationJson(temp.get("data").getAsString());
+				JsonObject forwardObject = temp.get("output").getAsJsonObject();
+
+                int meas_len = forwardObject.get("message").getAsJsonObject().get("measurements").getAsJsonArray().size();
+                JsonArray tarray = forwardObject.get("message").getAsJsonObject().get("measurements").getAsJsonArray();
+                int chunk_size = 500;
+                IntStream.range(0, (meas_len-1) / chunk_size).forEachOrdered(end -> {
+//                	System.out.println("TestManager range " + end*chunk_size + " " + ((end+1)*chunk_size-1));
+                	JsonArray slice = getArraySlice(tarray, end*chunk_size, (end+1)*chunk_size); 
+					forwardObject.get("message").getAsJsonObject().add("measurements", slice);
+	            	forwardFNCSOutput(forwardObject,rulePort, topic);
+                });
+                System.out.println("TestManager range " + ((meas_len-1) / chunk_size)*chunk_size + " " + (meas_len-1));
+            	JsonArray slice = getArraySlice(tarray, ((meas_len-1) / chunk_size)*chunk_size, meas_len); 
+				forwardObject.get("message").getAsJsonObject().add("measurements", slice);
+				forwardFNCSOutput(forwardObject, rulePort, topic);
+
+				if (!processExpectedResults) {
+					return;
+				}
+
 				JsonElement simOutputObject = jsonObject.getAsJsonObject();
-//				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
-				// Relace simulationid with 1378290079
-
-//				String firstKey = null;
-//				keys = simOutputObject.getAsJsonObject().entrySet()
-//					    .stream()
-//					    .map(i -> i.getKey())
-//					    .collect(Collectors.toCollection(ArrayList::new));
-
-//				keys.forEach(System.out::println);
 				String firstKey = CompareResults.getFirstKey(simOutputObject.getAsJsonObject());
 				System.out.println("TestMan compare key " + firstKey);
 
-//				String dataStr = jsonObject.get("output").getAsString().replace(firstKey, "1378290079");
-//				String dataStr = jsonObject.get("output").getAsString();
-//				simOutputObject = parser.parse(dataStr);
-
-//				System.out.println("TestMan compare " + dataStr);
-//				SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
-//				compareResults.getProp(simOutProperties);
-//				TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
-
-//				Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap(expected_output);
-//				Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-//						.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-				
-				//Temp timeseries index
+				// Temp timeseries index
 				String indexStr = tempIndex + "";
 				tempIndex++;
-//				TestResults tr = compareResults.compareExpectedWithSimulationOutput(expectedOutputMap, propMap,simOutputObject.getAsJsonObject());
-				TestResults tr = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series);
-				if (tr != null){
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(indexStr,
+						simOutputObject.getAsJsonObject(), expected_output_series);
+				if (tr != null) {
 					testResultSeries.add(indexStr, tr);
 				}
-//				int count2 = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series, simOutProperties).getNumberOfConflicts();
-				
+
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("Index: " + indexStr +" TestManager number of conflicts: "+" total "+ testResultSeries.getTotal());
-				logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
-				
+				logMessageObj.setLogMessage("Index: " + indexStr + " TestManager number of conflicts: "
+						+ " total " + testResultSeries.getTotal());
+				logManager.log(logMessageObj, GridAppsDConstants.username,
+						GridAppsDConstants.topic_platformLog);
 			}
 
+			public JsonArray getArraySlice(JsonArray tarray, int start, int end) {
+				JsonArray childJsonArray1 = new JsonArray();
+				IntStream.range(start , end).forEachOrdered(ii -> {
+				        JsonElement rec = tarray.get(ii);
+				        childJsonArray1.add(rec); 		
+				});
+				return childJsonArray1;
+			}
 
-			});
+		});
 	}
 	
 	public void forwardSimulationInput(Client client, int simulationID) {

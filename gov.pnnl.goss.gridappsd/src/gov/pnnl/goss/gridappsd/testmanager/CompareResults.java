@@ -375,7 +375,7 @@ public class CompareResults {
 		int countTrue = 0;
 		int countFalse = 0;
 		for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
-			System.out.println(entry);
+//			System.out.println(entry);
 			if (entry.getValue().isJsonObject()) {
 				JsonObject expectedOutputObj = expectedOutputMap.get(entry.getKey()).getAsJsonObject();
 				if ( simOutputMap.containsKey(entry.getKey()) ){
@@ -387,15 +387,16 @@ public class CompareResults {
 						if (comparison)
 							countTrue++;
 						else{
-//							System.out.println("\nFor "+entry.getKey() +":"+prop);
-//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+							System.out.println("\nFor "+entry.getKey() +":"+prop);
+							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
 							testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
 							countFalse++;
 						}
 					}
-					} else
-						System.out.println("No property for "+ entry.getKey());
+					} else{
+//						System.out.println("No property for "+ entry.getKey());
+					}
 				}else
 					System.out.println("     Not object" + entry);
 		}
@@ -439,41 +440,41 @@ public class CompareResults {
 	}
 	
 
-	public void compareExpectedWithSimulationOld(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
-			TestResults testResults, JsonObject simOutput) {
-		int countTrue = 0;
-		int countFalse = 0;
-		if (simOutput != null) {
-			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
-			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
-//				System.out.println(simOutputElement);
-				if (simOutputElement.getValue().isJsonObject()) {
-					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
-					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
-					List<String> propsArray = propMap.get(simOutputElement.getKey());
-					for (String prop : propsArray) {
-						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
-							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
-							if (comparison)
-								countTrue++;
-							else{
-//								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
-								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
-								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
-								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
-								countFalse++;
-							}
-
-						} else
-							System.out.println("No property");
-					}
-				} else
-					System.out.println("     Not object" + simOutputElement);
-			}
-		}
-		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
-	}
+//	public void compareExpectedWithSimulationOld(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
+//			TestResults testResults, JsonObject simOutput) {
+//		int countTrue = 0;
+//		int countFalse = 0;
+//		if (simOutput != null) {
+//			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
+//			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
+////				System.out.println(simOutputElement);
+//				if (simOutputElement.getValue().isJsonObject()) {
+//					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
+//					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
+//					List<String> propsArray = propMap.get(simOutputElement.getKey());
+//					for (String prop : propsArray) {
+//						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
+//							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
+//							if (comparison)
+//								countTrue++;
+//							else{
+////								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
+//								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
+//								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+//								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
+//								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
+//								countFalse++;
+//							}
+//
+//						} else
+//							System.out.println("No property");
+//					}
+//				} else
+//					System.out.println("     Not object" + simOutputElement);
+//			}
+//		}
+//		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
+//	}
 
 	/**
 	 * 
@@ -547,7 +548,6 @@ public class CompareResults {
 				JsonObject jsonObject = expectedOutputObj.getAsJsonObject();
 				JsonObject output = jsonObject.get("expected_output").getAsJsonObject();
 				expectedOutputMap = getOutputMap(output);
-				System.out.println("     Lookup expected" + expectedOutputMap.get("rcon_VREG3"));
 
 			}
 		} catch (FileNotFoundException e) {
@@ -582,8 +582,6 @@ public class CompareResults {
 					return null;
 				}
 
-
-				System.out.println("     Lookup expected" + expectedOutputMap.get("rcon_VREG3"));
 
 			}
 		} catch (FileNotFoundException e) {
