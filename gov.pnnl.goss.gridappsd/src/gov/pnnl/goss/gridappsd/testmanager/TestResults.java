@@ -36,69 +36,70 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.testmanager;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-
-public class TestScript implements Serializable {
-
-	private static final long serialVersionUID = 1L;
-
-	public String name;
-
-	private String test_configuration;
-
-	private String application;
+/**
+ * Class to keep track of the test result differences.
+ * @author jsimpson
+ *
+ */
+public class TestResults {
 	
-	private Map<String,List<String>> outputs;
+	public Map<String, HashMap<String, String[]>> objectPropComparison = new HashMap<String, HashMap<String, String[]>>();
 	
-//	private String[] events;
-
-	public TestScript() {
-
-	}
-
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
+	public HashMap<String, String[]> add(String obj, String prop){
+		HashMap<String, String[]> prop1 ;
+		if (objectPropComparison.containsKey(obj)){
+			prop1  = objectPropComparison.get(obj);
+		} else {
+			prop1 = new HashMap<String, String[]>();
+			objectPropComparison.put(obj, prop1 );
+		}
+		return prop1;
 	}
 	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
-	}
-
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
+	public void add(String obj, String prop, String expected, String actual){
+		HashMap<String, String[]> prop1 = add(obj,prop);
+		String [] x = {expected, actual};
+		prop1.put(prop, x);
 	}
 	
-	public static TestScript parse(String jsonString){
-		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new JsonSyntaxException("Expected attribute name not found");
-		return obj;
+	public int getNumberOfConflicts(){
+		int count = 0;
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			count+=propMap.size();
+		}
+		return count;	
+	}	
+	
+	public void pprint() {
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			for (Entry<String, String[]> prop: propMap.entrySet()){
+				System.out.println(entry.getKey() + "." + prop.getKey());
+				System.out.println("    Expected:" + prop.getValue()[0] );
+				System.out.println("    Actual  :" + prop.getValue()[1] );
+			}
+		}
+		System.out.println("Total conflicts "+ getNumberOfConflicts());
 	}
+	
+	public static void main(String[] args) {
+		TestResults tr = new TestResults();
+		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
+		String [] x = {"3","10"};
+		prop1.put("tap_A", x );
+		tr.objectPropComparison.put("reg_VREG2",prop1);	
+		
+		tr.add("reg_VREG1", "tap_A", "3", "10");
+		tr.add("reg_VREG1", "tap_B", "3", "10");
+		tr.pprint();
+	}
+
 }
