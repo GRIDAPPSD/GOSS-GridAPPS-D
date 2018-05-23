@@ -245,6 +245,7 @@ public class CompareResults {
 	 */
 	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutputPath);
+		if (expectedOutputMap == null) return null;
 //		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 //				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 	
@@ -336,7 +337,7 @@ public class CompareResults {
 		JsonObject simOutput = null;
 		System.out.println(firstKey);
 		JsonObject x = output.get(firstKey).getAsJsonObject();
-		System.out.println(x);
+//		System.out.println(x);
 //		if (output.get(firstKey).isJsonObject()){
 		if ( ! firstKey.equals("output") ){
 			simOutput = output.get(firstKey).getAsJsonObject();
@@ -386,9 +387,9 @@ public class CompareResults {
 						if (comparison)
 							countTrue++;
 						else{
-							System.out.println("\nFor "+entry.getKey() +":"+prop);
-							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+//							System.out.println("\nFor "+entry.getKey() +":"+prop);
+//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
 							testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
 							countFalse++;
 						}
@@ -575,7 +576,11 @@ public class CompareResults {
 //				}
 //				
 				JsonObject outputs = jsonObject.get("expected_outputs").getAsJsonObject();
-				expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+				if(outputs.has(timestamp)){
+					expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+				}else{
+					return null;
+				}
 
 
 				System.out.println("     Lookup expected" + expectedOutputMap.get("rcon_VREG3"));

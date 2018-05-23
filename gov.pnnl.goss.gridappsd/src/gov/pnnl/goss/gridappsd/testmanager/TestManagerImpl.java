@@ -152,7 +152,7 @@ public class TestManagerImpl implements TestManager {
 	
 	protected TestScript testScript;
 	
-	protected boolean testMode=true;
+	protected boolean testMode = false;
 
 	protected String expectedResultSeriesPath;
 	
@@ -263,21 +263,8 @@ public class TestManagerImpl implements TestManager {
 //				    System.out.println(startDateStr); 
 //				    System.out.println(endDateStr);
 					
-					client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput +"."+ simulationID, new GossResponseEvent(){
-						public void onMessage(Serializable message) {
-							if( !(testMode && message != null)){
-								return;
-							}
-							JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
-							jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
-							JsonObject forwardObject = jsonObject.get("input").getAsJsonObject();
-							forwardFNCSOutput(forwardObject,rulePort,topic);
-						}
-					});
-				    
-
 					processExpectedResults=true;
-
+					
 					if (expectedResultSeriesPath == null || expectedResultSeriesPath.isEmpty()){
 						logMessageObj.setTimestamp(new Date().getTime());
 						logMessageObj.setLogMessage("TestManager expected output is null or empty. Skipping test.");
@@ -292,6 +279,10 @@ public class TestManagerImpl implements TestManager {
 							processExpectedResults=false;
 						}
 					}
+					
+					forwardSimulationInput(client, simulationID);
+					
+					processSimulationOutput(logMessageObj, client, simulationID);
 
 					try {
 						
@@ -391,15 +382,20 @@ public class TestManagerImpl implements TestManager {
 
 				}
 			});
-		
-		   
 
-				   
-		
-//		client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+
+		}
+		catch(Exception e){
+			log.error("Error in test manager",e);
+		}	
+	}
+	
+//	client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossResponseEvent() {
+	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
 		client.subscribe("/topic/" +GridAppsDConstants.topic_simulationOutput +"."+  simulationID, new GossResponseEvent(){
 				
 			public void onMessage(Serializable message) {
+
 				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
 
 				if(testMode && message != null){
@@ -410,7 +406,9 @@ public class TestManagerImpl implements TestManager {
 
 				DataResponse event = (DataResponse)message;
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
+				String subMsg = event.getData().toString();
+				if ( subMsg.length() >= 200 ) subMsg = subMsg.substring(0, 200);
+				logMessageObj.setLogMessage("TestManager recevied message: "+ subMsg +" on topic "+event.getDestination());
 				
 				CompareResults compareResults = new CompareResults();
 				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
@@ -429,12 +427,14 @@ public class TestManagerImpl implements TestManager {
 //				expected_output_series = "/home/gridappsd/gridappsd_project/builds/applications/sample_app/tests/expected_result_series.json";
 
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
+//				logMessageObj.setLogMessage("TestManager fncs :  "+ expectedResultSeriesPath + message.toString());
 				logManager.log(logMessageObj,  GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 				
 //				{"output": null, "command": "isInitialized", "response": "False"}
-				System.out.println("TestMan keys");
-				System.out.println(jsonObject.get("data").getAsString());
+//				System.out.println("TestMan keys");
+//				System.out.println(jsonObject.get("data").getAsString());
+				
+				// TODO double check
 				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
 
 				if( jsonObject.get("output") == null || jsonObject.get("output").isJsonNull() ){
@@ -461,7 +461,8 @@ public class TestManagerImpl implements TestManager {
 				JsonParser parser = new JsonParser();
 				JsonObject forwardObject = jsonObject.get("output").getAsJsonObject();
 				forwardFNCSOutput(forwardObject,rulePort,topic);
-				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
+				JsonElement simOutputObject = jsonObject.getAsJsonObject();
+//				JsonElement simOutputObject = parser.parse(jsonObject.get("output").getAsString());
 				// Relace simulationid with 1378290079
 
 //				String firstKey = null;
@@ -475,10 +476,10 @@ public class TestManagerImpl implements TestManager {
 				System.out.println("TestMan compare key " + firstKey);
 
 //				String dataStr = jsonObject.get("output").getAsString().replace(firstKey, "1378290079");
-				String dataStr = jsonObject.get("output").getAsString();
-				simOutputObject = parser.parse(dataStr);
+//				String dataStr = jsonObject.get("output").getAsString();
+//				simOutputObject = parser.parse(dataStr);
 
-				System.out.println("TestMan compare " + dataStr);
+//				System.out.println("TestMan compare " + dataStr);
 //				SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 //				compareResults.getProp(simOutProperties);
 //				TestResults tr = compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
@@ -492,21 +493,33 @@ public class TestManagerImpl implements TestManager {
 				tempIndex++;
 //				TestResults tr = compareResults.compareExpectedWithSimulationOutput(expectedOutputMap, propMap,simOutputObject.getAsJsonObject());
 				TestResults tr = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series);
-				testResultSeries.add(indexStr, tr);
+				if (tr != null){
+					testResultSeries.add(indexStr, tr);
+				}
 //				int count2 = compareResults.compareExpectedWithSimulationOutput(indexStr,simOutputObject.getAsJsonObject(),expected_output_series, simOutProperties).getNumberOfConflicts();
 				
 				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("Index: " + indexStr +" TestManager number of conflicts: "+ tr.getNumberOfConflicts() + " total "+ testResultSeries.getTotal());
+				logMessageObj.setLogMessage("Index: " + indexStr +" TestManager number of conflicts: "+" total "+ testResultSeries.getTotal());
 				logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 				
 			}
 
 
 			});
-		}
-		catch(Exception e){
-			log.error("Error in test manager",e);
-		}	
+	}
+	
+	public void forwardSimulationInput(Client client, int simulationID) {
+		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput +"."+ simulationID, new GossResponseEvent(){
+			public void onMessage(Serializable message) {
+				if( !(testMode && message != null)){
+					return;
+				}
+				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
+				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
+				JsonObject forwardObject = jsonObject.get("input").getAsJsonObject();
+				forwardFNCSOutput(forwardObject,rulePort,topic);
+			}
+		});
 	}
 	
 	public void forwardFNCSOutput(JsonObject jsonObject, int port, String topic) {
