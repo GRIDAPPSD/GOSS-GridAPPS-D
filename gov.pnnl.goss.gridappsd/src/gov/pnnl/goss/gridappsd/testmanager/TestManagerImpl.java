@@ -52,8 +52,6 @@ import java.util.Date;
 import java.util.TimeZone;
 import java.util.stream.IntStream;
 
-import javax.jms.JMSException;
-
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
@@ -85,10 +83,7 @@ import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -97,7 +92,6 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 
 
@@ -196,10 +190,6 @@ public class TestManagerImpl implements TestManager {
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			//TODO: Compare Results
-			
-			
 			//TODO: subscribe to GridAppsDConstants.topic_request_prefix+/* instead of GridAppsDConstants.topic_requestSimulation
 			client.subscribe(topic_requestTest, new GossResponseEvent() {
 
@@ -410,6 +400,8 @@ public class TestManagerImpl implements TestManager {
 							GridAppsDConstants.topic_platformLog);
 					return;
 				}
+				
+				// Break up measurements to send to rules app
 				JsonObject temp = CompareResults.getSimulationJson(message.toString());
 				temp = CompareResults.getSimulationJson(temp.get("data").getAsString());
 				JsonObject forwardObject = temp.get("output").getAsJsonObject();
@@ -423,7 +415,7 @@ public class TestManagerImpl implements TestManager {
 					forwardObject.get("message").getAsJsonObject().add("measurements", slice);
 	            	forwardFNCSOutput(forwardObject,rulePort, topic);
                 });
-                System.out.println("TestManager range " + ((meas_len-1) / chunk_size)*chunk_size + " " + (meas_len-1));
+//                System.out.println("TestManager range " + ((meas_len-1) / chunk_size)*chunk_size + " " + (meas_len-1));
             	JsonArray slice = getArraySlice(tarray, ((meas_len-1) / chunk_size)*chunk_size, meas_len); 
 				forwardObject.get("message").getAsJsonObject().add("measurements", slice);
 				forwardFNCSOutput(forwardObject, rulePort, topic);
@@ -535,23 +527,9 @@ public class TestManagerImpl implements TestManager {
 			jsonReader = new JsonReader(new FileReader(path));
 			jsonReader.setLenient(true);
 			testConfig = gson.fromJson(new FileReader(path),TestConfiguration.class);
-			System.out.println(testConfig.toString());
-				
-//			jsonReader.beginObject();
-//			while (jsonReader.hasNext()) {
-//
-//				String name = jsonReader.nextName();
-//				System.out.println(name);
-//				System.out.println(jsonReader.nextString());
-//				if (name.equals("test_configuration")) {
-//	//				readApp(jsonReader);
-//	
-//				}
-//			}
-//			jsonReader.endObject();
+//			System.out.println(testConfig.toString());
 			jsonReader.close();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 //			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Error" + e.getMessage());
@@ -580,48 +558,6 @@ public class TestManagerImpl implements TestManager {
 //			logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 		}
 		return testScript;
-	}
-
-	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException {
-		//TODO: Request Simulation
-			//TODO: 1 PowerSystemConfig
-			//TODO: 2 SimulationConfig simulation_config
-			//TODO: 3 Build/Set ApplicationConfig 
-		//Create Request Simulation object, you could also just pass in a json string with the configuration
-		TestManagerQueryFactory qf = new TestManagerQueryFactory();
-		qf.getFeeder();
-		PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
-		powerSystemConfig.GeographicalRegion_name = qf.getGeographicalRegion(); // "ieee8500_Region";
-		powerSystemConfig.SubGeographicalRegion_name =  qf.getSubGeographicalRegion(); // "ieee8500_SubRegion";
-		powerSystemConfig.Line_name = qf.getFeeder(); // "ieee8500";
-
-		SimulationConfig simulationConfig = new SimulationConfig();
-		simulationConfig.duration = 60;
-		simulationConfig.power_flow_solver_method = "";
-		simulationConfig.simulation_id = ""; //.setSimulation_name("");
-		simulationConfig.simulator = ""; //.setSimulator("");
-
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		simulationConfig.start_time = sdf.format(new Date()); //.setStart_time("");
-
-		RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
-
-		Gson  gson = new Gson();
-		String request = gson.toJson(requestSimulation);
-		//Step3: Send configuration to the request simulation topic
-		log.debug("Request simulation");
-		log.debug("Client is:" + client);
-		Serializable simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, RESPONSE_FORMAT.JSON);
-		log.debug("simulation id is: "+simulationId);
-		//Subscribe to bridge output
-		client.subscribe("goss/gridappsd/fncs/output", new GossResponseEvent() {
-		    public void onMessage(Serializable response) {
-		      log.debug("simulation output is: "+response);
-		      System.out.println("simulation output is: "+response);
-		      //TODO capture stream and save
-		      
-		    }
-		});
 	}
 
 	
