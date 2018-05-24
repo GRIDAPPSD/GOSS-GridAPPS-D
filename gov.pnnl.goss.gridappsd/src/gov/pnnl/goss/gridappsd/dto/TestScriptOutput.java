@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,16 +36,41 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
-import gov.pnnl.goss.gridappsd.dto.TestScript;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface TestManager {
+import com.google.gson.Gson;
+
+public class TestScriptOutput {
+
+	public List<String> output_objects;
 	
-	public TestScript loadTestScript(String path);
+
+
+	public List<String> getOutputObjects() {
+		if(output_objects==null)
+			output_objects = new ArrayList<String>();
+		return output_objects;
+	}
+
+	public void setOutputObjects(List<String> outputObjects) {
+		this.output_objects = outputObjects;
+	}
 	
-	public TestConfiguration loadTestConfig(String path);
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 	
+	public static TestScriptOutput parse(String jsonString){
+		Gson  gson = new Gson();
+		TestScriptOutput obj = gson.fromJson(jsonString, TestScriptOutput.class);
+		if(obj.output_objects==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
+		return obj;
+	}
 }

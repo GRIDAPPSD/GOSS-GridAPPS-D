@@ -48,34 +48,85 @@ public class RequestTest implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
+	public String expectedResult;
+	
+	public int rulePort;
+	
+	public int simulationID;
+	
 	public String testConfigPath;
-
+	
+	public int testID;
+	
 	public String testScriptPath;
 	
+	public String topic;
+
+	public RequestTest(){}
+
+	public RequestTest(String testConfigPath, String testScriptPath){
+		this.testConfigPath = testConfigPath;
+		this.testScriptPath = testScriptPath;
+	}
+
+	public String getExpectedResult() {
+		return expectedResult;
+	}
+
+	public int getRulePort() {
+		return rulePort;
+	}
+
+	public int getSimulationID() {
+		return simulationID;
+	}	
+
 	public String getTestConfigPath() {
 		return testConfigPath;
+	}
+
+	public int getTestID() {
+		return testID;
 	}
 
 	public String getTestScriptPath() {
 		return testScriptPath;
 	}
 
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setExpectedResult(String expectedResult) {
+		this.expectedResult = expectedResult;
+	}
+
+	public void setRulePort(int rulePort) {
+		this.rulePort = rulePort;
+	}
+
+	public void setSimulationID(int simulationID) {
+		this.simulationID = simulationID;
 	}
 
 	public void setTestConfigPath(String testConfigPath) {
 		this.testConfigPath = testConfigPath;
-	}	
+	}
+
+	public void setTestID(int testID) {
+		this.testID = testID;
+	}
 	
-	public RequestTest(){}
-	
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
+	public void setTestScriptPath(String testScriptPath) {
 		this.testScriptPath = testScriptPath;
 	}
 	
 
+	public void setTopic(String topic) {
+		this.topic = topic;
+	}
+	
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();

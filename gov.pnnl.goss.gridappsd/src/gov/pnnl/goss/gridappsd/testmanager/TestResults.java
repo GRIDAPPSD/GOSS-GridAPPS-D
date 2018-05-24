@@ -37,15 +37,69 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+package gov.pnnl.goss.gridappsd.testmanager;
 
-import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
-import gov.pnnl.goss.gridappsd.dto.TestScript;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
-public interface TestManager {
+/**
+ * Class to keep track of the test result differences.
+ * @author jsimpson
+ *
+ */
+public class TestResults {
 	
-	public TestScript loadTestScript(String path);
+	public Map<String, HashMap<String, String[]>> objectPropComparison = new HashMap<String, HashMap<String, String[]>>();
 	
-	public TestConfiguration loadTestConfig(String path);
+	public HashMap<String, String[]> add(String obj, String prop){
+		HashMap<String, String[]> prop1 ;
+		if (objectPropComparison.containsKey(obj)){
+			prop1  = objectPropComparison.get(obj);
+		} else {
+			prop1 = new HashMap<String, String[]>();
+			objectPropComparison.put(obj, prop1 );
+		}
+		return prop1;
+	}
 	
+	public void add(String obj, String prop, String expected, String actual){
+		HashMap<String, String[]> prop1 = add(obj,prop);
+		String [] x = {expected, actual};
+		prop1.put(prop, x);
+	}
+	
+	public int getNumberOfConflicts(){
+		int count = 0;
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			count+=propMap.size();
+		}
+		return count;	
+	}	
+	
+	public void pprint() {
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			for (Entry<String, String[]> prop: propMap.entrySet()){
+				System.out.println(entry.getKey() + "." + prop.getKey());
+				System.out.println("    Expected:" + prop.getValue()[0] );
+				System.out.println("    Actual  :" + prop.getValue()[1] );
+			}
+		}
+		System.out.println("Total conflicts "+ getNumberOfConflicts());
+	}
+	
+	public static void main(String[] args) {
+		TestResults tr = new TestResults();
+		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
+		String [] x = {"3","10"};
+		prop1.put("tap_A", x );
+		tr.objectPropComparison.put("reg_VREG2",prop1);	
+		
+		tr.add("reg_VREG1", "tap_A", "3", "10");
+		tr.add("reg_VREG1", "tap_B", "3", "10");
+		tr.pprint();
+	}
+
 }

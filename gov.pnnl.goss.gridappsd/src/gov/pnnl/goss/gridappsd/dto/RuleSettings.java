@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,16 +36,30 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
-import gov.pnnl.goss.gridappsd.dto.TestScript;
+import com.google.gson.Gson;
 
-public interface TestManager {
+public class RuleSettings {
+	public String name;
 	
-	public TestScript loadTestScript(String path);
+	public int port;
 	
-	public TestConfiguration loadTestConfig(String path);
+	public String topic;
 	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	public static TestScript parse(String jsonString){
+		Gson  gson = new Gson();
+		TestScript obj = gson.fromJson(jsonString, TestScript.class);
+		if(obj.name==null)
+			throw new RuntimeException("Expected attribute name not found");
+		return obj;
+	}
+
 }
