@@ -174,7 +174,6 @@ public class CompareResults {
 				for (SimulationOutputObject out :simOut.output_objects){
 					JsonElement outputTmp = ouputsMap.get(out.name);
 					System.out.println(out.name + " " +ouputsMap.get(out.name));
-					// TODO Compare here since I can look at each output and property
 					if( output != null){
 						for (String prop : out.getProperties()) {
 							System.out.println("     "  +prop);
@@ -200,7 +199,6 @@ public class CompareResults {
 
 			}		
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -308,22 +306,6 @@ public class CompareResults {
 		expectedOutputNames.retainAll(simOONames);
 		System.out.println(expectedOutputNames.size() + " "  + expectedOutputNames);
 		return expectedOutputNames;
-		
-		
-//		int count =0;
-//		for (Entry<String, List<String>> entry : es) {
-//			List<String> listOfValues = entry.getValue();
-//			for (String value : listOfValues) {
-//				for (SimulationOutputObject simulationOutputObject : simOutputObjects) {
-//					if (simulationOutputObject.getName().equals(value)){
-//						System.out.println("Found " + simulationOutputObject.getName());
-//						count ++;
-//					}
-//				}
-//			}
-//		}
-//		System.out.println(count);
-//		System.out.println(simOutProperties.getOutputObjects().size());
 	}
 
 	public TestResults compareExpectedWithSimulationOutput(Map<String, JsonElement> expectedOutputMap,
@@ -331,27 +313,20 @@ public class CompareResults {
 
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
-//		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
 		String firstKey = getFirstKey(output);
 
 		JsonObject simOutput = null;
-		System.out.println(firstKey);
-		JsonObject x = output.get(firstKey).getAsJsonObject();
-//		System.out.println(x);
+
 //		if (output.get(firstKey).isJsonObject()){
 		if ( ! firstKey.equals("output") ){
 			simOutput = output.get(firstKey).getAsJsonObject();
 		} else { 
 			// CIM: new sim output 
-			JsonParser parser = new JsonParser();
-//			simOutput = parser.parse(output.get(firstKey).getAsString()).getAsJsonObject();
 			simOutput = output.get(firstKey).getAsJsonObject();
 			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
 			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
 			return testResults;
-		}
-//		Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
-//		compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);	
+		}	
 		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
 		return testResults;
 	}
@@ -395,7 +370,7 @@ public class CompareResults {
 						}
 					}
 					} else{
-//						System.out.println("No property for "+ entry.getKey());
+						System.out.println("No property for "+ entry.getKey());
 					}
 				}else
 					System.out.println("     Not object" + entry);
@@ -440,42 +415,6 @@ public class CompareResults {
 	}
 	
 
-//	public void compareExpectedWithSimulationOld(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
-//			TestResults testResults, JsonObject simOutput) {
-//		int countTrue = 0;
-//		int countFalse = 0;
-//		if (simOutput != null) {
-//			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
-//			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
-////				System.out.println(simOutputElement);
-//				if (simOutputElement.getValue().isJsonObject()) {
-//					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
-//					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
-//					List<String> propsArray = propMap.get(simOutputElement.getKey());
-//					for (String prop : propsArray) {
-//						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
-//							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
-//							if (comparison)
-//								countTrue++;
-//							else{
-////								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
-//								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
-//								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-//								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
-//								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
-//								countFalse++;
-//							}
-//
-//						} else
-//							System.out.println("No property");
-//					}
-//				} else
-//					System.out.println("     Not object" + simOutputElement);
-//			}
-//		}
-//		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
-//	}
-
 	/**
 	 * 
 	 * @param simOutputPath
@@ -492,7 +431,6 @@ public class CompareResults {
 			}
 
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return jsonObject;
@@ -551,7 +489,6 @@ public class CompareResults {
 
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return expectedOutputMap;
@@ -585,7 +522,6 @@ public class CompareResults {
 
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return expectedOutputMap;
@@ -699,7 +635,6 @@ public class CompareResults {
 			}
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
 	}
