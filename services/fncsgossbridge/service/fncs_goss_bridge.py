@@ -202,7 +202,7 @@ class GOSSListener(object):
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
-                response_msg = json.dumps(message)
+                response_msg = json.dumps(message['output'])
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
@@ -463,12 +463,13 @@ def _get_fncs_bus_messages(simulation_id):
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        t_now = datetime.utcnow()
         cim_output = {}
         if simulation_id in message_events:
             cim_measurements_dict = {
                 "simulation_id": simulation_id,
                 "message" : {
-                    "timestamp" : str(datetime.utcnow()),
+                    "timestamp" : datetime.utcnow().isoformat() + 'Z',
                     "measurements" : []
                 }
             }
