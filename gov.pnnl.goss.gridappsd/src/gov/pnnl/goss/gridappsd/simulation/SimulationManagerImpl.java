@@ -61,6 +61,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -287,6 +288,12 @@ public class SimulationManagerImpl implements SimulationManager{
 					} finally {
 						//Shut down applications and services connected with the simulation
 						List<String> ids = simContext.getServiceInstanceIds();
+						simulatorProcess.destroy();
+						try {
+							simulatorProcess.waitFor(10, TimeUnit.MILLISECONDS);
+						} catch(InterruptedException ex) {
+							simulatorProcess.destroyForcibly();
+						}
 						for(String id : ids){
 							serviceManager.stopServiceInstance(id);
 						}
@@ -400,8 +407,8 @@ public class SimulationManagerImpl implements SimulationManager{
 							new Date().getTime(),
 							"FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
 							+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms",
-							LogLevel.ERROR,
-							ProcessStatus.ERROR,
+							LogLevel.INFO,
+							ProcessStatus.RUNNING,
 							true), GridAppsDConstants.username,
 							GridAppsDConstants.topic_platformLog);
 					throw new Exception("FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
