@@ -42,6 +42,8 @@ package gov.pnnl.goss.gridappsd.testmanager;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +58,11 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -170,7 +174,6 @@ public class CompareResults {
 				for (SimulationOutputObject out :simOut.output_objects){
 					JsonElement outputTmp = ouputsMap.get(out.name);
 					System.out.println(out.name + " " +ouputsMap.get(out.name));
-					// TODO Compare here since I can look at each output and property
 					if( output != null){
 						for (String prop : out.getProperties()) {
 							System.out.println("     "  +prop);
@@ -196,7 +199,6 @@ public class CompareResults {
 
 			}		
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -211,11 +213,11 @@ public class CompareResults {
 	public TestResults compareExpectedWithSimulation(String simOutputPath, String expectedOutputPath, SimulationOutput simOutProperties) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
 
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 		JsonObject jsonObject = getSimulationOutputFile(simOutputPath);
 		
-		return compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 	}
 	
 	/**
@@ -224,13 +226,9 @@ public class CompareResults {
 	 * @param expectedOutputPath
 	 * @param simOutProperties
 	 */
-	public TestResults compareExpectedWithSimulation(JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulation(JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-		
-		return compareExpectedWithSimulation(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 	}
 	
 	
@@ -243,12 +241,13 @@ public class CompareResults {
 	 * @param simOutProperties
 	 * @return
 	 */
-	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutputPath);
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+		if (expectedOutputMap == null) return null;
+//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 	
-		return compareExpectedWithSimulationOutput(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 	}
 	
 	/**
@@ -257,28 +256,25 @@ public class CompareResults {
 	 * @param expectedOutputPath
 	 * @param simOutProperties
 	 */
-	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath, SimulationOutput simOutProperties) {
+	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath) {
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 	
-		return compareExpectedWithSimulationOutput(expectedOutputMap, propMap, jsonObject);
+		return compareExpectedWithSimulationOutput(expectedOutputMap,  jsonObject);
 	}
 
-	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap,
-			Map<String, List<String>> propMap, JsonObject jsonObject) {
+	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, JsonObject jsonObject) {
 		
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject.get("output").getAsJsonObject();
 		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
+		compareExpectedWithSimulation(expectedOutputMap,  testResults, simOutput);
 		return testResults;
 	}
 	
 	public String getFeeder() {
-		TestManagerQueryFactory qf = new TestManagerQueryFactory();
-		return qf.getFeeder();
-//		return "ieee8500";
+//		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+//		return qf.getFeeder();
+		return "ieee8500";
 	}
 	
 	/**
@@ -310,69 +306,114 @@ public class CompareResults {
 		expectedOutputNames.retainAll(simOONames);
 		System.out.println(expectedOutputNames.size() + " "  + expectedOutputNames);
 		return expectedOutputNames;
-		
-		
-//		int count =0;
-//		for (Entry<String, List<String>> entry : es) {
-//			List<String> listOfValues = entry.getValue();
-//			for (String value : listOfValues) {
-//				for (SimulationOutputObject simulationOutputObject : simOutputObjects) {
-//					if (simulationOutputObject.getName().equals(value)){
-//						System.out.println("Found " + simulationOutputObject.getName());
-//						count ++;
-//					}
-//				}
-//			}
-//		}
-//		System.out.println(count);
-//		System.out.println(simOutProperties.getOutputObjects().size());
 	}
 
 	public TestResults compareExpectedWithSimulationOutput(Map<String, JsonElement> expectedOutputMap,
-			Map<String, List<String>> propMap, JsonObject jsonObject) {
+			 JsonObject jsonObject) {
 
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
-		JsonObject simOutput = output.get(getFeeder()).getAsJsonObject();
-		compareExpectedWithSimulation(expectedOutputMap, propMap, testResults, simOutput);
+		String firstKey = getFirstKey(output);
+
+		JsonObject simOutput = null;
+
+//		if (output.get(firstKey).isJsonObject()){
+		if ( ! firstKey.equals("output") ){
+			simOutput = output.get(firstKey).getAsJsonObject();
+		} else { 
+			// CIM: new sim output 
+			simOutput = output.get(firstKey).getAsJsonObject();
+			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
+			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
+			return testResults;
+		}	
+		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
 		return testResults;
 	}
-
-	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, Map<String, List<String>> propMap,
+	
+	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, 
 			TestResults testResults, JsonObject simOutput) {
+
+		if (simOutput != null) { 
+			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
+			
+			compareExpectedAndSimOld(expectedOutputMap, testResults, simOutputSet);
+			
+		}else{
+			System.out.println("Sim output is null");
+		}
+
+	}
+	
+	public void compareExpectedAndSim(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+			Map<String, JsonElement> simOutputMap) {
 		int countTrue = 0;
 		int countFalse = 0;
-		if (simOutput != null) {
-			Set<Entry<String, JsonElement>> simOutputSet = simOutput.entrySet();
-			for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
-//				System.out.println(simOutputElement);
-				if (simOutputElement.getValue().isJsonObject()) {
-					JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
-					JsonObject expectedOutputttObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
-					List<String> propsArray = propMap.get(simOutputElement.getKey());
-					for (String prop : propsArray) {
-						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
-							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputttObj, prop);
-							if (comparison)
-								countTrue++;
-							else{
-//								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
-								System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
-								System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-								System.out.println("    GOT:      "+ expectedOutputttObj.get(prop) );
-								testResults.add(simOutputElement.getKey() , prop, expectedOutputttObj.get(prop).toString(), simOutputObj.get(prop).toString());
-								countFalse++;
-							}
-
-						} else
-							System.out.println("No property");
+		for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
+//			System.out.println(entry);
+			if (entry.getValue().isJsonObject()) {
+				JsonObject expectedOutputObj = expectedOutputMap.get(entry.getKey()).getAsJsonObject();
+				if ( simOutputMap.containsKey(entry.getKey()) ){
+					JsonObject simOutputObj = simOutputMap.get(entry.getKey()).getAsJsonObject(); 
+					// Check each property of the object
+					for(Entry<String, JsonElement> simentry : simOutputMap.get(entry.getKey()).getAsJsonObject().entrySet()){
+						String prop = simentry.getKey();
+						Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+						if (comparison)
+							countTrue++;
+						else{
+							System.out.println("\nFor "+entry.getKey() +":"+prop);
+							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+							testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+							countFalse++;
+						}
 					}
-				} else
-					System.out.println("     Not object" + simOutputElement);
-			}
+					} else{
+						System.out.println("No property for "+ entry.getKey());
+					}
+				}else
+					System.out.println("     Not object" + entry);
 		}
 		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
 	}
+	
+	public void compareExpectedAndSimOld(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+			Set<Entry<String, JsonElement>> simOutputSet) {
+		int countTrue = 0;
+		int countFalse = 0;
+		for (Map.Entry<String, JsonElement> simOutputElement : simOutputSet) {
+			System.out.println(simOutputElement);
+			if (simOutputElement.getValue().isJsonObject()) {
+				JsonObject simOutputObj = simOutputElement.getValue().getAsJsonObject();
+				JsonObject expectedOutputObj = expectedOutputMap.get(simOutputElement.getKey()).getAsJsonObject();
+				for (Entry<String, JsonElement> entry : expectedOutputObj.entrySet()) {
+					String prop = entry.getKey();				
+					if (simOutputObj.has(prop)) {
+//					List<String> propsArray = propMap.get(simOutputElement.getKey());
+//					for (String prop : propsArray) {
+//						if (simOutputObj.has(prop) && expectedOutputttObj.has(prop)) {
+						Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+						if (comparison)
+							countTrue++;
+						else{
+//								System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
+							System.out.println("\nFor "+simOutputElement.getKey() +":"+prop);
+							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+							testResults.add(simOutputElement.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+							countFalse++;
+						}
+
+					} else
+						System.out.println("No property");
+				}
+			} else
+				System.out.println("     Not object" + simOutputElement);
+		}
+		System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
+	}
+	
 
 	/**
 	 * 
@@ -390,7 +431,6 @@ public class CompareResults {
 			}
 
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return jsonObject;
@@ -414,11 +454,11 @@ public class CompareResults {
 	}
 	
 	/**
-	 * 
+	 * Get the JsonObject from a string
 	 * @param simOutput
 	 * @return
 	 */
-	public JsonObject getSimulationJson(String simOutput) {
+	public static JsonObject getSimulationJson(String simOutput) {
 		JsonObject jsonObject = null;
 
 		JsonParser parser = new JsonParser();
@@ -446,11 +486,9 @@ public class CompareResults {
 				JsonObject jsonObject = expectedOutputObj.getAsJsonObject();
 				JsonObject output = jsonObject.get("expected_output").getAsJsonObject();
 				expectedOutputMap = getOutputMap(output);
-				System.out.println("     Lookup expected" + expectedOutputMap.get("rcon_VREG3"));
 
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return expectedOutputMap;
@@ -475,14 +513,15 @@ public class CompareResults {
 //				}
 //				
 				JsonObject outputs = jsonObject.get("expected_outputs").getAsJsonObject();
-				expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+				if(outputs.has(timestamp)){
+					expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+				}else{
+					return null;
+				}
 
-
-				System.out.println("     Lookup expected" + expectedOutputMap.get("rcon_VREG3"));
 
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return expectedOutputMap;
@@ -490,10 +529,48 @@ public class CompareResults {
 
 	public Map<String, JsonElement> getOutputMap(JsonObject output) {
 		Map<String, JsonElement> expectedOutputMap;
-		JsonObject outputs = output.get(getFeeder()).getAsJsonObject();
+		String firstKey = getFirstKey(output);
+		// CIM
+		if (output.has("message") ){
+			return getMeasurmentsMap(output);
+			
+		}
+		JsonObject outputs = output.get(firstKey).getAsJsonObject();
 		expectedOutputMap = outputs.entrySet().stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
 		return expectedOutputMap;
+	}
+	
+	
+	public Map<String, JsonElement> getMeasurmentsMap(JsonObject output) {
+		Map<String, JsonElement> expectedOutputMap;
+		JsonObject tempObj = output.getAsJsonObject("message");
+		JsonArray temp = tempObj.getAsJsonArray("measurements");
+		expectedOutputMap = new HashMap<String, JsonElement>();
+		for (JsonElement jsonElement : temp) {
+//				System.out.println(jsonElement);
+			expectedOutputMap.put(jsonElement.getAsJsonObject().get("measurement_mrid").getAsString(), jsonElement);
+		}
+		return expectedOutputMap;
+	}
+	
+	public static String getFirstKey(String json_string) {
+		JsonParser parser = new JsonParser();
+		JsonElement simOutputObject = parser.parse(json_string);
+		String firstKey = CompareResults.getFirstKey(simOutputObject.getAsJsonObject());
+		return firstKey;
+	}
+	
+	public static String getFirstKey(JsonObject output) {
+		String firstKey = null;
+		List<String> keys = output.getAsJsonObject().entrySet()
+			    .stream()
+			    .map(i -> i.getKey())
+			    .collect(Collectors.toCollection(ArrayList::new));
+
+//		keys.forEach(System.out::println);
+		firstKey = keys.get(0);
+		return firstKey;
 	}
 
 	/**
@@ -513,8 +590,15 @@ public class CompareResults {
 			Complex c2 = cf.parse(expectedOutputObj.get(prop).getAsString());
 //			System.out.println("              Complex" + c1 + c2 + equals(c1,c2));
 			comparison = equals(c1,c2);
+			return comparison;
 		}
-		
+		JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
+		JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
+		if (obj1.isNumber() && obj2.isNumber()){
+			float f1 = simOutputObj.get(prop).getAsFloat();
+			float f2 = expectedOutputObj.get(prop).getAsFloat(); 
+			comparison = equals(f1,f2);
+		}
 		return comparison;
 	}
 	
@@ -551,7 +635,6 @@ public class CompareResults {
 			}
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
 	}
@@ -565,14 +648,14 @@ public class CompareResults {
 //		str_out = "{\"output\": {\"ieee8500\":{\"cap_capbank0a\":{\"capacitor_A\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank0b\":{\"capacitor_B\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank0c\":{\"capacitor_C\":400000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank1a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank1b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank1c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank2a\":{\"capacitor_A\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":100.0,\"phases\":\"AN\",\"phases_connected\":\"NA\",\"pt_phase\":\"A\",\"switchA\":\"CLOSED\"},\"cap_capbank2b\":{\"capacitor_B\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":101.0,\"phases\":\"BN\",\"phases_connected\":\"NB\",\"pt_phase\":\"B\",\"switchB\":\"CLOSED\"},\"cap_capbank2c\":{\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"BANK\",\"dwell_time\":102.0,\"phases\":\"CN\",\"phases_connected\":\"NC\",\"pt_phase\":\"C\",\"switchC\":\"CLOSED\"},\"cap_capbank3\":{\"capacitor_A\":300000.0,\"capacitor_B\":300000.0,\"capacitor_C\":300000.0,\"control\":\"MANUAL\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":0.0,\"phases\":\"ABCN\",\"phases_connected\":\"NCBA\",\"pt_phase\":\"\",\"switchA\":\"CLOSED\",\"switchB\":\"CLOSED\",\"switchC\":\"CLOSED\"},\"nd_190-7361\":{\"voltage_A\":\"6410.387412-4584.456974j V\",\"voltage_B\":\"-7198.592139-3270.308373j V\",\"voltage_C\":\"642.547265+7539.531175j V\"},\"nd_190-8581\":{\"voltage_A\":\"6485.244723-4692.686497j V\",\"voltage_B\":\"-7183.641236-3170.693325j V\",\"voltage_C\":\"544.875721+7443.341013j V\"},\"nd_190-8593\":{\"voltage_A\":\"6723.279163-5056.725836j V\",\"voltage_B\":\"-7494.205738-3101.034603j V\",\"voltage_C\":\"630.475858+7534.534976j V\"},\"nd__hvmv_sub_lsb\":{\"voltage_A\":\"6261.474438-3926.148203j V\",\"voltage_B\":\"-6529.409296-3466.545236j V\",\"voltage_C\":\"247.131623+7348.295282j V\"},\"nd_l2673313\":{\"voltage_A\":\"6569.522313-5003.052614j V\",\"voltage_B\":\"-7431.486583-3004.840141j V\",\"voltage_C\":\"644.553332+7464.115913j V\"},\"nd_l2876814\":{\"voltage_A\":\"6593.064916-5014.031802j V\",\"voltage_B\":\"-7430.572725-3003.995539j V\",\"voltage_C\":\"643.473398+7483.558764j V\"},\"nd_l2955047\":{\"voltage_A\":\"5850.305847-4217.166594j V\",\"voltage_B\":\"-6729.652722-2987.617377j V\",\"voltage_C\":\"535.302084+7395.127354j V\"},\"nd_l3160107\":{\"voltage_A\":\"5954.507575-4227.423005j V\",\"voltage_B\":\"-6662.357613-3055.346880j V\",\"voltage_C\":\"600.213658+7317.832959j V\"},\"nd_l3254238\":{\"voltage_A\":\"6271.490549-4631.254028j V\",\"voltage_B\":\"-7169.987847-3099.952684j V\",\"voltage_C\":\"751.609656+7519.062259j V\"},\"nd_m1047574\":{\"voltage_A\":\"6306.632407-4741.568925j V\",\"voltage_B\":\"-7214.626338-2987.055915j V\",\"voltage_C\":\"622.058712+7442.125123j V\"},\"rcon_FEEDER_REG\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":126.5,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG2\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG3\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"rcon_VREG4\":{\"Control\":\"MANUAL\",\"PT_phase\":\"CBA\",\"band_center\":125.0,\"band_width\":2.0,\"connect_type\":\"WYE_WYE\",\"control_level\":\"INDIVIDUAL\",\"dwell_time\":15.0,\"lower_taps\":16,\"raise_taps\":16,\"regulation\":0.10000000000000001},\"reg_FEEDER_REG\":{\"configuration\":\"rcon_FEEDER_REG\",\"phases\":\"ABC\",\"tap_A\":2,\"tap_B\":2,\"tap_C\":1,\"to\":\"nd__hvmv_sub_lsb\"},\"reg_VREG2\":{\"configuration\":\"rcon_VREG2\",\"phases\":\"ABC\",\"tap_A\":10,\"tap_B\":6,\"tap_C\":2,\"to\":\"nd_190-8593\"},\"reg_VREG3\":{\"configuration\":\"rcon_VREG3\",\"phases\":\"ABC\",\"tap_A\":16,\"tap_B\":10,\"tap_C\":1,\"to\":\"nd_190-8581\"},\"reg_VREG4\":{\"configuration\":\"rcon_VREG4\",\"phases\":\"ABC\",\"tap_A\":12,\"tap_B\":12,\"tap_C\":5,\"to\":\"nd_190-7361\"},\"xf_hvmv_sub\":{\"power_in_A\":\"1739729.120858-774784.929430j VA\",\"power_in_B\":\"1659762.622463-785218.730666j VA\",\"power_in_C\":\"1709521.679515-849734.584043j VA\"}}}\n, \"command\": \"nextTimeStep\"}";
 		JsonObject jsonObject = compareResults.getSimulationOutput(str_out);
 
-		String path = "./applications/python/sim_output_object.json";
+//		String path = "./applications/python/sim_output_object.json";
 		String expectedOutputPath = "./applications/python/expected_output.json";
-		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
+//		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
 
-		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-		compareResults.compareExpectedWithSimulation(expectedOutputMap, propMap,jsonObject);
+//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+		compareResults.compareExpectedWithSimulation(expectedOutputMap, jsonObject);
 		
 	}
 

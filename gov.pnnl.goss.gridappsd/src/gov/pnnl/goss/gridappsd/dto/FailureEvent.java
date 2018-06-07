@@ -37,24 +37,75 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.testmanager;
+package gov.pnnl.goss.gridappsd.dto;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
+import java.io.Serializable;
+import java.util.Date;
 
-public class TestResultSeries {
-	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
+import com.google.gson.Gson;
+
+public class FailureEvent implements Serializable{
 	
-	public void add(String index, TestResults testResults){
-		results.put(index, testResults);
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7348798730580951117L;
+	
+//	mRID of the Fault itself
+//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
+//	Fault.phases, for the phases involved in the fault
+//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
+//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
+//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
+//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
+//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
+
+	public String faultMRID;
+	
+	public String equipmentMRID;
+	
+	public String phases;
+	
+	public String rGround; //Complex
+	
+	public String xGround; //Complex
+	
+	public String rLineToLine; //Complex
+	
+	public String xLineToLine; //Complex
+
+	public Date event_date;
+	
+	public int event_type;
+	
+	public Date getEvent_date() {
+		return event_date;
+	}
+
+	public void setEvent_date(Date event_date) {
+		this.event_date = event_date;
+	}
+
+	public int getEvent_type() {
+		return event_type;
+	}
+
+	public void setEvent_type(int event_type) {
+		this.event_type = event_type;
 	}
 	
-	public int getTotal(){
-		int total=0;
-		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
-			total+=iterable_element.getValue().getNumberOfConflicts();
-		}
-		return total;
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+
+	public static FailureEvent parse(String jsonString){
+		Gson  gson = new Gson();
+		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
+		if(obj.event_date==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
+		return obj;
 	}
 
 }

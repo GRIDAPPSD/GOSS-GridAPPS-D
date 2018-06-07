@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,25 +36,30 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.testmanager;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
+import com.google.gson.Gson;
 
-public class TestResultSeries {
-	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
+public class RuleSettings {
+	public String name;
 	
-	public void add(String index, TestResults testResults){
-		results.put(index, testResults);
+	public int port;
+	
+	public String topic;
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-	public int getTotal(){
-		int total=0;
-		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
-			total+=iterable_element.getValue().getNumberOfConflicts();
-		}
-		return total;
+	public static TestScript parse(String jsonString){
+		Gson  gson = new Gson();
+		TestScript obj = gson.fromJson(jsonString, TestScript.class);
+		if(obj.name==null)
+			throw new RuntimeException("Expected attribute name not found");
+		return obj;
 	}
 
 }
