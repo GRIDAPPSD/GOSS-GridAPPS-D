@@ -6,9 +6,12 @@ import static org.amdatu.testing.configurator.TestConfigurator.createServiceDepe
 import static org.junit.Assert.assertNotNull;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import javax.jms.JMSException;
 
 import org.amdatu.testing.configurator.TestConfiguration;
 import org.apache.http.auth.Credentials;
@@ -23,9 +26,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.northconcepts.exception.SystemException;
 
 import gov.pnnl.goss.gridappsd.configuration.GLDBaseConfigurationHandler;
-import gov.pnnl.goss.gridappsd.configuration.GLDSymbolsConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.GLDSimulationOutputConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.CIMDictionaryConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.CIMFeederIndexConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.CIMSymbolsConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -51,15 +59,44 @@ public class ConfigurationManagerTest {
 	private volatile ClientFactory clientFactory;
 	private volatile ServerControl serverControl;
 	private Client client;
+	private String simulationId;
 	
 	private static final String OPENWIRE_CLIENT_CONNECTION = "tcp://localhost:6000";
 	private static final String STOMP_CLIENT_CONNECTION = "stomp://localhost:6000";
 
 	public static void main (String[] args){
 		ConfigurationManagerTest test = new ConfigurationManagerTest();
+		test.simulationId = null;
+		try{
+//			test.simulationId = test.getClient().getResponse(TestConstants.REQUEST_SIMULATION_CONFIG_ESC, "goss.gridappasd.process.request.simulation", null).toString();
+			test.simulationId = test.startSimulation();
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("SIMULATION ID "+test.simulationId);
+//		try {
+//			Thread.sleep(35000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		test.testgetGLDAllConfiguration();
+//		test.testgetCIMDictConfiguration();
+//		test.testgetGLDSimulationOutputConfiguration();
 //		test.testgetGLMBaseConfiguration();
-		test.testgetGLMSymbolsConfiguration();
+//		test.testgetGLMSymbolsConfiguration();
+//		test.testgetCIMFeederIndexConfiguration();
 	}
+	
+	public String startSimulation() throws Exception{
+		Client client = getClient();
+		
+		Serializable response = client.getResponse(TestConstants.REQUEST_SIMULATION_CONFIG_ESC, GridAppsDConstants.topic_requestSimulation, RESPONSE_FORMAT.JSON);
+		
+		
+		return response.toString();
+	}
+	
 	
 	
 	@Before
@@ -109,6 +146,7 @@ public class ConfigurationManagerTest {
     
     
 	public void testgetGLMBaseConfiguration(){
+		long start = new Date().getTime();
 
 		try {
 			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
@@ -122,6 +160,10 @@ public class ConfigurationManagerTest {
 			properties.setProperty(GLDBaseConfigurationHandler.SCHEDULENAME, "ieeezipload");
 			properties.setProperty(GLDBaseConfigurationHandler.LOADSCALINGFACTOR, "1.0");
 			properties.setProperty(GLDBaseConfigurationHandler.MODELID, objectMrid);
+			if(simulationId!=null){
+				properties.setProperty(GLDBaseConfigurationHandler.SIMULATIONID, simulationId);
+
+			}
 			configRequest.setParameters(properties);
 			
 			System.out.println("CONFIG BASE GLM REQUEST: "+GridAppsDConstants.topic_requestConfig);
@@ -136,7 +178,9 @@ public class ConfigurationManagerTest {
 				String responseStr = response.toString();
 				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println("Response: ");
-				System.out.println(dataResponse.getData());
+				System.out.println(dataResponse.isError());
+//				System.out.println(dataResponse.getData());
+
 			} else {
 				System.out.println(response);
 				System.out.println(response.getClass());
@@ -145,26 +189,152 @@ public class ConfigurationManagerTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
 	}
     
-    
-	public void testgetGLMSymbolsConfiguration(){
-
+	public void testgetGLDAllConfiguration(){
+		long start = new Date().getTime();
 		try {
 			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
 
 			ConfigurationRequest configRequest = new ConfigurationRequest();
-			configRequest.setConfigurationType(GLDSymbolsConfigurationHandler.TYPENAME);
+			configRequest.setConfigurationType(GLDAllConfigurationHandler.TYPENAME);
 			Properties properties = new Properties();
-//			properties.setProperty(GLDBaseConfigurationHandler.ZFRACTION, "0.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.IFRACTION, "1.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.PFRACTION, "0.0");
-//			properties.setProperty(GLDBaseConfigurationHandler.SCHEDULENAME, "ieeezipload");
-//			properties.setProperty(GLDBaseConfigurationHandler.LOADSCALINGFACTOR, "1.0");
-			properties.setProperty(GLDBaseConfigurationHandler.MODELID, objectMrid);
+			String simId = "12345";
+			if(simulationId!=null){
+				simId = simulationId;
+			}
+			properties.setProperty(GLDAllConfigurationHandler.DIRECTORY, "/tmp/gridappsd_tmp/"+simId);
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONNAME, "ieee8500");
+			properties.setProperty(GLDAllConfigurationHandler.ZFRACTION, "0.0");
+			properties.setProperty(GLDAllConfigurationHandler.IFRACTION, "1.0");
+			properties.setProperty(GLDAllConfigurationHandler.PFRACTION, "0.0");
+			properties.setProperty(GLDAllConfigurationHandler.SCHEDULENAME, "ieeezipload");
+			properties.setProperty(GLDAllConfigurationHandler.LOADSCALINGFACTOR, "1.0");
+			properties.setProperty(GLDAllConfigurationHandler.SOLVERMETHOD, "NR");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, "2018-02-18 00:00:00");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONDURATION, "60");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONID, simId);
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, "localhost");
+			properties.setProperty(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, "61616");
+
+
+			properties.setProperty(GLDAllConfigurationHandler.MODELID, objectMrid);
+			
 			configRequest.setParameters(properties);
 			
-			System.out.println("CONFIG GLM SYMBOL REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println("CONFIG BASE ALL REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println(configRequest);
+			System.out.println();
+			System.out.println();						
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(configRequest.toString(), GridAppsDConstants.topic_requestConfig, RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+//				System.out.println("Response: "+responseStr);
+
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println("Response: "+response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
+	}
+	
+	public void testgetGLDSimulationOutputConfiguration(){
+		long start = new Date().getTime();
+		try {
+			String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+			ConfigurationRequest configRequest = new ConfigurationRequest();
+			configRequest.setConfigurationType(GLDSimulationOutputConfigurationHandler.TYPENAME);
+			Properties properties = new Properties();
+			
+			properties.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, objectMrid);
+			properties.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, "");
+			if(simulationId!=null){
+				properties.setProperty(GLDBaseConfigurationHandler.SIMULATIONID, simulationId);
+
+			}
+			configRequest.setParameters(properties);
+			
+			System.out.println("CONFIG SIM OUTPUT REQUEST: "+GridAppsDConstants.topic_requestConfig);
+			System.out.println(configRequest);
+			System.out.println();
+			System.out.println();						
+			Client client = getClient();
+			
+			Serializable response = client.getResponse(configRequest.toString(), GridAppsDConstants.topic_requestConfig, RESPONSE_FORMAT.JSON);
+			
+			if(response instanceof String){
+				String responseStr = response.toString();
+//				System.out.println("Response: "+responseStr);
+
+				DataResponse dataResponse = DataResponse.parse(responseStr);
+				System.out.println(dataResponse.isError());
+
+//				System.out.println(dataResponse.getData());
+			} else {
+				System.out.println(response);
+				System.out.println(response.getClass());
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
+	}
+    
+	public void testgetGLMSymbolsConfiguration(){
+		long start = new Date().getTime();
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMSymbolsConfigurationHandler.TYPENAME, objectMrid, simulationId);
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
+	}
+	public void testgetCIMDictConfiguration(){
+		long start = new Date().getTime();
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMDictionaryConfigurationHandler.TYPENAME, objectMrid, simulationId);
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
+	}
+	public void testgetCIMFeederIndexConfiguration(){
+		long start = new Date().getTime();
+		String objectMrid = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+
+		testConfig(CIMFeederIndexConfigurationHandler.TYPENAME, objectMrid, simulationId);
+		long end = new Date().getTime();
+		System.out.println("Took "+(end-start)+" ms");
+	}
+	
+	
+	void testConfig (String type, String modelId, String simulationId){
+		try {
+
+			ConfigurationRequest configRequest = new ConfigurationRequest();
+			configRequest.setConfigurationType(type);
+			Properties properties = new Properties();
+			properties.setProperty(GLDAllConfigurationHandler.MODELID, modelId);
+			if(simulationId!=null){
+				properties.setProperty(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
+
+			}
+			configRequest.setParameters(properties);
+			
+			System.out.println("CONFIG "+type+" REQUEST: "+GridAppsDConstants.topic_requestConfig);
 			System.out.println(configRequest);
 			System.out.println();
 			System.out.println();						
@@ -176,7 +346,9 @@ public class ConfigurationManagerTest {
 				String responseStr = response.toString();
 				DataResponse dataResponse = DataResponse.parse(responseStr);
 				System.out.println("Response: ");
-				System.out.println(dataResponse.getData());
+//				System.out.println(dataResponse.getData());
+				System.out.println(dataResponse.isError());
+
 			} else {
 				System.out.println(response);
 				System.out.println(response.getClass());

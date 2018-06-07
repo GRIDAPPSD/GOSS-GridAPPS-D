@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Properties;
@@ -56,7 +57,10 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
@@ -120,10 +124,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 */
 	@Override
 	public synchronized File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception{
-		
+		logManager.log(
+				new LogMessage(this.getClass().getName(), new Integer(
+						simulationId).toString(), new Date().getTime(),
+						"ConfigurationManager.getSimulationFile will be deprecated", LogLevel.WARN,
+						ProcessStatus.RUNNING, false), "",
+				GridAppsDConstants.topic_platformLog);
 		log.debug(powerSystemConfig.toString());
 		//TODO call dataManager's method to get power grid model data and create simulation file
-		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH));
+		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), "");
 		
 		if(resp!=null && (resp instanceof DataResponse) && (((DataResponse)resp).getData())!=null && (((DataResponse)resp).getData() instanceof File)){
 			//Update simulation status after every step, for example:
@@ -157,10 +166,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	}
 
 	@Override
-	public void generateConfiguration(String type, Properties parameters, PrintWriter out) throws Exception {
+	public void generateConfiguration(String type, Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		if(configHandlers.containsKey(type) && configHandlers.get(type)!=null){
-			configHandlers.get(type).generateConfig(parameters, out);
+			configHandlers.get(type).generateConfig(parameters, out, processId, username);
 		} else {
+			logManager.log(
+					new LogMessage(this.getClass().getName(), new Integer(
+							processId).toString(), new Date().getTime(),
+							"No configuration handler registered for '"+type+"'", LogLevel.ERROR,
+							ProcessStatus.ERROR, false), "",
+					GridAppsDConstants.topic_platformLog);			
 			throw new Exception("No configuration handler registered for '"+type+"'");
 		}
 	}

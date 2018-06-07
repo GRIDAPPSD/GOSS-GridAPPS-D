@@ -44,21 +44,31 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import pnnl.goss.core.DataResponse;
 
@@ -124,9 +134,13 @@ public class ProcessNewSimulationRequest {
 							LogLevel.INFO,
 							ProcessStatus.RUNNING,true), simulationLogTopic);
 
-			File simulationFile = configurationManager.getSimulationFile(
-					simulationId, config);
-			if (simulationFile == null) {
+			
+//			StringWriter simulationConfigDirOut = new StringWriter();
+//			File simulationFile = configurationManager.getSimulationFile(
+//					simulationId, config);
+//			String simulationConfigDir = simulationConfigDirOut.toString();
+			String simulationConfigDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
 								simulationId).toString(), new Date().getTime(),
@@ -137,6 +151,49 @@ public class ProcessNewSimulationRequest {
 				throw new Exception("No simulation file returned for request "
 						+ config);
 			}
+			if(!simulationConfigDir.endsWith(File.separator)){
+				simulationConfigDir = simulationConfigDir+File.separator;
+			}
+			simulationConfigDir = simulationConfigDir+simulationId+File.separator;
+			File tempDataPathDir = new File(simulationConfigDir);
+			if(!tempDataPathDir.exists()){
+				tempDataPathDir.mkdirs();
+			}
+			
+			
+			SimulationContext simContext = new SimulationContext();
+			simContext.setRequest(config);
+			simContext.simulationId = simId;
+			simContext.simulationPort = simulationPort;
+			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
+			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			try{
+				simContext.simulatorPath = serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path();
+			}catch(NullPointerException e){
+				if(serviceManager.getService(config.getSimulation_config().getSimulator()) == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							simId, 
+							new Date().getTime(),
+							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(), 
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+				}
+				e.printStackTrace();
+			}
+			 
+			
+			
+			
+			
+			Properties simulationParams = generateSimulationParameters(config);
+			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
+			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
 
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
@@ -144,16 +201,15 @@ public class ProcessNewSimulationRequest {
 							simulationLogTopic);
 
 			
-			
 			// Start Apps and Services
 			
-			
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
+			simulationContext.put("request",config);
 			simulationContext.put("simulationId",simId);
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
-			simulationContext.put("simulationDir",simulationFile.getParentFile());
-			simulationContext.put("simulationFile",simulationFile.getAbsolutePath());
+			simulationContext.put("simulationDir",simulationConfigDir);
+			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
@@ -162,7 +218,7 @@ public class ProcessNewSimulationRequest {
 							simId, 
 							new Date().getTime(),
 							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
 					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 							simId, 
@@ -204,12 +260,14 @@ public class ProcessNewSimulationRequest {
 			
 			simulationContext.put("connectedServiceInstanceIds",connectServiceInstanceIds);
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
+			simContext.serviceInstanceIds = connectServiceInstanceIds;
+			simContext.appInstanceIds = connectedAppInstanceIds;
 
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Starting simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
-			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simulationContext);
+			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simContext);
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Started simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
@@ -229,6 +287,83 @@ public class ProcessNewSimulationRequest {
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
+		}
+	}
+	
+	
+	Properties generateSimulationParameters(RequestSimulation requestSimulation){
+		Properties params = new Properties();
+		
+		//TODO where to get feeder id?
+		params.put(GLDAllConfigurationHandler.MODELID, requestSimulation.power_system_config.Line_name);
+		
+		ModelCreationConfig modelConfig = requestSimulation.getSimulation_config().model_creation_config;
+		double zFraction = modelConfig.z_fraction;
+		double iFraction = modelConfig.i_fraction;
+		if(iFraction==0){
+			iFraction = 1;
+		}
+		double pFraction = modelConfig.p_fraction; 
+			
+		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
+		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
+		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
+		params.put(GLDAllConfigurationHandler.LOADSCALINGFACTOR, new Double(modelConfig.load_scaling_factor).toString());
+			
+		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
+		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
+		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
+
+		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, requestSimulation.getSimulation_config().getSimulation_broker_location());
+		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, new Integer(requestSimulation.getSimulation_config().getSimulation_broker_port()).toString());
+		
+		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
+		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
+		
+		return params;
+	}
+	
+	
+	/**
+	 * Create configfile.json string, should look something like 
+	 *   "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
+	 * @param simulationOutput
+	 * @return
+	 */
+	protected void generateConfigFile(File configFile , SimulationOutput simulationOutput){
+		StringBuffer configStr = new StringBuffer();
+		boolean isFirst = true;
+		configStr.append("{");
+		for(SimulationOutputObject obj: simulationOutput.getOutputObjects()){
+			if(!isFirst){
+				configStr.append(",");
+			}
+			isFirst = false;
+			
+			configStr.append("\""+obj.getName()+"\": [");
+			boolean isFirstProp = true;
+			for(String property: obj.getProperties()){
+				if(!isFirstProp){
+					configStr.append(",");
+				}
+				isFirstProp = false;
+				configStr.append("\""+property+"\"");
+			}
+			configStr.append("]");
+		}
+		
+		configStr.append("}");
+		
+		FileWriter fOut;
+		try {
+			fOut  = new FileWriter(configFile);
+			fOut.write(configStr.toString());
+		
+		fOut.flush();
+		fOut.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 }

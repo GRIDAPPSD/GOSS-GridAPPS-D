@@ -1,16 +1,16 @@
-ARG GRIDAPPSD_VERSION_LABEL=:rc2
+ARG GRIDAPPSD_BASE_VERSION=:v1.0
+FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
-FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
+ARG TIMESTAMP
 
-# Add specific pip requirements files for installation onto this image in
-# the following location. 
-#
-# NOTE: as an example the fncsgossbridge requirements file can be used as a
-#       reference point.
-RUN apt-get update && \
-  apt-get install -y python-pip && \
-  rm -rf /var/cache/apt/archives/* && \
-  rm -rf /root/.cache/pip/wheels
+# Get the gridappsd-python from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
+  && cd gridappsd-python \
+  && python setup.py sdist \
+  && pip3 install dist/gridappsd-1.0.tar.gz \
+  && pip install dist/gridappsd-1.0.tar.gz \
+  && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
 # 
@@ -25,8 +25,18 @@ COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
 
-COPY ./run-docker.sh /gridappsd/run-docker.sh
-RUN chmod +x /gridappsd/run-docker.sh
+COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
+RUN chmod +x /gridappsd/run-gridappsd.sh
+RUN ln -s run-gridappsd.sh run-docker.sh
+
+# Add the opendss command and library to the container
+COPY ./opendss/opendsscmd /usr/local/bin
+COPY ./opendss/liblinenoise.so /usr/local/lib
+RUN chmod +x /usr/local/bin/opendsscmd && \
+  ldconfig
+
+# Add mysql configuration 
+RUN echo "[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql" > /root/.my.cnf
 
 # This is the location that is built using the ./gradlew export command from
 # the command line.  When building this image we must make sure to have run that
@@ -42,6 +52,8 @@ RUN pip install -r /gridappsd/requirements.txt && \
 EXPOSE 61616 61613 61614 8000-9000
 
 WORKDIR /gridappsd
+
+RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
 
 ENTRYPOINT ["/gridappsd/entrypoint.sh"]
 CMD ["gridappsd"]
