@@ -1,6 +1,6 @@
-ARG GRIDAPPSD_VERSION_LABEL=:dev
+ARG GRIDAPPSD_BASE_VERSION=:v1.0
+FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
-FROM gridappsd/gridappsd_base${GRIDAPPSD_VERSION_LABEL}
 ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
@@ -8,8 +8,8 @@ RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
   && cd gridappsd-python \
   && python setup.py sdist \
-  && pip3 install dist/gridappsd-0.7.tar.gz \
-  && pip install dist/gridappsd-0.7.tar.gz \
+  && pip3 install dist/gridappsd-1.0.tar.gz \
+  && pip install dist/gridappsd-1.0.tar.gz \
   && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
@@ -25,8 +25,9 @@ COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
 
-COPY ./run-docker.sh /gridappsd/run-docker.sh
-RUN chmod +x /gridappsd/run-docker.sh
+COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
+RUN chmod +x /gridappsd/run-gridappsd.sh
+RUN ln -s run-gridappsd.sh run-docker.sh
 
 # Add the opendss command and library to the container
 COPY ./opendss/opendsscmd /usr/local/bin
