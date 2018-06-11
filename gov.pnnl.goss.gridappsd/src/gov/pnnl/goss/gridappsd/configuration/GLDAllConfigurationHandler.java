@@ -86,6 +86,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String ZFRACTION = "z_fraction";
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
+	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
+	public static final String ADDHOUSES = "add_houses";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
@@ -153,6 +155,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bWantZip = true;
 		}
 		
+		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
+		
+		
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
@@ -186,7 +191,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, zFraction, iFraction, pFraction);
 
 		String tempDataPath = dir.getAbsolutePath();
 		
