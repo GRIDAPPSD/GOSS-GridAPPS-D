@@ -104,6 +104,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
 	
+	final double sqrt3 = Math.sqrt(3);
+
+	
 	public GLDAllConfigurationHandler() {
 	}
 	 
@@ -243,21 +246,26 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		
-		String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
-				+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
-				+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
-				+ "?s c:ConductingEquipment.BaseVoltage ?lev."
-				+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
-				+ "} ORDER by ?vnom";
+		double nominalv = 0;
 		
-		ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
-		QuerySolution binding = rs.nextSolution();
-		String vnom = ((Literal) binding.get("vnom")).toString();
-		double root = Math.sqrt(3);
-		double vnomdbl = new Double(vnom).doubleValue();
-		double nominalv = vnomdbl/root;
-		//TODO send error and fail in vnom not found in model or bad format
 		
+		
+		try{
+			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
+					+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
+					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
+					+ "?s c:ConductingEquipment.BaseVoltage ?lev."
+					+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
+					+ "} ORDER by ?vnom";
+			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
+			QuerySolution binding = rs.nextSolution();
+			String vnom = ((Literal) binding.get("vnom")).toString();
+			nominalv = new Double(vnom).doubleValue()/sqrt3;
+		}catch (Exception e) {
+			//send error and fail in vnom not found in model or bad format
+			logError("Could not find valid nominal voltage for feeder:"+modelId, processId, username, logManager);
+			throw new Exception("Could not find valid nominal voltage for feeder:"+modelId);
+		}
 		//add an include reference to the base glm 
 				String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
 				String brokerLocation = simulationBrokerHost;
