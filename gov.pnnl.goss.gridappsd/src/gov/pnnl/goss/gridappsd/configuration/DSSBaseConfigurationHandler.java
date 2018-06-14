@@ -196,6 +196,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
+		//TODO, this should go in the simiulation context directory or be a separate call or return dir or something
 		PrintWriter outID = new PrintWriter("outid");
 		
 		//If the simulation info is available also write to file

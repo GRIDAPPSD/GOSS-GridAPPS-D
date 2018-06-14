@@ -304,12 +304,16 @@ public class ProcessNewSimulationRequest {
 			iFraction = 1;
 		}
 		double pFraction = modelConfig.p_fraction; 
+		
+		
 			
 		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
 		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
 		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
 		params.put(GLDAllConfigurationHandler.LOADSCALINGFACTOR, new Double(modelConfig.load_scaling_factor).toString());
-			
+		params.put(GLDAllConfigurationHandler.RANDOMIZEFRACTIONS, modelConfig.randomize_zipload_fractions);
+		params.put(GLDAllConfigurationHandler.ADDHOUSES, modelConfig.add_houses);
+
 		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
 		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
@@ -319,7 +323,7 @@ public class ProcessNewSimulationRequest {
 		
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
 		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
-		
+
 		return params;
 	}
 	

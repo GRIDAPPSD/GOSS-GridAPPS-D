@@ -86,6 +86,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String ZFRACTION = "z_fraction";
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
+	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
+	public static final String ADDHOUSES = "add_houses";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
@@ -103,6 +105,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
+	
+	final double sqrt3 = Math.sqrt(3);
+
 	
 	public GLDAllConfigurationHandler() {
 	}
@@ -150,6 +155,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bWantZip = true;
 		}
 		
+		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
+		
+		
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
@@ -183,7 +191,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, zFraction, iFraction, pFraction);
 
 		String tempDataPath = dir.getAbsolutePath();
 		
@@ -243,28 +251,34 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		
-		String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
-				+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
-				+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
-				+ "?s c:ConductingEquipment.BaseVoltage ?lev."
-				+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
-				+ "} ORDER by ?vnom";
+		double nominalv = 0;
 		
-		ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
-		QuerySolution binding = rs.nextSolution();
-		String vnom = ((Literal) binding.get("vnom")).toString();
-		double root = Math.sqrt(3);
-		double vnomdbl = new Double(vnom).doubleValue();
-		double nominalv = vnomdbl/root;
-		//TODO send error and fail in vnom not found in model or bad format
 		
+		
+		try{
+			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
+					+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
+					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
+					+ "?s c:ConductingEquipment.BaseVoltage ?lev."
+					+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
+					+ "} ORDER by ?vnom";
+			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
+			QuerySolution binding = rs.nextSolution();
+			String vnom = ((Literal) binding.get("vnom")).toString();
+			nominalv = new Double(vnom).doubleValue()/sqrt3;
+		}catch (Exception e) {
+			//send error and fail in vnom not found in model or bad format
+			logError("Could not find valid nominal voltage for feeder:"+modelId, processId, username, logManager);
+			throw new Exception("Could not find valid nominal voltage for feeder:"+modelId);
+		}
 		//add an include reference to the base glm 
 				String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
 				String brokerLocation = simulationBrokerHost;
 				String brokerPort = String.valueOf(simulationBrokerPort);
 				
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
+				long startTimeLong = new Long(simulationStartTime).longValue();
+				Date startTime = new Date(startTimeLong);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, new Integer(simulationDuration));
 				Date stopTime = c.getTime();

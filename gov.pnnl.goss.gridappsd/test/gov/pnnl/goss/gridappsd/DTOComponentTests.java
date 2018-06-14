@@ -46,7 +46,9 @@ import static org.junit.Assert.*;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.*;
 
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 
 import org.junit.Test;
@@ -65,6 +67,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -302,7 +305,14 @@ public class DTOComponentTests {
 	private SimulationConfig generateSimulationConfig(){
 		SimulationOutput configOutput = generateSimulationOutput();
 		SimulationConfig config = new SimulationConfig();
-		config.start_time = "2009-07-21 00:00:00";
+		Date d;
+		try {
+			d = GridAppsDConstants.SDF_GLM_CLOCK.parse("2009-07-21 00:00:00");
+		} catch (ParseException e) {
+			e.printStackTrace();
+			d = new Date();
+		}
+		config.start_time = d.getTime();
 		config.duration = 120;
 		config.simulator = "GridLAB-D";
 		config.timestep_frequency = 1000;
