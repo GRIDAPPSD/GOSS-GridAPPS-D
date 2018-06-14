@@ -139,12 +139,13 @@ public class ProcessEvent implements GossResponseEvent {
 				if(request instanceof ConfigurationRequest){
 					simRequest = ((RequestSimulation)request);
 				} else{
-					try{
-						simRequest = RequestSimulation.parse(request.toString());
-					}catch(JsonSyntaxException e){
-						//TODO log error
-						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
-					}
+					//TODO implement later, make sure it doesn't fail if request is null
+//					try{
+//						simRequest = RequestSimulation.parse(request.toString());
+//					}catch(JsonSyntaxException e){
+//						//TODO log error
+//						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+//					}
 				}
 				if(simRequest!=null){
 					//if new simulation		
