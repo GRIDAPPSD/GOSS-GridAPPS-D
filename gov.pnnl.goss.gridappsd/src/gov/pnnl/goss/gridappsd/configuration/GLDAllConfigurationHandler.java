@@ -277,7 +277,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				String brokerPort = String.valueOf(simulationBrokerPort);
 				
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
+				long startTimeLong = new Long(simulationStartTime).longValue();
+				Date startTime = new Date(startTimeLong);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, new Integer(simulationDuration));
 				Date stopTime = c.getTime();

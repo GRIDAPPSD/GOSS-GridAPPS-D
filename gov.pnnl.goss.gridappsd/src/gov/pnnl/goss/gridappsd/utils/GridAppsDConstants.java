@@ -201,6 +201,22 @@ public class GridAppsDConstants {
 	}
 	
 	
+	/**
+	 * Helper method to get String value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static long getLongProperty(Properties props, String keyName, long defaultValue){
+		if(props.containsKey(keyName)){
+			return new Long(props.getProperty(keyName)).longValue();
+		}
+		
+		return defaultValue;
+	}
+	
+	
 	public static void logMessage(LogManager logManager, String fromClass, String message, String simulationID, String username, LogLevel logLevel){
 		
 		if(logManager!=null){

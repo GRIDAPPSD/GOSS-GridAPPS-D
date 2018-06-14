@@ -206,8 +206,7 @@ public class SimulationProcess extends Thread {
 	private void sendTimesteps(SimulationConfig simulationConfig, int simulationId) throws Exception{
 		// Send fncs timestep updates for the specified duration.
 
-		String startTimeStr = simulationConfig.getStart_time();
-		Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(startTimeStr);
+		Date startTime = new Date(simulationConfig.getStart_time()); 
 		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
