@@ -39,24 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -70,6 +52,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.management.RuntimeErrorException;
+
+import org.apache.felix.dm.annotation.api.Registered;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.DataResponse;
 
 public class ProcessNewSimulationRequest {
@@ -235,6 +239,19 @@ public class ProcessNewSimulationRequest {
 			for (ApplicationObject app : config.application_config
 					.getApplications()) {
 				// TODO: Ask Tara: is simulation id same as request id
+				AppInfo appInfo = appManager.getApp(app.getName());
+				if(appInfo==null) {
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							String.valueOf(simulationId), new Date().getTime(), 
+							"Cannot start application "+ app.getName() +". Application not available", 
+							LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
+							+ simulationId);
+					throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available"); 
+					
+				}
+					
+				
+				
 				List<String> prereqsList = appManager.getApp(app.getName())
 						.getPrereqs();
 				for (String prereqs : prereqsList) {
