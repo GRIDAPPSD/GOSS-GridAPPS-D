@@ -176,7 +176,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		fileWriter.println("redirect model_base.dss");
 		// transformer winding ratios must be consistent with base voltages for state estimation
 		// regulators should be at tap 0; in case LDC is active, we can not use a no-load solution
-		fileWriter.println("batchedit transformer..* wdg=2 tap=0");
+		fileWriter.println("batchedit transformer..* wdg=2 tap=1");
 		fileWriter.println("batchedit regcontrol..* enabled=false");
 		// remove source injections from the Y matrix on solve
 		fileWriter.println("batchedit vsource..* enabled=false");
