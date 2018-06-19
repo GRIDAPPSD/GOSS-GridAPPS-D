@@ -183,7 +183,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, false, zFraction, iFraction, pFraction);
 
 		String tempDataPath = dir.getAbsolutePath();
 		
