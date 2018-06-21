@@ -17,7 +17,8 @@
 	com.google.gson,\
 	org.fusesource.stompjms.stompjms-client,\
 	org.apache.commons.math3,\
-	org.apache.jena.osgi,\
+	org.apache.commons.logging;version=1.2,\
+	org.apache.jena.osgi;version=3.1.0,\
 	org.apache.servicemix.bundles.xerces,\
 	org.apache.servicemix.bundles.xmlresolver;version=1.2,\
 	com.mysql.jdbc,\
