@@ -358,13 +358,15 @@ public class CompareResults {
 					// Check each property of the object
 					for(Entry<String, JsonElement> simentry : simOutputMap.get(entry.getKey()).getAsJsonObject().entrySet()){
 						String prop = simentry.getKey();
+//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 						Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
 						if (comparison)
 							countTrue++;
 						else{
-							System.out.println("\nFor "+entry.getKey() +":"+prop);
-							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
-							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+//							System.out.println("\nFor "+entry.getKey() +":"+prop);
+//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
 							testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
 							countFalse++;
 						}

@@ -49,7 +49,9 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.TimeZone;
+import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -79,6 +81,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.data.GridAppsDataSources;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -125,6 +128,9 @@ public class TestManagerImpl implements TestManager {
 	
 	@ServiceDependency
 	private volatile LogManager logManager;
+	
+	@ServiceDependency
+	GridAppsDataSources dataSources;
 
 	protected int tempIndex=0;
 	
@@ -436,7 +442,16 @@ public class TestManagerImpl implements TestManager {
 				if (tr != null) {
 					testResultSeries.add(indexStr, tr);
 				}
-
+				 
+				String test_id = testScript.getApplication();
+				String simulation_time = simOutputObject.getAsJsonObject().get("output").getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()){
+					HashMap<String, String[]> propMap = entry.getValue();
+					for (Entry<String, String[]> prop: propMap.entrySet()){
+						logManager.getLogDataManager().storeExpectedResults(test_id, ""+simulationID, java.sql.Timestamp.valueOf(simulation_time).getTime() , entry.getKey(), prop.getKey(), prop.getValue()[0], prop.getValue()[1]);
+					}
+				}
+				
 				logMessageObj.setTimestamp(new Date().getTime());
 				logMessageObj.setLogMessage("Index: " + indexStr + " TestManager number of conflicts: "
 						+ " total " + testResultSeries.getTotal());
