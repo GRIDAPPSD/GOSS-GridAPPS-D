@@ -124,7 +124,6 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		if(simulationContext==null)
 			throw new Exception("Simulation context not found for simulation_id = "+simulationId);
 		
-		parameters.remove("simulationId");
 		parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
 		parameters.put("z_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction()));
 		parameters.put("p_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction()));
