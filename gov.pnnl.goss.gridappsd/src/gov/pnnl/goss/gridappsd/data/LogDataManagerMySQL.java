@@ -149,6 +149,37 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		
 
 	}
+	
+	@Override
+	public void storeExpectedResults(String test_id, String processId, long simulation_time,
+			String mrid, String property, String expected, String actual) {
+		
+		if(connection!=null){
+			try {
+				
+				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?,?)");
+				preparedStatement.setString(1, test_id);
+				preparedStatement.setString(2, processId);
+				preparedStatement.setString(3, mrid);
+				preparedStatement.setString(4, property);
+				preparedStatement.setString(5, expected);
+				preparedStatement.setString(6, actual);
+				preparedStatement.setTimestamp(7, new Timestamp(simulation_time));
+				
+				preparedStatement.executeUpdate();
+				
+			} catch (DataTruncation e) {
+				log.error("Error while storing log:");
+				log.error("error = " + e.getMessage());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			//Need to log a warning to file, that the connection did not exist
+			log.warn("Mysql connection not initialized for store");
+		}
+
+	}
 
 	@Override
 	public Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,

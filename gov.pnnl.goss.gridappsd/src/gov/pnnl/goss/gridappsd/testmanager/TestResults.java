@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright  2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,120 +36,70 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.testmanager;
 
-import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-
-public class RequestTest implements Serializable {
+/**
+ * Class to keep track of the test result differences.
+ * @author jsimpson
+ *
+ */
+public class TestResults {
 	
-	private static final long serialVersionUID = 1L;
-
-	public String expectedResult;
+	public Map<String, HashMap<String, String[]>> objectPropComparison = new HashMap<String, HashMap<String, String[]>>();
 	
-	public int rulePort;
-	
-	public int simulationID;
-	
-	public String simulationOutputObject;
-	
-	public String testConfigPath;
-	
-	public int testID;
-	
-	public String testScriptPath;
-	
-	public String topic;
-
-	public RequestTest(){}
-
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
+	public HashMap<String, String[]> add(String obj, String prop){
+		HashMap<String, String[]> prop1 ;
+		if (objectPropComparison.containsKey(obj)){
+			prop1  = objectPropComparison.get(obj);
+		} else {
+			prop1 = new HashMap<String, String[]>();
+			objectPropComparison.put(obj, prop1 );
+		}
+		return prop1;
 	}
-
-	public String getExpectedResult() {
-		return expectedResult;
+	
+	public void add(String obj, String prop, String expected, String actual){
+		HashMap<String, String[]> prop1 = add(obj,prop);
+		String [] x = {expected, actual};
+		prop1.put(prop, x);
 	}
-
-	public int getRulePort() {
-		return rulePort;
-	}
-
-	public int getSimulationID() {
-		return simulationID;
+	
+	public int getNumberOfConflicts(){
+		int count = 0;
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			count+=propMap.size();
+		}
+		return count;	
 	}	
 	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
-	}
-
-	public String getTestConfigPath() {
-		return testConfigPath;
-	}
-
-	public int getTestID() {
-		return testID;
-	}
-
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setExpectedResult(String expectedResult) {
-		this.expectedResult = expectedResult;
-	}
-
-	public void setRulePort(int rulePort) {
-		this.rulePort = rulePort;
-	}
-
-	public void setSimulationID(int simulationID) {
-		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}
-
-	public void setTestID(int testID) {
-		this.testID = testID;
+	public void pprint() {
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			for (Entry<String, String[]> prop: propMap.entrySet()){
+				System.out.println(entry.getKey() + "." + prop.getKey());
+				System.out.println("    Expected:" + prop.getValue()[0] );
+				System.out.println("    Actual  :" + prop.getValue()[1] );
+			}
+		}
+		System.out.println("Total conflicts "+ getNumberOfConflicts());
 	}
 	
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
-	}
-	
-
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
-	
-	
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-	
-	public static RequestTest parse(String jsonString){
-		Gson  gson = new Gson();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-		if(obj.testConfigPath==null)
-			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
-		return obj;
+	public static void main(String[] args) {
+		TestResults tr = new TestResults();
+		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
+		String [] x = {"3","10"};
+		prop1.put("tap_A", x );
+		tr.objectPropComparison.put("reg_VREG2",prop1);	
+		
+		tr.add("reg_VREG1", "tap_A", "3", "10");
+		tr.add("reg_VREG1", "tap_B", "3", "10");
+		tr.pprint();
 	}
 
 }
