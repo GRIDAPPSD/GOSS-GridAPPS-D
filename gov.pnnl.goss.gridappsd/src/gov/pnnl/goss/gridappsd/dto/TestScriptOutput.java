@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -39,66 +39,38 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
-public class TestScript implements Serializable {
+public class TestScriptOutput {
 
-	private static final long serialVersionUID = 1L;
-
-	public String name;
-
-	private String test_configuration;
-
-	private String application;
+	public List<String> output_objects;
 	
-	private Map<String,List<String>> outputs;
-	
-//	private String[] events;
 
-	public TestScript() {
 
+	public List<String> getOutputObjects() {
+		if(output_objects==null)
+			output_objects = new ArrayList<String>();
+		return output_objects;
 	}
 
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
+	public void setOutputObjects(List<String> outputObjects) {
+		this.output_objects = outputObjects;
 	}
 	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
-	}
-
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-	public static TestScript parse(String jsonString){
+	public static TestScriptOutput parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new JsonSyntaxException("Expected attribute name not found");
+		TestScriptOutput obj = gson.fromJson(jsonString, TestScriptOutput.class);
+		if(obj.output_objects==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
 		return obj;
 	}
 }
