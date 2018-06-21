@@ -411,8 +411,9 @@ public class SimulationManagerImpl implements SimulationManager{
 							ProcessStatus.RUNNING,
 							true), GridAppsDConstants.username,
 							GridAppsDConstants.topic_platformLog);
-					throw new Exception("FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
-							+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms");
+					//throw new Exception("FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
+					//		+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms");
+					gossEvent.nextTimeStepTracker.isNextTimeStep = true;
 				}
 			}
 			gossEvent.nextTimeStepTracker.isNextTimeStep = false;
