@@ -43,23 +43,15 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -73,11 +65,8 @@ import org.slf4j.LoggerFactory;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
 
-import com.google.gson.Gson;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -109,7 +98,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	LogManager logManager;
 	
 	private Map<String, SimulationContext> simContexts  = new HashMap<String, SimulationContext>();
-	private Map<String, SimulationProcess> simProcesses = new HashMap<String, SimulationProcess>();
+//	private Map<String, SimulationProcess> simProcesses = new HashMap<String, SimulationProcess>();
 	public SimulationManagerImpl(){ }
 
 
@@ -160,30 +149,22 @@ public class SimulationManagerImpl implements SimulationManager{
 
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
 						simulationConfig, simulationId, logManager, appManager, client);
-			simProcesses.put(simContext.getSimulationId(), simProc);
+//			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
 
 	public void pauseSimulation(String simulationId){
-		if(simProcesses.containsKey(simulationId)){
-			
-		}else {
-			
-		}
+		//NOt implementing yet
+		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"pause\"}");
 	}
 	public void resumeSimulation(String simulationId){
-		if(simProcesses.containsKey(simulationId)){
-			
-		}else {
-			
-		}
+		//Not implementing yet
+		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"resume\"}");
+
 	}
 	public void endSimulation(String simulationId){
-		if(simProcesses.containsKey(simulationId)){
-			SimulationProcess simProc = simProcesses.get(simulationId);
-		}else {
-			
-		}
+		client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"stop\"}");
+
 	}
 	
 	
