@@ -55,5 +55,9 @@ WORKDIR /gridappsd
 
 RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
 
+RUN useradd -m gridappsd
+RUN echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd
+USER gridappsd
+
 ENTRYPOINT ["/gridappsd/entrypoint.sh"]
 CMD ["gridappsd"]
