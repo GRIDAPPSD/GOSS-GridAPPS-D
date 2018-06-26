@@ -129,6 +129,7 @@ public class ProcessEvent implements GossResponseEvent {
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				//Parse simluation request
 				Serializable request;
+				System.out.println("MESSAGE "+message);
 				if (message instanceof DataResponse){
 					request = ((DataResponse)message).getData();
 				} else {
@@ -139,11 +140,13 @@ public class ProcessEvent implements GossResponseEvent {
 				if(request instanceof ConfigurationRequest){
 					simRequest = ((RequestSimulation)request);
 				} else{
+					System.out.println("REQUEST = "+request);
 					if(request!=null){
-					//TODO implement later, make sure it doesn't fail if request is null
+						//make sure it doesn't fail if request is null, although it should never be null
 						try{
 							simRequest = RequestSimulation.parse(request.toString());
 						}catch(JsonSyntaxException e){
+							e.printStackTrace();
 							//TODO log error
 							sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 						}
@@ -156,11 +159,11 @@ public class ProcessEvent implements GossResponseEvent {
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
 						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
-						
+						simulationManager.pauseSimulation(simRequest.getSimulationId());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play
-					
+						simulationManager.resumeSimulation(simRequest.getSimulationId());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.STOP)) { //if stop
-						
+						simulationManager.endSimulation(simRequest.getSimulationId());
 					} else{
 						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId);
 					}

@@ -152,16 +152,18 @@ public class SimulationManagerImpl implements SimulationManager{
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
-
+	@Override
 	public void pauseSimulation(String simulationId){
 		//NOt implementing yet
 		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"pause\"}");
 	}
+	@Override
 	public void resumeSimulation(String simulationId){
 		//Not implementing yet
 		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"resume\"}");
 
 	}
+	@Override
 	public void endSimulation(String simulationId){
 		client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"stop\"}");
 
