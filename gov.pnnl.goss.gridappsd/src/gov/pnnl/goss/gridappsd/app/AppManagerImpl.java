@@ -667,16 +667,11 @@ public class AppManagerImpl implements AppManager {
 	            String line = null; 
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	System.out.println("APPRECEIVED "+line);
 	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
-	                	
-//	                    log.info(processName+": "+line);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();
-//	                log.error("Error on process "+processName, e);
                 	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username, GridAppsDConstants.topic_platformLog);
-
 	            }
 	        }
 	    }.start();
