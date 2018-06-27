@@ -313,7 +313,7 @@ public class GridLabDDataHandler implements GridAppsDataHandler {
 				String brokerPort = String.valueOf(dataRequest.getSimulation_config().getSimulation_broker_port());
 				
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(dataRequest.getSimulation_config().start_time);
+				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(Long.toString(dataRequest.getSimulation_config().start_time));
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, dataRequest.getSimulation_config().duration);
 				Date stopTime = c.getTime();
