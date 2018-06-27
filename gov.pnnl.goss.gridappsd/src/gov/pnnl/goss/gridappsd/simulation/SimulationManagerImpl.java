@@ -183,7 +183,7 @@ public class SimulationManagerImpl implements SimulationManager{
 		if(simProcesses.containsKey(simulationId)){
 			SimulationProcess simProc = simProcesses.get(simulationId);
 		}else {
-			
+
 		}
 	}
 	
