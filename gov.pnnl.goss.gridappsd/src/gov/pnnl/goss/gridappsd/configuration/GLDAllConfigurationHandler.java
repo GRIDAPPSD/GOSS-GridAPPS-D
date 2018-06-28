@@ -87,7 +87,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
 	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
-	public static final String ADDHOUSES = "add_houses";
+	public static final String USEHOUSES = "use_houses";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
