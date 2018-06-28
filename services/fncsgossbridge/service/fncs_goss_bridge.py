@@ -182,7 +182,8 @@ class GOSSListener(object):
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
-                message['timestamp'] = datetime.utcnow().microsecond
+                t_now = datetime.utcnow()
+                message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
@@ -193,11 +194,15 @@ class GOSSListener(object):
                 message_str = 'incrementing to '+str(current_time + 1)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+                message['response'] = "True"
+                t_now = datetime.utcnow()
+                message['timestamp'] = int(time.mktime(t_now.timetuple()))
+                goss_connection.send(output_to_simulation_manager, json.dumps(message))
+                del message['response']
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message['output'] = _get_fncs_bus_messages(simulation_id)
-                message['timestamp'] = datetime.utcnow().microsecond
-                response_msg = json.dumps(message)
+                response_msg = json.dumps(message['output'])
                 goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
@@ -458,12 +463,13 @@ def _get_fncs_bus_messages(simulation_id):
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        t_now = datetime.utcnow()
         cim_output = {}
         if simulation_id in message_events:
             cim_measurements_dict = {
                 "simulation_id": simulation_id,
                 "message" : {
-                    "timestamp" : str(datetime.utcnow()),
+                    "timestamp" : int(time.mktime(t_now.timetuple())),
                     "measurements" : []
                 }
             }
@@ -654,7 +660,7 @@ def _send_simulation_status(status, message, log_level):
         status_message = {
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
-            "timestamp" : int(time.mktime(t_now.timetuple())*1000) + t_now.microsecond,
+            "timestamp" : int(time.mktime(t_now.timetuple())),
             "processStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,

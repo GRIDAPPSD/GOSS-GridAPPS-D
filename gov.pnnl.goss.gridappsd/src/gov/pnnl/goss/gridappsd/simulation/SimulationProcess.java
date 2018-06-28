@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,7 @@ public class SimulationProcess extends Thread {
 
 		Process simulatorProcess = null;
 		InitializedTracker isInitialized = new InitializedTracker();
+		NextTimeStepTracker timeAdvanced = new NextTimeStepTracker();
 		try{
 
 			File simulationFile = new File(simContext.getStartupFile());
@@ -117,7 +119,8 @@ public class SimulationProcess extends Thread {
 					GridAppsDConstants.topic_platformLog);
 			
 			//Subscribe to fncs-goss-bridge output topic
-			client.subscribe(GridAppsDConstants.topic_FNCS_output, new GossFncsResponseEvent(logManager, isInitialized, simulationId));
+			GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, timeAdvanced, simulationId);
+			client.subscribe(GridAppsDConstants.topic_FNCS_output, gossFncsResponseEvent);
 
 			int initAttempts = 0;
 			while(!isInitialized.isInited && initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
@@ -151,7 +154,7 @@ public class SimulationProcess extends Thread {
 
 
 				//Send the timesteps by second for the amount of time specified in the simulation config
-                sendTimesteps(simulationConfig, simulationId);
+                sendTimesteps(gossFncsResponseEvent, simulationConfig, simulationId);
 			} else {
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),
 						Integer.toString(simulationId), 
@@ -192,6 +195,12 @@ public class SimulationProcess extends Thread {
 		} finally {
 			//Shut down applications and services connected with the simulation
 			List<String> ids = simContext.getServiceInstanceIds();
+			simulatorProcess.destroy();
+			try {
+				simulatorProcess.waitFor(10, TimeUnit.MILLISECONDS);
+			} catch(InterruptedException ex) {
+				simulatorProcess.destroyForcibly();
+			}
 			for(String id : ids){
 				serviceManager.stopServiceInstance(id);
 			}
@@ -203,27 +212,62 @@ public class SimulationProcess extends Thread {
 	}
 
 	
-	private void sendTimesteps(SimulationConfig simulationConfig, int simulationId) throws Exception{
+	private void sendTimesteps(GossFncsResponseEvent gossEvent, SimulationConfig simulationConfig, int simulationId) throws Exception{
 		// Send fncs timestep updates for the specified duration.
 
 		Date startTime = new Date(simulationConfig.getStart_time()); 
 		long endTime = startTime.getTime() + (simulationConfig.getDuration()*1000);
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
+		long busyWait = 10;
+		Thread.sleep(simulationConfig.timestep_frequency);
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge 
 			logManager.log(new LogMessage(this.getClass().getSimpleName(),
 					Integer.toString(simulationId), 
 					new Date().getTime(), 
-					"Sending timestep "+seconds, 
+					"Sending timestep "+(seconds + 1), 
 					LogLevel.INFO, 
 					ProcessStatus.RUNNING, 
 					true),GridAppsDConstants.username,
 					GridAppsDConstants.topic_platformLog);
 			String message = "{\"command\": \"nextTimeStep\", \"currentTime\": "+seconds+"}";
 			client.publish(GridAppsDConstants.topic_FNCS_input, message);
-			Thread.sleep(simulationConfig.timestep_frequency);
-
+			int timeStepAttempts = 0;
+			while(!gossEvent.nextTimeStepTracker.isNextTimeStep) {
+				timeStepAttempts++;
+				if(timeStepAttempts < 100) {
+					Thread.sleep(busyWait);
+				} else {
+					logManager.log(new LogMessage(this.getClass().getSimpleName(),
+							Integer.toString(simulationId),
+							new Date().getTime(),
+							"FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
+							+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms",
+							LogLevel.INFO,
+							ProcessStatus.RUNNING,
+							true), GridAppsDConstants.username,
+							GridAppsDConstants.topic_platformLog);
+					//throw new Exception("FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
+					//		+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms");
+					gossEvent.nextTimeStepTracker.isNextTimeStep = true;
+				}
+			}
+			gossEvent.nextTimeStepTracker.isNextTimeStep = false;
+			logManager.log(new LogMessage(this.getClass().getSimpleName(),
+					Integer.toString(simulationId),
+					new Date().getTime(),
+					"It took " + (timeStepAttempts * 10) + "ms for FNCS approve timestep " + (seconds + 1),
+					LogLevel.INFO,
+					ProcessStatus.RUNNING,
+					true), GridAppsDConstants.username,
+					GridAppsDConstants.topic_platformLog);
+			long timeLeft = simulationConfig.timestep_frequency - (timeStepAttempts * busyWait);
+			if(timeLeft < 10) {
+				Thread.sleep(10);
+			} else {
+				Thread.sleep(timeLeft);
+			}
 			seconds++;
 			currentTime += simulationConfig.timestep_increment;
 		}
@@ -245,13 +289,20 @@ public class SimulationProcess extends Thread {
 	    }.start();
 	}
 	
+    class NextTimeStepTracker {
+    	public boolean isNextTimeStep = false;
+    }
+
+	
 	class GossFncsResponseEvent implements GossResponseEvent{
 		InitializedTracker initializedTracker;
+		volatile NextTimeStepTracker nextTimeStepTracker;
 		LogManager logManager;
 		int simulationId;
-		public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized, int id) {
+		public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized, NextTimeStepTracker timeAdvanced, int id) {
 			this.logManager = logManager;
 			initializedTracker = initialized;
+			nextTimeStepTracker = timeAdvanced;
 			simulationId = id;
 		}
 
@@ -283,10 +334,14 @@ public class SimulationProcess extends Thread {
                         log.info("FNCS is initialized "+initializedTracker);
 						initializedTracker.isInited = true;
 					}
-				} else {
-					//System.out.println("RESPONSE COMMAND "+responseJson.command);
-					//??
+				} else if("nextTimeStep".equals(responseJson.command)){
+					log.debug("FNCS nextTimeStep response: "+responseJson);
+					if("True".equals(responseJson.response)){
+						log.info("FNCS timestep successful");
+						nextTimeStepTracker.isNextTimeStep = true;
+					}
 				}
+
 
 
 

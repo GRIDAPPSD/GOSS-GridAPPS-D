@@ -173,6 +173,19 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		//Create file with commands for opendsscmd
 		PrintWriter fileWriter = new PrintWriter(commandFile);
 		fileWriter.println("redirect model_base.dss");
+		// transformer winding ratios must be consistent with base voltages for state estimation
+		// regulators should be at tap 0; in case LDC is active, we can not use a no-load solution
+		fileWriter.println("batchedit transformer..* wdg=2 tap=1");
+		fileWriter.println("batchedit regcontrol..* enabled=false");
+		// remove source injections from the Y matrix on solve
+		fileWriter.println("batchedit vsource..* enabled=false");
+		fileWriter.println("batchedit isource..* enabled=false");
+		// remove PC elements from the Y matrix on solve
+		fileWriter.println("batchedit load..* enabled=false");
+		fileWriter.println("batchedit generator..* enabled=false");
+		fileWriter.println("batchedit pvsystem..* enabled=false");
+		fileWriter.println("batchedit storage..* enabled=false");
+		// solve the system in unloaded condition with regulator taps locked
 		fileWriter.println("solve");
 		fileWriter.println("export y triplet base_ysparse.csv");
 		fileWriter.println("export ynodelist base_nodelist.csv");
