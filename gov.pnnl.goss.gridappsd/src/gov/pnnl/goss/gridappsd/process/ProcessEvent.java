@@ -159,11 +159,11 @@ public class ProcessEvent implements GossResponseEvent {
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
 						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
-						simulationManager.pauseSimulation(simRequest.getSimulationId());
+						simulationManager.pauseSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play
-						simulationManager.resumeSimulation(simRequest.getSimulationId());
+						simulationManager.resumeSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.STOP)) { //if stop
-						simulationManager.endSimulation(simRequest.getSimulationId());
+						simulationManager.endSimulation(simRequest.getSimulation_id());
 					} else{
 						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId);
 					}
