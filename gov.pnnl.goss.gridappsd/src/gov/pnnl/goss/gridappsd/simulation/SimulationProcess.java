@@ -220,7 +220,13 @@ public class SimulationProcess extends Thread {
 		long currentTime = startTime.getTime(); //incrementing integer 0 ,1, 2.. representing seconds
 		int seconds = 0;
 		long busyWait = 10;
-		Thread.sleep(simulationConfig.timestep_frequency);
+		int timestep_increment = 1000;
+		int timestep_frequency = 1;
+		if(simulationConfig.run_realtime){
+			timestep_frequency = 1000;
+		}
+		
+		Thread.sleep(timestep_frequency);
 		while(currentTime < endTime){
 			//send next timestep to fncs bridge 
 			logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -243,7 +249,7 @@ public class SimulationProcess extends Thread {
 							Integer.toString(simulationId),
 							new Date().getTime(),
 							"FNCS_GOSS_Bridge failed to return a nextTimeStep response within"
-							+ " the timestep_frequency of " + simulationConfig.timestep_frequency + " ms",
+							+ " the timestep_frequency of " + timestep_frequency + " ms",
 							LogLevel.INFO,
 							ProcessStatus.RUNNING,
 							true), GridAppsDConstants.username,
@@ -262,14 +268,14 @@ public class SimulationProcess extends Thread {
 					ProcessStatus.RUNNING,
 					true), GridAppsDConstants.username,
 					GridAppsDConstants.topic_platformLog);
-			long timeLeft = simulationConfig.timestep_frequency - (timeStepAttempts * busyWait);
+			long timeLeft = timestep_frequency - (timeStepAttempts * busyWait);
 			if(timeLeft < 10) {
 				Thread.sleep(10);
 			} else {
 				Thread.sleep(timeLeft);
 			}
 			seconds++;
-			currentTime += simulationConfig.timestep_increment;
+			currentTime += timestep_increment;
 		}
 	}
 	
