@@ -154,8 +154,9 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 				if(simRequest!=null){
 					//if new simulation		
-					if (simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
+					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
 						client.publish(event.getReplyDestination(), processId);
+						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
 						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
