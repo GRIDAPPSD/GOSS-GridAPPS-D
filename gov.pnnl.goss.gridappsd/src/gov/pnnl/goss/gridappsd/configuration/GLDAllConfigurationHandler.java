@@ -291,6 +291,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("}");
 				
 				startupFileWriter.println("\"globals\" : [\"clock\"]");
+				startupFileWriter.println("#set maximum_synctime=3600");
 				
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");
