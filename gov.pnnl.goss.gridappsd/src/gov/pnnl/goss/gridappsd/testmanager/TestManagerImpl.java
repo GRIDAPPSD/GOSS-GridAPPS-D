@@ -49,6 +49,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.jms.JMSException;
 import java.util.HashMap;
 import java.util.TimeZone;
 import java.util.Map.Entry;
@@ -86,7 +87,10 @@ import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;	
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -95,6 +99,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 
 
