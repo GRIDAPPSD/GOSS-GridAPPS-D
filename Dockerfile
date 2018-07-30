@@ -1,4 +1,4 @@
-ARG GRIDAPPSD_BASE_VERSION=:v1.0
+ARG GRIDAPPSD_BASE_VERSION=:dev
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
@@ -54,6 +54,10 @@ EXPOSE 61616 61613 61614 8000-9000
 WORKDIR /gridappsd
 
 RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
+
+RUN useradd -m gridappsd
+RUN echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd
+USER gridappsd
 
 ENTRYPOINT ["/gridappsd/entrypoint.sh"]
 CMD ["gridappsd"]
