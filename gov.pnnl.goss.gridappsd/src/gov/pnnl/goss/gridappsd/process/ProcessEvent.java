@@ -143,7 +143,7 @@ public class ProcessEvent implements GossResponseEvent {
 					try{
 						simRequest = RequestSimulation.parse(request.toString());
 					}catch(JsonSyntaxException e){
-						//TODO handle error better, but want to make sure it doesn't cause things to fail when it shouldn't
+						//TODO handle error better, but additional testing to make sure it doesn't cause things to fail when it shouldn't
 						e.printStackTrace();
 //						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 					}

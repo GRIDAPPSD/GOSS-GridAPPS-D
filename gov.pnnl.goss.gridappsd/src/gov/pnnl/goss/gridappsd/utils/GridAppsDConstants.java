@@ -209,7 +209,14 @@ public class GridAppsDConstants {
 	 * @return
 	 */
 	public static long getLongProperty(Properties props, String keyName, long defaultValue){
+		
 		if(props.containsKey(keyName)){
+			Object val = props.get(keyName);
+			System.out.println("VAL "+val);
+			System.out.println("TYPE "+val.getClass());
+			if(val instanceof Long){
+				return ((Long)val).longValue();
+			}
 			return new Long(props.getProperty(keyName)).longValue();
 		}
 		
