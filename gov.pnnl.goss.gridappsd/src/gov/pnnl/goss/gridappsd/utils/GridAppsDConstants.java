@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -212,12 +213,16 @@ public class GridAppsDConstants {
 		
 		if(props.containsKey(keyName)){
 			Object val = props.get(keyName);
-			System.out.println("VAL "+val);
-			System.out.println("TYPE "+val.getClass());
 			if(val instanceof Long){
 				return ((Long)val).longValue();
+			} else if (val instanceof Integer){
+				return ((Integer)val).longValue();
+			} else if (val instanceof String){
+				return new Long((String)val).longValue();
+			} else {
+				throw new RuntimeException("Unrecognized type when reading "+keyName+", for parameter value "+val.getClass());
 			}
-			return new Long(props.getProperty(keyName)).longValue();
+//			return new Long(props.getProperty(keyName)).longValue();
 		}
 		
 		return defaultValue;
