@@ -140,12 +140,13 @@ public class ProcessEvent implements GossResponseEvent {
 					simRequest = ((RequestSimulation)request);
 				} else{
 					//TODO implement later, make sure it doesn't fail if request is null
-//					try{
-//						simRequest = RequestSimulation.parse(request.toString());
-//					}catch(JsonSyntaxException e){
-//						//TODO log error
+					try{
+						simRequest = RequestSimulation.parse(request.toString());
+					}catch(JsonSyntaxException e){
+						//TODO handle error better, but want to make sure it doesn't cause things to fail when it shouldn't
+						e.printStackTrace();
 //						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
-//					}
+					}
 				}
 				if(simRequest!=null){
 					//if new simulation		
