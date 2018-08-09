@@ -244,7 +244,6 @@ public class ProcessEvent implements GossResponseEvent {
 
 
 			} else if(event.getDestination().contains("log")){
-				System.out.println("LOG CLASS "+message.getClass());
 				Serializable request;
 				if (message instanceof DataResponse){
 					request = ((DataResponse)message).getData();
