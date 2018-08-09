@@ -39,24 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -70,6 +52,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.management.RuntimeErrorException;
+
+import org.apache.felix.dm.annotation.api.Registered;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.DataResponse;
 
 public class ProcessNewSimulationRequest {
@@ -235,6 +239,19 @@ public class ProcessNewSimulationRequest {
 			for (ApplicationObject app : config.application_config
 					.getApplications()) {
 				// TODO: Ask Tara: is simulation id same as request id
+				AppInfo appInfo = appManager.getApp(app.getName());
+				if(appInfo==null) {
+					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+							String.valueOf(simulationId), new Date().getTime(), 
+							"Cannot start application "+ app.getName() +". Application not available", 
+							LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
+							+ simulationId);
+					throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available"); 
+					
+				}
+					
+				
+				
 				List<String> prereqsList = appManager.getApp(app.getName())
 						.getPrereqs();
 				for (String prereqs : prereqsList) {
@@ -304,12 +321,16 @@ public class ProcessNewSimulationRequest {
 			iFraction = 1;
 		}
 		double pFraction = modelConfig.p_fraction; 
+		
+		
 			
 		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
 		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
 		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
 		params.put(GLDAllConfigurationHandler.LOADSCALINGFACTOR, new Double(modelConfig.load_scaling_factor).toString());
-			
+		params.put(GLDAllConfigurationHandler.RANDOMIZEFRACTIONS, modelConfig.randomize_zipload_fractions);
+		params.put(GLDAllConfigurationHandler.ADDHOUSES, modelConfig.add_houses);
+
 		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
 		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
@@ -319,7 +340,7 @@ public class ProcessNewSimulationRequest {
 		
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
 		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
-		
+
 		return params;
 	}
 	

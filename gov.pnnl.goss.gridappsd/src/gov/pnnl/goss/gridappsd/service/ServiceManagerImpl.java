@@ -52,6 +52,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
@@ -435,6 +436,11 @@ public class ServiceManagerImpl implements ServiceManager{
 		instanceId = instanceId.trim();
 		ServiceInstance instance = serviceInstances.get(instanceId);
 		instance.getProcess().destroy();
+		try {
+			instance.getProcess().waitFor(10, TimeUnit.MILLISECONDS);
+		} catch(InterruptedException ex) {
+			instance.getProcess().destroyForcibly();
+		}
 		serviceInstances.remove(instanceId); 
 	}
 

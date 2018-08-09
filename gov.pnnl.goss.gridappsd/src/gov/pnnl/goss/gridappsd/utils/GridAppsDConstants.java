@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -163,8 +164,23 @@ public class GridAppsDConstants {
 		System.out.println(props);
 		if(props.containsKey(keyName)){
 			String val = props.getProperty(keyName);
-			System.out.println("GOT "+val+" for "+keyName);
 			return new Double(val).doubleValue();
+		}
+		
+		return defaultValue;
+	}
+	/**
+	 * Helper method to get boolean value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static boolean getBooleanProperty(Properties props, String keyName, boolean defaultValue){
+		System.out.println(props);
+		if(props.containsKey(keyName)){
+			String val = props.getProperty(keyName);
+			return new Boolean(val).booleanValue();
 		}
 		
 		return defaultValue;
@@ -180,6 +196,33 @@ public class GridAppsDConstants {
 	public static String getStringProperty(Properties props, String keyName, String defaultValue){
 		if(props.containsKey(keyName)){
 			return props.getProperty(keyName);
+		}
+		
+		return defaultValue;
+	}
+	
+	
+	/**
+	 * Helper method to get String value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static long getLongProperty(Properties props, String keyName, long defaultValue){
+		
+		if(props.containsKey(keyName)){
+			Object val = props.get(keyName);
+			if(val instanceof Long){
+				return ((Long)val).longValue();
+			} else if (val instanceof Integer){
+				return ((Integer)val).longValue();
+			} else if (val instanceof String){
+				return new Long((String)val).longValue();
+			} else {
+				throw new RuntimeException("Unrecognized type when reading "+keyName+", for parameter value "+val.getClass());
+			}
+//			return new Long(props.getProperty(keyName)).longValue();
 		}
 		
 		return defaultValue;

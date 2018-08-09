@@ -49,6 +49,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.jms.JMSException;
 import java.util.HashMap;
 import java.util.TimeZone;
 import java.util.Map.Entry;
@@ -86,7 +87,10 @@ import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;	
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestTest;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -95,6 +99,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 
 
@@ -575,6 +580,98 @@ public class TestManagerImpl implements TestManager {
 		return testScript;
 	}
 
+
+	public void requestSimulation(Client client, TestConfiguration testConfiguration, TestScript ts) throws JMSException {
+		//TODO: Request Simulation
+			//TODO: 1 PowerSystemConfig
+			//TODO: 2 SimulationConfig simulation_config
+			//TODO: 3 Build/Set ApplicationConfig 
+		//Create Request Simulation object, you could also just pass in a json string with the configuration
+		PowerSystemConfig powerSystemConfig = new PowerSystemConfig();
+		powerSystemConfig.GeographicalRegion_name = "ieee8500_Region";
+		powerSystemConfig.SubGeographicalRegion_name = "ieee8500_SubRegion";
+		powerSystemConfig.Line_name = "ieee8500";
+
+		SimulationConfig simulationConfig = new SimulationConfig();
+		simulationConfig.duration = 60;
+		simulationConfig.power_flow_solver_method = "";
+		simulationConfig.simulation_id = ""; //.setSimulation_name("");
+		simulationConfig.simulator = ""; //.setSimulator("");
+
+		simulationConfig.start_time = new Date().getTime(); //.setStart_time("");
+
+		RequestSimulation requestSimulation = new RequestSimulation(powerSystemConfig, simulationConfig);
+
+		Gson  gson = new Gson();
+		String request = gson.toJson(requestSimulation);
+		//Step3: Send configuration to the request simulation topic
+		log.debug("Request simulation");
+		log.debug("Client is:" + client);
+		Serializable simulationId = client.getResponse(request, GridAppsDConstants.topic_requestSimulation, RESPONSE_FORMAT.JSON);
+		log.debug("simulation id is: "+simulationId);
+		//Subscribe to bridge output
+		client.subscribe("goss/gridappsd/fncs/output", new GossResponseEvent() {
+		    public void onMessage(Serializable response) {
+		      log.debug("simulation output is: "+response);
+		      System.out.println("simulation output is: "+response);
+		      //TODO capture stream and save
+		      
+		    }
+		});
+	}
+	
+	private void requestSimOld(Client client, Serializable message, DataResponse event) {
+//		statusReporter.reportStatus(String.format("Got new message in %s", getClass().getName()));
+		//TODO: create registry mapping between request topics and request handlers.
+		switch(event.getDestination().replace("/queue/", "")){
+			case topic_requestTest : {
+				log.debug("Received test request: "+ event.getData());
+				
+				//generate simulation id and reply to event's reply destination.
+//				int simulationId = generateSimulationId();
+				int testId = 1234;
+				client.publish(event.getReplyDestination(), testId);
+				try{
+					// TODO: validate simulation request json and create PowerSystemConfig and SimulationConfig dto objects to work with internally.
+					Gson  gson = new Gson();
+						
+					RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+					log.info("Parsed config "+config);
+					if(config==null || config.getPower_system_config()==null || config.getSimulation_config()==null){
+						throw new RuntimeException("Invalid configuration received");
+					}
+
+					//make request to configuration Manager to get power grid model file locations and names
+					log.debug("Creating simulation and power grid model files for simulation Id "+ testId);
+					File simulationFile = configurationManager.getSimulationFile(testId, config);
+					if(simulationFile==null){
+						throw new Exception("No simulation file returned for request "+config);
+					}
+						
+						
+					log.debug("Simulation and power grid model files generated for simulation Id "+ testId);
+					
+					//start simulation
+					log.debug("Starting simulation for id "+ testId);
+					simulationManager.startSimulation(testId, config.getSimulation_config(),null);
+					log.debug("Starting simulation for id "+ testId);
+						
+//								new ProcessSimulationRequest().process(event, client, configurationManager, simulationManager); break;
+				}catch (Exception e){
+					e.printStackTrace();
+					try {
+//						statusReporter.reportStatus(GridAppsDConstants.topic_simulationLog+testId, "Test Initialization error: "+e.getMessage());
+						log.error("Test Initialization error",e);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+			//case GridAppsDConstants.topic_requestData : processDataRequest(); break;
+			//case GridAppsDConstants.topic_requestSimulationStatus : processSimulationStatusRequest(); break;
+		}
+	}
+	
 	
 	public static void main(String[] args) {
 
