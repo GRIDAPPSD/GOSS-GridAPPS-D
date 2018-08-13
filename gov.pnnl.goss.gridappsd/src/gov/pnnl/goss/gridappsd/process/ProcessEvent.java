@@ -129,7 +129,6 @@ public class ProcessEvent implements GossResponseEvent {
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				//Parse simluation request
 				Serializable request;
-				System.out.println("MESSAGE "+message);
 				if (message instanceof DataResponse){
 					request = ((DataResponse)message).getData();
 				} else {
@@ -140,7 +139,6 @@ public class ProcessEvent implements GossResponseEvent {
 				if(request instanceof ConfigurationRequest){
 					simRequest = ((RequestSimulation)request);
 				} else{
-					System.out.println("REQUEST = "+request);
 					if(request!=null){
 						//make sure it doesn't fail if request is null, although it should never be null
 						try{
@@ -150,6 +148,8 @@ public class ProcessEvent implements GossResponseEvent {
 							//TODO log error
 							sendError(client, event.getReplyDestination(), e.getMessage(), processId);
 						}
+					} else {
+						sendError(client, event.getReplyDestination(), "Simulation request is null", processId);
 					}
 				}
 				if(simRequest!=null){
@@ -249,7 +249,6 @@ public class ProcessEvent implements GossResponseEvent {
 
 
 			} else if(event.getDestination().contains("log")){
-				System.out.println("LOG CLASS "+message.getClass());
 				Serializable request;
 				if (message instanceof DataResponse){
 					request = ((DataResponse)message).getData();
