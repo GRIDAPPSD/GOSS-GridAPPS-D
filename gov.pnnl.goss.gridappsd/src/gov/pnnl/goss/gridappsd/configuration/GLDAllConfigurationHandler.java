@@ -229,8 +229,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logError("No "+SIMULATIONBROKERPORT+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONBROKERPORT);
 		}
-		String simulationStartTime = GridAppsDConstants.getStringProperty(parameters, SIMULATIONSTARTTIME, null);
-		if(simulationStartTime==null || simulationStartTime.trim().length()==0){
+		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
+		if(simulationStartTime<0){
 			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
 		}
@@ -277,8 +277,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				String brokerPort = String.valueOf(simulationBrokerPort);
 				
 				Calendar c = Calendar.getInstance();
-				long startTimeLong = new Long(simulationStartTime).longValue();
-				Date startTime = new Date(startTimeLong);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
+				Date startTime = new Date(simulationStartTime);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, new Integer(simulationDuration));
 				Date stopTime = c.getTime();

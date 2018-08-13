@@ -39,103 +39,26 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
-public class RequestTest implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
+public class TestScriptOutput {
 
-	public String expectedResult;
-	
-	public int rulePort;
-	
-	public int simulationID;
-	
-	public String simulationOutputObject;
-	
-	public String testConfigPath;
-	
-	public int testID;
-	
-	public String testScriptPath;
-	
-	public String topic;
-
-	public RequestTest(){}
-
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
-	}
-
-	public String getExpectedResult() {
-		return expectedResult;
-	}
-
-	public int getRulePort() {
-		return rulePort;
-	}
-
-	public int getSimulationID() {
-		return simulationID;
-	}	
-	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
-	}
-
-	public String getTestConfigPath() {
-		return testConfigPath;
-	}
-
-	public int getTestID() {
-		return testID;
-	}
-
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setExpectedResult(String expectedResult) {
-		this.expectedResult = expectedResult;
-	}
-
-	public void setRulePort(int rulePort) {
-		this.rulePort = rulePort;
-	}
-
-	public void setSimulationID(int simulationID) {
-		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}
-
-	public void setTestID(int testID) {
-		this.testID = testID;
-	}
-	
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
-	}
+	public List<String> output_objects;
 	
 
-	public void setTopic(String topic) {
-		this.topic = topic;
+
+	public List<String> getOutputObjects() {
+		if(output_objects==null)
+			output_objects = new ArrayList<String>();
+		return output_objects;
 	}
-	
+
+	public void setOutputObjects(List<String> outputObjects) {
+		this.output_objects = outputObjects;
+	}
 	
 	@Override
 	public String toString() {
@@ -143,13 +66,11 @@ public class RequestTest implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	
-	public static RequestTest parse(String jsonString){
+	public static TestScriptOutput parse(String jsonString){
 		Gson  gson = new Gson();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-		if(obj.testConfigPath==null)
-			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+		TestScriptOutput obj = gson.fromJson(jsonString, TestScriptOutput.class);
+		if(obj.output_objects==null)
+			throw new RuntimeException("Expected attribute output_objects not found");
 		return obj;
 	}
-
 }
