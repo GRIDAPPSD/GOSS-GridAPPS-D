@@ -286,7 +286,7 @@ public class SimulationProcess extends Thread {
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                    log.info(processName+": "+line.substring(0,200));
+	                    log.info(processName+": "+line.substring(0,Math.min(200, line.length())));
 	                }
 	            } catch (IOException e) {
 	                log.error("Error on process "+processName, e);
