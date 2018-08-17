@@ -79,7 +79,7 @@
 	javax.servlet-api,\
 	com.bigdata.rdf,\
 	proven-message-all-in-one,\
-	gridappsd-proven-client.api,\
+	proven-client,\
 	javax.ws.rs-api
 	
 	
