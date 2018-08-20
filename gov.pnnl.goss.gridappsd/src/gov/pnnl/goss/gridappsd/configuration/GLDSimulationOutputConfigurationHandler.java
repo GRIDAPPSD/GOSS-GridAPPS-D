@@ -231,8 +231,9 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				for(Map.Entry<String, JsonArray> entry : measurements.entrySet()) {
 					gldConfigObj.add(entry.getKey(), entry.getValue());
 				}
-				
-				gldConfigObj.add("global", new JsonPrimitive("clock"));
+				JsonArray globalsArr = new JsonArray();
+				globalsArr.add(new JsonPrimitive("clock"));
+				gldConfigObj.add("globals", globalsArr);
 				measurements.clear();
 			}
 			
