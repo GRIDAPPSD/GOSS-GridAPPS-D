@@ -289,7 +289,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
 				
-				startupFileWriter.println("\"globals\" : [\"clock\"]");
 				startupFileWriter.println("#set maximum_synctime=3600");
 				
 				startupFileWriter.println("#set suppress_repeat_messages=1");
