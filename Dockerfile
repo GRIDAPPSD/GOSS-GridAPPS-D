@@ -54,7 +54,7 @@ EXPOSE 61616 61613 61614 8000-9000
 WORKDIR /gridappsd
 
 RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
-
+RUN mkdir /gridappsd/log
 RUN useradd -m gridappsd
 RUN mkdir /etc/sudoers.d  \
         && echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd

@@ -18,7 +18,7 @@
 	org.fusesource.stompjms.stompjms-client,\
 	org.apache.commons.math3,\
 	org.apache.commons.logging;version=1.2,\
-	org.apache.jena.osgi;version=3.1.0,\
+	org.apache.jena.osgi;version=3.7.0,\
 	org.apache.servicemix.bundles.xerces,\
 	org.apache.servicemix.bundles.xmlresolver;version=1.2,\
 	com.mysql.jdbc,\
@@ -32,9 +32,9 @@
 	blazegraph.cim2glm;version=latest,\
 	httpclient,\
 	com.bigdata.rdf,\
-	gridappsd-proven-client.api,\
+	proven-client,\
 	proven-message
-	
+		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
 -sub: *.bnd
