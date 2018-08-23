@@ -151,6 +151,24 @@ difference_attribute_map = {
 
             "prefix" : "rcon_"
         }
+    },
+    "PowerElectronicsConnection.inverterMode" : {
+        "inverter" : {
+            "property" : ["four_quadrant_control_mode"],
+            "prefix" : "inv_"
+        }
+    },
+    "PowerElectronicsConnection.p" : {
+        "inverter" : {
+            "property" : ["P_Out"],
+            "prefix" : "inv_"
+        }
+    },
+    "PowerElectronicsConnection.q" : {
+        "inverter" : {
+            "property" : ["Q_Out"],
+            "prefix" : "inv_"
+        }
     }
 }
 
@@ -423,6 +441,35 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
             elif cim_attribute == "TapChanger.lineDropX":
                 for y in object_phases:
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    if cim_attribute == "RegulatingControl.mode":
+                        val = x.get("value")
+                        if val == 0:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                        elif val == 2:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                        elif val == 3:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                        else:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                            _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+            elif cim_atribute == 'PowerElectronicsConnection.inverterMode':
+                val = x.get("value")
+                invMode = 'CONSTANT_PF' # as the default
+                if val == 0:
+                    invMode = 'CONSTANT_PF'
+                elif val == 1:
+                    invMode = 'CONSTANT_PQ'
+                elif val == 2:
+                    invMode = 'VOLT_VAR'
+                elif val == 3:
+                    invMode = 'VOLT_WATT'
+                elif val == 4:
+                    invMode = 'LOAD_FOLLOWING'
+                else:
+                    _send_simulation_status("RUNNING", 
+                                            "Unsupported inverter control mode requested. Only PF, PQ, Volt-Var, Volt-Watt and Load Following are supported. Setting control mode to PF.",
+                                            "WARN")
+                fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = invMode
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
             
@@ -430,12 +477,12 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         if fncs.is_initialized():
-		fncs.publish_anon(fncs_input_topic, goss_message_converted)
+            fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
-	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
+        _send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+    #raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
     
     
     
@@ -650,7 +697,7 @@ def _send_simulation_status(status, message, log_level):
         RuntimeError()
     """
     simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
-	
+    
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
     if status in valid_status:
