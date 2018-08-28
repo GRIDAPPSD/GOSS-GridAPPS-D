@@ -87,7 +87,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
 	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
-	public static final String ADDHOUSES = "add_houses";
+	public static final String USEHOUSES = "use_houses";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
@@ -288,6 +288,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
+				
+				startupFileWriter.println("#set maximum_synctime=3600");
 				
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");

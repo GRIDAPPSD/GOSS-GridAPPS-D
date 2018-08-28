@@ -60,7 +60,7 @@ public class RequestSimulation implements Serializable {
 	
 	public SimulationRequestType simulation_request_type = SimulationRequestType.NEW;
 	
-	public String simulationId;  //used for pause/resume/stop requests
+	public String simulation_id;  //used for pause/resume/stop requests
 	
 	public RequestSimulation(){
 		
@@ -105,12 +105,12 @@ public class RequestSimulation implements Serializable {
 	}
 
 	
-	public String getSimulationId() {
-		return simulationId;
+	public String getSimulation_id() {
+		return simulation_id;
 	}
 
-	public void setSimulationId(String simulationId) {
-		this.simulationId = simulationId;
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
 	}
 
 	@Override

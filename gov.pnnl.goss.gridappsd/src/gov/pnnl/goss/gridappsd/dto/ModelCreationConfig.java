@@ -60,7 +60,7 @@ public class ModelCreationConfig implements Serializable{
 	public double i_fraction = 1;  // allowed values {0....1}  constant I portion (defaults to 0 for CIM-defined,  maps to -i
 	public double p_fraction = 0;  // allowed values {0....1}  constant P portion (defaults to 0 for CIM-defined,  maps to -p
 	public boolean randomize_zipload_fractions = false; // should randomize the zipload fraction values (eg. z, i, p_fractions)
-	public boolean add_houses = false;  
+	public boolean use_houses = false;  
 	
 	
 	
@@ -138,11 +138,11 @@ public class ModelCreationConfig implements Serializable{
 	public void setRandomize_zipload_fractions(boolean randomize_zipload_fractions) {
 		this.randomize_zipload_fractions = randomize_zipload_fractions;
 	}
-	public boolean isAdd_houses() {
-		return add_houses;
+	public boolean isUse_houses() {
+		return use_houses;
 	}
-	public void setAdd_houses(boolean add_houses) {
-		this.add_houses = add_houses;
+	public void setUse_houses(boolean add_houses) {
+		this.use_houses = add_houses;
 	}
 	@Override
 	public String toString() {

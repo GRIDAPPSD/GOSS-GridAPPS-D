@@ -246,8 +246,7 @@ public class DTOComponentTests {
 		assertNotNull(parsed.simulation_output);
 		assertNotNull(parsed.simulator);
 		assertNotNull(parsed.start_time);
-		assertNotNull(parsed.timestep_frequency);
-		assertNotNull(parsed.timestep_increment);
+		assertNotNull(parsed.run_realtime);
 						
 		//Create and Initialize with DTO object for serialization
 		SimulationConfig config = generateSimulationConfig();
@@ -315,8 +314,7 @@ public class DTOComponentTests {
 		config.start_time = d.getTime();
 		config.duration = 120;
 		config.simulator = "GridLAB-D";
-		config.timestep_frequency = 1000;
-		config.timestep_increment = 1000;
+		config.run_realtime = true;
 		config.simulation_name = "ieee8500";
 		config.power_flow_solver_method = "NR";
 		config.simulation_id = "12345";
