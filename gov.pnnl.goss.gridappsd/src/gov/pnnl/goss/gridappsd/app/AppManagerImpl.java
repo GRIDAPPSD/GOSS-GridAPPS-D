@@ -47,6 +47,7 @@ import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RemoteApplicationRegistrationResponse;
 import gov.pnnl.goss.gridappsd.dto.RequestAppList;
 import gov.pnnl.goss.gridappsd.dto.RequestAppRegister;
 import gov.pnnl.goss.gridappsd.dto.RequestAppStart;
@@ -89,6 +90,8 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+import com.google.gson.JsonSyntaxException;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -127,6 +130,8 @@ public class AppManagerImpl implements AppManager {
 	private String username;
 
 	private Client client;
+	
+	private RemoteApplicationHeartbeatMonitor remoteAppMonitor;
 
 	public AppManagerImpl() {
 	}
@@ -181,6 +186,20 @@ public class AppManagerImpl implements AppManager {
 			// TODO publish appinfo object on reply destination
 			client.publish(replyDestination, appInfo);
 
+		} else if (destination.contains(GridAppsDConstants.topic_app_register_remote)) {
+			Serializable request;
+			if (message instanceof DataResponse){
+				request = ((DataResponse)message).getData();
+			} else {
+				request = message;
+			}
+			// The request should just send the AppInfo object over rather than
+			// the RequestAppRegister option.
+			AppInfo app_info = AppInfo.parse(request.toString());
+			RemoteApplicationRegistrationResponse topics = registerRemoteApp(app_info);
+			client.publish(replyDestination, topics.toString());
+			//registerApp(requestObj.app_info, requestObj.app_package);
+
 		} else if (destination.contains(GridAppsDConstants.topic_app_register)) {
 			RequestAppRegister requestObj = RequestAppRegister.parse(message
 					.toString());
@@ -192,8 +211,14 @@ public class AppManagerImpl implements AppManager {
 			deRegisterApp(appId);
 
 		} else if (destination.contains(GridAppsDConstants.topic_app_start)) {
-			RequestAppStart requestObj = RequestAppStart.parse(message
-					.toString());
+			RequestAppStart requestObj;
+			try {
+				requestObj = RequestAppStart.parse(message.toString());
+			}
+			catch (JsonSyntaxException ex){
+				requestObj = RequestAppStart.parse(event.getData().toString());
+			}
+					
 			String instanceId = null;
 			if (requestObj.getSimulation_id() == null) {
 				instanceId = startApp(requestObj.getApp_id(),
@@ -270,6 +295,33 @@ public class AppManagerImpl implements AppManager {
 		}
 	}
 
+	public RemoteApplicationRegistrationResponse registerRemoteApp(AppInfo appInfo) {
+		if (remoteAppMonitor == null) {
+			remoteAppMonitor = new RemoteApplicationHeartbeatMonitor(logManager, client);
+		}
+		
+		System.out.println(appInfo.toString());
+		// Simple routine to make sure appid is unique.
+		int app_count = 1;
+		String app_id = appInfo.getId() + app_count;
+		while (apps.containsKey(app_id)) {
+			app_count += 1;
+			app_id = appInfo.getId() + app_count;
+		}
+		appInfo.setId(app_id);
+		apps.put(app_id, appInfo);
+		
+		RemoteApplicationRegistrationResponse response = new RemoteApplicationRegistrationResponse();
+		response.applicationId = app_id;
+		response.errorTopic="Error";
+		response.heartbeatTopic="/queue/" + GridAppsDConstants.topic_remoteapp_heartbeat+"."+app_id;
+		response.startControlTopic="/topic/" + GridAppsDConstants.topic_remoteapp_start+"."+app_id;
+		response.stopControlTopic="/topic/" + GridAppsDConstants.topic_remoteapp_stop+"."+app_id;
+		System.out.println(response.toString());
+		remoteAppMonitor.addRemoteApplication(app_id, response);		
+		
+		return response;
+	}
 	// TODO probably need an updateApp call or integrate this with register app
 
 	@Override
@@ -429,7 +481,10 @@ public class AppManagerImpl implements AppManager {
 	@Override
 	public String startAppForSimultion(String appId, String runtimeOptions, Map simulationContext) {
 		
-		String simulationId = simulationContext.get("simulationId").toString();
+		String simulationId = null;
+		if (simulationContext != null) {
+			simulationId = simulationContext.get("simulationId").toString();
+		}
 		
 		appId = appId.trim();
 		String instanceId = appId + "-" + new Date().getTime();
@@ -463,35 +518,22 @@ public class AppManagerImpl implements AppManager {
 			}
 		}*/
 		
+		
+		
 		File appDirectory = new File(getAppConfigDirectory().getAbsolutePath()
 				+ File.separator + appId);
 
 		Process process = null;
 		// something like
-		if (AppType.PYTHON.equals(appInfo.getType())) {
-			List<String> commands = new ArrayList<String>();
-			commands.add("python");
-			commands.add(appInfo.getExecution_path());
-			
-			 //Check if static args contain any replacement values
-			List<String> staticArgsList = appInfo.getOptions();
-			for(String staticArg : staticArgsList) {
-			    if(staticArg!=null){
-			    	if(staticArg.contains("(")){
-				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
-				    	 for(String args : replaceArgs){
-				    		staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
-				    	 }
-			    	}
-			    	commands.add(staticArg);
-			    }
-			}
-		    
-                        if(runtimeOptions!=null && !runtimeOptions.isEmpty()){
-				String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
-				commands.add(runTimeString);
-			}
-			
+		if (AppType.REMOTE.equals(appInfo.getType())) {
+			List<String> commands = buildCommandString(runtimeOptions, simulationContext, appInfo);
+			String args = String.join(" ", commands);
+			remoteAppMonitor.startRemoteApplication(appInfo.getId(), args);
+					
+		}
+		else if (AppType.PYTHON.equals(appInfo.getType())) {
+			List<String> commands = buildCommandString(runtimeOptions, simulationContext, appInfo);
+			commands.add(0, "python");
 			ProcessBuilder processAppBuilder = new ProcessBuilder(commands);
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
@@ -552,11 +594,40 @@ public class AppManagerImpl implements AppManager {
 		AppInstance appInstance = new AppInstance(instanceId, appInfo,
 				runtimeOptions, simulationId, simulationId, process);
 		appInstance.setApp_info(appInfo);
-		watch(appInstance);
+		if (!AppType.REMOTE.equals(appInfo.getType())){
+			watch(appInstance);
+		}
 		// add to app instances map
 		appInstances.put(instanceId, appInstance);
 
 		return instanceId;
+	}
+
+	private List<String> buildCommandString(String runtimeOptions, Map simulationContext, AppInfo appInfo) {
+		List<String> commands = new ArrayList<String>();
+		commands.add(appInfo.getExecution_path());
+		
+		//Check if static args contain any replacement values
+		List<String> staticArgsList = appInfo.getOptions();
+		if (staticArgsList != null) {
+			for(String staticArg : staticArgsList) {
+			    if(staticArg!=null){
+			    	if(staticArg.contains("(")){
+				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+				    	 for(String args : replaceArgs){
+				    		staticArg = staticArg.replace("("+args+")",simulationContext.get(args).toString());
+				    	 }
+			    	}
+			    	commands.add(staticArg);
+			    }
+			}
+		}
+		
+		if(runtimeOptions!=null && !runtimeOptions.isEmpty()){
+			String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
+			commands.add(runTimeString);
+		}
+		return commands;
 	}
 
 	@Override
