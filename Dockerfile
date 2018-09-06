@@ -18,12 +18,25 @@ RUN cd ${TEMP_DIR} \
 #       mount other items specifically in the /gridappsd/appplication
 #       and/or /gridappsd/services location in order for gridappsd
 #       to be able to "see" and ultimately start them.
-COPY ./applications /gridappsd/applications
+# comment this out until the applications are removed from GOSS-GridAPPS-D repo
+#COPY ./applications /gridappsd/applications
 COPY ./services /gridappsd/services
 COPY ./gov.pnnl.goss.gridappsd/conf /gridappsd/conf
 COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
+
+# Add the gridlabd-vvo app & sample app
+RUN cd ${TEMP_DIR} \
+  && [ ! -d /gridappsd/applications ] && mkdir /gridappsd/applications \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-sample-app -b master \
+  && cp -rp gridappsd-sample-app/sample_app/sample_app /gridappsd/applications \
+  && cp -p  gridappsd-sample-app/sample_app/sample_app.config /gridappsd/applications \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-gridlabd-vvo -b master \
+  && cp -rp gridappsd-gridlabd-vvo/vvo/vvo /gridappsd/applications \
+  && cp -p  gridappsd-gridlabd-vvo/vvo/vvo.config /gridappsd/applications \
+  && rm -r gridappsd-sample-app \
+  && rm -r gridappsd-gridlabd-vvo
 
 COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
 RUN chmod +x /gridappsd/run-gridappsd.sh
