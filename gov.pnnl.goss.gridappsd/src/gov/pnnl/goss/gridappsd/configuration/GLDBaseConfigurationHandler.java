@@ -151,6 +151,8 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 			bWantZip = true;
 		}
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, GLDAllConfigurationHandler.RANDOMIZEFRACTIONS, false);
+		
+		boolean bWantHouses = GridAppsDConstants.getBooleanProperty(parameters, GLDAllConfigurationHandler.ADDHOUSES, false);
 
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
@@ -178,9 +180,9 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateGLMFile(queryHandler, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, zFraction, iFraction, pFraction);
+			cimImporter.generateGLMFile(queryHandler, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, bWantHouses, zFraction, iFraction, pFraction);
 		} else {
-			cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, zFraction, iFraction, pFraction);
+			cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, bWantHouses, zFraction, iFraction, pFraction);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that
