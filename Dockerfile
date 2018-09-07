@@ -24,7 +24,7 @@ COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
 
-# Add the applications directory
+# Add the applications directory which is necessary for gridappsd to operate.
 RUN if [ ! -d /gridappsd/applications ] ; then  mkdir /gridappsd/applications ; fi 
 
 COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
