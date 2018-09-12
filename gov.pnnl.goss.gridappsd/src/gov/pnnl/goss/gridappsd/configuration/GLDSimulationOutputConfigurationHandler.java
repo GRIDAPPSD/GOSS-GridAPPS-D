@@ -350,7 +350,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		} else if (conductingEquipmentType.contains("EnergyConsumer")) {
 			if(measurementType.equals("VA")) {
 				objectName = connectivityNode;
-				propertyName = "measured_power_" + phases;
+				if(phases.equals("1") || phases.equals("2")) {
+					propertyName = "indiv_measured_power_" + phases;
+				} else {
+					propertyName = "measured_power_" + phases;
+				}
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
