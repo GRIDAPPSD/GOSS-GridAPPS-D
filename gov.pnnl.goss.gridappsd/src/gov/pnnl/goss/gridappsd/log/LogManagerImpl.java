@@ -124,6 +124,9 @@ public class LogManagerImpl implements LogManager {
 		String requestId = message.getProcessId();
 		long timestamp = message.getTimestamp();
 		String log_message = message.getLogMessage();
+		//Default log message to empty if it is null to prevent sql error
+		if(log_message==null)
+			log_message = "";
 		LogLevel logLevel = message.getLogLevel();
 		ProcessStatus processStatus = message.getProcessStatus();
 		Boolean storeToDb = message.getStoreToDb();

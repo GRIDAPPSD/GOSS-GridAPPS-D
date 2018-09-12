@@ -329,7 +329,7 @@ public class ProcessNewSimulationRequest {
 		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
 		params.put(GLDAllConfigurationHandler.LOADSCALINGFACTOR, new Double(modelConfig.load_scaling_factor).toString());
 		params.put(GLDAllConfigurationHandler.RANDOMIZEFRACTIONS, modelConfig.randomize_zipload_fractions);
-		params.put(GLDAllConfigurationHandler.ADDHOUSES, modelConfig.add_houses);
+		params.put(GLDAllConfigurationHandler.USEHOUSES, modelConfig.use_houses);
 
 		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);

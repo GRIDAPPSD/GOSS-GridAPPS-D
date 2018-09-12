@@ -139,27 +139,32 @@ public class ProcessEvent implements GossResponseEvent {
 				if(request instanceof ConfigurationRequest){
 					simRequest = ((RequestSimulation)request);
 				} else{
-					//TODO implement later, make sure it doesn't fail if request is null
-					try{
-						simRequest = RequestSimulation.parse(request.toString());
-					}catch(JsonSyntaxException e){
-						//TODO handle error better, but additional testing to make sure it doesn't cause things to fail when it shouldn't
-						e.printStackTrace();
-//						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+					if(request!=null){
+						//make sure it doesn't fail if request is null, although it should never be null
+						try{
+							simRequest = RequestSimulation.parse(request.toString());
+						}catch(JsonSyntaxException e){
+							e.printStackTrace();
+							//TODO log error
+							sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+						}
+					} else {
+						sendError(client, event.getReplyDestination(), "Simulation request is null", processId);
 					}
 				}
 				if(simRequest!=null){
 					//if new simulation		
-					if (simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
+					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
 						client.publish(event.getReplyDestination(), processId);
+						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
 						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
-						
+						simulationManager.pauseSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play
-					
+						simulationManager.resumeSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.STOP)) { //if stop
-						
+						simulationManager.endSimulation(simRequest.getSimulation_id());
 					} else{
 						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId);
 					}

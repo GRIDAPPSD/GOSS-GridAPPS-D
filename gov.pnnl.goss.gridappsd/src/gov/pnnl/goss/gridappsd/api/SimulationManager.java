@@ -59,4 +59,10 @@ public interface SimulationManager {
 	void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext);
 	
 	SimulationContext getSimulationContextForId(String simulationId);
+
+	void endSimulation(String simulationId);
+
+	void pauseSimulation(String simulationId);
+
+	void resumeSimulation(String simulationId);
 }
