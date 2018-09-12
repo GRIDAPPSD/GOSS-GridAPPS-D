@@ -513,7 +513,7 @@ def _get_fncs_bus_messages(simulation_id):
                                     else:
                                         measurement["value"] = 1
                             elif conducting_equipment_type == "PowerTransformer":
-                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_int_"+phases]:
+                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                     val = complex(val_str)
                                     (mag,ang_rad) = cmath.polar(val)
                                     ang_deg = math.degrees(ang_rad)
@@ -521,15 +521,21 @@ def _get_fncs_bus_messages(simulation_id):
                                     measurement["angle"] = ang_deg
                                 else:
                                     measurement["value"] = int(val_str)
-                            elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch"]:
+                            elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
                                 val = complex(val_str)
                                 (mag,ang_rad) = cmath.polar(val)
                                 ang_deg = math.degrees(ang_rad)
                                 measurement["magnitude"] = mag
                                 measurement["angle"] = ang_deg
                             elif conducting_equipment_type == "RatioTapChanger":
-                                #TODO ask Tom
-                                measurement["value"] = int(val_str)
+                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                    val = complex(val_str)
+                                    (mag,ang_rad) = cmath.polar(val)
+                                    ang_deg = math.degrees(ang_rad)
+                                    measurement["magnitude"] = mag
+                                    measurement["angle"] = ang_deg
+                                else:
+                                    measurement["value"] = int(val_str)
                             else:
                                 _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
                                 raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
@@ -789,7 +795,10 @@ def _create_cim_object_map(map_file=None):
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = connectivityNode;
-                            property_name = "measured_power_" + phases;
+                            if phases in ["1","2"]:
+                                property_name = "indiv_measured_power_" + phases;
+                            else:
+                                property_name = "measured_current_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivityNode;
                             property_name = "voltage_" + phases;
