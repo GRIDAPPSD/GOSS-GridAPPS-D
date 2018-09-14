@@ -253,23 +253,23 @@ public class AppManagerImpl implements AppManager {
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		try{
-		logManager.log(new LogMessage(this.getClass().getName(), 
-				null,
-				new Date().getTime(), 
-				"Starting "+this.getClass().getName(), 
-				LogLevel.INFO, 
-				ProcessStatus.RUNNING, 
-				true),GridAppsDConstants.username,
-				GridAppsDConstants.topic_platformLog);
-		
-		scanForApps();
-		
 		logManager.log(new LogMessage(this.getClass().getName(),
 				null,
-				new Date().getTime(), 
-				String.format("Found %s applications", apps.size()), 
-				LogLevel.INFO, 
-				ProcessStatus.RUNNING, 
+				new Date().getTime(),
+				"Starting "+this.getClass().getName(),
+				LogLevel.INFO,
+				ProcessStatus.RUNNING,
+				true),GridAppsDConstants.username,
+				GridAppsDConstants.topic_platformLog);
+
+		scanForApps();
+
+		logManager.log(new LogMessage(this.getClass().getName(),
+				null,
+				new Date().getTime(),
+				String.format("Found %s applications", apps.size()),
+				LogLevel.INFO,
+				ProcessStatus.RUNNING,
 				true),GridAppsDConstants.username);
 		}catch(Exception e){
 			e.printStackTrace();
@@ -299,7 +299,7 @@ public class AppManagerImpl implements AppManager {
 		if (remoteAppMonitor == null) {
 			remoteAppMonitor = new RemoteApplicationHeartbeatMonitor(logManager, client);
 		}
-		
+
 		System.out.println(appInfo.toString());
 		// Simple routine to make sure appid is unique.
 		int app_count = 1;
@@ -308,9 +308,10 @@ public class AppManagerImpl implements AppManager {
 			app_count += 1;
 			app_id = appInfo.getId() + app_count;
 		}
+		app_id = appInfo.getId();
 		appInfo.setId(app_id);
 		apps.put(app_id, appInfo);
-		
+
 		RemoteApplicationRegistrationResponse response = new RemoteApplicationRegistrationResponse();
 		response.applicationId = app_id;
 		response.errorTopic="Error";
@@ -318,8 +319,8 @@ public class AppManagerImpl implements AppManager {
 		response.startControlTopic="/topic/" + GridAppsDConstants.topic_remoteapp_start+"."+app_id;
 		response.stopControlTopic="/topic/" + GridAppsDConstants.topic_remoteapp_stop+"."+app_id;
 		System.out.println(response.toString());
-		remoteAppMonitor.addRemoteApplication(app_id, response);		
-		
+		remoteAppMonitor.addRemoteApplication(app_id, response);
+
 		return response;
 	}
 	// TODO probably need an updateApp call or integrate this with register app
@@ -480,12 +481,12 @@ public class AppManagerImpl implements AppManager {
 
 	@Override
 	public String startAppForSimultion(String appId, String runtimeOptions, Map simulationContext) {
-		
+
 		String simulationId = null;
 		if (simulationContext != null) {
 			simulationId = simulationContext.get("simulationId").toString();
 		}
-		
+
 		appId = appId.trim();
 		String instanceId = appId + "-" + new Date().getTime();
 		// get execution path
@@ -517,9 +518,9 @@ public class AppManagerImpl implements AppManager {
 						simulationId);
 			}
 		}*/
-		
-		
-		
+
+
+
 		File appDirectory = new File(getAppConfigDirectory().getAbsolutePath()
 				+ File.separator + appId);
 
@@ -529,7 +530,7 @@ public class AppManagerImpl implements AppManager {
 			List<String> commands = buildCommandString(runtimeOptions, simulationContext, appInfo);
 			String args = String.join(" ", commands);
 			remoteAppMonitor.startRemoteApplication(appInfo.getId(), args);
-					
+
 		}
 		else if (AppType.PYTHON.equals(appInfo.getType())) {
 			List<String> commands = buildCommandString(runtimeOptions, simulationContext, appInfo);
@@ -538,10 +539,10 @@ public class AppManagerImpl implements AppManager {
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
 			processAppBuilder.directory(appDirectory);
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
+			logManager.log(new LogMessage(this.getClass().getSimpleName(),
 					simulationId, new Date().getTime(),
-					"Starting app with command "+ String.join(" ",commands), 
-					LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+					"Starting app with command "+ String.join(" ",commands),
+					LogLevel.DEBUG, ProcessStatus.RUNNING, true),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 			try {
 				process = processAppBuilder.start();
@@ -606,7 +607,7 @@ public class AppManagerImpl implements AppManager {
 	private List<String> buildCommandString(String runtimeOptions, Map simulationContext, AppInfo appInfo) {
 		List<String> commands = new ArrayList<String>();
 		commands.add(appInfo.getExecution_path());
-		
+
 		//Check if static args contain any replacement values
 		List<String> staticArgsList = appInfo.getOptions();
 		if (staticArgsList != null) {
@@ -622,7 +623,7 @@ public class AppManagerImpl implements AppManager {
 			    }
 			}
 		}
-		
+
 		if(runtimeOptions!=null && !runtimeOptions.isEmpty()){
 			String runTimeString = runtimeOptions.replace(" ", "").replace("\n","");
 			commands.add(runTimeString);
@@ -735,7 +736,7 @@ public class AppManagerImpl implements AppManager {
 	    new Thread() {
 	        public void run() {
 	            BufferedReader input = new BufferedReader(new InputStreamReader(appInstance.getProcess().getInputStream()));
-	            String line = null; 
+	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
