@@ -808,7 +808,7 @@ def _create_cim_object_map(map_file=None):
                             if phases in ["1","2"]:
                                 property_name = "indiv_measured_power_" + phases;
                             else:
-                                property_name = "measured_current_" + phases;
+                                property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
