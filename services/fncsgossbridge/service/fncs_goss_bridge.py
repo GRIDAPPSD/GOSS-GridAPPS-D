@@ -804,28 +804,28 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             if phases in ["1","2"]:
                                 property_name = "indiv_measured_power_" + phases;
                             else:
-                                property_name = "measured_current_" + phases;
+                                property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             property_name = "measured_current_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     elif "PowerElectronicsConnection" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = connectivityNode;
+                            object_name = connectivity_node;
                             property_name = "measured_current_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
