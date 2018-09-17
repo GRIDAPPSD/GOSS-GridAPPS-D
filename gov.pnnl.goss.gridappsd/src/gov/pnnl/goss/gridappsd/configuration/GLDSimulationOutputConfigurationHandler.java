@@ -328,7 +328,14 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			}
 			if(measurementType.equals("VA")) {
 				objectName = prefix+conductingEquipmentName;
-				propertyName = "power_in_" + phases;
+				if (phases.equals("1")) {
+					propertyName = "power_in_" + "A";
+				} else if (phases.equals("2")) {
+					propertyName = "power_in_" + "B";
+				} else {
+					propertyName = "power_in_" + phases;
+				}
+
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
@@ -347,7 +354,14 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("A")) {
 				objectName = "swt_"+conductingEquipmentName;
-				propertyName = "current_in_" + phases;
+				if (phases.equals("1")) {
+					propertyName = "current_in_A";
+				} else if (phases.equals("2")) {
+					propertyName = "current_in_B";
+				} else {
+					propertyName = "current_in_" + phases;
+				}
+
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for LoadBreakSwitch are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
