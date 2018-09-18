@@ -46,6 +46,7 @@ import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.ResultSetCloseable;
 
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -118,8 +119,9 @@ public class BlazegraphQueryHandler implements QueryHandler {
 
 		long end = new Date().getTime();
 		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
-		return qexec.execSelect();
-		
+//		return qexec.execSelect();
+		ResultSetCloseable rs=  ResultSetCloseable.closeableResultSet(qexec);
+		return rs;
 	}
 	public boolean addFeederSelection (String mRID) {
 		this.mRID = mRID;
