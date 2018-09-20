@@ -235,44 +235,53 @@ public class ProcessNewSimulationRequest {
 		
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
-		
-			for (ApplicationObject app : config.application_config
-					.getApplications()) {
-				// TODO: Ask Tara: is simulation id same as request id
-				AppInfo appInfo = appManager.getApp(app.getName());
-				if(appInfo==null) {
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							String.valueOf(simulationId), new Date().getTime(), 
-							"Cannot start application "+ app.getName() +". Application not available", 
-							LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
-							+ simulationId);
-					throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available"); 
-					
-				}
-					
-				
-				
-				List<String> prereqsList = appManager.getApp(app.getName())
-						.getPrereqs();
-				for (String prereqs : prereqsList) {
-					String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
-					connectServiceInstanceIds.add(serviceInstanceId);
-					logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-							+ prereqs + " with instance id "
-							+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-							GridAppsDConstants.topic_simulationLog
-									+ simulationId);
-				}
 
-				String appInstanceId = appManager.startAppForSimultion(app
-						.getName(), app.getConfig_string(), simulationContext);
-				connectedAppInstanceIds.add(appInstanceId);
-				logManager.log(
-						new LogMessage(source, simId, new Date().getTime(),"Started "
-								+ app.getName() + " with instance id "
-								+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-						GridAppsDConstants.topic_simulationLog + simulationId);
+			if (config.application_config == null) {
+				logManager.log(new LogMessage(this.getClass().getSimpleName(),
+						simId,
+						new Date().getTime(),
+						"No applications found in request  ="+config.getSimulation_config().getSimulator(),
+						LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+			}
+			else {
+				for (ApplicationObject app : config.application_config
+						.getApplications()) {
+					// TODO: Ask Tara: is simulation id same as request id
+					AppInfo appInfo = appManager.getApp(app.getName());
+					if(appInfo==null) {
+						logManager.log(new LogMessage(this.getClass().getSimpleName(),
+								String.valueOf(simulationId), new Date().getTime(),
+								"Cannot start application "+ app.getName() +". Application not available",
+								LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
+								+ simulationId);
+						throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available");
 
+					}
+
+
+
+					List<String> prereqsList = appManager.getApp(app.getName())
+							.getPrereqs();
+					for (String prereqs : prereqsList) {
+						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
+						connectServiceInstanceIds.add(serviceInstanceId);
+						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+								+ prereqs + " with instance id "
+								+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+								GridAppsDConstants.topic_simulationLog
+										+ simulationId);
+					}
+
+					String appInstanceId = appManager.startAppForSimultion(app
+							.getName(), app.getConfig_string(), simulationContext);
+					connectedAppInstanceIds.add(appInstanceId);
+					logManager.log(
+							new LogMessage(source, simId, new Date().getTime(),"Started "
+									+ app.getName() + " with instance id "
+									+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+							GridAppsDConstants.topic_simulationLog + simulationId);
+
+				}
 			}
 			
 			simulationContext.put("connectedServiceInstanceIds",connectServiceInstanceIds);
