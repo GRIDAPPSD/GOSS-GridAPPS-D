@@ -29,7 +29,7 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	blazegraph.cim2glm;version=latest,\
+	blazegraph.cim2glm;version=7.0,\
 	httpclient,\
 	com.bigdata.rdf,\
 	proven-client,\
