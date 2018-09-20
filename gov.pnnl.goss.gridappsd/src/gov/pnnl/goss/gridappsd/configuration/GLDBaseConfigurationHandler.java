@@ -87,6 +87,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
 	public static final String SIMULATIONID = "simulation_id";
+	public static final String USEHOUSES = "use_houses";
 
 	public GLDBaseConfigurationHandler() {
 	}
@@ -176,13 +177,15 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
 		
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		
 		CIMImporter cimImporter = new CIMImporter(); 
 		
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateGLMFile(queryHandler, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, bWantHouses, zFraction, iFraction, pFraction);
+			cimImporter.generateGLMFile(queryHandler, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
 		} else {
-			cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, bWantHouses, zFraction, iFraction, pFraction);
+			cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses,zFraction, iFraction, pFraction);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that

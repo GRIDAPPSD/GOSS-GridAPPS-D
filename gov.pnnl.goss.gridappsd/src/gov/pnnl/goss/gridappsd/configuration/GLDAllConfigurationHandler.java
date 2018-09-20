@@ -190,10 +190,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String fRoot = dir.getAbsolutePath()+File.separator+CIM2GLM_PREFIX;
 		
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, bWantHouses, zFraction, iFraction, pFraction);
-
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
 		String tempDataPath = dir.getAbsolutePath();
 		
 		//Generate startup file
