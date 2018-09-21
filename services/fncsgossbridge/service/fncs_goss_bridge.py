@@ -44,11 +44,13 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 """
+import argparse
 import cmath
 from datetime import datetime
 import json
 import math
 import os
+from Queue import Queue
 import sys
 import time
 
@@ -155,8 +157,44 @@ difference_attribute_map = {
 }
 
 class GOSSListener(object):
+    
+    def __init__(self, sim_length):
+        self.goss_to_fncs_message_queue = Queue()
+        self.start_simulation = False
+        self.stop_simulation = False
+        self.simulation_finished = True
+        self.simulation_length = sim_length
+    
+    def run_simulation(self,run_realtime):
+        message = {}
+        current_time = 0;
+        message['command'] = 'nextTimeStep'
+        for current_time in xrange(self.simulation_length):
+            if self.stop_simulation == True:
+                if fncs.is_initialized():
+                    fncs.die()
+                break
+            #forward messages from FNCS to GOSS
+            message['output'] = _get_fncs_bus_messages(simulation_id)
+            response_msg = json.dumps(message['output'])
+            goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+            #forward messages from GOSS to FNCS
+            while self.goss_to_fncs_message_queue.not_empty:
+                _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get())
+            _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+            message_str = 'done with timestep '+str(current_time)
+            _send_simulation_status('RUNNING', message_str, 'DEBUG')
+            message_str = 'incrementing to '+str(current_time + 1)
+            _send_simulation_status('RUNNING', message_str, 'DEBUG')
+            if run_realtime == True:
+                time.sleep(1)
+        if fncs.is_initialized():
+            fncs.finalize()
+        self.stop_simulation = True
+            
+            
+        
     def on_message(self, headers, msg):
-        global stop_simulation
         message = {}
         try:
             message_str = 'received message '+str(msg)
@@ -187,50 +225,52 @@ class GOSSListener(object):
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
-                _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
+                self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
+                #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
             elif json_msg['command'] == 'nextTimeStep':
-                message['command'] = 'nextTimeStep'
-                current_time = json_msg['currentTime']
-                message_str = 'incrementing to '+str(current_time + 1)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message['response'] = "True"
-                t_now = datetime.utcnow()
-                message['timestamp'] = int(time.mktime(t_now.timetuple()))
-                goss_connection.send(output_to_simulation_manager, json.dumps(message))
-                del message['response']
-                message_str = 'done with timestep '+str(current_time)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                message['output'] = _get_fncs_bus_messages(simulation_id)
-                response_msg = json.dumps(message['output'])
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                if self.start_time == False:
+                    self.start_simulation = True
+                #message['command'] = 'nextTimeStep'
+                #current_time = json_msg['currentTime']
+                #message_str = 'incrementing to '+str(current_time + 1)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #_done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+                #message['response'] = "True"
+                #t_now = datetime.utcnow()
+                #essage['timestamp'] = int(time.mktime(t_now.timetuple()))
+                #oss_connection.send(output_to_simulation_manager, json.dumps(message))
+                #el message['response']
+                #essage_str = 'done with timestep '+str(current_time)
+                #send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #message['output'] = _get_fncs_bus_messages(simulation_id)
+                #response_msg = json.dumps(message['output'])
+                #oss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
-                stop_simulation = True
-                fncs.finalize()
+                self.stop_simulation = True
+                if fncs.is_initialized():
+                    fncs.finalize()
                 
         
         except Exception as e:
             message_str = 'Error in command '+str(e)
             _send_simulation_status('ERROR', message_str, 'ERROR')
-            stop_simulation = True
+            self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
            
         
     def on_error(self, headers, message):
-        global stop_simulation
         message_str = 'Error in goss listener '+str(message)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        self.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
     
     
     def on_disconnected(self):
-        global stop_simulation
-        stop_simulation = True
+        self.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
   
@@ -249,7 +289,6 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
         ValueError()
     """
     global is_initialized
-    global stop_simulation
     configuration_zpl = ''
     try:
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
@@ -306,14 +345,14 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
     except Exception as e:
         message_str = 'Error while registering with fncs broker '+str(e)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        goss_listener_instance.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
 
     if not fncs.is_initialized():
         message_str = 'fncs.initialize(configuration_zpl) failed!\n' + 'configuration_zpl = {0}'.format(configuration_zpl)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        goss_listener_instance.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
         raise RuntimeError(
@@ -570,7 +609,7 @@ def _done_with_time_step(current_time):
         ValueError()
     """
     try:
-        message_str = 'In done with timestep '+str(current_time)
+        message_str = 'Done with timestep '+str(current_time)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
         if current_time == None or type(current_time) != int:
             raise ValueError(
@@ -593,7 +632,7 @@ def _done_with_time_step(current_time):
         
             
 def _register_with_goss(sim_id,username,password,goss_server='localhost', 
-                      stomp_port='61613',):
+                      stomp_port='61613', sim_durration=86400):
     """Register with the GOSS server broker and return.
     
     Function arguments:
@@ -615,6 +654,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
     """
     global simulation_id
     global goss_connection
+    global goss_listener_instance
     simulation_id = sim_id
     if (goss_server == None or goss_server == ''
             or type(goss_server) != str):
@@ -626,11 +666,11 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
         raise ValueError(
             'stomp_port must be a nonempty string.\n' 
             + 'stomp_port = {0}'.format(stomp_port))
-   
+    goss_listener_instance = GOSSListener(sim_durration)
     goss_connection = stomp.Connection12([(goss_server, stomp_port)])
     goss_connection.start()
     goss_connection.connect(username,password, wait=True)
-    goss_connection.set_listener('GOSSListener', GOSSListener())
+    goss_connection.set_listener('GOSSListener', goss_listener_instance)
     goss_connection.subscribe(input_from_goss_topic,1)
     goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
 
@@ -906,26 +946,42 @@ def _byteify(data, ignore_dicts = False):
     return data
  
  
-def _keep_alive():
-    while stop_simulation == False:
+def _keep_alive(is_realtime):
+    simulation_ran = False
+    while goss_listener_instance.stop_simulation == False:
         time.sleep(0.1)
+        if goss_listener_instance.start_simulation == True and simulation_ran == False:
+            goss_listener_instance.run_simulation(is_realtime)
+            simulation_ran = True
    
         
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400):
  
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
+    _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613', sim_duration)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
-    _keep_alive()
+    _keep_alive(is_realtime)
     
-        
+def _get_opts():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("simulation_id", help="The simulation id to use for responses on the message bus.")
+    parser.add_argument("broker_location", help="The location of the FNCS broker.")
+    parser.add_argument("simulation_directory", help="The simulation files directory.")
+    parser.add_argument("simulation_request", help="The simulation request.")
+    opts = parser.parse_args()
+    return opts
+    
 if __name__ == "__main__":
     #TODO: send simulation_id, fncsBrokerLocation, gossLocation, 
     #stomp_port, username and password as commmand line arguments
-    simulation_id = sys.argv[1]
-    sim_broker_location = sys.argv[2]
-    sim_dir = sys.argv[3]
-    _main(simulation_id, sim_broker_location, sim_dir) 
+    opts = _get_opts()
+    simulation_id = opts.simulation_id
+    sim_broker_location = opts.broker_location
+    sim_dir = opts.simulation_directory
+    sim_request = json.loads(opts.request.replace("\'",""))
+    run_realtime = sim_request["simulation_config"]["realtime"]
+    sim_duration = sim_request["simulation_config"]["duration"]
+    _main(simulation_id, sim_broker_location, sim_dir, r_rt, sim_duration) 
     debugFile.close()
     
