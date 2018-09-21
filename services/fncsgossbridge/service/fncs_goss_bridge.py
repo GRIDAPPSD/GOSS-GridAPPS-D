@@ -635,7 +635,7 @@ def _done_with_time_step(current_time):
 
 
 def _register_with_goss(sim_id,username,password,goss_server='localhost',
-                      stomp_port='61613', sim_durration=86400):
+                      stomp_port='61613', sim_duration=86400):
     """Register with the GOSS server broker and return.
 
     Function arguments:
@@ -669,7 +669,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
         raise ValueError(
             'stomp_port must be a nonempty string.\n'
             + 'stomp_port = {0}'.format(stomp_port))
-    goss_listener_instance = GOSSListener(sim_durration)
+    goss_listener_instance = GOSSListener(sim_duration)
     goss_connection = stomp.Connection12([(goss_server, stomp_port)])
     goss_connection.start()
     goss_connection.connect(username,password, wait=True)
@@ -982,9 +982,9 @@ if __name__ == "__main__":
     simulation_id = opts.simulation_id
     sim_broker_location = opts.broker_location
     sim_dir = opts.simulation_directory
-    sim_request = json.loads(opts.request.replace("\'",""))
-    run_realtime = sim_request["simulation_config"]["realtime"]
+    sim_request = json.loads(opts.simulation_request.replace("\'",""))
+    run_realtime = sim_request["simulation_config"]["run_realtime"]
     sim_duration = sim_request["simulation_config"]["duration"]
-    _main(simulation_id, sim_broker_location, sim_dir, r_rt, sim_duration)
+    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
     debugFile.close()
 
