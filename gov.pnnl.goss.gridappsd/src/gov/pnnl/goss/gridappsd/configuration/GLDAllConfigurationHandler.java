@@ -156,8 +156,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
-		
-		boolean bWantHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 				
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
