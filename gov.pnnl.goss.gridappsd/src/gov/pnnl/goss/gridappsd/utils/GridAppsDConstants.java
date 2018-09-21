@@ -70,8 +70,16 @@ public class GridAppsDConstants {
 	public static final String topic_requestData = topic_process_prefix+".request.data";
 	public static final String topic_requestConfig = topic_process_prefix+".request.config";
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
+	public static final String topic_app_register_remote = topic_requestApp+".remote.register";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
 	public static final String topic_requestPlatformStatus = topic_process_prefix+".request.status.platform";
+	
+	// Remote Application topics
+	public static final String topic_remoteapp_prefix = topic_prefix+".remoteapp";
+	public static final String topic_remoteapp_heartbeat = topic_remoteapp_prefix+".heartbeat";
+	public static final String topic_remoteapp_start = topic_remoteapp_prefix+".start";
+	public static final String topic_remoteapp_stop = topic_remoteapp_prefix+".stop";
+	public static final String topic_remoteapp_status = topic_remoteapp_prefix+".status";
 	
 	
 	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";

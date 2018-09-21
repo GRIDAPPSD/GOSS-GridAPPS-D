@@ -1,40 +1,40 @@
 /*******************************************************************************
  * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
- * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
- * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
- * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
- * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+ * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
+ * lawfully obtaining a copy of this software and associated documentation files (hereinafter the
+ * Software) to redistribute and use the Software in source and binary forms, with or without modification.
+ * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and may permit others to do so, subject to the following conditions:
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the
  * following disclaimers.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
- * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+ * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
- * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+ * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * General disclaimer for use with OSS licenses
- * 
- * This material was prepared as an account of work sponsored by an agency of the United States Government. 
- * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
- * of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
- * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
- * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+ *
+ * This material was prepared as an account of work sponsored by an agency of the United States Government.
+ * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
+ * of their employees, nor any jurisdiction or organization that has cooperated in the development of these
+ * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
+ * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
  * disclosed, or represents that its use would not infringe privately owned rights.
- * 
- * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
- * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
- * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+ *
+ * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
+ * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
+ * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
  * herein do not necessarily state or reflect those of the United States Government or any agency thereof.
- * 
- * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+ *
+ * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
@@ -138,7 +138,7 @@ public class ProcessNewSimulationRequest {
 							LogLevel.INFO,
 							ProcessStatus.RUNNING,true), simulationLogTopic);
 
-			
+
 //			StringWriter simulationConfigDirOut = new StringWriter();
 //			File simulationFile = configurationManager.getSimulationFile(
 //					simulationId, config);
@@ -163,8 +163,8 @@ public class ProcessNewSimulationRequest {
 			if(!tempDataPathDir.exists()){
 				tempDataPathDir.mkdirs();
 			}
-			
-			
+
+
 			SimulationContext simContext = new SimulationContext();
 			simContext.setRequest(config);
 			simContext.simulationId = simId;
@@ -175,25 +175,25 @@ public class ProcessNewSimulationRequest {
 				simContext.simulatorPath = serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path();
 			}catch(NullPointerException e){
 				if(serviceManager.getService(config.getSimulation_config().getSimulator()) == null){
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							simId, 
+					logManager.log(new LogMessage(this.getClass().getSimpleName(),
+							simId,
 							new Date().getTime(),
-							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
+							"Cannot find service with id ="+config.getSimulation_config().getSimulator(),
 							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							simId, 
+					logManager.log(new LogMessage(this.getClass().getSimpleName(),
+							simId,
 							new Date().getTime(),
-							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(), 
+							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(),
 							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}
 				e.printStackTrace();
 			}
-			 
-			
-			
-			
-			
+
+
+
+
+
 			Properties simulationParams = generateSimulationParameters(config);
 			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
 			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
@@ -204,9 +204,9 @@ public class ProcessNewSimulationRequest {
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 							simulationLogTopic);
 
-			
+
 			// Start Apps and Services
-			
+
 			Map<String,Object> simulationContext = new HashMap<String,Object>();
 			simulationContext.put("request",config);
 			simulationContext.put("simulationId",simId);
@@ -218,63 +218,72 @@ public class ProcessNewSimulationRequest {
 				simulationContext.put("simulatorPath",serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
 				if(serviceManager.getService(config.getSimulation_config().getSimulator()) == null){
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							simId, 
+					logManager.log(new LogMessage(this.getClass().getSimpleName(),
+							simId,
 							new Date().getTime(),
-							"Cannot find service with id ="+config.getSimulation_config().getSimulator(), 
+							"Cannot find service with id ="+config.getSimulation_config().getSimulator(),
 							LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(config.getSimulation_config().getSimulator()).getExecution_path() == null){
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							simId, 
+					logManager.log(new LogMessage(this.getClass().getSimpleName(),
+							simId,
 							new Date().getTime(),
-							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(), 
+							"Cannot find execution path for service ="+config.getSimulation_config().getSimulator(),
 							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 				}
 				e.printStackTrace();
 			}
-		
+
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
-		
-			for (ApplicationObject app : config.application_config
-					.getApplications()) {
-				// TODO: Ask Tara: is simulation id same as request id
-				AppInfo appInfo = appManager.getApp(app.getName());
-				if(appInfo==null) {
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-							String.valueOf(simulationId), new Date().getTime(), 
-							"Cannot start application "+ app.getName() +". Application not available", 
-							LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
-							+ simulationId);
-					throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available"); 
-					
-				}
-					
-				
-				
-				List<String> prereqsList = appManager.getApp(app.getName())
-						.getPrereqs();
-				for (String prereqs : prereqsList) {
-					String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
-					connectServiceInstanceIds.add(serviceInstanceId);
-					logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-							+ prereqs + " with instance id "
-							+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-							GridAppsDConstants.topic_simulationLog
-									+ simulationId);
-				}
 
-				String appInstanceId = appManager.startAppForSimultion(app
-						.getName(), app.getConfig_string(), simulationContext);
-				connectedAppInstanceIds.add(appInstanceId);
-				logManager.log(
-						new LogMessage(source, simId, new Date().getTime(),"Started "
-								+ app.getName() + " with instance id "
-								+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-						GridAppsDConstants.topic_simulationLog + simulationId);
-
+			if (config.application_config == null) {
+				logManager.log(new LogMessage(this.getClass().getSimpleName(),
+						simId,
+						new Date().getTime(),
+						"No applications found in request  ="+config.getSimulation_config().getSimulator(),
+						LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
 			}
-			
+			else {
+				for (ApplicationObject app : config.application_config
+						.getApplications()) {
+					// TODO: Ask Tara: is simulation id same as request id
+					AppInfo appInfo = appManager.getApp(app.getName());
+					if(appInfo==null) {
+						logManager.log(new LogMessage(this.getClass().getSimpleName(),
+								String.valueOf(simulationId), new Date().getTime(),
+								"Cannot start application "+ app.getName() +". Application not available",
+								LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
+								+ simulationId);
+						throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available");
+
+					}
+
+
+
+					List<String> prereqsList = appManager.getApp(app.getName())
+							.getPrereqs();
+					for (String prereqs : prereqsList) {
+						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
+						connectServiceInstanceIds.add(serviceInstanceId);
+						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+								+ prereqs + " with instance id "
+								+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+								GridAppsDConstants.topic_simulationLog
+										+ simulationId);
+					}
+
+					String appInstanceId = appManager.startAppForSimultion(app
+							.getName(), app.getConfig_string(), simulationContext);
+					connectedAppInstanceIds.add(appInstanceId);
+					logManager.log(
+							new LogMessage(source, simId, new Date().getTime(),"Started "
+									+ app.getName() + " with instance id "
+									+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+							GridAppsDConstants.topic_simulationLog + simulationId);
+
+				}
+			}
+
 			simulationContext.put("connectedServiceInstanceIds",connectServiceInstanceIds);
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
@@ -306,24 +315,24 @@ public class ProcessNewSimulationRequest {
 			}
 		}
 	}
-	
-	
+
+
 	Properties generateSimulationParameters(RequestSimulation requestSimulation){
 		Properties params = new Properties();
-		
+
 		//TODO where to get feeder id?
 		params.put(GLDAllConfigurationHandler.MODELID, requestSimulation.power_system_config.Line_name);
-		
+
 		ModelCreationConfig modelConfig = requestSimulation.getSimulation_config().model_creation_config;
 		double zFraction = modelConfig.z_fraction;
 		double iFraction = modelConfig.i_fraction;
 		if(iFraction==0){
 			iFraction = 1;
 		}
-		double pFraction = modelConfig.p_fraction; 
-		
-		
-			
+		double pFraction = modelConfig.p_fraction;
+
+
+
 		params.put(GLDAllConfigurationHandler.ZFRACTION, new Double(zFraction).toString());
 		params.put(GLDAllConfigurationHandler.IFRACTION, new Double(iFraction).toString());
 		params.put(GLDAllConfigurationHandler.PFRACTION, new Double(pFraction).toString());
@@ -337,16 +346,16 @@ public class ProcessNewSimulationRequest {
 
 		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, requestSimulation.getSimulation_config().getSimulation_broker_location());
 		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, new Integer(requestSimulation.getSimulation_config().getSimulation_broker_port()).toString());
-		
+
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
 		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
 
 		return params;
 	}
-	
-	
+
+
 	/**
-	 * Create configfile.json string, should look something like 
+	 * Create configfile.json string, should look something like
 	 *   "{\"swt_g9343_48332_sw\": [\"status\"],\"swt_l5397_48332_sw\": [\"status\"],\"swt_a8869_48332_sw\": [\"status\"]}";
 	 * @param simulationOutput
 	 * @return
@@ -360,7 +369,7 @@ public class ProcessNewSimulationRequest {
 				configStr.append(",");
 			}
 			isFirst = false;
-			
+
 			configStr.append("\""+obj.getName()+"\": [");
 			boolean isFirstProp = true;
 			for(String property: obj.getProperties()){
@@ -372,14 +381,14 @@ public class ProcessNewSimulationRequest {
 			}
 			configStr.append("]");
 		}
-		
+
 		configStr.append("}");
-		
+
 		FileWriter fOut;
 		try {
 			fOut  = new FileWriter(configFile);
 			fOut.write(configStr.toString());
-		
+
 		fOut.flush();
 		fOut.close();
 		} catch (IOException e) {
