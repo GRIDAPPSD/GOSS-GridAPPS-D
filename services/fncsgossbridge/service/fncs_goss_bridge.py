@@ -961,7 +961,7 @@ def _keep_alive(is_realtime):
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400):
 
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613', sim_duration)
+    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
     _keep_alive(is_realtime)
