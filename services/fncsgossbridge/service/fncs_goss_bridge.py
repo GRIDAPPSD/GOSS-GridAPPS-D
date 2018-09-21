@@ -188,10 +188,10 @@ class GOSSListener(object):
             _send_simulation_status('RUNNING', message_str, 'DEBUG')
             if run_realtime == True:
                 time.sleep(1)
-        if fncs.is_initialized():
-            fncs.finalize()
         self.stop_simulation = True
-            
+        message['command'] = 'simulationFinished'
+        del message['output']
+        goss_connection.send(output_to_simulation_manager, json.dumps(message))
             
         
     def on_message(self, headers, msg):
@@ -227,7 +227,7 @@ class GOSSListener(object):
                 message['command'] = 'update'
                 self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
                 #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
-            elif json_msg['command'] == 'nextTimeStep':
+            elif json_msg['command'] == 'startSimulation':
                 if self.start_time == False:
                     self.start_simulation = True
                 #message['command'] = 'nextTimeStep'
@@ -237,14 +237,14 @@ class GOSSListener(object):
                 #_done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 #message['response'] = "True"
                 #t_now = datetime.utcnow()
-                #essage['timestamp'] = int(time.mktime(t_now.timetuple()))
-                #oss_connection.send(output_to_simulation_manager, json.dumps(message))
-                #el message['response']
-                #essage_str = 'done with timestep '+str(current_time)
-                #send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #message['timestamp'] = int(time.mktime(t_now.timetuple()))
+                #goss_connection.send(output_to_simulation_manager, json.dumps(message))
+                #del message['response']
+                #message_str = 'done with timestep '+str(current_time)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
                 #message['output'] = _get_fncs_bus_messages(simulation_id)
                 #response_msg = json.dumps(message['output'])
-                #oss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                #goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
