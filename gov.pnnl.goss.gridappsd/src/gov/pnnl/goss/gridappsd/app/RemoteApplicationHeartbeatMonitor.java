@@ -53,6 +53,7 @@ public class RemoteApplicationHeartbeatMonitor implements HeartbeatTimeout {
 
 	public void stopRemoteApplication(String appId) {
 		if (remoteApps.containsKey(appId)) {
+			System.out.println("Attempting to stop app: " + appId);
 			RemoteApplicationRegistrationResponse controller = remoteApps.get(appId);
 			client.publish(controller.stopControlTopic, "");
 		}
