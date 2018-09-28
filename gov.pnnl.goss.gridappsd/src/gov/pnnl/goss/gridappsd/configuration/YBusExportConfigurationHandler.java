@@ -55,6 +55,8 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -130,6 +132,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
 		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
+		parameters.put("directory",simulationContext.getSimulationDir());
 		
 		File simulationDir = new File(simulationContext.getSimulationDir());
 		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
@@ -149,7 +152,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		//Create DSS base file
 		PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
-		DSSBaseConfigurationHandler baseConfigurationHandler = new DSSBaseConfigurationHandler(logManager,configManager, simulationManager, powergridModelManager);
+		DSSAllConfigurationHandler baseConfigurationHandler = new DSSAllConfigurationHandler(logManager,simulationManager,configManager);
 		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
 		if(!dssBaseFile.exists())
@@ -221,9 +224,14 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		
 		YBusExportResponse response = new YBusExportResponse();
-		response.setyParseFilePath(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
-		response.setNodeListFilePath(simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv");
-		response.setSummaryFilePath(simulationDir.getAbsolutePath()+File.separator+"base_summary.csv");
+		
+		File yparsePath = new File(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
+		File nodeListPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv");
+		File summaryPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_summary.csv");
+		
+		response.setyParseFilePath(Files.readAllLines(Paths.get(yparsePath.getPath())));
+		response.setNodeListFilePath(Files.readAllLines(Paths.get(nodeListPath.getPath())));
+		response.setSummaryFilePath(Files.readAllLines(Paths.get(summaryPath.getPath())));
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
