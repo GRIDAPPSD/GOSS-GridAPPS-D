@@ -122,11 +122,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-		
-		ProvenQuery provenQuery = new ProvenQuery();
-		provenQuery.queryFilter = requestTimeseriesData.getFilters();
-		provenQuery.queryMeasurement = requestTimeseriesData.getType().toString();
-		ProvenResponse response = provenProducer.sendMessage(provenQuery.toString(), requestId);
+		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		return response.toString();
 		
 	}
@@ -149,23 +145,6 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenProducer.sendMessage(message.toString(), requestId);
 	}
 
-
-
-
 }
 
-
-class ProvenQuery implements Serializable{
-	
-	String queryMeasurement = "simulation";
-	String queryType = "time-series"; 
-	Map<String,String> queryFilter;	
-	
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-
-}
 
