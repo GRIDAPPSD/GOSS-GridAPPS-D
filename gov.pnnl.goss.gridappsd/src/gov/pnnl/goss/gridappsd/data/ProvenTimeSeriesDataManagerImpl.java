@@ -120,22 +120,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-		
-		
-		QueryFilter queryFilter = new QueryFilter();
-		
-		if(requestTimeseriesData.getSimulationId()!=null)
-			queryFilter.hasSimulationId = requestTimeseriesData.getSimulationId();
-		if(requestTimeseriesData.getMrid()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getMrid();
-		if(requestTimeseriesData.getStartTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getStartTime();
-		if(requestTimeseriesData.getEndTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getEndTime();
-		ProvenQuery provenQuery = new ProvenQuery();
-		provenQuery.queryFilter = queryFilter;
-		
-		ProvenResponse response = provenProducer.sendMessage(provenQuery.toString(), requestId);
+		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		return response.toString();
 		
 	}
@@ -163,31 +148,3 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 }
 
-
-class ProvenQuery implements Serializable{
-	
-	String queryMeasurement = "simulation";
-	String queryType = "time-series"; 
-	QueryFilter queryFilter;	
-	
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-
-}
-
-class QueryFilter implements Serializable{
-	 	String hasSimulationId;
-	    String hasSimulationMessageType;
-	    String hasMrid;
-	    String startTime;
-	    String endTime;
-	    
-	    @Override
-		public String toString() {
-			Gson  gson = new Gson();
-			return gson.toJson(this);
-		}
-}
