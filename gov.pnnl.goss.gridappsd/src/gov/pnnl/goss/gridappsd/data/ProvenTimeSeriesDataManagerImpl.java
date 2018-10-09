@@ -1,19 +1,5 @@
 package gov.pnnl.goss.gridappsd.data;
 
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.Date;
-import java.util.List;
-
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-
-import com.google.gson.Gson;
-
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
@@ -26,11 +12,27 @@ import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.proven.api.producer.ProvenProducer;
 import gov.pnnl.proven.api.producer.ProvenResponse;
+
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.felix.dm.annotation.api.Component;
+import org.apache.felix.dm.annotation.api.ServiceDependency;
+import org.apache.felix.dm.annotation.api.Start;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+
+import com.google.gson.Gson;
 
 @Component
 public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler{
@@ -121,20 +123,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		
-		
-		QueryFilter queryFilter = new QueryFilter();
-		
-		if(requestTimeseriesData.getSimulationId()!=null)
-			queryFilter.hasSimulationId = requestTimeseriesData.getSimulationId();
-		if(requestTimeseriesData.getMrid()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getMrid();
-		if(requestTimeseriesData.getStartTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getStartTime();
-		if(requestTimeseriesData.getEndTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getEndTime();
 		ProvenQuery provenQuery = new ProvenQuery();
-		provenQuery.queryFilter = queryFilter;
-		
+		provenQuery.queryFilter = requestTimeseriesData.getFilters();
+		provenQuery.queryMeasurement = requestTimeseriesData.getType().toString();
 		ProvenResponse response = provenProducer.sendMessage(provenQuery.toString(), requestId);
 		return response.toString();
 		
@@ -168,7 +159,7 @@ class ProvenQuery implements Serializable{
 	
 	String queryMeasurement = "simulation";
 	String queryType = "time-series"; 
-	QueryFilter queryFilter;	
+	Map<String,String> queryFilter;	
 	
 	@Override
 	public String toString() {
@@ -178,16 +169,3 @@ class ProvenQuery implements Serializable{
 
 }
 
-class QueryFilter implements Serializable{
-	 	String hasSimulationId;
-	    String hasSimulationMessageType;
-	    String hasMrid;
-	    String startTime;
-	    String endTime;
-	    
-	    @Override
-		public String toString() {
-			Gson  gson = new Gson();
-			return gson.toJson(this);
-		}
-}
