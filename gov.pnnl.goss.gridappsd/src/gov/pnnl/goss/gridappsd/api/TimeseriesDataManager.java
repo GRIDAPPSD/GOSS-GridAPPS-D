@@ -1,9 +1,8 @@
 package gov.pnnl.goss.gridappsd.api;
 
-import java.io.Serializable;
-import java.rmi.ServerError;
-
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+
+import java.io.Serializable;
 
 public interface TimeseriesDataManager {
 	public enum ResultFormat {
