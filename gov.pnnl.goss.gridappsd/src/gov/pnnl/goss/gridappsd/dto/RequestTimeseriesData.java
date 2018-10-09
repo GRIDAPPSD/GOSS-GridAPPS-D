@@ -16,25 +16,25 @@ public class RequestTimeseriesData implements Serializable {
 	    weather, simulation
 	}
 	
-	String startTime;
-	String endTime;
+	long startTime;
+	long endTime;
 	RequestType type;
 	Map<String,String> filters;
 	ResultFormat responseFormat = ResultFormat.JSON;
 	
-	public String getStartTime() {
+	public long getStartTime() {
 		return startTime;
 	}
 
-	public void setStartTime(String startTime) {
+	public void setStartTime(long startTime) {
 		this.startTime = startTime;
 	}
 
-	public String getEndTime() {
+	public long getEndTime() {
 		return endTime;
 	}
 
-	public void setEndTime(String endTime) {
+	public void setEndTime(long endTime) {
 		this.endTime = endTime;
 	}
 
