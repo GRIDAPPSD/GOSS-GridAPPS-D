@@ -952,11 +952,9 @@ def _byteify(data, ignore_dicts = False):
 
 
 def _keep_alive(is_realtime):
-    _send_simulation_status("RUNNING","entered _keep_alive. STOP SIMULATION == "+str(goss_listener_instance.stop_simulation),"DEBUG")
     simulation_ran = False
     while goss_listener_instance.stop_simulation == False:
         time.sleep(0.1)
-        #_send_simulation_status("RUNNING","Start Simulation == "+str(goss_listener_instance.start_simulation),"DEBUG")
         if goss_listener_instance.start_simulation == True and simulation_ran == False:
             goss_listener_instance.run_simulation(is_realtime)
             simulation_ran = True
