@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.api;
 import java.io.Serializable;
 import java.util.List;
 
+import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
 import pnnl.goss.core.Response;
 
 public interface DataManager {
@@ -58,4 +59,6 @@ public interface DataManager {
 	
 	Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception;
 
+	void registerConverter(String inputFormat, String outputFormat, DataFormatConverter converter);
+	DataFormatConverter getConverter(String inputFormat, String outputFormat);
 }
