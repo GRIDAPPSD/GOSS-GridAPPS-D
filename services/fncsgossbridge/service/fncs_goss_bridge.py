@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------
+
 # Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
 # Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
 # lawfully obtaining a copy of this software and associated documentation files (hereinafter the
@@ -169,32 +169,40 @@ class GOSSListener(object):
         self.simulation_length = sim_length
 
     def run_simulation(self,run_realtime):
-        message = {}
-        current_time = 0;
-        message['command'] = 'nextTimeStep'
-        for current_time in xrange(self.simulation_length):
-            if self.stop_simulation == True:
-                if fncs.is_initialized():
-                    fncs.die()
-                break
-            #forward messages from FNCS to GOSS
-            message['output'] = _get_fncs_bus_messages(simulation_id)
-            response_msg = json.dumps(message['output'])
-            goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
-            #forward messages from GOSS to FNCS
-            while self.goss_to_fncs_message_queue.not_empty:
-                _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get())
-            _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-            message_str = 'done with timestep '+str(current_time)
-            _send_simulation_status('RUNNING', message_str, 'DEBUG')
-            message_str = 'incrementing to '+str(current_time + 1)
-            _send_simulation_status('RUNNING', message_str, 'DEBUG')
-            if run_realtime == True:
-                time.sleep(1)
-        self.stop_simulation = True
-        message['command'] = 'simulationFinished'
-        del message['output']
-        goss_connection.send(output_to_simulation_manager, json.dumps(message))
+        try:
+            message = {}
+            current_time = 0;
+            message['command'] = 'nextTimeStep'
+            for current_time in xrange(self.simulation_length):
+                if self.stop_simulation == True:
+                    if fncs.is_initialized():
+                        fncs.die()
+                    break
+                #forward messages from FNCS to GOSS
+                message['output'] = _get_fncs_bus_messages(simulation_id)
+                response_msg = json.dumps(message['output'])
+                if message['output']!={}:
+                    goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                #forward messages from GOSS to FNCS
+                while not self.goss_to_fncs_message_queue.empty():
+                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get())
+                _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+                message_str = 'done with timestep '+str(current_time)
+                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                message_str = 'incrementing to '+str(current_time + 1)
+                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                if run_realtime == True:
+                    time.sleep(1)
+            self.stop_simulation = True
+            message['command'] = 'simulationFinished'
+            del message['output']
+            goss_connection.send(output_to_simulation_manager, json.dumps(message))
+        except Exception as e:
+            message_str = 'Error in run simulation '+str(e)
+            _send_simulation_status('ERROR', message_str, 'ERROR')
+            self.stop_simulation = True
+            if fncs.is_initialized():
+                fncs.die()
 
 
     def on_message(self, headers, msg):
@@ -216,13 +224,6 @@ class GOSSListener(object):
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['command'] = 'isInitialized'
                 message['response'] = str(is_initialized)
-                if (simulation_id != None):
-                    message['output'] = _get_fncs_bus_messages(simulation_id)
-                message_str = 'Added isInitialized output, sending message '+str(message)+' connection '+str(goss_connection)
-                if fncs.is_initialized():
-                    _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                else:
-                    _send_simulation_status('STARTED', message_str, 'DEBUG')
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
@@ -230,8 +231,8 @@ class GOSSListener(object):
                 message['command'] = 'update'
                 self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
                 #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
-            elif json_msg['command'] == 'startSimulation':
-                if self.start_time == False:
+            elif json_msg['command'] == 'StartSimulation':
+                if self.start_simulation == False:
                     self.start_simulation = True
                 #message['command'] = 'nextTimeStep'
                 #current_time = json_msg['currentTime']
@@ -718,6 +719,7 @@ def _send_simulation_status(status, message, log_level):
         status_str = json.dumps(status_message)
         debugFile.write("{}\n\n".format(status_str))
         goss_connection.send(simulation_status_topic, status_str)
+        goss_connection.send("/topic/goss.gridappsd.simulation.log.{}".format(simulation_id),status_str)
 
 
 def _byteify(data, ignore_dicts = False):
