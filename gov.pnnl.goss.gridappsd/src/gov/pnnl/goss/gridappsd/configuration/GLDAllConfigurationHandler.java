@@ -156,8 +156,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
-		
-		
+				
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
