@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 public class TestConfiguration implements Serializable {
@@ -196,7 +197,8 @@ public class TestConfiguration implements Serializable {
 	}
 	
 	public static TestConfiguration parse(String jsonString){
-	    Gson  gson = new Gson();
+//	    Gson  gson = new Gson();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
 	    if(obj.power_system_configuration==null)
 	        throw new JsonSyntaxException("Expected attribute power_system_configuration not found");

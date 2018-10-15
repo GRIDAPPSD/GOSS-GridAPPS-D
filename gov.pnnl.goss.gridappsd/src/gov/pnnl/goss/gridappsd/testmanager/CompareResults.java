@@ -251,6 +251,23 @@ public class CompareResults {
 	}
 	
 	/**
+	 * Look up the expected with a timestamp
+	 * @param timestamp
+	 * @param jsonObject
+	 * @param expectedOutputPath
+	 * @param simOutProperties
+	 * @return
+	 */
+	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, JsonObject expectedOutput) {
+		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutput);
+		if (expectedOutputMap == null) return new TestResults();
+//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+	
+		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+	}
+	
+	/**
 	 * compareExpectedWithSimulation
 	 * @param simOutputPath
 	 * @param expectedOutputPath
@@ -314,21 +331,25 @@ public class CompareResults {
 		TestResults testResults = new TestResults();
 		JsonObject output = jsonObject;
 		String firstKey = getFirstKey(output);
-
-		JsonObject simOutput = null;
-
-//		if (output.get(firstKey).isJsonObject()){
-		if ( ! firstKey.equals("output") ){
-			simOutput = output.get(firstKey).getAsJsonObject();
-		} else { 
-			// CIM: new sim output 
-			simOutput = output.get(firstKey).getAsJsonObject();
-			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
-			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
-			return testResults;
-		}	
-		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
+		
+		Map<String, JsonElement> simOutputMap= getMeasurmentsMap(jsonObject);
+		compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
 		return testResults;
+
+//		JsonObject simOutput = null;
+//
+////		if (output.get(firstKey).isJsonObject()){
+//		if ( ! firstKey.equals("output") ){
+//			simOutput = output.get(firstKey).getAsJsonObject();
+//		} else { 
+//			// CIM: new sim output 
+//			simOutput = output.get(firstKey).getAsJsonObject();
+//			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(simOutput);
+//			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
+//			return testResults;
+//		}	
+//		compareExpectedWithSimulation(expectedOutputMap, testResults, simOutput);
+//		return testResults;
 	}
 	
 	public void compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, 
@@ -492,6 +513,27 @@ public class CompareResults {
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+		}
+		return expectedOutputMap;
+	}
+	
+	/**
+	 * Get the map of the expected outputs
+	 * @param expectedOutputPath
+	 * @return
+	 * @throws FileNotFoundException
+	 */
+	public Map<String, JsonElement> getExpectedOutputMap(String timestamp, JsonObject expectedOutputObj) {
+		Map<String, JsonElement> expectedOutputMap = null;
+		if (expectedOutputObj.isJsonObject()) {
+			JsonObject jsonObject = expectedOutputObj.getAsJsonObject();				
+			JsonObject outputs = jsonObject.get("expected_outputs").getAsJsonObject();
+			if(outputs.has(timestamp)){
+				expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+			}else{
+				System.out.println("CompareResults no index for" + timestamp);
+				return null;
+			}
 		}
 		return expectedOutputMap;
 	}
