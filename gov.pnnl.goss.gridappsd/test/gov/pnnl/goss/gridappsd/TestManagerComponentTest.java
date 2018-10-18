@@ -163,14 +163,14 @@ public class TestManagerComponentTest {
 		CompareResults compareResults = new CompareResults();
 		JsonObject simOutputObject = new JsonObject();
 		String message = "{\"output\": \"{\\\"simulation_id\\\": \\\"2003982953\\\", \\\"message\\\": {\\\"timestamp\\\": \\\"2018-05-07 17:02:42.807081\\\", \\\"measurements\\\": [{\\\"magnitude\\\": 158.30425951917206, \\\"angle\\\": -31.204732405109397, \\\"measurement_mrid\\\": \\\"280a2f7d-192e-4b54-a8b9-5e0a6b51f278\\\"}   ]}}\", \"command\": \"nextTimeStep\", \"timestamp\": 938638}";
-		message = "{\"output\": \"{\\\"simulation_id\\\": \\\"2003982953\\\", \\\"message\\\": {\\\"timestamp\\\": \\\"2018-05-07 17:02:42.807081\\\", \\\"measurements\\\": [{\\\"magnitude\\\": 158.30425951917206, \\\"angle\\\": -31.204732405109397, \\\"measurement_mrid\\\": \\\"280a2f7d-192e-4b54-a8b9-5e0a6b51f278\\\"}   ]}}\", \"command\": \"nextTimeStep\", \"timestamp\": 938638}";
+		message = "{\"output\": \"{\\\"simulation_id\\\": \\\"2003982953\\\", \\\"message\\\": {\\\"timestamp\\\": \\\"2018-05-07 17:02:42.807081\\\", \\\"measurements\\\": [{\\\"magnitude\\\": 158.30425951917206, \\\"angle\\\": -31.204732405109397, \\\"measurement_mrid\\\": \\\"280a2f7d-192e-4b54-a8b9-5e0a6b51f278\\\"}, {\\\"measurement_mrid\\\": \\\"_1b154d1b-4e84-467a-b510-71c0b5d0e962\\\", \\\"value\\\": 2}   ]}}\", \"command\": \"nextTimeStep\", \"timestamp\": 938638}";
 		
 		JsonObject jsonObject = CompareResults.getSimulationJson(message.toString());
 		jsonObject = CompareResults.getSimulationJson(jsonObject.get("output").getAsString());
 		simOutputObject = jsonObject;
 		TestResults tr = compareResults.compareExpectedWithSimulationOutput("0",
 				simOutputObject.getAsJsonObject(), expectedResultObject);
-		
+		 
 
 	}
 

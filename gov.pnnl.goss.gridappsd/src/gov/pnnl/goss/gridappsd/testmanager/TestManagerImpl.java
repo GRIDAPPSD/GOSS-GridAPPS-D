@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+" * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -155,6 +155,8 @@ public class TestManagerImpl implements TestManager {
 
 	protected String expectedResultSeriesPath;
 	
+	protected JsonObject expectedResultObject;
+	
 	protected Process rulesProcess = null;
 	
 	protected boolean processExpectedResults = false;
@@ -226,11 +228,17 @@ public class TestManagerImpl implements TestManager {
 					
 					reqTest = RequestTest.parse(event.getData().toString());
 					
-					testScript = loadTestScript(reqTest.getTestScriptPath());
+					if (reqTest.getTestConfigPath() != null || reqTest.getTestScriptPath() != null){
+						testScript = loadTestScript(reqTest.getTestScriptPath());
+						testConfig = loadTestConfig(reqTest.getTestConfigPath());
+						expectedResultSeriesPath = reqTest.getExpectedResult();
+					}else{
+						testScript = reqTest.getTestScript();
+						testConfig = reqTest.getTestConfig();
+						expectedResultObject = reqTest.getExpectedResultObject();
+					}
 					
-					testConfig = loadTestConfig(reqTest.getTestConfigPath());
 					
-					expectedResultSeriesPath = reqTest.getExpectedResult();
 					
 					simulationID = reqTest.getSimulationID();
 					
@@ -239,6 +247,8 @@ public class TestManagerImpl implements TestManager {
 					topic = reqTest.getTopic();
 					
 					testMode=true;
+					
+					tempIndex=0;
 					
 					DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate UTC, no timezone offset
 					df.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -252,18 +262,23 @@ public class TestManagerImpl implements TestManager {
 					
 					processExpectedResults=true;
 					
-					if (expectedResultSeriesPath == null || expectedResultSeriesPath.isEmpty()){
-						logMessageObj.setTimestamp(new Date().getTime());
-						logMessageObj.setLogMessage("TestManager expected output is null or empty. Skipping test.");
-						logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-						processExpectedResults=false;
-					}else{
-						File testFile = new File(expectedResultSeriesPath);
-						if(!testFile.exists() || testFile.isDirectory()) {
+					if ( expectedResultObject != null){
+						processExpectedResults=true;
+					} else {
+					
+						if (expectedResultSeriesPath == null || expectedResultSeriesPath.isEmpty()){
 							logMessageObj.setTimestamp(new Date().getTime());
-							logMessageObj.setLogMessage("TestManager expected output does not exist:  "+ expectedResultSeriesPath);
+							logMessageObj.setLogMessage("TestManager expected output is null or empty. Skipping test.");
 							logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 							processExpectedResults=false;
+						}else{
+							File testFile = new File(expectedResultSeriesPath);
+							if(!testFile.exists() || testFile.isDirectory()) {
+								logMessageObj.setTimestamp(new Date().getTime());
+								logMessageObj.setLogMessage("TestManager expected output does not exist:  "+ expectedResultSeriesPath);
+								logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+								processExpectedResults=false;
+							}
 						}
 					}
 					
@@ -271,9 +286,19 @@ public class TestManagerImpl implements TestManager {
 					
 					processSimulationOutput(logMessageObj, client, simulationID);
 
+					startRulesProcess(simulationID);
+				}
+
+				/**
+				 * 
+				 */
+				private void startRulesProcess(int simulationID) {
 					try {
 						
-						File defaultLogDir = new File(reqTest.getTestScriptPath()).getParentFile();
+//						File defaultLogDir = new File(reqTest.getTestScriptPath()).getParentFile();
+//						File defaultLogDir = new File(".").getParentFile();
+						File defaultLogDir = new File(System.getProperty("user.dir"));
+						System.out.println(defaultLogDir);
 						
 						String appRuleName = testScript.getRules().get(0).name;
 						
@@ -300,6 +325,7 @@ public class TestManagerImpl implements TestManager {
 						
 						File appDirectory = new File(appManager.getAppConfigDirectory().getAbsolutePath()
 								+ File.separator + appInfo.getId() + File.separator + "tests");
+						System.out.println(appDirectory);
 						
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
 								Integer.toString(simulationID), 
@@ -313,30 +339,28 @@ public class TestManagerImpl implements TestManager {
 						ruleAppBuilder.redirectErrorStream(true);
 						ruleAppBuilder.redirectOutput(new File(defaultLogDir.getAbsolutePath()+File.separator+"rule_app.log"));
 
-						rulesProcess = ruleAppBuilder.start();
+//						rulesProcess = ruleAppBuilder.start();
 						try {
 							Thread.sleep(500);
 						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						System.out.println("TestMan rule " + rulesProcess.isAlive());
-						if ( ! rulesProcess.isAlive()){
-							logManager.log(new LogMessage(this.getClass().getSimpleName(),
-									Integer.toString(simulationID), 
-									new Date().getTime(), 
-									"Process " + appDirectory+File.separator+appRuleName+" " +"did not start check rule script and that redis is running." ,
-									LogLevel.INFO, 
-									ProcessStatus.RUNNING, 
-									true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
-			
-						}
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
+//						System.out.println("TestMan rule " + rulesProcess.isAlive());
+//						if ( ! rulesProcess.isAlive()){
+//							logManager.log(new LogMessage(this.getClass().getSimpleName(),
+//									Integer.toString(simulationID), 
+//									new Date().getTime(), 
+//									"Process " + appDirectory+File.separator+appRuleName+" " +"did not start check rule script and that redis is running." ,
+//									LogLevel.INFO, 
+//									ProcessStatus.RUNNING, 
+//									true),GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+//			
+//						}
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 					// Watch the process
-					watch(rulesProcess, "Rules Application");
+//					watch(rulesProcess, "Rules Application");
 				}
 			});
 			
@@ -379,44 +403,52 @@ public class TestManagerImpl implements TestManager {
 	
 	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
 		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
+//				client.subscribe("/topic/goss.gridappsd.process.log.simulation"+ "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
-				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
-
-				if (testMode && message != null) {
-					expected_output_series = expectedResultSeriesPath;
-				} else {
+//				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
+//				System.out.println("Test mode " + (testMode && message != null));
+//				if (testMode && message != null) {
+//					expected_output_series = expectedResultSeriesPath;
+//				} else {
+//					return;
+//				}
+//				
+				if ( ! testMode || message == null) {
 					return;
 				}
 
 				DataResponse event = (DataResponse) message;
 				logMessageObj.setTimestamp(new Date().getTime());
-				String subMsg = event.getData().toString();
+				String dataStr = event.getData().toString();
+				String subMsg = dataStr;
 				if (subMsg.length() >= 200)
 					subMsg = subMsg.substring(0, 200);
 				logMessageObj.setLogMessage("TestManager recevied message: " + subMsg + " on topic " + event.getDestination());
-
 				CompareResults compareResults = new CompareResults();
-				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString());
-				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
+				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
+				
+//				if (jsonObject.get("output") == null || jsonObject.get("output").isJsonNull()) {
+//				logMessageObj.setTimestamp(new Date().getTime());
+//				if (jsonObject.get("output") == null)
+//					logMessageObj.setLogMessage("TestManager output is null.");
+//				else
+//					logMessageObj.setLogMessage("TestManager output is Json null" + jsonObject.get("output").toString());
+//				
+//				logManager.log(logMessageObj, GridAppsDConstants.username,
+//						GridAppsDConstants.topic_platformLog);
+//				return;
+//			}
 
-				if (jsonObject.get("output") == null || jsonObject.get("output").isJsonNull()) {
-					logMessageObj.setTimestamp(new Date().getTime());
-					if (jsonObject.get("output") == null)
-						logMessageObj.setLogMessage("TestManager output is null.");
-					else
-						logMessageObj.setLogMessage("TestManager output is Json null" + jsonObject.get("output").toString());
-					
+				if ( ! jsonObject.has("message")) {
+					logMessageObj.setLogMessage("TestManager output is empty");			
 					logManager.log(logMessageObj, GridAppsDConstants.username,
 							GridAppsDConstants.topic_platformLog);
 					return;
 				}
 				
 				// Break up measurements to send to rules app
-				JsonObject temp = CompareResults.getSimulationJson(message.toString());
-				temp = CompareResults.getSimulationJson(temp.get("data").getAsString());
-				JsonObject forwardObject = temp.get("output").getAsJsonObject();
-
+				JsonObject forwardObject =  jsonObject;
                 int meas_len = forwardObject.get("message").getAsJsonObject().get("measurements").getAsJsonArray().size();
                 JsonArray tarray = forwardObject.get("message").getAsJsonObject().get("measurements").getAsJsonArray();
                 int chunk_size = 500;
@@ -424,44 +456,38 @@ public class TestManagerImpl implements TestManager {
 //                	System.out.println("TestManager range " + end*chunk_size + " " + ((end+1)*chunk_size-1));
                 	JsonArray slice = getArraySlice(tarray, end*chunk_size, (end+1)*chunk_size); 
 					forwardObject.get("message").getAsJsonObject().add("measurements", slice);
-	            	forwardFNCSOutput(forwardObject,rulePort, topic);
+	            	forwardFNCSOutput(forwardObject,rulePort, topic,"localhost");
                 });
 //                System.out.println("TestManager range " + ((meas_len-1) / chunk_size)*chunk_size + " " + (meas_len-1));
             	JsonArray slice = getArraySlice(tarray, ((meas_len-1) / chunk_size)*chunk_size, meas_len); 
 				forwardObject.get("message").getAsJsonObject().add("measurements", slice);
-				forwardFNCSOutput(forwardObject, rulePort, topic);
+				forwardFNCSOutput(forwardObject, rulePort, topic,"localhost");
 
 				if (!processExpectedResults) {
 					return;
 				}
-
-				JsonElement simOutputObject = jsonObject.getAsJsonObject();
-				String firstKey = CompareResults.getFirstKey(simOutputObject.getAsJsonObject());
-				System.out.println("TestMan compare key " + firstKey);
-
+				jsonObject = CompareResults.getSimulationJson(dataStr);
 				// Temp timeseries index
 				String indexStr = tempIndex + "";
 				tempIndex++;
-				TestResults tr = compareResults.compareExpectedWithSimulationOutput(indexStr,
-						simOutputObject.getAsJsonObject(), expected_output_series);
-				if (tr != null) {
-					testResultSeries.add(indexStr, tr);
-				}
-				 
-				String test_id = testScript.getApplication();
-				String simulation_time = simOutputObject.getAsJsonObject().get("output").getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()){
-					HashMap<String, String[]> propMap = entry.getValue();
-					for (Entry<String, String[]> prop: propMap.entrySet()){
-						logManager.getLogDataManager().storeExpectedResults(test_id, ""+simulationID, java.sql.Timestamp.valueOf(simulation_time).getTime() , entry.getKey(), prop.getKey(), prop.getValue()[0], prop.getValue()[1]);
-					}
+				
+				TestResults testResults = compareResults.compareExpectedWithSimulationOutput(indexStr,
+						jsonObject, expectedResultObject);
+				if (testResults != null) {
+					testResultSeries.add(indexStr, testResults);
 				}
 				
-				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage("Index: " + indexStr + " TestManager number of conflicts: "
-						+ " total " + testResultSeries.getTotal());
-				logManager.log(logMessageObj, GridAppsDConstants.username,
-						GridAppsDConstants.topic_platformLog);
+//				TestResults testResults = compareResults.compareExpectedWithSimulationOutput(indexStr,
+//						simOutputObject.getAsJsonObject(), expected_output_series);
+//				if (tr != null) {
+//					testResultSeries.add(indexStr, testResults);
+//				}
+				 
+				String test_id = testScript.getApplication();
+				String simulation_time = jsonObject.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+							
+				logResults(logMessageObj, simulationID, testResults, test_id, simulation_time, indexStr);
+				
 			}
 
 			public JsonArray getArraySlice(JsonArray tarray, int start, int end) {
@@ -475,6 +501,22 @@ public class TestManagerImpl implements TestManager {
 
 		});
 	}
+
+	public void logResults(LogMessage logMessageObj, int simulationID, TestResults tr, String test_id, String simulation_time, String indexStr) {
+		for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()){
+			HashMap<String, String[]> propMap = entry.getValue();
+			for (Entry<String, String[]> prop: propMap.entrySet()){
+//				logManager.getLogDataManager().storeExpectedResults(test_id, ""+simulationID, java.sql.Timestamp.valueOf(simulation_time).getTime() , entry.getKey(), prop.getKey(), prop.getValue()[0], prop.getValue()[1]);
+				logManager.getLogDataManager().storeExpectedResults(test_id, ""+simulationID,  Long.parseLong(simulation_time), entry.getKey(), prop.getKey(), prop.getValue()[0], prop.getValue()[1]);
+			}
+		}
+		
+		logMessageObj.setTimestamp(new Date().getTime());
+		logMessageObj.setLogMessage("Index: " + indexStr + " TestManager number of conflicts: "
+				+ " total " + testResultSeries.getTotal());
+		logManager.log(logMessageObj, GridAppsDConstants.username,
+				GridAppsDConstants.topic_platformLog);
+	}	
 	
 	public void forwardSimulationInput(Client client, int simulationID) {
 		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput +"."+ simulationID, new GossResponseEvent(){
@@ -485,15 +527,16 @@ public class TestManagerImpl implements TestManager {
 				JsonObject jsonObject = CompareResults.getSimulationJson(message.toString()); 
 				jsonObject = CompareResults.getSimulationJson(jsonObject.get("data").getAsString());
 				JsonObject forwardObject = jsonObject.get("input").getAsJsonObject();
-				forwardFNCSOutput(forwardObject,rulePort,topic);
+				forwardFNCSOutput(forwardObject,rulePort,topic,"localhost");
 			}
 		});
 	}
 	
-	public void forwardFNCSOutput(JsonObject jsonObject, int port, String topic) {
+	public void forwardFNCSOutput(JsonObject jsonObject, int port, String topic, String host) {
 		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 		try {
-		    HttpPost request = new HttpPost("http://localhost:"+port+"/"+topic+"/events");
+			
+		    HttpPost request = new HttpPost("http://"+host+":"+port+"/"+topic+"/events");
 //			String str_json= "{\"simulation_id\" : \"12ae2345\", \"message\" : { \"timestamp\" : \"YYYY-MMssZ\", \"difference_mrid\" : \"123a456b-789c-012d-345e-678f901a234\", \"reverse_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"0\" }, \"forward_difference\" : { \"attribute\" : \"Switch.open\", \"value\" : \"1\" } }}";
 			
 		    StringEntity params = new StringEntity(jsonObject.toString());
@@ -677,3 +720,5 @@ public class TestManagerImpl implements TestManager {
 
 	}
 }
+
+	
