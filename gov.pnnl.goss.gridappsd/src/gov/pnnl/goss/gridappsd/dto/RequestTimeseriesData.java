@@ -16,42 +16,25 @@ public class RequestTimeseriesData implements Serializable {
 	    weather, simulation
 	}
 	
-	long startTime;
-	long endTime;
-	RequestType type;
-	Map<String,String> filters;
+	RequestType queryMeasurement;
+	Map<String,String> queryFilter;
 	ResultFormat responseFormat = ResultFormat.JSON;
+	private String queryType = "time-series";
 	
-	public long getStartTime() {
-		return startTime;
+	public RequestType getQueryMeasurement() {
+		return queryMeasurement;
 	}
 
-	public void setStartTime(long startTime) {
-		this.startTime = startTime;
+	public void setQueryMeasurement(RequestType queryMeasurement) {
+		this.queryMeasurement = queryMeasurement;
 	}
 
-	public long getEndTime() {
-		return endTime;
+	public Map<String, String> getQueryFilter() {
+		return queryFilter;
 	}
 
-	public void setEndTime(long endTime) {
-		this.endTime = endTime;
-	}
-
-	public RequestType getType() {
-		return type;
-	}
-
-	public void setType(RequestType type) {
-		this.type = type;
-	}
-
-	public Map<String, String> getFilters() {
-		return filters;
-	}
-
-	public void setFilters(Map<String, String> filters) {
-		this.filters = filters;
+	public void setQueryFilter(Map<String, String> queryFilter) {
+		this.queryFilter = queryFilter;
 	}
 
 	public ResultFormat getResponseFormat() {
@@ -71,7 +54,7 @@ public class RequestTimeseriesData implements Serializable {
 	public static RequestTimeseriesData parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
-		if(obj.type==RequestType.simulation && !obj.filters.containsKey("simulationId"))
+		if(obj.queryMeasurement==RequestType.simulation && !obj.queryFilter.containsKey("simulationId"))
 				throw new JsonSyntaxException("Expected attribute simulationId not found");
 		return obj;
 	}

@@ -9,7 +9,7 @@ public interface TimeseriesDataManager {
 	    JSON, XML, CSV
 	}
 	
-	String query(RequestTimeseriesData requestTimeseriesData) throws Exception;
+	Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception;
 	
 	void storeSimulationOutput(Serializable simulationOutput) throws Exception;
 	

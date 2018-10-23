@@ -116,12 +116,13 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	}
 	
 	@Override
-	public String query(RequestTimeseriesData requestTimeseriesData) throws Exception {
+	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
 		provenProducer.restProducer(provenUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
-		return response.toString();
+		return response.data;
+		//return response.toString();
 		
 	}
 	
