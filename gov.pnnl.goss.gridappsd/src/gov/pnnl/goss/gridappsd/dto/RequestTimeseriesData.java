@@ -1,56 +1,50 @@
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
+
 import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-
-import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 public class RequestTimeseriesData implements Serializable {
 	
 	private static final long serialVersionUID = -820277813503252519L;
 	
+	public enum RequestType {
+	    weather, simulation
+	}
 	
-	String startTime;
-	String endTime;
-	String simulationId;
-	String mrid;
-	RESPONSE_FORMAT responseFormat = RESPONSE_FORMAT.JSON;
+	RequestType queryMeasurement;
+	Map<String,String> queryFilter;
+	ResultFormat responseFormat = ResultFormat.JSON;
+	private String queryType = "time-series";
 	
-	
-	public String getStartTime() {
-		return startTime;
+	public RequestType getQueryMeasurement() {
+		return queryMeasurement;
 	}
-	public void setStartTime(String startTime) {
-		this.startTime = startTime;
+
+	public void setQueryMeasurement(RequestType queryMeasurement) {
+		this.queryMeasurement = queryMeasurement;
 	}
-	public String getEndTime() {
-		return endTime;
+
+	public Map<String, String> getQueryFilter() {
+		return queryFilter;
 	}
-	public void setEndTime(String endTime) {
-		this.endTime = endTime;
+
+	public void setQueryFilter(Map<String, String> queryFilter) {
+		this.queryFilter = queryFilter;
 	}
-	public String getSimulationId() {
-		return simulationId;
-	}
-	public void setSimulationId(String simulationId) {
-		this.simulationId = simulationId;
-	}
-	public String getMrid() {
-		return mrid;
-	}
-	public void setMrid(String mrid) {
-		this.mrid = mrid;
-	}
-	public RESPONSE_FORMAT getResponseFormat() {
+
+	public ResultFormat getResponseFormat() {
 		return responseFormat;
 	}
-	public void setResponseFormat(RESPONSE_FORMAT responseFormat) {
+
+	public void setResponseFormat(ResultFormat responseFormat) {
 		this.responseFormat = responseFormat;
 	}
-	
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
@@ -60,13 +54,9 @@ public class RequestTimeseriesData implements Serializable {
 	public static RequestTimeseriesData parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
-		if(obj.simulationId==null)
-			throw new JsonSyntaxException("Expected attribute simulationId not found");
+		if(obj.queryMeasurement==RequestType.simulation && !obj.queryFilter.containsKey("simulationId"))
+				throw new JsonSyntaxException("Expected attribute simulationId not found");
 		return obj;
 	}
 	
-	
-	
-	
-
 }
