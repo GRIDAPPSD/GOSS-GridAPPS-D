@@ -1,40 +1,40 @@
-#-------------------------------------------------------------------------------
+
 # Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
-# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
-# lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
-# Software) to redistribute and use the Software in source and binary forms, with or without modification. 
-# Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+# Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
+# lawfully obtaining a copy of this software and associated documentation files (hereinafter the
+# Software) to redistribute and use the Software in source and binary forms, with or without modification.
+# Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 # the Software, and may permit others to do so, subject to the following conditions:
-# Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+# Redistributions of source code must retain the above copyright notice, this list of conditions and the
 # following disclaimers.
-# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+# Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
 # the following disclaimer in the documentation and/or other materials provided with the distribution.
-# Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+# Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
 # form whatsoever without the express written consent of Battelle.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
-# BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
-# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
-# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
-# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+# BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+# GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+# AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # General disclaimer for use with OSS licenses
-# 
-# This material was prepared as an account of work sponsored by an agency of the United States Government. 
-# Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
-# of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
-# materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
-# the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+#
+# This material was prepared as an account of work sponsored by an agency of the United States Government.
+# Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
+# of their employees, nor any jurisdiction or organization that has cooperated in the development of these
+# materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
+# the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
 # disclosed, or represents that its use would not infringe privately owned rights.
-# 
-# Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
-# or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
-# States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+#
+# Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
+# or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
+# States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
 # herein do not necessarily state or reflect those of the United States Government or any agency thereof.
-# 
-# PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+#
+# PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
 import traceback
@@ -44,11 +44,16 @@ Created on Jan 6, 2017
 @author: fish334
 @author: poorva1209
 """
+import argparse
 import cmath
 from datetime import datetime
 import json
 import math
 import os
+try:
+    from Queue import Queue
+except:
+    from queue import Queue
 import sys
 import time
 
@@ -71,7 +76,7 @@ output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should m
 simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
 
 goss_connection= None
-is_initialized = False 
+is_initialized = False
 simulation_id = None
 stop_simulation = False
 
@@ -155,12 +160,56 @@ difference_attribute_map = {
 }
 
 class GOSSListener(object):
+
+    def __init__(self, sim_length):
+        self.goss_to_fncs_message_queue = Queue()
+        self.start_simulation = False
+        self.stop_simulation = False
+        self.simulation_finished = True
+        self.simulation_length = sim_length
+
+    def run_simulation(self,run_realtime):
+        try:
+            message = {}
+            current_time = 0;
+            message['command'] = 'nextTimeStep'
+            for current_time in xrange(self.simulation_length):
+                if self.stop_simulation == True:
+                    if fncs.is_initialized():
+                        fncs.die()
+                    break
+                #forward messages from FNCS to GOSS
+                message['output'] = _get_fncs_bus_messages(simulation_id)
+                response_msg = json.dumps(message['output'])
+                if message['output']!={}:
+                    goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                #forward messages from GOSS to FNCS
+                while not self.goss_to_fncs_message_queue.empty():
+                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get())
+                _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+                message_str = 'done with timestep '+str(current_time)
+                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                message_str = 'incrementing to '+str(current_time + 1)
+                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                if run_realtime == True:
+                    time.sleep(1)
+            self.stop_simulation = True
+            message['command'] = 'simulationFinished'
+            del message['output']
+            goss_connection.send(output_to_simulation_manager, json.dumps(message))
+        except Exception as e:
+            message_str = 'Error in run simulation '+str(e)
+            _send_simulation_status('ERROR', message_str, 'ERROR')
+            self.stop_simulation = True
+            if fncs.is_initialized():
+                fncs.die()
+
+
     def on_message(self, headers, msg):
-        global stop_simulation
         message = {}
         try:
             message_str = 'received message '+str(msg)
-            
+
             if fncs.is_initialized():
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
             else:
@@ -175,69 +224,64 @@ class GOSSListener(object):
                     _send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['command'] = 'isInitialized'
                 message['response'] = str(is_initialized)
-                if (simulation_id != None):
-                    message['output'] = _get_fncs_bus_messages(simulation_id)
-                message_str = 'Added isInitialized output, sending message '+str(message)+' connection '+str(goss_connection)
-                if fncs.is_initialized():
-                    _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                else:
-                    _send_simulation_status('STARTED', message_str, 'DEBUG')
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
-                _publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
-            elif json_msg['command'] == 'nextTimeStep':
-                message['command'] = 'nextTimeStep'
-                current_time = json_msg['currentTime']
-                message_str = 'incrementing to '+str(current_time + 1)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message['response'] = "True"
-                t_now = datetime.utcnow()
-                message['timestamp'] = int(time.mktime(t_now.timetuple()))
-                goss_connection.send(output_to_simulation_manager, json.dumps(message))
-                del message['response']
-                message_str = 'done with timestep '+str(current_time)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
-                message['output'] = _get_fncs_bus_messages(simulation_id)
-                response_msg = json.dumps(message['output'])
-                goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
+                #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
+            elif json_msg['command'] == 'StartSimulation':
+                if self.start_simulation == False:
+                    self.start_simulation = True
+                #message['command'] = 'nextTimeStep'
+                #current_time = json_msg['currentTime']
+                #message_str = 'incrementing to '+str(current_time + 1)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #_done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
+                #message['response'] = "True"
+                #t_now = datetime.utcnow()
+                #message['timestamp'] = int(time.mktime(t_now.timetuple()))
+                #goss_connection.send(output_to_simulation_manager, json.dumps(message))
+                #del message['response']
+                #message_str = 'done with timestep '+str(current_time)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #message['output'] = _get_fncs_bus_messages(simulation_id)
+                #response_msg = json.dumps(message['output'])
+                #goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
-                stop_simulation = True
-                fncs.finalize()
-                
-        
+                self.stop_simulation = True
+                if fncs.is_initialized():
+                    fncs.finalize()
+
+
         except Exception as e:
             message_str = 'Error in command '+str(e)
             _send_simulation_status('ERROR', message_str, 'ERROR')
-            stop_simulation = True
+            self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
-           
-        
+
+
     def on_error(self, headers, message):
-        global stop_simulation
         message_str = 'Error in goss listener '+str(message)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        self.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
-    
-    
+
+
     def on_disconnected(self):
-        global stop_simulation
-        stop_simulation = True
+        self.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
-  
-  
+
+
 def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
     """Register with the fncs_broker and return.
-    
+
     Function arguments:
         broker_location -- Type: string. Description: The ip location and port
             for the fncs_broker. It must not be an empty string.
@@ -249,23 +293,22 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
         ValueError()
     """
     global is_initialized
-    global stop_simulation
     configuration_zpl = ''
     try:
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
         ('STARTED', message_str, 'INFO')
-        
+
         message_str = 'still connected to goss 1 '+str(goss_connection.is_connected())
         _send_simulation_status('STARTED', message_str, 'INFO')
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + 'simulation_id = {0}'.format(simulation_id))
-    
+
         if (broker_location == None or broker_location == ''
                 or type(broker_location) != str):
             raise ValueError(
-                'broker_location must be a nonempty string.\n' 
+                'broker_location must be a nonempty string.\n'
                 + 'broker_location = {0}'.format(broker_location))
         fncs_configuration = {
             'name' : 'FNCS_GOSS_Bridge_' + simulation_id,
@@ -279,9 +322,9 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
                     'list' : 'false'
                 }
             }
-        }  
-    
-        
+        }
+
+
         configuration_zpl = ('name = {0}\n'.format(fncs_configuration['name'])
             + 'time_delta = {0}\n'.format(fncs_configuration['time_delta'])
             + 'broker = {0}\nvalues'.format(fncs_configuration['broker']))
@@ -296,36 +339,36 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
             configuration_zpl += '\n        list = {0}'.format(
                 fncs_configuration['values'][x]['list'])
         fncs.initialize(configuration_zpl)
-        
+
         is_initialized = fncs.is_initialized()
         if is_initialized:
             message_str = 'Registered with fncs '+str(is_initialized)
             _send_simulation_status('RUNNING', message_str, 'INFO')
-    
-    
+
+
     except Exception as e:
         message_str = 'Error while registering with fncs broker '+str(e)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        goss_listener_instance.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
 
     if not fncs.is_initialized():
         message_str = 'fncs.initialize(configuration_zpl) failed!\n' + 'configuration_zpl = {0}'.format(configuration_zpl)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        stop_simulation = True
+        goss_listener_instance.stop_simulation = True
         if fncs.is_initialized():
             fncs.die()
         raise RuntimeError(
             'fncs.initialize(configuration_zpl) failed!\n'
             + 'configuration_zpl = {0}'.format(configuration_zpl))
-        
-    
+
+
 def _publish_to_fncs_bus(simulation_id, goss_message):
     """publish a message received from the GOSS bus to the FNCS bus.
-    
+
     Function arguments:
-        simulation_id -- Type: string. Description: The simulation id. 
+        simulation_id -- Type: string. Description: The simulation id.
             It must not be an empty string. Default: None.
         goss_message -- Type: string. Description: The message from the GOSS bus
             as a json string. It must not be an empty string. Default: None.
@@ -387,7 +430,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
             elif cim_attribute == "RegulatingControl.targetValue":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))    
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
             elif cim_attribute == "ShuntCompensator.aVRDelay":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
@@ -425,8 +468,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
-            
-                
+
+
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         if fncs.is_initialized():
@@ -436,14 +479,14 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     except Exception as ex:
 	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
 	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
-    
-    
-    
+
+
+
 def _get_fncs_bus_messages(simulation_id):
     """publish a message received from the GOSS bus to the FNCS bus.
-    
+
     Function arguments:
-        simulation_id -- Type: string. Description: The simulation id. 
+        simulation_id -- Type: string. Description: The simulation id.
             It must not be an empty string. Default: None.
     Function returns:
         fncs_output -- Type: string. Description: The json structured output
@@ -473,12 +516,12 @@ def _get_fncs_bus_messages(simulation_id):
                     "measurements" : []
                 }
             }
-            
+
             fncs_output = fncs.get_value(simulation_id)
             fncs_output_dict = json_loads_byteified(fncs_output)
 
             sim_dict = fncs_output_dict.get(simulation_id, None)
-            
+
             if sim_dict != None:
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
@@ -555,13 +598,13 @@ def _get_fncs_bus_messages(simulation_id):
         traceback.print_exc()
         _send_simulation_status('ERROR', message_str, 'ERROR')
         return {}
-        
-        
+
+
 def _done_with_time_step(current_time):
     """tell the fncs_broker to move to the next time step.
-    
+
     Function arguments:
-        current_time -- Type: integer. Description: the current time in seconds. 
+        current_time -- Type: integer. Description: the current time in seconds.
             It must not be none.
     Function returns:
         None.
@@ -570,7 +613,7 @@ def _done_with_time_step(current_time):
         ValueError()
     """
     try:
-        message_str = 'In done with timestep '+str(current_time)
+        message_str = 'Done with timestep '+str(current_time)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
         if current_time == None or type(current_time) != int:
             raise ValueError(
@@ -585,29 +628,29 @@ def _done_with_time_step(current_time):
         if time_approved != time_request:
             raise RuntimeError(
                 'The time approved from fncs_broker is not the time requested.\n'
-                + 'time_request = {0}.\ntime_approved = {1}'.format(time_request, 
+                + 'time_request = {0}.\ntime_approved = {1}'.format(time_request,
                 time_approved))
     except Exception as e:
         message_str = 'Error in fncs timestep '+str(e)
         _send_simulation_status('ERROR', message_str, 'ERROR')
-        
-            
-def _register_with_goss(sim_id,username,password,goss_server='localhost', 
-                      stomp_port='61613',):
+
+
+def _register_with_goss(sim_id,username,password,goss_server='localhost',
+                      stomp_port='61613', sim_duration=86400):
     """Register with the GOSS server broker and return.
-    
+
     Function arguments:
         sim_id -- Type: string. Description: The simulation id.
             It must not be an empty string. Default: None.
         goss_server -- Type: string. Description: The ip location
         for the GOSS server. It must not be an empty string.
             Default: 'localhost'.
-        stomp_port -- Type: string. Description: The port for Stomp 
+        stomp_port -- Type: string. Description: The port for Stomp
         protocol for the GOSS server. It must not be an empty string.
             Default: '61613'.
         username -- Type: string. Description: User name for GOSS connection.
         password -- Type: string. Description: Password for GOSS connection.
-        
+
     Function returns:
         None.
     Function exceptions:
@@ -615,48 +658,49 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
     """
     global simulation_id
     global goss_connection
+    global goss_listener_instance
     simulation_id = sim_id
     if (goss_server == None or goss_server == ''
             or type(goss_server) != str):
         raise ValueError(
-            'goss_server must be a nonempty string.\n' 
+            'goss_server must be a nonempty string.\n'
             + 'goss_server = {0}'.format(goss_server))
     if (stomp_port == None or stomp_port == ''
             or type(stomp_port) != str):
         raise ValueError(
-            'stomp_port must be a nonempty string.\n' 
+            'stomp_port must be a nonempty string.\n'
             + 'stomp_port = {0}'.format(stomp_port))
-   
+    goss_listener_instance = GOSSListener(sim_duration)
     goss_connection = stomp.Connection12([(goss_server, stomp_port)])
     goss_connection.start()
     goss_connection.connect(username,password, wait=True)
-    goss_connection.set_listener('GOSSListener', GOSSListener())
+    goss_connection.set_listener('GOSSListener', goss_listener_instance)
     goss_connection.subscribe(input_from_goss_topic,1)
     goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
 
     message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.is_connected())
     _send_simulation_status('STARTED', message_str, 'INFO')
-    
-    
+
+
 def _send_simulation_status(status, message, log_level):
     """send a status message to the GridAPPS-D log manager
-    
+
     Function arguments:
         status -- Type: string. Description: The status of the simulation.
             Default: 'localhost'.
-        stomp_port -- Type: string. Description: The port for Stomp 
+        stomp_port -- Type: string. Description: The port for Stomp
         protocol for the GOSS server. It must not be an empty string.
             Default: '61613'.
         username -- Type: string. Description: User name for GOSS connection.
         password -- Type: string. Description: Password for GOSS connection.
-        
+
     Function returns:
         None.
     Function exceptions:
         RuntimeError()
     """
     simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
-	
+
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
     if status in valid_status:
@@ -675,6 +719,7 @@ def _send_simulation_status(status, message, log_level):
         status_str = json.dumps(status_message)
         debugFile.write("{}\n\n".format(status_str))
         goss_connection.send(simulation_status_topic, status_str)
+        goss_connection.send("/topic/goss.gridappsd.simulation.log.{}".format(simulation_id),status_str)
 
 
 def _byteify(data, ignore_dicts = False):
@@ -831,7 +876,7 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     else:
                         raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\conducting_equipment_type = {}.".format(conducting_equipment_type))
-                    
+
                     property_dict = {
                         "property" : property_name,
                         "conducting_equipment_type" : conducting_equipment_type,
@@ -867,13 +912,13 @@ def _create_cim_object_map(map_file=None):
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
                         "type" : "switch"
-                    }        
-                    
+                    }
+
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
-        
-        
+
+
 def json_loads_byteified(json_text):
     return _byteify(
         json.loads(json_text, object_hook=_byteify),
@@ -886,7 +931,7 @@ def json_load_byteified(file_handle):
         json.load(file_handle, object_hook=_byteify),
         ignore_dicts = True
     )
-    
+
 
 def _byteify(data, ignore_dicts = False):
     # if this is a unicode string, return its string representation
@@ -904,28 +949,44 @@ def _byteify(data, ignore_dicts = False):
         }
     # if it's anything else, return it in its original form
     return data
- 
- 
-def _keep_alive():
-    while stop_simulation == False:
+
+
+def _keep_alive(is_realtime):
+    simulation_ran = False
+    while goss_listener_instance.stop_simulation == False:
         time.sleep(0.1)
-   
-        
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir=''):
- 
+        if goss_listener_instance.start_simulation == True and simulation_ran == False:
+            goss_listener_instance.run_simulation(is_realtime)
+            simulation_ran = True
+
+
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400):
+
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,'system','manager',goss_server='127.0.0.1',stomp_port='61613')
+    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
-    _keep_alive()
-    
-        
+    _keep_alive(is_realtime)
+
+def _get_opts():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("simulation_id", help="The simulation id to use for responses on the message bus.")
+    parser.add_argument("broker_location", help="The location of the FNCS broker.")
+    parser.add_argument("simulation_directory", help="The simulation files directory.")
+    parser.add_argument("simulation_request", help="The simulation request.")
+    opts = parser.parse_args()
+    return opts
+
 if __name__ == "__main__":
-    #TODO: send simulation_id, fncsBrokerLocation, gossLocation, 
+    #TODO: send simulation_id, fncsBrokerLocation, gossLocation,
     #stomp_port, username and password as commmand line arguments
-    simulation_id = sys.argv[1]
-    sim_broker_location = sys.argv[2]
-    sim_dir = sys.argv[3]
-    _main(simulation_id, sim_broker_location, sim_dir) 
+    opts = _get_opts()
+    simulation_id = opts.simulation_id
+    sim_broker_location = opts.broker_location
+    sim_dir = opts.simulation_directory
+    sim_request = json.loads(opts.simulation_request.replace("\'",""))
+    run_realtime = sim_request["simulation_config"]["run_realtime"]
+    sim_duration = sim_request["simulation_config"]["duration"]
+    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
     debugFile.close()
-    
+

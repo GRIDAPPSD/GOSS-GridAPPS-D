@@ -50,7 +50,7 @@ import com.google.gson.JsonSyntaxException;
 public class AppInfo implements Serializable {
 	
 	public enum AppType {
-		   PYTHON, JAVA, WEB
+		   PYTHON, JAVA, WEB, REMOTE
 		}
 	
 	
