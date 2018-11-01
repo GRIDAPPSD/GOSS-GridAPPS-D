@@ -13,7 +13,7 @@ public class RequestTimeseriesData implements Serializable {
 	private static final long serialVersionUID = -820277813503252519L;
 	
 	public enum RequestType {
-	    weather, simulation
+	    weather, PROVEN_MEASUREMENT
 	}
 	
 	RequestType queryMeasurement;
@@ -54,8 +54,9 @@ public class RequestTimeseriesData implements Serializable {
 	public static RequestTimeseriesData parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
-		if(obj.queryMeasurement==RequestType.simulation && !obj.queryFilter.containsKey("simulationId"))
-				throw new JsonSyntaxException("Expected attribute simulationId not found");
+		if(obj.queryMeasurement==RequestType.PROVEN_MEASUREMENT)
+			if(obj.queryFilter==null || !obj.queryFilter.containsKey("hasSimulationId"))
+				throw new JsonSyntaxException("Expected filter hasSimulationId not found.");
 		return obj;
 	}
 	
