@@ -133,7 +133,7 @@ difference_attribute_map = {
     },
     "TapChanger.step" : {
         "regulator" : {
-            "property" : ["tap{}"],
+            "property" : ["tap_{}"],
             "prefix" : "reg_"
         }
     },
@@ -849,9 +849,9 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivity_node;
+                            object_name = "ld_" + conducting_equipment_name;
                             if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases;
+                                property_name = "measured_power_" + phases;
                             else:
                                 property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
