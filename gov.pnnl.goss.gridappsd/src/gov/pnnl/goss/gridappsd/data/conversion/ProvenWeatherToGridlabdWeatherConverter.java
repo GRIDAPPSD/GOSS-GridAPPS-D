@@ -27,12 +27,11 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
 public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConverter {
-//	protected static SimpleDateFormat sdfIn = new SimpleDateFormat("yyyy:MM:dd:HH:mm:ss");
 	protected static SimpleDateFormat sdfIn = new SimpleDateFormat("MM/dd/yyyy HH:mm");
 	protected static SimpleDateFormat sdfOut = new SimpleDateFormat("MM:dd:HH:mm:ss");
 	
 	public static String INPUT_FORMAT = "PROVEN_WEATHER";
-	public static String OUTPUT_FORMAT = "GRIDLAB-D_WEATHER";
+	public static String OUTPUT_FORMAT = "GRIDLABD_WEATHER";
 	
 	
 	public static String SOLAR_DIFFUSE = "Diffuse";

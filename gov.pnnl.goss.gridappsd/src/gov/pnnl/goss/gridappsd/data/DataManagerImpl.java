@@ -204,11 +204,15 @@ public class DataManagerImpl implements DataManager {
 	}
 	@Override
 	public void registerConverter(String inputFormat, String outputFormat, DataFormatConverter converter) {
-		this.dataConverters.put(inputFormat+":"+outputFormat, converter);
+		String converterKey = inputFormat+":"+outputFormat;
+		converterKey = converterKey.toUpperCase();
+		this.dataConverters.put(converterKey, converter);
 	}
 	@Override
 	public DataFormatConverter getConverter(String inputFormat, String outputFormat) {
 		String converterKey = inputFormat+":"+outputFormat;
+		converterKey = converterKey.toUpperCase();
+		System.out.println("LOOKING FOR CONVERTER "+converterKey+"  IN   "+dataConverters);
 		if(dataConverters.containsKey(converterKey)){
 			return dataConverters.get(converterKey);
 		} else {
