@@ -427,13 +427,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
             elif cim_attribute == "RegulatingControl.targetDeadband":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "RegulatingControl.targetValue":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.aVRDelay":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.sections":
                 if x.get("value") == 1:
                     val = "CLOSED"
@@ -450,10 +450,10 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
             elif cim_attribute == "TapChanger.initialDelay":
                 for y in object_property_list:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "TapChanger.step":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropCompensation":
                 if x.get("value") == 1:
                     val = "LINE_DROP_COMP"
@@ -462,10 +462,10 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                 fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
             elif cim_attribute == "TapChanger.lineDropR":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropX":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
 
@@ -523,6 +523,9 @@ def _get_fncs_bus_messages(simulation_id):
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
             if sim_dict != None:
+                simulation_time = int(sim_dict.get("globals",{"clock" : "0"}).get("clock", "0"))
+                if simulation_time != 0:
+                    cim_measurements_dict["message"]["timestamp"] = simulation_time
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
