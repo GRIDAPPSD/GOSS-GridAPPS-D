@@ -523,6 +523,9 @@ def _get_fncs_bus_messages(simulation_id):
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
             if sim_dict != None:
+                simulation_time = int(sim_dict.get("globals",{"clock" : "0"}).get("clock", "0"))
+                if simulation_time != 0:
+                    cim_measurements_dict["message"]["timestamp"] = simulation_time
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
