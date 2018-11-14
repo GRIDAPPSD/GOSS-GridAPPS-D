@@ -427,13 +427,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
             elif cim_attribute == "RegulatingControl.targetDeadband":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "RegulatingControl.targetValue":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.aVRDelay":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.sections":
                 if x.get("value") == 1:
                     val = "CLOSED"
