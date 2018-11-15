@@ -167,6 +167,7 @@ class GOSSListener(object):
         self.stop_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
+        self.simulation_time = 0
 
     def run_simulation(self,run_realtime):
         try:
@@ -530,9 +531,9 @@ def _get_fncs_bus_messages(simulation_id):
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
                         err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
-                        _send_simulation_status('ERROR', err_msg, 'ERROR')
-                        raise RuntimeError(err_msg)
-                    for y in object_property_to_measurement_id[x]:
+                        _send_simulation_status('RUNNING', err_msg, 'WARN')
+                        #raise RuntimeError(err_msg)
+                    for y in object_property_to_measurement_id.get(x,{}):
                         measurement = {}
                         property_name = y["property"]
                         measurement["measurement_mrid"] = y["measurement_mrid"]
@@ -541,8 +542,8 @@ def _get_fncs_bus_messages(simulation_id):
                         prop_val_str = gld_properties_dict.get(property_name, None)
                         if prop_val_str == None:
                             err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
-                            _send_simulation_status('ERROR', err_msg, 'ERROR')
-                            raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                            _send_simulation_status('RUNNING', err_msg, 'WARN')
+                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                         else:
                             val_str = str(prop_val_str).split(" ")[0]
                             conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
