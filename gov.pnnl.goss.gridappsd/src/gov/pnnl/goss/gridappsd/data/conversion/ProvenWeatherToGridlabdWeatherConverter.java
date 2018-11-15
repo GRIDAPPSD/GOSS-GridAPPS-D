@@ -19,10 +19,10 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult.MeasurementResult;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult.RowResult;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesRowResult;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
@@ -89,7 +89,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		boolean headerPrinted = false;
 		
 		TimeSeriesResult resultObj = TimeSeriesResult.parse(inputContent);
-		for(MeasurementResult record: resultObj.getMeasurements()){
+		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
 			if(!headerPrinted){
 				printGLDHeader(record, outputContent);
 				headerPrinted = true;
@@ -104,7 +104,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		
 		String strContent = IOUtils.toString(inputContent);
 		TimeSeriesResult resultObj = TimeSeriesResult.parse(strContent);
-		for(MeasurementResult record: resultObj.getMeasurements()){
+		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
 			if(!headerPrinted){
 				printGLDHeader(record, outputContent);
 				headerPrinted = true;
@@ -114,7 +114,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 
 	}
 
-	protected void printGLDHeader(MeasurementResult record, PrintWriter outputContent){
+	protected void printGLDHeader(TimeSeriesMeasurementResult record, PrintWriter outputContent){
 		//TODO this needs to come from data or tags within proven
 		String placeStr="", yearStr="", latlong = "";
 		
@@ -139,9 +139,9 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		outputContent.println("time,temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
 	}
 	
-	protected void convertRecord(MeasurementResult record, PrintWriter outputContent){
+	protected void convertRecord(TimeSeriesMeasurementResult record, PrintWriter outputContent){
 		//See https://github.com/gridlab-d/gridlab-d/blob/master/climate/climate.cpp for gridlabd format requirements
-		for(RowResult result: record.getPoints()){
+		for(TimeSeriesRowResult result: record.getPoints()){
 			Map<String, String> map = result.getRow().getEntryMap();
 			
 			String dateStr = map.get(DATE);
