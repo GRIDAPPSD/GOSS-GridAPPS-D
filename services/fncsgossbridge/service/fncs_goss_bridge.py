@@ -167,6 +167,7 @@ class GOSSListener(object):
         self.stop_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
+        self.simulation_time = 0
 
     def run_simulation(self,run_realtime):
         try:
@@ -427,13 +428,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
             elif cim_attribute == "RegulatingControl.targetDeadband":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "RegulatingControl.targetValue":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.aVRDelay":
                 for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "ShuntCompensator.sections":
                 if x.get("value") == 1:
                     val = "CLOSED"
@@ -450,10 +451,10 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
             elif cim_attribute == "TapChanger.initialDelay":
                 for y in object_property_list:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
             elif cim_attribute == "TapChanger.step":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropCompensation":
                 if x.get("value") == 1:
                     val = "LINE_DROP_COMP"
@@ -462,10 +463,10 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                 fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
             elif cim_attribute == "TapChanger.lineDropR":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropX":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(x.get("value"))
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
 
@@ -523,13 +524,16 @@ def _get_fncs_bus_messages(simulation_id):
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
             if sim_dict != None:
+                simulation_time = int(sim_dict.get("globals",{"clock" : "0"}).get("clock", "0"))
+                if simulation_time != 0:
+                    cim_measurements_dict["message"]["timestamp"] = simulation_time
                 for x in object_property_to_measurement_id.keys():
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
                         err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
-                        _send_simulation_status('ERROR', err_msg, 'ERROR')
-                        raise RuntimeError(err_msg)
-                    for y in object_property_to_measurement_id[x]:
+                        _send_simulation_status('RUNNING', err_msg, 'WARN')
+                        #raise RuntimeError(err_msg)
+                    for y in object_property_to_measurement_id.get(x,{}):
                         measurement = {}
                         property_name = y["property"]
                         measurement["measurement_mrid"] = y["measurement_mrid"]
@@ -538,8 +542,8 @@ def _get_fncs_bus_messages(simulation_id):
                         prop_val_str = gld_properties_dict.get(property_name, None)
                         if prop_val_str == None:
                             err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
-                            _send_simulation_status('ERROR', err_msg, 'ERROR')
-                            raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                            _send_simulation_status('RUNNING', err_msg, 'WARN')
+                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                         else:
                             val_str = str(prop_val_str).split(" ")[0]
                             conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
