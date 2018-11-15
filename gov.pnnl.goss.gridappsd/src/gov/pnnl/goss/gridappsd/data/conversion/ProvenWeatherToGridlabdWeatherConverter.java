@@ -136,7 +136,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		outputContent.println("$state_name=N/A");
 		outputContent.println("$city_name=N/A");
 		
-		outputContent.println("time,temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
+		outputContent.println("temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
 	}
 	
 	protected void convertRecord(TimeSeriesMeasurementResult record, PrintWriter outputContent){
