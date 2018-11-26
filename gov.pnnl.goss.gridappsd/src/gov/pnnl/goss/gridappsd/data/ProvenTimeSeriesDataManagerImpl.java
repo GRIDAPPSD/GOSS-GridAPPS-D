@@ -127,11 +127,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		String responseFormat = requestTimeseriesData.getResponseFormat();
 		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
 		if(converter!=null){
-			System.out.println("DATA TO CONVERT   "+response.data.toString());
 			StringWriter sw = new StringWriter();
-//			string input content, printwriter outputContent
 			converter.convert(response.data.toString(), new PrintWriter(sw));
-			System.out.println("RESULT "+sw.toString());
 			return sw.toString();
 		}
 				
