@@ -215,7 +215,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
-		long simulationEndTime = simulationStartTime+simulationDuration;
+		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
 		
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
@@ -246,15 +246,12 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			//TODO either we need more weather data in the database, or make this more flexible wehre we only have to search by month/day
 			c.setTime(new Date(simulationStartTime));
 			c.set(Calendar.YEAR, TIMEFILTER_YEAR);
-			queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis());
+			queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
 			c.setTime(new Date(simulationEndTime));
 			c.set(Calendar.YEAR, TIMEFILTER_YEAR);
-			queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis());
-			queryFilter.put(ENDTIME_FILTER, ""+simulationEndTime);
-			
+			queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
 			weatherRequest.setQueryFilter(queryFilter);
 			DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
-			
 			File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
 			FileOutputStream fout = new FileOutputStream(weatherFile);
 			fout.write(resp.getData().toString().getBytes());
