@@ -274,6 +274,34 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		return null;
 
 	}
+	
+
+	@Override
+	public Serializable query(String queryString){
+		if(connection==null){
+			try {
+				connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		if(connection!=null){
+			try{
+				preparedStatement = connection.prepareStatement(queryString);
+				ResultSet rs = preparedStatement.executeQuery();
+				return this.getJSONFromResultSet(rs);
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
+		} else {
+			//Need a way to log warning to file that connection does not exist
+			log.warn("Mysql connection not initialized for query");
+		}	
+		
+		return null;
+	}
 
 	@Override
 	public Serializable handle(Serializable requestContent, String processId,
@@ -286,12 +314,15 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		else 
 			 request = RequestLogMessage.parse(requestContent.toString());
 		
-		return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
+		if(request.getQuery()!=null)
+			return this.query(request.getQuery());
+		else
+			return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
 
 	}
 	
 	public Serializable getJSONFromResultSet(ResultSet rs) {
-	    List list = new ArrayList();
+	    List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
 	    if(rs!=null)
 	    {
 	        try {

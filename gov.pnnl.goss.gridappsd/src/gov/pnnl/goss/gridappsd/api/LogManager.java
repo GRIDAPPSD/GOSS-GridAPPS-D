@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.api;
 
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
 
 public interface LogManager {
 	
@@ -72,7 +73,7 @@ public interface LogManager {
 	 * LogDataManager and get the log messages from data store based on the not
 	 * null values in LogMessage object.
 	 */
-	void get(LogMessage message, String outputTopics, String LogTopic);
+	void get(RequestLogMessage message, String outputTopics, String LogTopic);
 	
 	LogDataManager getLogDataManager();
 

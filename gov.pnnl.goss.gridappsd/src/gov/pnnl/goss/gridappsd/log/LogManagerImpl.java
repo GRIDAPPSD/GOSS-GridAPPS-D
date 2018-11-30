@@ -45,6 +45,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -186,15 +187,21 @@ public class LogManagerImpl implements LogManager {
 	 *            an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
 	 */
 	@Override
-	public void get(LogMessage message, String resultTopic, String logTopic) {
+	public void get(RequestLogMessage message, String resultTopic, String logTopic) {
 		
-		String source = message.getSource();
-		String requestId = message.getProcessId();
-		long timestamp = message.getTimestamp();
-		LogLevel log_level = message.getLogLevel();
-		ProcessStatus process_status = message.getProcessStatus();
-		String username = "system";
-		logDataManager.query(source, requestId, timestamp, log_level, process_status, username);
+		if(message.getQuery()==null){
+			String source = message.getSource();
+			String requestId = message.getProcessId();
+			long timestamp = message.getTimestamp();
+			LogLevel log_level = message.getLogLevel();
+			ProcessStatus process_status = message.getProcessStatus();
+			String username = "system";
+			logDataManager.query(source, requestId, timestamp, log_level, process_status, username);
+		}
+		else{
+			logDataManager.query(message.getQuery());
+		}
+		
 		
 	}
 
