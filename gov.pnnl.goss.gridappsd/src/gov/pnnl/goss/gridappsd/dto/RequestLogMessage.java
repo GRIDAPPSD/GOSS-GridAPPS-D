@@ -47,6 +47,7 @@ public class RequestLogMessage extends LogMessage {
 	private static final long serialVersionUID = 1L;
 	
 	String username;
+	String query;
 	
 	public String getUsername() {
 		return username;
@@ -54,6 +55,14 @@ public class RequestLogMessage extends LogMessage {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+	
+	public String getQuery() {
+		return query;
+	}
+
+	public void setQuery(String query) {
+		this.query = query;
 	}
 
 	public static RequestLogMessage parse(String jsonString) throws JsonSyntaxException {
