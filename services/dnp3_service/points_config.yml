@@ -1,0 +1,17 @@
+---
+points:
+  - data_type: "AI"
+    description: "DER Profile Implementation Level. 1, 2 or 3 to indicate support for Level 1, Level 2 or Level 3 respectively."
+    group: 30
+    index: 0
+    name: "DCHD.WTgt"
+    units: "N/A"
+    variation: 2
+  - data_type: AO
+    description: "DER Profile Implementation Level. 1, 2 or 3 to indicate support for Level 1, Level 2 or Level 3 respectively."
+    group: 40
+    index: 0
+    name: "DCHD.WTgt"
+    units: "N/A"
+    variation: 2
+
