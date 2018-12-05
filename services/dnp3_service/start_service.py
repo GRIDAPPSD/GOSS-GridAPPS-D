@@ -248,6 +248,7 @@ if __name__ == '__main__':
 
     oustation = full_dict.get('outstation', {})
     point_def = PointDefinitions()
+    point_def.load_points(points)
     processor = Processor(point_def)
     #point_def.load_points(points)
 
