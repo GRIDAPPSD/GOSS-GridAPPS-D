@@ -118,6 +118,7 @@ class DNP3Outstation(opendnp3.IOutstationApplication):
         _log.debug('Configuring the DNP3 Outstation database.')
         db_config = self.stack_config.dbConfig
         for point in self.get_agent().point_definitions.all_points():
+            _log.debug("Adding Point: {}".format(point))
             if point.point_type == 'Analog Input':
                 cfg = db_config.analog[int(point.index)]
             elif point.point_type == 'Binary Input':
