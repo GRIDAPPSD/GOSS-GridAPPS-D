@@ -40,6 +40,14 @@
 package gov.pnnl.goss.gridappsd;
 
 import static org.junit.Assert.assertEquals;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
+import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.text.ParseException;
 import java.util.List;
@@ -51,14 +59,6 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import gov.pnnl.goss.gridappsd.api.LogDataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LogManagerTests {
@@ -149,7 +149,7 @@ public class LogManagerTests {
 		
 		LogManager logManager = new LogManagerImpl(logDataManager);
 		
-		LogMessage message = new LogMessage();
+		RequestLogMessage message = new RequestLogMessage();
 		message.setLogLevel(LogLevel.DEBUG);
 		message.setSource(this.getClass().getName());
 		message.setProcessStatus(ProcessStatus.RUNNING);
