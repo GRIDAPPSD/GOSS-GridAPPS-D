@@ -28,7 +28,7 @@ Please see :ref:`run_config` for more details.
 
 CIM Documentation
 -----------------
-.. include:: CDPSM_RC1.rst
+.. include:: CDPSM.rst
 
 Platform UML Diagrams
 ---------------------

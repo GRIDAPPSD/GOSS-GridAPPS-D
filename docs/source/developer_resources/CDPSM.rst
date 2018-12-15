@@ -1,4 +1,4 @@
-.. _cdpsm_rc1:
+.. _cdpsm:
 
 .. toctree::
    :maxdepth: 2
@@ -989,40 +989,40 @@ required for MySQL. The following manual edits were made:
 .. [4]
    https://github.com/GRIDAPPSD/Powergrid-Models/CIM
 
-.. |image0| image:: CDPSM_RC1/media/cim_NamingHierarchyPart1.png
-.. |image1| image:: CDPSM_RC1/media/cim_LineModel.png
-.. |image2| image:: CDPSM_RC1/media/cim_LoadsAndSources.png
-.. |image3| image:: CDPSM_RC1/media/cim_SwitchingEquipment.png
-.. |image4| image:: CDPSM_RC1/media/cim_RegulatingEquipment.png
-.. |image5| image:: CDPSM_RC1/media/cim_Transformer.png
-.. |image6| image:: CDPSM_RC1/media/cim_TapChangerClass.png
-.. |image7| image:: CDPSM_RC1/media/cim_AssetsOverview.png
-.. |image8| image:: CDPSM_RC1/media/cim_DCIMTransformerInfo.png
-.. |image9| image:: CDPSM_RC1/media/cim_DCIMWireInfo.png
-.. |image10| image:: CDPSM_RC1/media/cim_StateVariables.png
-.. |image11| image:: CDPSM_RC1/media/cim_BusNavigation.png
-.. |image12| image:: CDPSM_RC1/media/cim_ConductingEquipmentContexts.png
-.. |image13| image:: CDPSM_RC1/media/cim_Capacitors.png
-.. |image14| image:: CDPSM_RC1/media/cim_Autotransformer.png
-.. |image15| image:: CDPSM_RC1/media/cim_PowerTransformerNavigation.png
-.. |image16| image:: CDPSM_RC1/media/cim_PowerTransformerImpedance.png
-.. |image17| image:: CDPSM_RC1/media/cim_OpenWyeOpenDelta.png
-.. |image18| image:: CDPSM_RC1/media/cim_TankNavigation.png
-.. |image19| image:: CDPSM_RC1/media/cim_TankImpedance.png
-.. |image20| image:: CDPSM_RC1/media/cim_LinePhaseNavigation.png
-.. |image21| image:: CDPSM_RC1/media/cim_SwitchPhaseNavigation.png
-.. |image22| image:: CDPSM_RC1/media/cim_LineInstance.png
-.. |image23| image:: CDPSM_RC1/media/cim_LineSequence.png
-.. |image24| image:: CDPSM_RC1/media/cim_LineMatrix.png
-.. |image25| image:: CDPSM_RC1/media/cim_LineAssetInfo.png
-.. |image26| image:: CDPSM_RC1/media/cim_LineCatalog.png
-.. |image27| image:: CDPSM_RC1/media/cim_Loads.png
-.. |image28| image:: CDPSM_RC1/media/cim_TapChanger.png
-.. |image29| image:: CDPSM_RC1/media/cim_VoltageMeasurements.png
-.. |image30| image:: CDPSM_RC1/media/cim_TapMeasurements.png
-.. |image31| image:: CDPSM_RC1/media/cim_CapacitorMeasurement.png
-.. |image32| image:: CDPSM_RC1/media/cim_DCIMLoadModel.png
-.. |image33| image:: CDPSM_RC1/media/cim_MeteringUsagePoints.png
-.. |image34| image:: CDPSM_RC1/media/cim_MeteringEndDevices.png
-.. |image35| image:: CDPSM_RC1/media/cim_CIMTool.png
+.. |image0| image:: CDPSM/media/cim_NamingHierarchyPart1.png
+.. |image1| image:: CDPSM/media/cim_LineModel.png
+.. |image2| image:: CDPSM/media/cim_LoadsAndSources.png
+.. |image3| image:: CDPSM/media/cim_SwitchingEquipment.png
+.. |image4| image:: CDPSM/media/cim_RegulatingEquipment.png
+.. |image5| image:: CDPSM/media/cim_Transformer.png
+.. |image6| image:: CDPSM/media/cim_TapChangerClass.png
+.. |image7| image:: CDPSM/media/cim_AssetsOverview.png
+.. |image8| image:: CDPSM/media/cim_DCIMTransformerInfo.png
+.. |image9| image:: CDPSM/media/cim_DCIMWireInfo.png
+.. |image10| image:: CDPSM/media/cim_StateVariables.png
+.. |image11| image:: CDPSM/media/cim_BusNavigation.png
+.. |image12| image:: CDPSM/media/cim_ConductingEquipmentContexts.png
+.. |image13| image:: CDPSM/media/cim_Capacitors.png
+.. |image14| image:: CDPSM/media/cim_Autotransformer.png
+.. |image15| image:: CDPSM/media/cim_PowerTransformerNavigation.png
+.. |image16| image:: CDPSM/media/cim_PowerTransformerImpedance.png
+.. |image17| image:: CDPSM/media/cim_OpenWyeOpenDelta.png
+.. |image18| image:: CDPSM/media/cim_TankNavigation.png
+.. |image19| image:: CDPSM/media/cim_TankImpedance.png
+.. |image20| image:: CDPSM/media/cim_LinePhaseNavigation.png
+.. |image21| image:: CDPSM/media/cim_SwitchPhaseNavigation.png
+.. |image22| image:: CDPSM/media/cim_LineInstance.png
+.. |image23| image:: CDPSM/media/cim_LineSequence.png
+.. |image24| image:: CDPSM/media/cim_LineMatrix.png
+.. |image25| image:: CDPSM/media/cim_LineAssetInfo.png
+.. |image26| image:: CDPSM/media/cim_LineCatalog.png
+.. |image27| image:: CDPSM/media/cim_Loads.png
+.. |image28| image:: CDPSM/media/cim_TapChanger.png
+.. |image29| image:: CDPSM/media/cim_VoltageMeasurements.png
+.. |image30| image:: CDPSM/media/cim_TapMeasurements.png
+.. |image31| image:: CDPSM/media/cim_CapacitorMeasurement.png
+.. |image32| image:: CDPSM/media/cim_DCIMLoadModel.png
+.. |image33| image:: CDPSM/media/cim_MeteringUsagePoints.png
+.. |image34| image:: CDPSM/media/cim_MeteringEndDevices.png
+.. |image35| image:: CDPSM/media/cim_CIMTool.png
 
