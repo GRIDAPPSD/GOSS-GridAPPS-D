@@ -27,10 +27,10 @@ PNNL Applications (Release Cycle 2)
 
 .. include:: ModelValidator/ModelValidatorDocumentation.rst
 
-.. include:: PNNL_Applications.rst
+.. include:: PNNL_Apps/PNNL_Applications.rst
 
 NREL Applications (Release Cycle 2)
 -----------------------------------
 
-.. include:: Real_Time_DER_Setpoint_Dispatch.rst
+.. include:: NREL_Apps/Real_Time_DER_Setpoint_Dispatch.rst
 

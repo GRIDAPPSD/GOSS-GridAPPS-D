@@ -153,36 +153,38 @@ to be in primary volts, amps, vars, etc.
 
 |image5|
 
-Figure 6: PowerTransformers may be modeled with or without tanks, and in
-both cases vectorGroup should be specified according to IEC transformer
-standards (e.g. Dy1 for many substation transformers). The case without
-tanks is most suitable for balanced three-phase transformers that won’t
-reference catalog data; any other case should use tank-level modeling.
-In the tankless case, each winding will have a PowerTransformerEnd that
-associates to both a Terminal and a BaseVoltage, and the parent
-PowerTransformer. The impedance and admittance parameters are defined by
-reverse-associated TransformerMeshImpedance between each pair of
-windings, and a reverse-associated TransformerCoreAdmittance for one
-winding. The units for these are ohms and siemens based on the winding
-voltage, rather than per-unit. WindingConnection is similar to
-PhaseShuntConnectionKind, adding Z and Zn for zig-zag connections and A
-for autotranformers. If the transformer is unbalanced in any way, then
-TransformerTankEnd is used instead of PowerTransformerEnd, and then one
-or more TransformerTanks may be used in the parent PowerTransformer.
-Some of the use cases are 1) center-tapped secondary, 2) open-delta and
-3) EHV transformer banks. Tank-level modeling is also required is using
-catalog data, as described with Figure 9.
+Figure 6: PowerTransformers may be modeled with or without tanks, and in 
+both cases vectorGroup should be specified according to IEC transformer 
+standards (e.g.  Dy1 for many substation transformers).  The case without 
+tanks is most suitable for balanced three-phase transformers that won’t 
+reference catalog data; any other case should use tank-level modeling.  In 
+the tankless case, each winding will have a PowerTransformerEnd that 
+associates to both a Terminal and a BaseVoltage, and the parent 
+PowerTransformer.  The impedance and admittance parameters are defined by 
+reverse-associated TransformerMeshImpedance between each pair of windings, 
+and a reverse-associated TransformerCoreAdmittance for one winding.  The 
+units for these are ohms and siemens based on the winding voltage, rather 
+than per-unit.  WindingConnection is similar to PhaseShuntConnectionKind, 
+adding Z and Zn for zig-zag connections and A for autotranformers.  If the 
+transformer is unbalanced in any way, then TransformerTankEnd is used 
+instead of PowerTransformerEnd, and then one or more TransformerTanks may 
+be used in the parent PowerTransformer.  Some of the use cases are 1) 
+center-tapped secondary, 2) open-delta and 3) EHV transformer banks.  
+Tank-level modeling is also required is using catalog data, as described 
+with Figure 9.  (TransformerStarImpedance and several PowerTransformer 
+attributes are not used.) 
 
 |image6|
 
-Figure 7: A RatioTapChanger can represent a transformer tap changer on
-the associated TransformerEnd. The RatioTapChanger has some parameters
-defined in a direct-associated TapChangerControl, which inherits from
-RegulatingControl some of the same attributes used in capacitor controls
-(Figure 5). Therefore, a line voltage regulator in CIM includes a
-PowerTransformer, a RatioTapChanger, and a TapChangerControl. The CT and
-PT parameters of a voltage regulator can only be described via the
-AssetInfo mechanism, described with Figure 8.
+Figure 7: A RatioTapChanger can represent a transformer tap changer on the 
+associated TransformerEnd.  The RatioTapChanger has some parameters 
+defined in a direct-associated TapChangerControl, which inherits from 
+RegulatingControl some of the same attributes used in capacitor controls 
+(Figure 5).  Therefore, a line voltage regulator in CIM includes a 
+PowerTransformer, a RatioTapChanger, and a TapChangerControl.  The CT and 
+PT parameters of a voltage regulator can only be described via the 
+AssetInfo mechanism, described with Figure 8.  (Note: RegulationSchedule, 
+RatioTapChangerTable and PhaseTapChanger are not used.) 
 
 |image7|
 
@@ -211,7 +213,7 @@ TransformerEnd:endNumber (Figure 6). The shunt admittances are defined
 by NoLoadTest on a winding / end, usually just one such test. The
 impedances are defined by a set of ShortCircuitTests; one winding / end
 will be energized, and one or more of the others will be grounded in
-these tests.
+these tests. (OpenCircuitTest is not used).
 
 |image9|
 
@@ -235,16 +237,17 @@ constant values might be defined for each WireInsulationKind.
 
 |image10|
 
-Figure 11: The CIM state variables package might be used to mimic sensor
-locations and values on the distribution system. Voltages are measured
-on TopologicalNodes, power flows are measured at Terminals, step
-positions are measured on TapChangers, status is measured on
-ConductingEquipment, and on/off state is measured on ShuntCompensators.
-The “injections” have been included here, but there may not be a use
-case for them in distribution. On the other hand, we would need an
-SvCurrent, which was probably not included in the CIM because of its
-transmission system heritage. Attributes for sensor characteristics
-would also have to be added in future versions of GridAPPS-D.
+Figure 11: The CIM state variables package might be used to mimic sensor 
+locations and values on the distribution system.  Voltages are measured on 
+ConnectivityNodes (i.e., not TopologicalNodes), power flows are measured 
+at Terminals, step positions are measured on TapChangers, status is 
+measured on ConductingEquipment, and on/off state is measured on 
+ShuntCompensators.  The “injections” have been included here, but 
+there may not be a use case for them in distribution.  On the other hand, 
+we would need an SvCurrent, which was probably not included in the CIM 
+because of its transmission system heritage.  Attributes for sensor 
+characteristics would also have to be added in future versions of 
+GridAPPS-D.  
 
 Typical Queries
 ^^^^^^^^^^^^^^^
@@ -777,21 +780,11 @@ been planned for implementation in RC1, but in a future version of
 GridAPPS-D, they can be used to link automated meter readings with loads
 in the distribution system model.
 
-|image32|
-
-Figure 33: Energy Consumers are associated to Metering Usage Points
-
 |image33|
 
-Figure 34: Metering Usage Points have one or more EndDevices (i.e.
-Meters)
+Figure 34: Trouble Calls route through Metering Usage Points to EnergyConsumers
 
-|image34|
-
-Figure 35: EndDevices associate to meter readings, functions and
-channels.
-
-CIM Enhancements for RC2
+CIM Enhancements for RC4
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Possible CIM enhancements to support volt-var feeder modeling:
@@ -818,6 +811,11 @@ Possible CIM enhancements to support volt-var feeder modeling:
    PowerTransformerEnd to TransformerEnd (Figure 6)
 
 9. Clarify side1 and side2 for switch phase modeling (Figure 4)
+
+
+|image33|
+
+Figure 34: Trouble Calls route through Metering Usage Points to EnergyConsumers
 
 CIM Profile in CIMTool
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -876,10 +874,25 @@ cases, CIMTool reports only two kinds of validation error:
 With these caveats, the profile and instances validate against each
 other, for feeder models that solve in OpenDSS.
 
-|image35|
+|image90|
 
-Figure 36: Profiling TapChangerControl in CIMTool; the inherited
-RegulatingCondEq is not included.
+Figure 90: Faults.
+
+|image91|
+
+Figure 91: Power Electronics.
+
+|image92|
+
+Figure 92: Rotating Machines.
+
+|image93|
+
+Figure 93: Houses.
+
+|image94|
+
+Figure 94: Measurements.
 
 Creating Data Definition Language (DDL) for MySQL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -989,14 +1002,14 @@ required for MySQL. The following manual edits were made:
 .. [4]
    https://github.com/GRIDAPPSD/Powergrid-Models/CIM
 
-.. |image0| image:: CDPSM/media/cim_NamingHierarchyPart1.png
+.. |image0| image:: CDPSM/media/cim_FeederContext.png
 .. |image1| image:: CDPSM/media/cim_LineModel.png
 .. |image2| image:: CDPSM/media/cim_LoadsAndSources.png
 .. |image3| image:: CDPSM/media/cim_SwitchingEquipment.png
-.. |image4| image:: CDPSM/media/cim_RegulatingEquipment.png
+.. |image4| image:: CDPSM/media/cim_CapacitorClass.png
 .. |image5| image:: CDPSM/media/cim_Transformer.png
 .. |image6| image:: CDPSM/media/cim_TapChangerClass.png
-.. |image7| image:: CDPSM/media/cim_AssetsOverview.png
+.. |image7| image:: CDPSM/media/cim_AssetInfoOverview.png
 .. |image8| image:: CDPSM/media/cim_DCIMTransformerInfo.png
 .. |image9| image:: CDPSM/media/cim_DCIMWireInfo.png
 .. |image10| image:: CDPSM/media/cim_StateVariables.png
@@ -1021,8 +1034,11 @@ required for MySQL. The following manual edits were made:
 .. |image29| image:: CDPSM/media/cim_VoltageMeasurements.png
 .. |image30| image:: CDPSM/media/cim_TapMeasurements.png
 .. |image31| image:: CDPSM/media/cim_CapacitorMeasurement.png
-.. |image32| image:: CDPSM/media/cim_DCIMLoadModel.png
-.. |image33| image:: CDPSM/media/cim_MeteringUsagePoints.png
-.. |image34| image:: CDPSM/media/cim_MeteringEndDevices.png
+.. |image33| image:: CDPSM/media/ext_TroubleCalls.png
 .. |image35| image:: CDPSM/media/cim_CIMTool.png
+.. |image90| image:: CDPSM/media/cim_Faults.png
+.. |image91| image:: CDPSM/media/cim_PowerElectronics.png
+.. |image92| image:: CDPSM/media/cim_DERMachines.png
+.. |image93| image:: CDPSM/media/ext_Houses.png
+.. |image94| image:: CDPSM/media/cim_MeasurementGRIDAPPSD.png
 
