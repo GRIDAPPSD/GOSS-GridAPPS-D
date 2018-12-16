@@ -19,27 +19,21 @@ FNCS requires both the ZeroMQ and CZMQ libraries. For the purposes of the tutori
 :~$ wget http://download.zeromq.org/zeromq-3.2.4.tar.gz
 # if you do not have wget, use
 # curl -O http://download.zeromq.org/zeromq-3.2.4.tar.gz
-
 # unpack zeromq, change to its directory
 :~$ tar -xzf zeromq-3.2.4.tar.gz
 :~$ cd zeromq-3.2.4
-
 # configure, make, and make install 
 :~/zeromq-3.2.4$ ./configure --prefix=$FNCS_INSTALL
 :~/zeromq-3.2.4$ make
 :~/zeromq-3.2.4$ make install
-
 # download and install CZMQ
 :~/zeromq-3.2.4$ cd $HOME
-
 :~$ wget http://download.zeromq.org/czmq-3.0.0-rc1.tar.gz
 # if you do not have wget, use
 # curl -O http://download.zeromq.org/czmq-3.0.0-rc1.tar.gz
-
 # unpack czmq, change to its directory
 :~$ tar -xzf czmq-3.0.0-rc1.tar.gz
 :~$ cd czmq-3.0.0
-
 # configure, make, and make install 
 :~/czmq-3.0.0$ ./configure --prefix=$FNCS_INSTALL --with-libzmq=$FNCS_INSTALL
 :~/czmq-3.0.0$ make
@@ -51,10 +45,8 @@ In this tutorial FNCS source code will be downloaded using git to the $HOME dire
 ```bash
 # download FNCS
 :~$ git clone https://github.com/FNCS/fncs.git
-
 # change to FNCS directory
 :~$ cd fncs
-
 # configure, make, and make install 
 :~/fncs$ ./configure --prefix=$FNCS_INSTALL --with-zmq=$FNCS_INSTALL
 :~/fncs$ make

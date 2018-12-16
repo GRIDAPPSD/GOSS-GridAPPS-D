@@ -9,7 +9,7 @@ Volt-var Optimization (VVO)
 
 The sample VVO application is a Python implementation of a heuristic method that PNNL has
 investigated before [CIT3]_, [CIT4]_, [CIT5]_. There are more advanced VVO methods that
-could be implemented in future applications.
+will be implemented in future work.
 
 Visualization
 -------------
@@ -20,17 +20,11 @@ interactive graph.  Capacitors and regulators are highlighted in the graph
 and displayed alongside tables with current values for capacitor status
 (OPEN or CLOSED), regulator voltage, and feeder power.
 
-PNNL Applications (Release Cycle 2)
------------------------------------
+.. include:: PNNL_Apps/StateEstimatorDocumentation.rst
 
-.. include:: StateEstimator/StateEstimatorDocumentation.rst
+.. include:: PNNL_Apps/ModelValidatorDocumentation.rst
 
-.. include:: ModelValidator/ModelValidatorDocumentation.rst
+.. include:: PNNL_Apps/TransactiveApplication.rst
 
-.. include:: PNNL_Apps/PNNL_Applications.rst
-
-NREL Applications (Release Cycle 2)
------------------------------------
-
-.. include:: NREL_Apps/Real_Time_DER_Setpoint_Dispatch.rst
+.. include:: NREL_APPS/Real_Time_DER_Setpoint_Dispatch.rst
 

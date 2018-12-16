@@ -1,5 +1,6 @@
 Input/Output Topics
------------------
+-------------------
+
 The FNCS Bridge input and output topics are the main driver behind controlling the simulation and subscribing to the latest data from the simulation.
 FNCS Bridge listens for input on topic **goss/gridappsd/fncs/input** and publishes responses on topic **goss/gridappsd/fncs/output**
 
