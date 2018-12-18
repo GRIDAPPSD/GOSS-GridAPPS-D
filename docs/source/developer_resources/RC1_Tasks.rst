@@ -1,6 +1,6 @@
 .. _rc1-diagrams-label:
 
-UML for Release Cycle 1
+UML for Release Cycle 4
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Our objective is to demonstrate useful functionality, which is
