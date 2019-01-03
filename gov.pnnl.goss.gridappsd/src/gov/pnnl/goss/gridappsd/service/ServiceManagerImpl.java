@@ -238,6 +238,9 @@ public class ServiceManagerImpl implements ServiceManager{
 
 	@Override
 	public String startServiceForSimultion(String serviceId, String runtimeOptions,  Map<String, Object> simulationContext) {
+		
+		if(simulationId == null)
+			this.simulationId = simulationContext.get("simulationId").toString();
 				
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
