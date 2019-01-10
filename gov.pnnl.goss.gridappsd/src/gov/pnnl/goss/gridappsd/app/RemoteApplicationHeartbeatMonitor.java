@@ -70,17 +70,10 @@ public class RemoteApplicationHeartbeatMonitor implements HeartbeatTimeout {
 			DataResponse event = (DataResponse)message;
 			String appId = (String) event.getData();
 			appId = appId.trim();
-			System.out.println("Heartbeat received: {}"+appId);
 
 			RemoteApplicationRegistrationResponse resp = RemoteApplicationHeartbeatMonitor.remoteApps.get(appId.trim());
 
-			if (RemoteApplicationHeartbeatMonitor.remoteApps.containsKey(appId)) {
-				System.out.println("App is apart of the remoteApps");
-			}
-
-
 			if (RemoteApplicationHeartbeatMonitor.remoteAppTimers.containsKey(appId)) {
-				System.out.println("resetting log");
 				ApplicationTimeoutTask task = (ApplicationTimeoutTask)RemoteApplicationHeartbeatMonitor.remoteAppTimers.get(appId);
 				task.cancel();
 				RemoteApplicationHeartbeatMonitor.remoteAppTimers.put(appId, new ApplicationTimeoutTask(60, appId, RemoteApplicationHeartbeatMonitor.this));

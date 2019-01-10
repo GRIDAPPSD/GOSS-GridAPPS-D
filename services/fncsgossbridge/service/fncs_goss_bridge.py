@@ -771,55 +771,51 @@ def _create_cim_object_map(map_file=None):
                     elif phases == "s2":
                         phases = "2"
                     conducting_equipment_type = y.get("name")
-                    conducting_equipment_name = y.get("ConductingEquipment_name")
+                    conducting_equipment_name = y.get("SimObject")
                     connectivity_node = y.get("ConnectivityNode")
                     measurement_mrid = y.get("mRID")
                     if "LinearShuntCompensator" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "shunt_" + phases;
                         elif measurement_type == "Pos":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "switch" + phases;
                         elif measurement_type == "PNV":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {}.".format(measurement_type))
                     elif "PowerTransformer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "xf_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = "xf_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "RatioTapChanger" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "Pos":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "tap_" + phases;
                         elif measurement_type == "A":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "ACLineSegment" in conducting_equipment_type:
-                        if phases in ["1","2"]:
-                            prefix = "tpx_"
-                        else:
-                            prefix = "line_"
                         if measurement_type == "VA":
-                            object_name = prefix + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             if phases == "1":
                                 property_name = "power_in_A"
                             elif phases == "2":
@@ -830,7 +826,7 @@ def _create_cim_object_map(map_file=None):
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = prefix + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             if phases == "1":
                                 property_name = "current_in_A"
                             elif phases == "2":
@@ -841,19 +837,19 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "LoadBreakSwitch" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "swt_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = "swt_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "ld_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             if phases in ["1","2"]:
                                 property_name = "measured_power_" + phases;
                             else:
@@ -868,13 +864,13 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     elif "PowerElectronicsConnection" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "measured_current_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
@@ -908,7 +904,7 @@ def _create_cim_object_map(map_file=None):
                             "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
-                            "type" : "regulator"
+                            "type" : "regu:lator"
                         }
                 for y in switches:
                     object_mrid_to_name[y.get("mRID")] = {
