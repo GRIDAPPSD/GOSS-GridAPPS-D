@@ -278,6 +278,7 @@ public class ProcessEvent implements GossResponseEvent {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			this.error(processId,sw.toString());
+			sendError(client, event.getReplyDestination(), sw.toString(), processId);
 		}
 	}
 
