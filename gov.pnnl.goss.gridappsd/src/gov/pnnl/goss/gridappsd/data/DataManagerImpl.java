@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.data;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,11 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
 import gov.pnnl.goss.gridappsd.api.GridAppsDataHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 /**
  * This represents Internal Function 405 Simulation Control Manager.
@@ -73,7 +79,8 @@ public class DataManagerImpl implements DataManager {
 	
 	private Map<Class<?>, List<GridAppsDataHandler>> handlers = new HashMap<Class<?>, List<GridAppsDataHandler>>();
 	private Map<String, DataManagerHandler> dataManagers = new HashMap<String, DataManagerHandler>();
-    private Logger log = LoggerFactory.getLogger(getClass());
+	private Map<String, DataFormatConverter> dataConverters = new HashMap<String, DataFormatConverter>();
+	private Logger log = LoggerFactory.getLogger(getClass());
     
 	Client client = null; 
 	
@@ -194,6 +201,30 @@ public class DataManagerImpl implements DataManager {
 	public GridAppsDataHandler getHandler(Class<?> requestClass, Class<?> handlerClass) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	@Override
+	public void registerConverter(String inputFormat, String outputFormat, DataFormatConverter converter) {
+		String converterKey = inputFormat+":"+outputFormat;
+		converterKey = converterKey.toUpperCase();
+		this.dataConverters.put(converterKey, converter);
+	}
+	@Override
+	public DataFormatConverter getConverter(String inputFormat, String outputFormat) {
+		String converterKey = inputFormat+":"+outputFormat;
+		converterKey = converterKey.toUpperCase();
+		System.out.println("LOOKING FOR CONVERTER "+converterKey+"  IN   "+dataConverters);
+		if(dataConverters.containsKey(converterKey)){
+			return dataConverters.get(converterKey);
+		} else {
+			//TODO should we log a warning that the converter is not found?
+			logManager.log(
+					new LogMessage(this.getClass().getName(), new Integer(
+							0).toString(), new Date().getTime(),
+							"No Data converter available for "+inputFormat+" to "+outputFormat, LogLevel.WARN,
+							ProcessStatus.RUNNING, false), "system",
+					GridAppsDConstants.topic_platformLog);
+			return null;
+		}
 	}
 
 }
