@@ -207,7 +207,7 @@ public class SimulationManagerImpl implements SimulationManager{
 		ServiceInfo simulationServiceInfo = serviceManager.getService(simulationConfig.simulator);
 		List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
 		for(String service : serviceDependencies) {
-			String serviceInstanceId = serviceManager.startServiceForSimultion(service, "", simulationContext);
+			String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
 			simContext.addServiceInstanceIds(serviceInstanceId);
 		}
 		
