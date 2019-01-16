@@ -264,7 +264,7 @@ public class ProcessNewSimulationRequest {
 							.getPrereqs();
 					for (String prereqs : prereqsList) {
 						//TODO: remove this if condition after hardcoded pre-reqs are removed from sample-app config file.
-						if(prereqs.equals("fncs") || prereqs.equals("fncsgossbrdige"))
+						if(prereqs.equals("fncs") || prereqs.equals("fncsgossbridge"))
 							continue;
 						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
 						connectServiceInstanceIds.add(serviceInstanceId);
