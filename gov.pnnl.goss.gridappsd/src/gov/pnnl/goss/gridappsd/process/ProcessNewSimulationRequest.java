@@ -263,6 +263,9 @@ public class ProcessNewSimulationRequest {
 					List<String> prereqsList = appManager.getApp(app.getName())
 							.getPrereqs();
 					for (String prereqs : prereqsList) {
+						//TODO: remove this if condition after hardcoded pre-reqs are removed from sample-app config file.
+						if(prereqs.equals("fncs") || prereqs.equals("fncsgossbridge"))
+							continue;
 						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
 						connectServiceInstanceIds.add(serviceInstanceId);
 						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
@@ -293,7 +296,7 @@ public class ProcessNewSimulationRequest {
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Starting simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
-			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simContext);
+			simulationManager.startSimulation(simulationId, config.getSimulation_config(),simContext, simulationContext);
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Started simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
 					simulationLogTopic);
