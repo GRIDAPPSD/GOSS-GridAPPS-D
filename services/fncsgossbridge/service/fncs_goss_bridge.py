@@ -873,10 +873,10 @@ def _create_cim_object_map(map_file=None):
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
-                        else::
+                        else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
-                        if measurement_type == "VA"::
+                        if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             if phases in ["1","2"]:
                                 property_name = "measured_power_" + phases;
