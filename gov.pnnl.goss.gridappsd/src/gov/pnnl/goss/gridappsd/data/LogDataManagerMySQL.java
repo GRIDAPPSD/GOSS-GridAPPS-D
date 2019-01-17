@@ -202,7 +202,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 			boolean where = false;
 			
 			if(source!=null){
-				queryString+="source=\'"+source+"\'";
+				queryString+=" source=\'"+source+"\'";
 				where = true;
 			}
 				
