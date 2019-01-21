@@ -119,6 +119,18 @@ difference_attribute_map = {
             "prefix" : "cap_"
         }
     },
+    "PowerElectronicsConnection.p": {
+        "inverter": {
+            "property": ["P_Out"],
+            "prefix": "inv_"
+        }
+    },
+    "PowerElectronicsConnection.q": {
+        "inverter": {
+            "property": ["Q_Out"],
+            "prefix": "inv_"
+        }
+    },
     "Switch.open" : {
         "switch" : {
             "property" : ["phase_{}_state"],
@@ -133,7 +145,7 @@ difference_attribute_map = {
     },
     "TapChanger.step" : {
         "regulator" : {
-            "property" : ["tap{}"],
+            "property" : ["tap_{}"],
             "prefix" : "reg_"
         }
     },
@@ -167,6 +179,7 @@ class GOSSListener(object):
         self.stop_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
+        self.simulation_time = 0
 
     def run_simulation(self,run_realtime):
         try:
@@ -405,13 +418,21 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         for x in forward_differences_list:
             object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
+            # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
             object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
+            # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
             object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
+            # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
             object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
+            # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
             object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
+            # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
             cim_attribute = x.get("attribute")
+
             object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
+            # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
             phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
+            # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
             if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
                 fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
             if cim_attribute == "RegulatingControl.mode":
@@ -465,7 +486,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropX":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                  fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+            elif cim_attribute == "PowerElectronicsConnection.p":
+                for y in object_phases:
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
+            elif cim_attribute == "PowerElectronicsConnection.q":
+                for y in object_phases:
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
 
@@ -477,7 +504,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+        _send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+        _send_simulation_status("ERROR",str(ex),"ERROR")
 	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
 
 
@@ -530,9 +558,9 @@ def _get_fncs_bus_messages(simulation_id):
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
                         err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
-                        _send_simulation_status('ERROR', err_msg, 'ERROR')
-                        raise RuntimeError(err_msg)
-                    for y in object_property_to_measurement_id[x]:
+                        _send_simulation_status('RUNNING', err_msg, 'WARN')
+                        #raise RuntimeError(err_msg)
+                    for y in object_property_to_measurement_id.get(x,{}):
                         measurement = {}
                         property_name = y["property"]
                         measurement["measurement_mrid"] = y["measurement_mrid"]
@@ -541,8 +569,8 @@ def _get_fncs_bus_messages(simulation_id):
                         prop_val_str = gld_properties_dict.get(property_name, None)
                         if prop_val_str == None:
                             err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
-                            _send_simulation_status('ERROR', err_msg, 'ERROR')
-                            raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
+                            _send_simulation_status('RUNNING', err_msg, 'WARN')
+                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                         else:
                             val_str = str(prop_val_str).split(" ")[0]
                             conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
@@ -761,6 +789,7 @@ def _create_cim_object_map(map_file=None):
                 capacitors = x.get("capacitors",[])
                 regulators = x.get("regulators",[])
                 switches = x.get("switches",[])
+                solarpanels = x.get("solarpanels",[])
                 #TODO: add more object types to handle
                 for y in measurements:
                     measurement_type = y.get("measurementType")
@@ -770,55 +799,51 @@ def _create_cim_object_map(map_file=None):
                     elif phases == "s2":
                         phases = "2"
                     conducting_equipment_type = y.get("name")
-                    conducting_equipment_name = y.get("ConductingEquipment_name")
+                    conducting_equipment_name = y.get("SimObject")
                     connectivity_node = y.get("ConnectivityNode")
                     measurement_mrid = y.get("mRID")
                     if "LinearShuntCompensator" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "shunt_" + phases;
                         elif measurement_type == "Pos":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "switch" + phases;
                         elif measurement_type == "PNV":
-                            object_name = "cap_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {}.".format(measurement_type))
                     elif "PowerTransformer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "xf_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = "xf_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "RatioTapChanger" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "Pos":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "tap_" + phases;
                         elif measurement_type == "A":
-                            object_name = "reg_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "ACLineSegment" in conducting_equipment_type:
-                        if phases in ["1","2"]:
-                            prefix = "tpx_"
-                        else:
-                            prefix = "line_"
                         if measurement_type == "VA":
-                            object_name = prefix + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             if phases == "1":
                                 property_name = "power_in_A"
                             elif phases == "2":
@@ -829,7 +854,7 @@ def _create_cim_object_map(map_file=None):
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = prefix + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             if phases == "1":
                                 property_name = "current_in_A"
                             elif phases == "2":
@@ -840,21 +865,21 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "LoadBreakSwitch" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = "swt_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = "swt_" + conducting_equipment_name;
+                            object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases;
+                                property_name = "measured_power_" + phases;
                             else:
                                 property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
@@ -867,13 +892,13 @@ def _create_cim_object_map(map_file=None):
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     elif "PowerElectronicsConnection" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         elif measurement_type == "A":
-                            object_name = connectivity_node;
+                            object_name = conducting_equipment_name;
                             property_name = "measured_current_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
@@ -907,7 +932,7 @@ def _create_cim_object_map(map_file=None):
                             "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
-                            "type" : "regulator"
+                            "type" : "regu:lator"
                         }
                 for y in switches:
                     object_mrid_to_name[y.get("mRID")] = {
@@ -916,10 +941,17 @@ def _create_cim_object_map(map_file=None):
                         "total_phases" : y.get("phases"),
                         "type" : "switch"
                     }
-
+                for y in solarpanels:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "inverter"
+                    }
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
+        _send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
 
 
 def json_loads_byteified(json_text):
@@ -992,4 +1024,3 @@ if __name__ == "__main__":
     sim_duration = sim_request["simulation_config"]["duration"]
     _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
     debugFile.close()
-
