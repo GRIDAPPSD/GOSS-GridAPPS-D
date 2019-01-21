@@ -132,20 +132,26 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	
 	@Override
 	public void storeSimulationOutput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenWriteUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationOutput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+	       try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenMessageResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 	
 	
 	
 	@Override
 	public void storeSimulationInput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenWriteUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+               try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenMessageResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 
 
