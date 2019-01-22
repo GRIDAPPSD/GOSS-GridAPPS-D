@@ -154,9 +154,12 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 				//todo throw exception
 			}
 			
+
+			double temp_fahr = readDouble(map, TEMPERATURE, -100000000);
+			//we are already receiving it as fahrenhight
 			//print temperature in Fahrenheit and convert from celcius to Fahrenheit
-			double temp_cel = readDouble(map, TEMPERATURE, -100000000);
-			double temp_fahr = (temp_cel * 1.8) + 32;
+//			double temp_cel = readDouble(map, TEMPERATURE, -100000000);
+//			double temp_fahr = (temp_cel * 1.8) + 32;
 			outputContent.print(temp_fahr+",");
 			//print humidity 
 			outputContent.print(map.get(HUMIDITY)+",");
