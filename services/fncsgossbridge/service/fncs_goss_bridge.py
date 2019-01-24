@@ -741,7 +741,7 @@ def _send_simulation_status(status, message, log_level):
         status_message = {
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
-            "timestamp" : int(time.mktime(t_now.timetuple())),
+            "timestamp" : int(time.mktime(t_now.timetuple()))*1000,
             "processStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
