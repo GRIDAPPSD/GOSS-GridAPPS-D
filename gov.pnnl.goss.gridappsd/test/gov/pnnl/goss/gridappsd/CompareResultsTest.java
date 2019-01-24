@@ -33,6 +33,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.testmanager.TestManagerQueryFactory;
 import gov.pnnl.goss.gridappsd.testmanager.TestResultSeries;
 import gov.pnnl.goss.gridappsd.testmanager.TestResults;
 import pnnl.goss.core.Client;
