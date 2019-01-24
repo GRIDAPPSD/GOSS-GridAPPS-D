@@ -39,19 +39,9 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.simulation;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -62,6 +52,17 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -130,7 +131,8 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext){
+	public void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext){
+		//TODO: remove simulationContext parameter after refactoring service manager
 
 			try {
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -146,7 +148,9 @@ public class SimulationManagerImpl implements SimulationManager{
 			}
 			
 			simContexts.put(simContext.getSimulationId(), simContext);
-
+			
+			startServiceDependencies(simulationConfig, simContext, simulationContext);
+			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
 						simulationConfig, simulationId, logManager, appManager, client);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
@@ -196,6 +200,17 @@ public class SimulationManagerImpl implements SimulationManager{
 	@Override
 	public SimulationContext getSimulationContextForId(String simulationId){
 		return this.simContexts.get(simulationId);
+	}
+	
+	@Override
+	public void startServiceDependencies(SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext){
+		ServiceInfo simulationServiceInfo = serviceManager.getService(simulationConfig.simulator);
+		List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
+		for(String service : serviceDependencies) {
+			String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
+			simContext.addServiceInstanceIds(serviceInstanceId);
+		}
+		
 	}
 	
 	

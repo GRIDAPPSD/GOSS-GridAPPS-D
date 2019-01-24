@@ -119,6 +119,18 @@ difference_attribute_map = {
             "prefix" : "cap_"
         }
     },
+    "PowerElectronicsConnection.p": {
+        "inverter": {
+            "property": ["P_Out"],
+            "prefix": "inv_"
+        }
+    },
+    "PowerElectronicsConnection.q": {
+        "inverter": {
+            "property": ["Q_Out"],
+            "prefix": "inv_"
+        }
+    },
     "Switch.open" : {
         "switch" : {
             "property" : ["phase_{}_state"],
@@ -406,13 +418,21 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         for x in forward_differences_list:
             object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
+            # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
             object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
+            # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
             object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
+            # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
             object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
+            # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
             object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
+            # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
             cim_attribute = x.get("attribute")
+
             object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
+            # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
             phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
+            # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
             if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
                 fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
             if cim_attribute == "RegulatingControl.mode":
@@ -466,7 +486,13 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
                     fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
             elif cim_attribute == "TapChanger.lineDropX":
                 for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                  fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+            elif cim_attribute == "PowerElectronicsConnection.p":
+                for y in object_phases:
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
+            elif cim_attribute == "PowerElectronicsConnection.q":
+                for y in object_phases:
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
             else:
                 _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
 
@@ -478,7 +504,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
-	_send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+        _send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
+        _send_simulation_status("ERROR",str(ex),"ERROR")
 	#raise RuntimeError("An error occurred while trying to translate the update message recieved.\n{}: {}".format(type(ex).__name__, ex.message))
 
 
@@ -762,6 +789,7 @@ def _create_cim_object_map(map_file=None):
                 capacitors = x.get("capacitors",[])
                 regulators = x.get("regulators",[])
                 switches = x.get("switches",[])
+                solarpanels = x.get("solarpanels",[])
                 #TODO: add more object types to handle
                 for y in measurements:
                     measurement_type = y.get("measurementType")
@@ -913,10 +941,17 @@ def _create_cim_object_map(map_file=None):
                         "total_phases" : y.get("phases"),
                         "type" : "switch"
                     }
-
+                for y in solarpanels:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "inverter"
+                    }
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
+        _send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
 
 
 def json_loads_byteified(json_text):
@@ -989,4 +1024,3 @@ if __name__ == "__main__":
     sim_duration = sim_request["simulation_config"]["duration"]
     _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
     debugFile.close()
-

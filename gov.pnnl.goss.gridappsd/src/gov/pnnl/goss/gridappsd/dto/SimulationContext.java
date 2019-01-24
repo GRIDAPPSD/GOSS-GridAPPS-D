@@ -90,6 +90,10 @@ public class SimulationContext implements Serializable {
 		this.serviceInstanceIds = serviceInstanceIds;
 	}
 	
+	public void addServiceInstanceIds(String serviceInstanceId) {
+		this.serviceInstanceIds.add(serviceInstanceId);
+	}
+	
 	
 
 }

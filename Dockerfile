@@ -5,11 +5,10 @@ ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
   && cd gridappsd-python \
-  && python setup.py sdist \
-  && pip3 install dist/gridappsd-1.0.tar.gz \
-  && pip install dist/gridappsd-1.0.tar.gz \
+  && pip3 install . \
+  && pip install . \
   && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
