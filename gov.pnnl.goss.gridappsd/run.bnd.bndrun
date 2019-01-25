@@ -78,8 +78,8 @@
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	javax.servlet-api,\
 	com.bigdata.rdf,\
-	proven-message,\
-	proven-client,\
+	proven-message;version=0.2,\
+	proven-client;version=0.2.1,\
 	javax.ws.rs-api,\
 	org.apache.commons.codec,\
 	shacl,\
