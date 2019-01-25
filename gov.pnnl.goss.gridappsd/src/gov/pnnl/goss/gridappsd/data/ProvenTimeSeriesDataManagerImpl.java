@@ -134,7 +134,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	public void storeSimulationOutput(Serializable message) throws Exception {
 	       try {
                       provenProducer.restProducer(provenWriteUri, null, null);
-                      ProvenMessageResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -147,7 +147,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	public void storeSimulationInput(Serializable message) throws Exception {
                try {
                       provenProducer.restProducer(provenWriteUri, null, null);
-                      ProvenMessageResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
