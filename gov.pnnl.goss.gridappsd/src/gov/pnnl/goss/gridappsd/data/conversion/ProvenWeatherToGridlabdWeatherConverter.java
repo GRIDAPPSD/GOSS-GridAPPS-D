@@ -15,6 +15,8 @@ import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 
+import com.google.gson.JsonSyntaxException;
+
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -87,14 +89,27 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	@Override
 	public void convert(String inputContent, PrintWriter outputContent) throws Exception {
 		boolean headerPrinted = false;
-		
-		TimeSeriesResult resultObj = TimeSeriesResult.parse(inputContent);
-		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
-			if(!headerPrinted){
-				printGLDHeader(record, outputContent);
-				headerPrinted = true;
+		try {
+			TimeSeriesResult resultObj = TimeSeriesResult.parse(inputContent);
+			for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
+				if(!headerPrinted){
+					printGLDHeader(record, outputContent);
+					headerPrinted = true;
+				}
+				convertRecord(record, outputContent);
 			}
-			convertRecord(record, outputContent);
+		} catch (JsonSyntaxException e) {
+			if(logManager != null) {
+				logManager.log(
+						new LogMessage(this.getClass().getName(),
+								new Integer(0).toString(),
+								new Date().getTime(),
+								"No weather data was found. Simulation will run without weather data.",
+								LogLevel.WARN,
+								ProcessStatus.RUNNING,
+								false), 
+						GridAppsDConstants.topic_platformLog);
+			}
 		}
 	}
 
@@ -103,13 +118,27 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		boolean headerPrinted = false;
 		
 		String strContent = IOUtils.toString(inputContent);
-		TimeSeriesResult resultObj = TimeSeriesResult.parse(strContent);
-		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
-			if(!headerPrinted){
-				printGLDHeader(record, outputContent);
-				headerPrinted = true;
+		try {
+			TimeSeriesResult resultObj = TimeSeriesResult.parse(strContent);
+			for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
+				if(!headerPrinted){
+					printGLDHeader(record, outputContent);
+					headerPrinted = true;
+				}
+				convertRecord(record, outputContent);
 			}
-			convertRecord(record, outputContent);
+		} catch (JsonSyntaxException e) {
+			if(logManager != null) {
+				logManager.log(
+						new LogMessage(this.getClass().getName(),
+								new Integer(0).toString(),
+								new Date().getTime(),
+								"No weather data was found. Simulation will run without weather data.",
+								LogLevel.WARN,
+								ProcessStatus.RUNNING,
+								false), 
+						GridAppsDConstants.topic_platformLog);
+			}
 		}
 
 	}
