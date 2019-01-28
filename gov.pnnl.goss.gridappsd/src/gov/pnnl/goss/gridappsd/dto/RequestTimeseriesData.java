@@ -1,6 +1,6 @@
 package gov.pnnl.goss.gridappsd.dto;
 
-import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
+//import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -18,7 +18,8 @@ public class RequestTimeseriesData implements Serializable {
 	
 	RequestType queryMeasurement;
 	Map<String,String> queryFilter;
-	ResultFormat responseFormat = ResultFormat.JSON;
+	//ResultFormat responseFormat = ResultFormat.JSON;
+	String responseFormat ="JSON";
 	private String queryType = "time-series";
 	
 	public RequestType getQueryMeasurement() {
@@ -37,11 +38,11 @@ public class RequestTimeseriesData implements Serializable {
 		this.queryFilter = queryFilter;
 	}
 
-	public ResultFormat getResponseFormat() {
+	public String getResponseFormat() {
 		return responseFormat;
 	}
 
-	public void setResponseFormat(ResultFormat responseFormat) {
+	public void setResponseFormat(String responseFormat) {
 		this.responseFormat = responseFormat;
 	}
 
