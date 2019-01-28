@@ -162,23 +162,28 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 //			double temp_fahr = (temp_cel * 1.8) + 32;
 			outputContent.print(temp_fahr+",");
 			//print humidity 
-			outputContent.print(map.get(HUMIDITY)+",");
+			double humidity = readDouble(map, HUMIDITY, 0);
+			outputContent.print(humidity/100+",");
 			//print wind_speed and no conversion necessary
 			double speed_m = readDouble(map, AVG_WIND_SPEED, 0);
 			outputContent.print(speed_m+",");
+			
+			//Solar readings have already been converted to feet
 			//print solar_direct and convert from watts/m^2 to watts/f^s
-			double solar_direct_m = readDouble(map,SOLAR_DIRECT, 0);
-			double solar_direct_f = solar_direct_m*(1/10.764);
+//			double solar_direct_m = readDouble(map,SOLAR_DIRECT, 0);
+//			double solar_direct_f = solar_direct_m*(1/10.764);
+			double solar_direct_f = readDouble(map,SOLAR_DIRECT, 0);
 			outputContent.print(solar_direct_f+",");
 			//print solar_diffuse convert from watts/m^2 to watts/f^s
 //			double solar_diffuse_m = record.getIrradanceDiffuseHorizontal();
-			double solar_diffuse_m = readDouble(map, SOLAR_DIFFUSE, 0);
-			double solar_diffuse_f = solar_diffuse_m*(1/10.764);
+//			double solar_diffuse_m = readDouble(map, SOLAR_DIFFUSE, 0);
+//			double solar_diffuse_f = solar_diffuse_m*(1/10.764);
+			double solar_diffuse_f = readDouble(map, SOLAR_DIFFUSE, 0);
 			outputContent.print(solar_diffuse_f+",");
 			//print solar_global convert from watts/m^2 to watts/f^s
-//			double solar_global_m = record.getIrradanceGlobalHorizontal();
-			double solar_global_m = readDouble(map, SOLAR_GLOBAL, 0);
-			double solar_global_f = solar_global_m*(1/10.764);
+//			double solar_global_m = readDouble(map, SOLAR_GLOBAL, 0);
+//			double solar_global_f = solar_global_m*(1/10.764);
+			double solar_global_f = readDouble(map, SOLAR_GLOBAL, 0);
 			outputContent.print(solar_global_f+"");
 			outputContent.println();
 			outputContent.flush();
@@ -220,18 +225,18 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 //			String provenInput = record.toString();
 				
 			String provenInput = "{\"measurements\":[{\"name\":\"weather\",\"points\":[{\"row\":{\"entry\":[{\"key\":"
-					+ "\"Diffuse\",\"value\":\"-0.006386875\"},{\"key\":\"AvgWindSpeed\",\"value\":\"0.0\"},{\"key\":"
+					+ "\"Diffuse\",\"value\":\"40.006386875\"},{\"key\":\"AvgWindSpeed\",\"value\":\"88.0\"},{\"key\":"
 					+ "\"TowerRH\",\"value\":\"86.8\"},{\"key\":\"long\",\"value\":\"\\\"105.18 W\\\"\"},{\"key\":"
 					+ "\"MST\",\"value\":\"00:00\"},{\"key\":\"TowerDryBulbTemp\",\"value\":\"13.316\"},{\"key\":"
-					+ "\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":\"-0.0402521765\"},{\"key\":"
-					+ "\"GlobalCM22\",\"value\":\"-0.037676152399999996\"},{\"key\":\"AvgWindDirection\",\"value\":"
+					+ "\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":\"70.0402521765\"},{\"key\":"
+					+ "\"GlobalCM22\",\"value\":\"21.037676152399999996\"},{\"key\":\"AvgWindDirection\",\"value\":"
 					+ "\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.8Z\"},{\"key\":\"place\",\"value\":"
 					+ "\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\""
-					+ "}]}},{\"row\":{\"entry\":[{\"key\":\"Diffuse\",\"value\":\"-0.005538233499999999\"},{\"key\":"
-					+ "\"AvgWindSpeed\",\"value\":\"0.0\"},{\"key\":\"TowerRH\",\"value\":\"86.9\"},{\"key\":\"long\","
+					+ "}]}},{\"row\":{\"entry\":[{\"key\":\"Diffuse\",\"value\":\"30.005538233499999999\"},{\"key\":"
+					+ "\"AvgWindSpeed\",\"value\":\"44.0\"},{\"key\":\"TowerRH\",\"value\":\"86.9\"},{\"key\":\"long\","
 					+ "\"value\":\"\\\"105.18 W\\\"\"},{\"key\":\"MST\",\"value\":\"00:01\"},{\"key\":\"TowerDryBulbTemp\","
 					+ "\"value\":\"13.406\"},{\"key\":\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":"
-					+ "\"-0.0395396335\"},{\"key\":\"GlobalCM22\",\"value\":\"-0.0369521827\"},{\"key\":\"AvgWindDirection\","
+					+ "\"34.0395396335\"},{\"key\":\"GlobalCM22\",\"value\":\"55.0369521827\"},{\"key\":\"AvgWindDirection\","
 					+ "\"value\":\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.86Z\"},{\"key\":\"place\","
 					+ "\"value\":\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\"}]}}]}]}";
 			
