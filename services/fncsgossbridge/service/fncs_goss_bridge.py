@@ -177,6 +177,7 @@ class GOSSListener(object):
         self.goss_to_fncs_message_queue = Queue()
         self.start_simulation = False
         self.stop_simulation = False
+        self.pause_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
         self.simulation_time = 0
@@ -187,6 +188,8 @@ class GOSSListener(object):
             current_time = 0;
             message['command'] = 'nextTimeStep'
             for current_time in xrange(self.simulation_length):
+                while self.pause_simulation == True:
+                    time.sleep(1)
                 if self.stop_simulation == True:
                     if fncs.is_initialized():
                         fncs.die()
@@ -267,8 +270,20 @@ class GOSSListener(object):
                 _send_simulation_status('CLOSED', message_str, 'INFO')
                 self.stop_simulation = True
                 if fncs.is_initialized():
-                    fncs.finalize()
-
+                    if self.simulation_finished == False:
+                        fncs.die()
+            elif json_msg['command'] == 'pause':
+                if self.pause_simulation == True:
+                    _send_simulation_status('PAUSED', 'The simulation is already paused.', 'WARN')
+                else:
+                    self.pause_simulation = True
+                    _send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
+            elif json_msg['command'] == 'resume':
+                if self.pause_simulation == False:
+                    _send_simulation_status('RUNNING', 'The simulation is already running.', 'WARN')
+                else:
+                    self.pause_simulation = False
+                    _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
 
         except Exception as e:
             message_str = 'Error in command '+str(e)
@@ -741,7 +756,7 @@ def _send_simulation_status(status, message, log_level):
         status_message = {
             "source" : os.path.basename(__file__),
             "processId" : str(simulation_id),
-            "timestamp" : int(time.mktime(t_now.timetuple())),
+            "timestamp" : int(time.mktime(t_now.timetuple()))*1000,
             "processStatus" : status,
             "logMessage" : str(message),
             "logLevel" : log_level,
