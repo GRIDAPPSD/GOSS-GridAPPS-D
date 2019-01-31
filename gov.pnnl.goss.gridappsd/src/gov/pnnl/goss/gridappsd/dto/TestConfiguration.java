@@ -65,7 +65,7 @@ public class TestConfiguration implements Serializable {
 
 	public String subregion_name;
 
-	public String line_name;
+	public String feeder_name;
 	
 	public Boolean logging;
 	
@@ -139,12 +139,12 @@ public class TestConfiguration implements Serializable {
 		this.subregion_name = subregion_name;
 	}
 
-	public String getLine_name() {
-		return line_name;
+	public String getFeeder_name() {
+		return feeder_name;
 	}
 
 	public void setLine_name(String line_name) {
-		this.line_name = line_name;
+		this.feeder_name = line_name;
 	}
 
 	public Boolean getLogging() {

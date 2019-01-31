@@ -64,6 +64,8 @@ public class HistoricalComparison {
 		RequestTimeseriesData request = new RequestTimeseriesData();
 		HashMap<String,String> queryFilter = new HashMap <String,String>();
 		queryFilter.put("hasSimulationId", simulationId);
+		queryFilter.put("startTime", startTime);
+		queryFilter.put("endTime", endTime);
 		request.setQueryMeasurement(RequestType.PROVEN_MEASUREMENT);
 		request.setQueryFilter(queryFilter);
 		
@@ -141,7 +143,7 @@ public class HistoricalComparison {
 
 
 
-	private JsonObject buildOutputObject(String simulationId, JsonObject simOutputObject, String time,
+	public JsonObject buildOutputObject(String simulationId, JsonObject simOutputObject, String time,
 			JsonArray measurements) {
 		simOutputObject.addProperty("timestame", time);
 		simOutputObject.add("measurements", measurements);
@@ -216,19 +218,19 @@ public class HistoricalComparison {
 		return null;
 	}
 	
-	public String getListOfTime(String  simulationId, String expected_output_series){
-		CompareResults compareResults = new CompareResults();
-		Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap("0", expected_output_series);
-		Set<String> keySet = expectedOutputMap.keySet();
-//		return timeSeriesQuery(simulationId,"_e10b535c-79f3-498b-a38f-11d1cc50f3a0", null,null);
-		for (String mrid : keySet) {
-//			String response = query(simulationId, mrid, null,null,null).result.toString();
-			String response = timeSeriesQuery(simulationId, mrid, null,null);
-			if (response.contains("PROVEN_MEASUREMENT"))
-				return response;
-		}
-		return null;
-	}
+//	public String getListOfTime(String  simulationId, String expected_output_series){
+//		CompareResults compareResults = new CompareResults();
+//		Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap("0", expected_output_series);
+//		Set<String> keySet = expectedOutputMap.keySet();
+////		return timeSeriesQuery(simulationId,"_e10b535c-79f3-498b-a38f-11d1cc50f3a0", null,null);
+//		for (String mrid : keySet) {
+////			String response = query(simulationId, mrid, null,null,null).result.toString();
+//			String response = timeSeriesQuery(simulationId, mrid, null,null);
+//			if (response.contains("PROVEN_MEASUREMENT"))
+//				return response;
+//		}
+//		return null;
+//	}
 	
 	public Set<String> getTimesEpoch(String responses) {
 //		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");

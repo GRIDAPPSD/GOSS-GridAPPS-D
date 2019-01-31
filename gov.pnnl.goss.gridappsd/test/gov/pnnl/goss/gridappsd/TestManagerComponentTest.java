@@ -27,6 +27,7 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.dto.FailureEvent;
@@ -68,7 +69,7 @@ public class TestManagerComponentTest {
 	private DataManager dataManager;
 
 	@Mock
-	ProvenTimeSeriesDataManagerImpl provenTimeSeriesDataManager;
+	TimeseriesDataManager provenTimeSeriesDataManager;
 
 	@Mock
 	SimulationManager simulationManager;
@@ -97,7 +98,7 @@ public class TestManagerComponentTest {
 
 		TestManagerImpl testManager = new TestManagerImpl(appManager,clientFactory,
 											configurationManager, simulationManager,
-											logManager);
+											logManager, provenTimeSeriesDataManager);
 		testManager.start();
 
 
@@ -122,12 +123,14 @@ public class TestManagerComponentTest {
 
 		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory,
 											configurationManager, simulationManager,
-											logManager);
+											logManager, provenTimeSeriesDataManager);
 		testManager.start();
-		String path = "./applications/python/exampleTestConfig.json";
+//		String path = "./applications/python/SampleTestConfig.json";
+		String path = "./test/gov/pnnl/goss/gridappsd/SampleTestConfig.json";
 //		/Users/jsimpson/git/adms/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/applications/python/exampleTestConfig.json
 		TestConfiguration testConfig = testManager.loadTestConfig(path);
-		assertEquals(testConfig.getPower_system_configuration(),"ieee8500");
+		System.out.println(testConfig.getFeeder_name());
+		assertEquals(testConfig.getFeeder_name(),"ieee8500");
 	}
 
 	@Test
@@ -140,16 +143,15 @@ public class TestManagerComponentTest {
 
 		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory,
 											configurationManager, simulationManager,
-											logManager);
+											logManager, provenTimeSeriesDataManager);
 		testManager.start();
 //		String path = "./applications/python/exampleTestScript.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/exampleTestScript.json";
 		TestScript testScript = testManager.loadTestScript(path);
-		FailureEvent event = testScript.getEvents().get(0);
+//		FailureEvent event = testScript.getEvents().get(0);
+//		assertNotNull(event);
 
-		assertNotNull(event);
-
-		assertEquals(testScript.name,"sample_app");
+		assertEquals(testScript.name,"VVO");
 	}
 
 	@Test
@@ -193,7 +195,7 @@ public class TestManagerComponentTest {
 //		Assert.assertEquals(o1, o2);
 	}
 
-	@Test
+
 	public void proven(){
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);

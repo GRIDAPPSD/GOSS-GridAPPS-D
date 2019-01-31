@@ -329,8 +329,8 @@ public class CompareResults {
 			 JsonObject jsonObject) {
 
 		TestResults testResults = new TestResults();
-		JsonObject output = jsonObject;
-		String firstKey = getFirstKey(output);
+//		JsonObject output = jsonObject;
+//		String firstKey = getFirstKey(output);
 		
 		Map<String, JsonElement> simOutputMap= getMeasurmentsMap(jsonObject);
 		compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
@@ -527,9 +527,10 @@ public class CompareResults {
 		Map<String, JsonElement> expectedOutputMap = null;
 		if (expectedOutputObj.isJsonObject()) {
 			JsonObject jsonObject = expectedOutputObj.getAsJsonObject();				
-			JsonObject outputs = jsonObject.get("expected_outputs").getAsJsonObject();
-			if(outputs.has(timestamp)){
-				expectedOutputMap = getOutputMap(outputs.get(timestamp).getAsJsonObject());
+			JsonObject output = jsonObject.get("expected_results").getAsJsonObject();
+			if (output.has("output") ) output = output.getAsJsonObject("output");
+			if(output.has(timestamp)){
+				expectedOutputMap = getOutputMap(output.get(timestamp).getAsJsonObject());
 			}else{
 				System.out.println("CompareResults no index for" + timestamp);
 				return null;
