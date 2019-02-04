@@ -575,61 +575,62 @@ def _get_fncs_bus_messages(simulation_id):
                         err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
                         _send_simulation_status('RUNNING', err_msg, 'WARN')
                         #raise RuntimeError(err_msg)
-                    for y in object_property_to_measurement_id.get(x,{}):
-                        measurement = {}
-                        property_name = y["property"]
-                        measurement["measurement_mrid"] = y["measurement_mrid"]
-                        phases = y["phases"]
-                        conducting_equipment_type_str = y["conducting_equipment_type"]
-                        prop_val_str = gld_properties_dict.get(property_name, None)
-                        if prop_val_str == None:
-                            err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
-                            _send_simulation_status('RUNNING', err_msg, 'WARN')
-                            #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
-                        else:
-                            val_str = str(prop_val_str).split(" ")[0]
-                            conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
-                            if conducting_equipment_type == "LinearShuntCompensator":
-                                if property_name in ["shunt_"+phases,"voltage_"+phases]:
-                                    val = complex(val_str)
-                                    (mag,ang_rad) = cmath.polar(val)
-                                    ang_deg = math.degrees(ang_rad)
-                                    measurement["magnitude"] = mag
-                                    measurement["angle"] = ang_deg
-                                else:
-                                    if val_str == "OPEN":
-                                        measurement["value"] = 0
-                                    else:
-                                        measurement["value"] = 1
-                            elif conducting_equipment_type == "PowerTransformer":
-                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                    val = complex(val_str)
-                                    (mag,ang_rad) = cmath.polar(val)
-                                    ang_deg = math.degrees(ang_rad)
-                                    measurement["magnitude"] = mag
-                                    measurement["angle"] = ang_deg
-                                else:
-                                    measurement["value"] = int(val_str)
-                            elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
-                                val = complex(val_str)
-                                (mag,ang_rad) = cmath.polar(val)
-                                ang_deg = math.degrees(ang_rad)
-                                measurement["magnitude"] = mag
-                                measurement["angle"] = ang_deg
-                            elif conducting_equipment_type == "RatioTapChanger":
-                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                    val = complex(val_str)
-                                    (mag,ang_rad) = cmath.polar(val)
-                                    ang_deg = math.degrees(ang_rad)
-                                    measurement["magnitude"] = mag
-                                    measurement["angle"] = ang_deg
-                                else:
-                                    measurement["value"] = int(val_str)
+                    else:
+                        for y in object_property_to_measurement_id.get(x,{}):
+                            measurement = {}
+                            property_name = y["property"]
+                            measurement["measurement_mrid"] = y["measurement_mrid"]
+                            phases = y["phases"]
+                            conducting_equipment_type_str = y["conducting_equipment_type"]
+                            prop_val_str = gld_properties_dict.get(property_name, None)
+                            if prop_val_str == None:
+                                err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
+                                _send_simulation_status('RUNNING', err_msg, 'WARN')
+                                #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                             else:
-                                _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
-                                # Should it raise runtime?
-                            cim_measurements_dict["message"]["measurements"].append(measurement)
+                                val_str = str(prop_val_str).split(" ")[0]
+                                conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
+                                if conducting_equipment_type == "LinearShuntCompensator":
+                                    if property_name in ["shunt_"+phases,"voltage_"+phases]:
+                                        val = complex(val_str)
+                                        (mag,ang_rad) = cmath.polar(val)
+                                        ang_deg = math.degrees(ang_rad)
+                                        measurement["magnitude"] = mag
+                                        measurement["angle"] = ang_deg
+                                    else:
+                                        if val_str == "OPEN":
+                                            measurement["value"] = 0
+                                        else:
+                                            measurement["value"] = 1
+                                elif conducting_equipment_type == "PowerTransformer":
+                                    if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                        val = complex(val_str)
+                                        (mag,ang_rad) = cmath.polar(val)
+                                        ang_deg = math.degrees(ang_rad)
+                                        measurement["magnitude"] = mag
+                                        measurement["angle"] = ang_deg
+                                    else:
+                                        measurement["value"] = int(val_str)
+                                elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
+                                    val = complex(val_str)
+                                    (mag,ang_rad) = cmath.polar(val)
+                                    ang_deg = math.degrees(ang_rad)
+                                    measurement["magnitude"] = mag
+                                    measurement["angle"] = ang_deg
+                                elif conducting_equipment_type == "RatioTapChanger":
+                                    if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                        val = complex(val_str)
+                                        (mag,ang_rad) = cmath.polar(val)
+                                        ang_deg = math.degrees(ang_rad)
+                                        measurement["magnitude"] = mag
+                                        measurement["angle"] = ang_deg
+                                    else:
+                                        measurement["value"] = int(val_str)
+                                else:
+                                    _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
+                                    raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
+                                    # Should it raise runtime?
+                                cim_measurements_dict["message"]["measurements"].append(measurement)
                 cim_output = cim_measurements_dict
             else:
                 err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
