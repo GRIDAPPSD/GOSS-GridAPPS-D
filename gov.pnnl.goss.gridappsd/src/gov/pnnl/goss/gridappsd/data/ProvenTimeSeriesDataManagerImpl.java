@@ -54,6 +54,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	String requestId = null;
 	Gson  gson = new Gson();
 	String provenUri = null;
+        String provenQueryUri = null;
+        String provenWriteUri = null;
+
 	ProvenProducer provenProducer = new ProvenProducer();
 	
 	@Start
@@ -67,7 +70,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
-		
+                provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
+                provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);		
 		try{
 		
 			Credentials credentials = new UsernamePasswordCredentials(
@@ -119,7 +123,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		provenProducer.restProducer(provenUri, null, null);
+		provenProducer.restProducer(provenQueryUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		
@@ -138,20 +142,26 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	
 	@Override
 	public void storeSimulationOutput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationOutput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+	       try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 	
 	
 	
 	@Override
 	public void storeSimulationInput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+               try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 
 
