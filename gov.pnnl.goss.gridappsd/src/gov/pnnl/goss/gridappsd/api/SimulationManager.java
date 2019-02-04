@@ -39,6 +39,8 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.api;
 
+import java.util.Map;
+
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
@@ -54,9 +56,17 @@ public interface SimulationManager {
 	 * This method is called by Process Manager to start a simulation
 	 * @param simulationId
 	 * @param simulationFile
-	 * @param simulationConfig	
+	 * @param simulationConfig	Map<String, Object> simulationContext
 	 */
-	void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext);
+	void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
 	
 	SimulationContext getSimulationContextForId(String simulationId);
+
+	void endSimulation(String simulationId);
+
+	void pauseSimulation(String simulationId);
+
+	void resumeSimulation(String simulationId);
+	
+	void startServiceDependencies(SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
 }

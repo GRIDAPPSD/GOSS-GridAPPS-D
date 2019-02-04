@@ -19,6 +19,7 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
+import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -53,6 +54,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	String requestId = null;
 	Gson  gson = new Gson();
 	String provenUri = null;
+        String provenQueryUri = null;
+        String provenWriteUri = null;
+
 	ProvenProducer provenProducer = new ProvenProducer();
 	
 	@Start
@@ -66,7 +70,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
-		
+                provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
+                provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);		
 		try{
 		
 			Credentials credentials = new UsernamePasswordCredentials(
@@ -116,46 +121,47 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	}
 	
 	@Override
-	public String query(RequestTimeseriesData requestTimeseriesData) throws Exception {
+	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		provenProducer.restProducer(provenUri, null, null);
+		provenProducer.restProducer(provenQueryUri, null, null);
 		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		
-		
-		QueryFilter queryFilter = new QueryFilter();
-		
-		if(requestTimeseriesData.getSimulationId()!=null)
-			queryFilter.hasSimulationId = requestTimeseriesData.getSimulationId();
-		if(requestTimeseriesData.getMrid()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getMrid();
-		if(requestTimeseriesData.getStartTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getStartTime();
-		if(requestTimeseriesData.getEndTime()!=null)
-			queryFilter.hasMrid = requestTimeseriesData.getEndTime();
-		ProvenQuery provenQuery = new ProvenQuery();
-		provenQuery.queryFilter = queryFilter;
-		
-		ProvenResponse response = provenProducer.sendMessage(provenQuery.toString(), requestId);
-		return response.toString();
+		String origFormat = "PROVEN_"+requestTimeseriesData.getQueryMeasurement().toString();
+		String responseFormat = requestTimeseriesData.getResponseFormat();
+		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
+		if(converter!=null){
+			StringWriter sw = new StringWriter();
+			converter.convert(response.data.toString(), new PrintWriter(sw));
+			return sw.toString();
+		}
+				
+		return response.data;
 		
 	}
 	
 	@Override
 	public void storeSimulationOutput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationOutput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+	       try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 	
 	
 	
 	@Override
 	public void storeSimulationInput(Serializable message) throws Exception {
-		
-		provenProducer.restProducer(provenUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "SimulationInput", this.getClass().getSimpleName(), keywords);
-		provenProducer.sendMessage(message.toString(), requestId);
+               try {
+                      provenProducer.restProducer(provenWriteUri, null, null);
+                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 	}
 
 
@@ -163,31 +169,3 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 }
 
-
-class ProvenQuery implements Serializable{
-	
-	String queryMeasurement = "simulation";
-	String queryType = "time-series"; 
-	QueryFilter queryFilter;	
-	
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-
-}
-
-class QueryFilter implements Serializable{
-	 	String hasSimulationId;
-	    String hasSimulationMessageType;
-	    String hasMrid;
-	    String startTime;
-	    String endTime;
-	    
-	    @Override
-		public String toString() {
-			Gson  gson = new Gson();
-			return gson.toJson(this);
-		}
-}

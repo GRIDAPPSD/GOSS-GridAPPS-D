@@ -48,11 +48,19 @@ public class RequestSimulation implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
+	public enum SimulationRequestType {
+		   NEW, PAUSE, RESUME, STOP
+		}
+	
 	public PowerSystemConfig power_system_config;
 
 	public SimulationConfig simulation_config;
 	
 	public ApplicationConfig application_config;
+	
+	public SimulationRequestType simulation_request_type = SimulationRequestType.NEW;
+	
+	public String simulation_id;  //used for pause/resume/stop requests
 	
 	public RequestSimulation(){
 		
@@ -86,6 +94,23 @@ public class RequestSimulation implements Serializable {
 
 	public void setApplication_config(ApplicationConfig application_config) {
 		this.application_config = application_config;
+	}
+
+	public SimulationRequestType getSimulation_request_type() {
+		return simulation_request_type;
+	}
+
+	public void setSimulation_request_type(SimulationRequestType simulation_request_type) {
+		this.simulation_request_type = simulation_request_type;
+	}
+
+	
+	public String getSimulation_id() {
+		return simulation_id;
+	}
+
+	public void setSimulation_id(String simulation_id) {
+		this.simulation_id = simulation_id;
 	}
 
 	@Override

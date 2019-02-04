@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,92 +36,30 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
 
-import java.text.ParseException;
-import java.util.List;
+import com.google.gson.Gson;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.data.handlers.GridLabDDataHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import pnnl.goss.core.server.DataSourceRegistry;
-
-@RunWith(MockitoJUnitRunner.class)
-public class GridLabDDataHandlerTests {
-	final String EXPECTED_DESCRIPTION = "Generates GridLABD config files for simulation";
-	@Mock
-	DataSourceRegistry registry;
+public class RuleSettings {
+	public String name;
 	
-	@Mock
-	DataManager dm;
+	public int port;
 	
-	@Mock
-	ConfigurationManager cm;
-	@Mock
-	CIMImporter cimImporter; 
+	public String topic;
 	
-	@Captor
-	ArgumentCaptor<String> argCaptor;
-	@Captor
-	ArgumentCaptor<Long> argLongCaptor;
-	@Captor
-	ArgumentCaptor<LogLevel> argLogLevelCaptor;
-	@Captor
-	ArgumentCaptor<ProcessStatus> argProcessStatusCaptor;
-	@Captor
-	ArgumentCaptor<Object> argObjectCaptor;
-	@Captor
-	ArgumentCaptor<Class<?>> argClassCaptor;
-	
-	
-	
-	@Test
-	public void handlersRegisteredWhen_startCalled() throws ParseException{
-		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
-		handler.start();
-		//verify handlers are registered for String.class and RequestSiulation.class
-		Mockito.verify(dm, Mockito.times(2)).registerHandler(Mockito.any(), argClassCaptor.capture());
-	}	
-
-	
-	
-	
-	
-	@Test
-	public void verifyDescription() throws ParseException{
-		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
-		String desc = handler.getDescription();
-		assertEquals(desc, EXPECTED_DESCRIPTION);
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-	@Test
-	public void verifyRequestTypes() throws ParseException{
-		GridLabDDataHandler handler = new GridLabDDataHandler(registry, dm, cm, cimImporter);
-		List<Class<?>> types = handler.getSupportedRequestTypes();
-		assertEquals(2, types.size());
-		assertTrue(types.contains(String.class));
-		assertTrue(types.contains(RequestSimulation.class));
+	public static TestScript parse(String jsonString){
+		Gson  gson = new Gson();
+		TestScript obj = gson.fromJson(jsonString, TestScript.class);
+		if(obj.name==null)
+			throw new RuntimeException("Expected attribute name not found");
+		return obj;
 	}
-	
-	
-	
-	
 
 }

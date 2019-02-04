@@ -40,10 +40,14 @@
 package gov.pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -61,9 +65,14 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
+import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
+import pnnl.goss.core.DataResponse;
 
 
 @Component
@@ -78,6 +87,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	private volatile PowergridModelDataManager powergridModelManager;
 	@ServiceDependency 
 	volatile LogManager logManager;
+	@ServiceDependency 
+	volatile DataManager dataManager;
 	
 	
 	public static final String TYPENAME = "GridLAB-D All";
@@ -86,6 +97,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String ZFRACTION = "z_fraction";
 	public static final String IFRACTION = "i_fraction";
 	public static final String PFRACTION = "p_fraction";
+	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
+	public static final String USEHOUSES = "use_houses";
 	public static final String SCHEDULENAME = "schedule_name";
 	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	public static final String MODELID = "model_id";
@@ -95,6 +108,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String SIMULATIONID = "simulation_id";
 	public static final String SIMULATIONBROKERHOST = "simulation_broker_host";
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
+	public static final String STARTTIME_FILTER = "startTime";
+	public static final String ENDTIME_FILTER = "endTime";
+	public static final int TIMEFILTER_YEAR = 2013;
 	
 	public static final String CONFIGTARGET = "glm";
 	
@@ -103,12 +119,17 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
+	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
+	
+	final double sqrt3 = Math.sqrt(3);
+
 	
 	public GLDAllConfigurationHandler() {
 	}
 	 
 	public GLDAllConfigurationHandler(LogManager logManager, DataManager dataManager) {
-
+		this.logManager = logManager;
+		this.dataManager = dataManager;
 	}
 	
 	
@@ -150,6 +171,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bWantZip = true;
 		}
 		
+		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
+				
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
@@ -171,6 +194,28 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(bgHost==null || bgHost.trim().length()==0){
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
 		}
+		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		int simId = -1;
+		if(simulationID==null || simulationID.trim().length()==0){
+			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONID);
+		}
+		try{
+			simId = new Integer(simulationID);
+		}catch (Exception e) {
+			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+		}
+		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
+		if(simulationStartTime<0){
+			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
+		}
+		long simulationDuration = GridAppsDConstants.getLongProperty(parameters, SIMULATIONDURATION, 0);
+		if(simulationDuration==0){
+			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONDURATION);
+		}
+		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
 		
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
@@ -181,16 +226,46 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String fRoot = dir.getAbsolutePath()+File.separator+CIM2GLM_PREFIX;
 		
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		//TODO
+		boolean useClimate = true;//GridAppsDConstants.getBooleanProperty(parameters, USECLIMATE, false);
+		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, zFraction, iFraction, pFraction);
-
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
 		String tempDataPath = dir.getAbsolutePath();
+		
+		//If use climate, then generate gridlabd weather data file
+		if(useClimate){
+			RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
+			weatherRequest.setQueryMeasurement(RequestType.weather);
+			weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
+			Map<String, String> queryFilter = new HashMap<String, String>();
+
+			Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+			//For both the start and end time, set the year to the one that currently has data in the database
+			//TODO either we need more weather data in the database, or make this more flexible wehre we only have to search by month/day
+			c.setTime(new Date(simulationStartTime*1000));
+			c.set(Calendar.YEAR, TIMEFILTER_YEAR);
+			//Convert to UTC time until the input time is correct
+			////TODO this will be changed in the future
+			c.add(Calendar.HOUR, 6);
+			queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
+		        c.add(Calendar.SECOND, new Long(simulationDuration).intValue());	
+			queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
+			weatherRequest.setQueryFilter(queryFilter);
+			DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
+			File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
+			FileOutputStream fout = new FileOutputStream(weatherFile);
+			fout.write(resp.getData().toString().getBytes());
+			fout.flush();
+			fout.close();
+		}
 		
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
 		PrintWriter startupFileWriter = new PrintWriter(startupFile);
-		generateStartupFile(parameters, tempDataPath, startupFileWriter, modelId, processId, username);
+		generateStartupFile(parameters, tempDataPath, startupFileWriter, modelId, processId, username, useClimate);
 		
 		//Generate outputs file
 		PrintWriter simulationOutputs = new PrintWriter(tempDataPath+File.separator+MEASUREMENTOUTPUTS_FILENAME);
@@ -201,6 +276,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 		
+		
 		out.write(dir.getAbsolutePath());
 		
 		logRunning("Finished generating all GridLAB-D configuration files.", processId, username, logManager);
@@ -208,7 +284,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	}
 	
 	
-	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username) throws Exception{
+	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate) throws Exception{
 		logRunning("Generating startup file for GridLAB-D configuration using parameters: "+parameters, processId, username, logManager);
 
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
@@ -221,8 +297,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logError("No "+SIMULATIONBROKERPORT+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONBROKERPORT);
 		}
-		String simulationStartTime = GridAppsDConstants.getStringProperty(parameters, SIMULATIONSTARTTIME, null);
-		if(simulationStartTime==null || simulationStartTime.trim().length()==0){
+		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
+		if(simulationStartTime<0){
 			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
 		}
@@ -243,28 +319,34 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		
-		String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
-				+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
-				+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
-				+ "?s c:ConductingEquipment.BaseVoltage ?lev."
-				+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
-				+ "} ORDER by ?vnom";
+		double nominalv = 0;
 		
-		ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
-		QuerySolution binding = rs.nextSolution();
-		String vnom = ((Literal) binding.get("vnom")).toString();
-		double root = Math.sqrt(3);
-		double vnomdbl = new Double(vnom).doubleValue();
-		double nominalv = vnomdbl/root;
-		//TODO send error and fail in vnom not found in model or bad format
 		
+		
+		try{
+			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
+					+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
+					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
+					+ "?s c:ConductingEquipment.BaseVoltage ?lev."
+					+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
+					+ "} ORDER by ?vnom";
+			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
+			QuerySolution binding = rs.nextSolution();
+			String vnom = ((Literal) binding.get("vnom")).toString();
+			nominalv = new Double(vnom).doubleValue()/sqrt3;
+		}catch (Exception e) {
+			//send error and fail in vnom not found in model or bad format
+			logError("Could not find valid nominal voltage for feeder:"+modelId, processId, username, logManager);
+			throw new Exception("Could not find valid nominal voltage for feeder:"+modelId);
+		}
 		//add an include reference to the base glm 
 				String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
 				String brokerLocation = simulationBrokerHost;
 				String brokerPort = String.valueOf(simulationBrokerPort);
 				
 				Calendar c = Calendar.getInstance();
-				Date startTime = GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
+				simulationStartTime = (long) simulationStartTime;
+				Date startTime = new Date(simulationStartTime * 1000);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 				c.setTime(startTime);
 				c.add(Calendar.SECOND, new Integer(simulationDuration));
 				Date stopTime = c.getTime();
@@ -275,6 +357,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("     starttime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(startTime)+"';");
 				startupFileWriter.println("     stoptime '"+GridAppsDConstants.SDF_GLM_CLOCK.format(stopTime)+"';");
 				startupFileWriter.println("}");
+				
+				startupFileWriter.println("#set maximum_synctime=3600");
 				
 				startupFileWriter.println("#set suppress_repeat_messages=1");
 				startupFileWriter.println("#set relax_naming_rules=1");
@@ -288,7 +372,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("     line_capacitance TRUE;");
 				startupFileWriter.println("     solver_method "+solverMethod+";");
 				startupFileWriter.println("}");
-				
+				if(useClimate) {
+					startupFileWriter.println("module climate;");
+				}
+
 				startupFileWriter.println("object fncs_msg {");
 				startupFileWriter.println("     name "+simulationID+";");
 				startupFileWriter.println("     message_type JSON;");
@@ -308,6 +395,18 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("         interval 1;");
 				startupFileWriter.println("         limit 120;");
 				startupFileWriter.println("}");*/
+				
+				if(useClimate) {
+					startupFileWriter.println("object csv_reader {");
+					startupFileWriter.println(" name CSVREADER;");
+					startupFileWriter.println(" filename \""+WEATHER_FILENAME+"\";");
+					startupFileWriter.println("}");
+					startupFileWriter.println("object climate {");
+					startupFileWriter.println(" name \"Weather Data\";");
+					startupFileWriter.println(" tmyfile \""+WEATHER_FILENAME+"\";");
+					startupFileWriter.println(" reader CSVREADER;");
+					startupFileWriter.println("}; ");
+				}
 				if(scheduleName!=null && scheduleName.trim().length()>0){
 					startupFileWriter.println("class player {");
 					startupFileWriter.println("	double value;");

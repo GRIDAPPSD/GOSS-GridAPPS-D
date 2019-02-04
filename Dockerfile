@@ -1,15 +1,14 @@
-ARG GRIDAPPSD_BASE_VERSION=:v1.0
+ARG GRIDAPPSD_BASE_VERSION=:master
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
   && cd gridappsd-python \
-  && python setup.py sdist \
-  && pip3 install dist/gridappsd-1.0.tar.gz \
-  && pip install dist/gridappsd-1.0.tar.gz \
+  && pip3 install . \
+  && pip install . \
   && rm -rf /root/.cache/pip/wheels
 
 # Copy initial applications and services into the container.
@@ -18,12 +17,14 @@ RUN cd ${TEMP_DIR} \
 #       mount other items specifically in the /gridappsd/appplication
 #       and/or /gridappsd/services location in order for gridappsd
 #       to be able to "see" and ultimately start them.
-COPY ./applications /gridappsd/applications
 COPY ./services /gridappsd/services
 COPY ./gov.pnnl.goss.gridappsd/conf /gridappsd/conf
 COPY ./entrypoint.sh /gridappsd/entrypoint.sh
 COPY ./requirements.txt /gridappsd/requirements.txt
 RUN chmod +x /gridappsd/entrypoint.sh
+
+# Add the applications directory which is necessary for gridappsd to operate.
+RUN if [ ! -d /gridappsd/applications ] ; then  mkdir /gridappsd/applications ; fi 
 
 COPY ./run-gridappsd.sh /gridappsd/run-gridappsd.sh
 RUN chmod +x /gridappsd/run-gridappsd.sh
@@ -35,8 +36,6 @@ COPY ./opendss/liblinenoise.so /usr/local/lib
 RUN chmod +x /usr/local/bin/opendsscmd && \
   ldconfig
 
-# Add mysql configuration 
-RUN echo "[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql" > /root/.my.cnf
 
 # This is the location that is built using the ./gradlew export command from
 # the command line.  When building this image we must make sure to have run that
@@ -54,6 +53,16 @@ EXPOSE 61616 61613 61614 8000-9000
 WORKDIR /gridappsd
 
 RUN echo $TIMESTAMP > /gridappsd/dockerbuildversion.txt
+
+# Add gridappsd user , sudoers, mysql configuration, log directory
+RUN useradd -m gridappsd \
+    && if [ -d /etc/sudoers.d ] ; then echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd ; fi \
+    && echo "[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql" > /home/gridappsd/.my.cnf \
+    && chown gridappsd:gridappsd /home/gridappsd/.my.cnf \
+    && mkdir /gridappsd/log \
+    && chown gridappsd:gridappsd /gridappsd/log
+
+USER gridappsd
 
 ENTRYPOINT ["/gridappsd/entrypoint.sh"]
 CMD ["gridappsd"]

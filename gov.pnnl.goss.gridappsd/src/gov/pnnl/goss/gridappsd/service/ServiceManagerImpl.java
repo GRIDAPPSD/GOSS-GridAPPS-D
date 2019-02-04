@@ -52,6 +52,7 @@ import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
@@ -68,6 +69,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo.ServiceType;
 import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
@@ -235,8 +237,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions, Map<String, Object> simulationContext) {
+	public String startServiceForSimultion(String serviceId, String runtimeOptions,  Map<String, Object> simulationContext) {
 		
+		if(simulationId == null)
+			this.simulationId = simulationContext.get("simulationId").toString();
+				
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
 		ServiceInfo serviceInfo = services.get(serviceId);
@@ -435,6 +440,11 @@ public class ServiceManagerImpl implements ServiceManager{
 		instanceId = instanceId.trim();
 		ServiceInstance instance = serviceInstances.get(instanceId);
 		instance.getProcess().destroy();
+		try {
+			instance.getProcess().waitFor(10, TimeUnit.MILLISECONDS);
+		} catch(InterruptedException ex) {
+			instance.getProcess().destroyForcibly();
+		}
 		serviceInstances.remove(instanceId); 
 	}
 

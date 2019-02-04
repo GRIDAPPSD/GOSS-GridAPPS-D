@@ -149,6 +149,37 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		
 
 	}
+	
+	@Override
+	public void storeExpectedResults(String test_id, String processId, long simulation_time,
+			String mrid, String property, String expected, String actual) {
+		
+		if(connection!=null){
+			try {
+				
+				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?,?)");
+				preparedStatement.setString(1, test_id);
+				preparedStatement.setString(2, processId);
+				preparedStatement.setString(3, mrid);
+				preparedStatement.setString(4, property);
+				preparedStatement.setString(5, expected);
+				preparedStatement.setString(6, actual);
+				preparedStatement.setTimestamp(7, new Timestamp(simulation_time));
+				
+				preparedStatement.executeUpdate();
+				
+			} catch (DataTruncation e) {
+				log.error("Error while storing log:");
+				log.error("error = " + e.getMessage());
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else {
+			//Need to log a warning to file, that the connection did not exist
+			log.warn("Mysql connection not initialized for store");
+		}
+
+	}
 
 	@Override
 	public Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,
@@ -171,7 +202,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 			boolean where = false;
 			
 			if(source!=null){
-				queryString+="source=\'"+source+"\'";
+				queryString+=" source=\'"+source+"\'";
 				where = true;
 			}
 				
@@ -243,6 +274,34 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		return null;
 
 	}
+	
+
+	@Override
+	public Serializable query(String queryString){
+		if(connection==null){
+			try {
+				connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		if(connection!=null){
+			try{
+				preparedStatement = connection.prepareStatement(queryString);
+				ResultSet rs = preparedStatement.executeQuery();
+				return this.getJSONFromResultSet(rs);
+		}catch (SQLException e) {
+			e.printStackTrace();
+		}
+		} else {
+			//Need a way to log warning to file that connection does not exist
+			log.warn("Mysql connection not initialized for query");
+		}	
+		
+		return null;
+	}
 
 	@Override
 	public Serializable handle(Serializable requestContent, String processId,
@@ -255,12 +314,15 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		else 
 			 request = RequestLogMessage.parse(requestContent.toString());
 		
-		return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
+		if(request.getQuery()!=null)
+			return this.query(request.getQuery());
+		else
+			return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
 
 	}
 	
 	public Serializable getJSONFromResultSet(ResultSet rs) {
-	    List list = new ArrayList();
+	    List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
 	    if(rs!=null)
 	    {
 	        try {

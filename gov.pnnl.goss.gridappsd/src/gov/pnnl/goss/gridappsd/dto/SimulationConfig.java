@@ -45,6 +45,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 public class SimulationConfig  implements Serializable {
+	private static final long serialVersionUID = -2995486912804104569L;
+
 	public static final int DEFAULT_SIMULATION_BROKER_PORT = 5570;
 	public static final String DEFAULT_SIMULATION_BROKER_LOCATION = "127.0.0.1";
 	
@@ -58,12 +60,11 @@ public class SimulationConfig  implements Serializable {
 	public String simulation_name;
 	//??
 	public String simulator;
-	//time that you want the simulation to start, expected format yyyy-MM-dd HH:mm:ss 
-	public String start_time;
-	//frequency to send timesteps in simulation (milliseconds), default is 1000
-	public int timestep_frequency = 1000;
-	//frequency to send timesteps in simulation (milliseconds), default is 1000
-	public int timestep_increment = 1000;
+	//time that you want the simulation to start, expected epoch time
+	public long start_time;
+	
+	//Slow simulator down to realtime if true.  If false it will run as fast as the simulator allows
+	public boolean run_realtime = true;
 
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
 	public SimulationOutput simulation_output = new SimulationOutput();
@@ -106,10 +107,10 @@ public class SimulationConfig  implements Serializable {
 	public void setSimulator(String simulator) {
 		this.simulator = simulator;
 	}
-	public String getStart_time() {
+	public long getStart_time() {
 		return start_time;
 	}
-	public void setStart_time(String start_time) {
+	public void setStart_time(long start_time) {
 		this.start_time = start_time;
 	}
 	public int getSimulation_broker_port() {
@@ -133,22 +134,15 @@ public class SimulationConfig  implements Serializable {
 	//getting rid of this for now, only 1 simulation at once
 //	public String[] simulator_name;
 
-	
+	public boolean isRun_realtime() {
+		return run_realtime;
+	}
+	public void setRun_realtime(boolean run_realtime) {
+		this.run_realtime = run_realtime;
+	}
 	
 	public SimulationOutput getSimulation_output() {
 		return simulation_output;
-	}
-	public int getTimestep_frequency() {
-		return timestep_frequency;
-	}
-	public int getTimestep_increment() {
-		return timestep_increment;
-	}
-	public void setTimestep_increment(int timestep_increment) {
-		this.timestep_increment = timestep_increment;
-	}
-	public void setTimestep_frequency(int timestep_frequency) {
-		this.timestep_frequency = timestep_frequency;
 	}
 	public void setSimulation_output(SimulationOutput simulation_output) {
 		this.simulation_output = simulation_output;

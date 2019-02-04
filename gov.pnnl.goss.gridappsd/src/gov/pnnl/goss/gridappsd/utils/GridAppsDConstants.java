@@ -44,6 +44,7 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -69,8 +70,16 @@ public class GridAppsDConstants {
 	public static final String topic_requestData = topic_process_prefix+".request.data";
 	public static final String topic_requestConfig = topic_process_prefix+".request.config";
 	public static final String topic_requestApp = topic_process_prefix+".request.app";
+	public static final String topic_app_register_remote = topic_requestApp+".remote.register";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
 	public static final String topic_requestPlatformStatus = topic_process_prefix+".request.status.platform";
+	
+	// Remote Application topics
+	public static final String topic_remoteapp_prefix = topic_prefix+".remoteapp";
+	public static final String topic_remoteapp_heartbeat = topic_remoteapp_prefix+".heartbeat";
+	public static final String topic_remoteapp_start = topic_remoteapp_prefix+".start";
+	public static final String topic_remoteapp_stop = topic_remoteapp_prefix+".stop";
+	public static final String topic_remoteapp_status = topic_remoteapp_prefix+".status";
 	
 	
 	public static final String topic_requestListAppsWithInstances = "goss.gridappsd.process.request.list.apps";
@@ -138,6 +147,8 @@ public class GridAppsDConstants {
 	public static final String SERVICES_PATH = "services.path";
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
 	public static final String PROVEN_PATH = "proven.path";
+        public static final String PROVEN_WRITE_PATH = "proven.write.path";
+        public static final String PROVEN_QUERY_PATH = "proven.query.path";
 
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -163,8 +174,23 @@ public class GridAppsDConstants {
 		System.out.println(props);
 		if(props.containsKey(keyName)){
 			String val = props.getProperty(keyName);
-			System.out.println("GOT "+val+" for "+keyName);
 			return new Double(val).doubleValue();
+		}
+		
+		return defaultValue;
+	}
+	/**
+	 * Helper method to get boolean value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static boolean getBooleanProperty(Properties props, String keyName, boolean defaultValue){
+		System.out.println(props);
+		if(props.containsKey(keyName)){
+			String val = props.getProperty(keyName);
+			return new Boolean(val).booleanValue();
 		}
 		
 		return defaultValue;
@@ -180,6 +206,33 @@ public class GridAppsDConstants {
 	public static String getStringProperty(Properties props, String keyName, String defaultValue){
 		if(props.containsKey(keyName)){
 			return props.getProperty(keyName);
+		}
+		
+		return defaultValue;
+	}
+	
+	
+	/**
+	 * Helper method to get String value from properties, if not found returns default
+	 * @param props
+	 * @param keyName
+	 * @param defaultValue
+	 * @return
+	 */
+	public static long getLongProperty(Properties props, String keyName, long defaultValue){
+		
+		if(props.containsKey(keyName)){
+			Object val = props.get(keyName);
+			if(val instanceof Long){
+				return ((Long)val).longValue();
+			} else if (val instanceof Integer){
+				return ((Integer)val).longValue();
+			} else if (val instanceof String){
+				return new Long((String)val).longValue();
+			} else {
+				throw new RuntimeException("Unrecognized type when reading "+keyName+", for parameter value "+val.getClass());
+			}
+//			return new Long(props.getProperty(keyName)).longValue();
 		}
 		
 		return defaultValue;

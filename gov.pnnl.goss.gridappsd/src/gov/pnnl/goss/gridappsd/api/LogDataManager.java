@@ -51,4 +51,9 @@ public interface LogDataManager {
 	
 	Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status, String username);
 	
+	Serializable query(String queryString);
+
+	void storeExpectedResults(String test_id, String processId, long simulation_time, String mrid, String property,
+			String expected, String actual);
+	
 }

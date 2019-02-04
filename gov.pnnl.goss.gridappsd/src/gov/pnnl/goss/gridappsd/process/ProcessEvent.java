@@ -49,8 +49,10 @@ import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -125,10 +127,50 @@ public class ProcessEvent implements GossResponseEvent {
 		try{ 
 
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
-				client.publish(event.getReplyDestination(), processId);
-				//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
-				newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
+				//Parse simluation request
+				Serializable request;
+				if (message instanceof DataResponse){
+					request = ((DataResponse)message).getData();
+				} else {
+					request = message;
+				}
 
+				RequestSimulation simRequest = null;
+				if(request instanceof ConfigurationRequest){
+					simRequest = ((RequestSimulation)request);
+				} else{
+					if(request!=null){
+						//make sure it doesn't fail if request is null, although it should never be null
+						try{
+							simRequest = RequestSimulation.parse(request.toString());
+						}catch(JsonSyntaxException e){
+							e.printStackTrace();
+							//TODO log error
+							sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+						}
+					} else {
+						sendError(client, event.getReplyDestination(), "Simulation request is null", processId);
+					}
+				}
+				if(simRequest!=null){
+					//if new simulation		
+					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
+						client.publish(event.getReplyDestination(), processId);
+						//TODO also verify that we have the correct sub-configurations as part of the request
+						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
+						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
+					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
+						simulationManager.pauseSimulation(simRequest.getSimulation_id());
+					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play
+						simulationManager.resumeSimulation(simRequest.getSimulation_id());
+					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.STOP)) { //if stop
+						simulationManager.endSimulation(simRequest.getSimulation_id());
+					} else{
+						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId);
+					}
+				} else {
+					sendError(client, event.getReplyDestination(), "Simulation request could not be parsed", processId);
+				}
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 				appManager.process(processId, event, message);
 
@@ -207,7 +249,6 @@ public class ProcessEvent implements GossResponseEvent {
 
 
 			} else if(event.getDestination().contains("log")){
-				System.out.println("LOG CLASS "+message.getClass());
 				Serializable request;
 				if (message instanceof DataResponse){
 					request = ((DataResponse)message).getData();
@@ -237,6 +278,7 @@ public class ProcessEvent implements GossResponseEvent {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			this.error(processId,sw.toString());
+			sendError(client, event.getReplyDestination(), sw.toString(), processId);
 		}
 	}
 
