@@ -909,7 +909,10 @@ def _create_cim_object_map(map_file=None):
                     elif "PowerElectronicsConnection" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
-                            property_name = "measured_power_" + phases;
+                            if phases in ["1","2"]:
+                                property_name = "indiv_measured_power_" + phases;
+                            else:
+                                property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
                             object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
