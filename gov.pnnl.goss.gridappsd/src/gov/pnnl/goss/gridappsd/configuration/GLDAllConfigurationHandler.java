@@ -259,16 +259,25 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
 				weatherRequest.setQueryFilter(queryFilter);
 				DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
-				File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
-				FileOutputStream fout = new FileOutputStream(weatherFile);
-				fout.write(resp.getData().toString().getBytes());
-				fout.flush();
-				fout.close();
+				if(resp.getData()==null){
+					useClimate = false;
+					throw new Exception("No weather data in time series data store. Setting useClimate = false.");
+				}
+				else{
+					File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
+					FileOutputStream fout = new FileOutputStream(weatherFile);
+					fout.write(resp.getData().toString().getBytes());
+					fout.flush();
+					fout.close();
+				}
 			}
 		} catch (JsonSyntaxException e) {
 			logRunning("No weather data was found in proven. Running Simulation without weather data.",
 					processId, username, logManager, LogLevel.WARN);
 			useClimate = false;
+		}catch (Exception e) {
+			logRunning(e.getMessage(),
+					processId, username, logManager, LogLevel.WARN);
 		}
 		
 		//Generate startup file
