@@ -87,7 +87,6 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	@Override
 	public void convert(String inputContent, PrintWriter outputContent) throws Exception {
 		boolean headerPrinted = false;
-		
 		TimeSeriesResult resultObj = TimeSeriesResult.parse(inputContent);
 		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
 			if(!headerPrinted){
@@ -111,7 +110,6 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 			}
 			convertRecord(record, outputContent);
 		}
-
 	}
 
 	protected void printGLDHeader(TimeSeriesMeasurementResult record, PrintWriter outputContent){

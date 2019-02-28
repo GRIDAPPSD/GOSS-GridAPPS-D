@@ -58,6 +58,8 @@ import org.apache.jena.rdf.model.Literal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonSyntaxException;
+
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
@@ -69,6 +71,7 @@ import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
@@ -236,30 +239,45 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String tempDataPath = dir.getAbsolutePath();
 		
 		//If use climate, then generate gridlabd weather data file
-		if(useClimate){
-			RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
-			weatherRequest.setQueryMeasurement(RequestType.weather);
-			weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
-			Map<String, String> queryFilter = new HashMap<String, String>();
-
-			Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-			//For both the start and end time, set the year to the one that currently has data in the database
-			//TODO either we need more weather data in the database, or make this more flexible wehre we only have to search by month/day
-			c.setTime(new Date(simulationStartTime*1000));
-			c.set(Calendar.YEAR, TIMEFILTER_YEAR);
-			//Convert to UTC time until the input time is correct
-			////TODO this will be changed in the future
-			c.add(Calendar.HOUR, 6);
-			queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
-		        c.add(Calendar.SECOND, new Long(simulationDuration).intValue());	
-			queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
-			weatherRequest.setQueryFilter(queryFilter);
-			DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
-			File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
-			FileOutputStream fout = new FileOutputStream(weatherFile);
-			fout.write(resp.getData().toString().getBytes());
-			fout.flush();
-			fout.close();
+		try {
+			if(useClimate){
+				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
+				weatherRequest.setQueryMeasurement(RequestType.weather);
+				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
+				Map<String, String> queryFilter = new HashMap<String, String>();
+	
+				Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+				//For both the start and end time, set the year to the one that currently has data in the database
+				//TODO either we need more weather data in the database, or make this more flexible wehre we only have to search by month/day
+				c.setTime(new Date(simulationStartTime*1000));
+				c.set(Calendar.YEAR, TIMEFILTER_YEAR);
+				//Convert to UTC time until the input time is correct
+				////TODO this will be changed in the future
+				c.add(Calendar.HOUR, 6);
+				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
+			        c.add(Calendar.SECOND, new Long(simulationDuration).intValue());	
+				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
+				weatherRequest.setQueryFilter(queryFilter);
+				DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
+				if(resp.getData()==null){
+					useClimate = false;
+					throw new Exception("No weather data in time series data store. Setting useClimate = false.");
+				}
+				else{
+					File weatherFile = new File(directory+File.separator+WEATHER_FILENAME);
+					FileOutputStream fout = new FileOutputStream(weatherFile);
+					fout.write(resp.getData().toString().getBytes());
+					fout.flush();
+					fout.close();
+				}
+			}
+		} catch (JsonSyntaxException e) {
+			logRunning("No weather data was found in proven. Running Simulation without weather data.",
+					processId, username, logManager, LogLevel.WARN);
+			useClimate = false;
+		}catch (Exception e) {
+			logRunning(e.getMessage(),
+					processId, username, logManager, LogLevel.WARN);
 		}
 		
 		//Generate startup file
