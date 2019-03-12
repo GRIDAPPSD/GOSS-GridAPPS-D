@@ -27,12 +27,14 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.testmanager.TestManagerQueryFactory;
 import gov.pnnl.goss.gridappsd.testmanager.TestResultSeries;
 import gov.pnnl.goss.gridappsd.testmanager.TestResults;
 import pnnl.goss.core.Client;
@@ -59,7 +61,10 @@ public class CompareResultsTest {
 	SimulationManager simulationManager;
 
 	@Mock
-	private volatile LogManager logManager;
+	LogManager logManager;
+	
+	@Mock
+	TimeseriesDataManager provenTimeSeriesDataManager;
 
 	@Mock
 	Client client;
@@ -232,7 +237,7 @@ public class CompareResultsTest {
 	@Test
 	public void test_script_prop(){
 		TestManagerImpl testManager = new TestManagerImpl(appManager, clientFactory,
-				configurationManager, simulationManager, logManager);
+				configurationManager, simulationManager, logManager, provenTimeSeriesDataManager);
 
 		String testScriptPath = "./applications/python/exampleTestScript.json";
 		TestScript testScript = testManager.loadTestScript(testScriptPath);
