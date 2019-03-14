@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	public static String HUMIDITY = "TowerRH";
 	public static String LONGITUDE = "long";
 	public static String LATITUDE = "lat";
-	public static String MST = "MST";
+	public static String MST = "UTC";
 	public static String TEMPERATURE = "TowerDryBulbTemp";
 	public static String DATE = "DATE";
 	public static String TIME = "time";
@@ -53,10 +54,10 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	@ServiceDependency 
 	private volatile LogManager logManager;
 	
-	static{
-	    sdfIn.setTimeZone(TimeZone.getTimeZone("MST"));
+	/*static{
+	    sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
 		sdfOut.setTimeZone(TimeZone.getTimeZone("UTC"));
-	}
+	}*/
 	
 	public ProvenWeatherToGridlabdWeatherConverter(){}
 	public ProvenWeatherToGridlabdWeatherConverter(LogManager logManager, DataManager dataManager) {
@@ -142,12 +143,19 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		for(TimeSeriesRowResult result: record.getPoints()){
 			Map<String, String> map = result.getRow().getEntryMap();
 			
-			String dateStr = map.get(DATE);
-			String timeStr = map.get(MST);
+			//String dateStr = map.get(DATE);
+			//String timeStr = map.get(MST);
 			try {
-				Date datetime = sdfIn.parse(dateStr+" "+timeStr);
-				outputContent.print(sdfOut.format(datetime)+",");
-			} catch (ParseException e) {
+				
+
+				Calendar c = Calendar.getInstance();
+				//For both the start and end time, set the year to the one that currently has data in the database
+				//TODO either we need more weather data in the database, or make this more flexible where we only have to search by month/day
+				c.setTime(new Date(Long.parseLong(map.get("time"))*1000));
+				c.set(Calendar.YEAR, 2013);
+				//Date datetime = sdfIn.parse(dateStr+" "+timeStr);
+				outputContent.print(sdfOut.format(c.getTime())+",");
+			} catch (NumberFormatException e) {
 				e.printStackTrace();
 				//todo throw exception
 			}
