@@ -237,7 +237,6 @@ public class TestManagerImpl implements TestManager {
 						expectedResultObject = reqTest.getExpectedResultObject();
 					}
 					
-					
 					String provenURI = configurationManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
 					System.out.println("ProvenURI" + provenURI);
 					simulationID = reqTest.getSimulationID();
@@ -245,8 +244,8 @@ public class TestManagerImpl implements TestManager {
 					if(testScript.getEvents() != null && testScript.getEvents().size() > 0){
 						System.out.println("TestManager to Process Events");
 						logMessage(logMessageObj,"Processing Events" );
-						 ProcessEvents pe = new ProcessEvents(testScript.getEvents());
-						 pe.processEvents(logMessageObj, client, simulationID);
+						 ProcessEvents pe = new ProcessEvents(logManager, testScript.getEvents());
+						 pe.processEvents(client, simulationID);
 						//TODO Process events!
 					}
 					
@@ -580,7 +579,6 @@ public class TestManagerImpl implements TestManager {
 		}
 	}
 
-	
 	public LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
 		logMessageObj.setLogLevel(LogLevel.DEBUG);

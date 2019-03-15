@@ -8,10 +8,13 @@ import java.util.PriorityQueue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.FailureEvent;
 import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.SimulationFault;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -24,14 +27,17 @@ public class ProcessEvents {
     PriorityQueue<FailureEvent> pq_cleared=
             new PriorityQueue<FailureEvent>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
     
-    public ProcessEvents(List<FailureEvent> failEvents){
+    LogManager logManager;
+    
+    public ProcessEvents(LogManager logManager, List<FailureEvent> failEvents){
+    	this.logManager = logManager;
 		for (FailureEvent failureEvent : failEvents) {
 			pq_initiated.add(failureEvent);
 			pq_cleared.add(failureEvent);
 		}    	
     }
 	
-	public void processEvents(LogMessage logMessageObj, Client client, int simulationID) {
+	public void processEvents(Client client, int simulationID) {
 
 		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
 		new GossResponseEvent() {
@@ -42,8 +48,7 @@ public class ProcessEvents {
 				String subMsg = dataStr;
 				if (subMsg.length() >= 200)
 					subMsg = subMsg.substring(0, 200);
-				logMessageObj.setTimestamp(new Date().getTime());
-				logMessageObj.setLogMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
+				logMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
 				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
 				long current_time = jsonObject.get("message").getAsJsonObject().get("timestamp").getAsLong();
 				System.out.println(this.getClass().getSimpleName() + " " + jsonObject.get("message").getAsJsonObject().get("timestamp"));
@@ -53,22 +58,16 @@ public class ProcessEvents {
 	        	while (pq_initiated.size() != 0 && pq_initiated.peek().timeInitiated <= current_time){
 	        		FailureEvent temp = pq_initiated.remove();
 	        		System.out.println("Remove init " + temp.timeInitiated);
-	        		logMessageObj.setTimestamp(new Date().getTime());
-	        		
-		    		SimulationFault simFault = new SimulationFault();
-		    		simFault.FaultMRID = temp.faultMRID;
-		    		simFault.ObjectMRID = temp.equipmentMRID;
-		    		simFault.PhaseCode = temp.phases;
-		    		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;
-		    		simFault.FaultImpedance = new FaultImpedance();
-		    		simFault.FaultImpedance.rGround = temp.rGround;
-		    		simFault.FaultImpedance.xGround = temp.xGround;
-		    		simFault.FaultImpedance.rLineToLine = temp.rLineToLine;
-		    		simFault.FaultImpedance.xLineToLine = temp.xLineToLine;
+		    		SimulationFault simFault = buildSimFault(temp);
+	        		logMessage("Adding fault " + simFault.toString());
 		    		faults.add(simFault.toJsonElement());
 	        	}
 	        	while (pq_cleared.size() != 0 && pq_cleared.peek().timeCleared <= current_time){
-	        		System.out.println("Remove cleared " + pq_cleared.remove().timeCleared);
+	        		FailureEvent temp = pq_cleared.remove();
+	        		System.out.println("Remove cleared " + temp.timeCleared);
+		    		SimulationFault simFault = buildSimFault(temp);
+	        		logMessage("Remove fault " + simFault.toString());
+		    		faults.add(simFault.toJsonElement());
 	        	}
 	    		
 	    		JsonObject topElement = new JsonObject();
@@ -76,6 +75,31 @@ public class ProcessEvents {
 
 			}
 		});
+	}
+	
+	public SimulationFault buildSimFault(FailureEvent temp) {
+		SimulationFault simFault = new SimulationFault();
+		simFault.FaultMRID = temp.faultMRID;
+		simFault.ObjectMRID = temp.equipmentMRID;
+		simFault.PhaseCode = temp.phases;
+		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;
+		simFault.FaultImpedance = new FaultImpedance();
+		simFault.FaultImpedance.rGround = temp.rGround;
+		simFault.FaultImpedance.xGround = temp.xGround;
+		simFault.FaultImpedance.rLineToLine = temp.rLineToLine;
+		simFault.FaultImpedance.xLineToLine = temp.xLineToLine;
+		return simFault;
+	}
+	
+	public void logMessage(String msgStr) {
+		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setLogLevel(LogLevel.DEBUG);
+		logMessageObj.setSource(this.getClass().getSimpleName());
+		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
+		logMessageObj.setStoreToDb(true);
+		logMessageObj.setTimestamp(new Date().getTime());
+		logMessageObj.setLogMessage(msgStr);
+		logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 	}
 
 }
