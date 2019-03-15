@@ -66,17 +66,23 @@ public class FailureEvent implements Serializable{
 	
 	public String phases;
 	
-	public String rGround; //Complex
+	public double rGround; //Complex
 	
-	public String xGround; //Complex
+	public double xGround; //Complex
 	
-	public String rLineToLine; //Complex
+	public double rLineToLine; //Complex
 	
-	public String xLineToLine; //Complex
+	public double xLineToLine; //Complex
+	
+	public String PhaseConnectedFaultKind;
 
 	public Date event_date;
 	
 	public int event_type;
+	
+    public long timeInitiated;
+
+    public long timeCleared;
 	
 	public Date getEvent_date() {
 		return event_date;

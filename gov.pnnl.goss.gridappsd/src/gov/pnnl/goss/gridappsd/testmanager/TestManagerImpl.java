@@ -197,9 +197,8 @@ public class TestManagerImpl implements TestManager {
 		
 		try{
 			LogMessage logMessageObj = createLogMessage();
-			
-			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
-			logManager.log(logMessageObj,GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+
+			logMessage(logMessageObj, "Starting "+this.getClass().getName());
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
@@ -221,9 +220,8 @@ public class TestManagerImpl implements TestManager {
 				@Override
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
-					logMessageObj.setTimestamp(new Date().getTime());
-					logMessageObj.setLogMessage("Recevied message: "+ event.getData() +" on topic "+event.getDestination());
-					logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+					String msgStr = "Recevied message: "+ event.getData() +" on topic "+event.getDestination();
+					logMessage(logMessageObj, msgStr);
 					
 					System.out.println("TestManager got message " + message.toString());
 					
@@ -243,6 +241,14 @@ public class TestManagerImpl implements TestManager {
 					String provenURI = configurationManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
 					System.out.println("ProvenURI" + provenURI);
 					simulationID = reqTest.getSimulationID();
+					
+					if(testScript.getEvents() != null && testScript.getEvents().size() > 0){
+						System.out.println("TestManager to Process Events");
+						logMessage(logMessageObj,"Processing Events" );
+						 ProcessEvents pe = new ProcessEvents(testScript.getEvents());
+						 pe.processEvents(logMessageObj, client, simulationID);
+						//TODO Process events!
+					}
 					
 					rulePort = reqTest.getRulePort();
 					
@@ -294,7 +300,7 @@ public class TestManagerImpl implements TestManager {
 						}
 					}
 					
-					forwardSimulationInput(client, simulationID);
+//					forwardSimulationInput(client, simulationID);
 					
 					processSimulationOutput(logMessageObj, client, simulationID);
 
@@ -412,7 +418,11 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
+		// output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
+//		client.subscribe("/topic/" + GridAppsDConstants.topic_FNCS_output + "." + simulationID,
 		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
+//				client.subscribe("/topic/goss.gridappsd.process.log.simulation"+ "." + simulationID,
+
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
 //				String expected_output_series = "/home/gridappsd/gridappsd_project/sources/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/test/gov/pnnl/goss/gridappsd/expected_output_series3.json";
@@ -571,18 +581,20 @@ public class TestManagerImpl implements TestManager {
 	}
 
 	
-	private LogMessage createLogMessage() {
+	public LogMessage createLogMessage() {
 		LogMessage logMessageObj = new LogMessage();
-
-//		logMessageObj.setProcessId(this.getClass().getSimpleName());
-		logMessageObj.setSource(this.getClass().getSimpleName());
-
 		logMessageObj.setLogLevel(LogLevel.DEBUG);
 		logMessageObj.setSource(this.getClass().getSimpleName());
 		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
 		logMessageObj.setStoreToDb(true);
 		logMessageObj.setTimestamp(new Date().getTime());
 		return logMessageObj;
+	}
+	
+	public void logMessage(LogMessage logMessageObj, String msgStr) {
+		logMessageObj.setTimestamp(new Date().getTime());
+		logMessageObj.setLogMessage(msgStr);
+		logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
 	}
 	
 	
