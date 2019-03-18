@@ -56,8 +56,8 @@ public class RequestTimeseriesData implements Serializable {
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
 		if(obj.queryMeasurement==RequestType.PROVEN_MEASUREMENT)
-			if(obj.queryFilter==null || !obj.queryFilter.containsKey("hasSimulationId"))
-				throw new JsonSyntaxException("Expected filter hasSimulationId not found.");
+			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
+				throw new JsonSyntaxException("Expected filter simulation_id not found.");
 		return obj;
 	}
 	
