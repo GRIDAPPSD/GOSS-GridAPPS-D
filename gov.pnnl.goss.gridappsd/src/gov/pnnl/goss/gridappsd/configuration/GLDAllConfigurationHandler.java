@@ -245,17 +245,17 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				weatherRequest.setQueryMeasurement(RequestType.weather);
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
 				Map<String, String> queryFilter = new HashMap<String, String>();
-	
-				Calendar c = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+				
+				Calendar c = Calendar.getInstance();
 				//For both the start and end time, set the year to the one that currently has data in the database
-				//TODO either we need more weather data in the database, or make this more flexible wehre we only have to search by month/day
+				//TODO either we need more weather data in the database, or make this more flexible where we only have to search by month/day
 				c.setTime(new Date(simulationStartTime*1000));
 				c.set(Calendar.YEAR, TIMEFILTER_YEAR);
 				//Convert to UTC time until the input time is correct
 				////TODO this will be changed in the future
-				c.add(Calendar.HOUR, 6);
+				//c.add(Calendar.HOUR, 6);
 				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
-			        c.add(Calendar.SECOND, new Long(simulationDuration).intValue());	
+			    c.add(Calendar.SECOND, new Long(simulationDuration).intValue());	
 				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
 				weatherRequest.setQueryFilter(queryFilter);
 				DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
