@@ -12,20 +12,16 @@ public class SimulationFault {
     public String PhaseCode ;
     public String ObjectMRID;
 
-	
-	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-
 	public JsonElement toJsonElement() {
 		Gson  gson = new Gson();
 		return gson.toJsonTree(this);
 	}
-
 
 	public static SimulationFault parse(String jsonString){
 		Gson  gson = new Gson();
