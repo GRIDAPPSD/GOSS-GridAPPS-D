@@ -33,9 +33,7 @@ public class ProcessEvents {
     
     public ProcessEvents(LogManager logManager, List<FailureEvent> failureEvents){
     	this.logManager = logManager;
-		addEvents(failureEvents);
-		// TODO Create events for simulator and add to Graph DB 
-		
+		addEvents(failureEvents);	
     }
 
 	public void addEvents(List<FailureEvent> failureEvents) {
@@ -58,41 +56,24 @@ public class ProcessEvents {
 //				logMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
 				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
 				long current_time = jsonObject.get("message").getAsJsonObject().get("timestamp").getAsLong();
-				System.out.println(this.getClass().getSimpleName() + " " + jsonObject.get("message").getAsJsonObject().get("timestamp"));
-				System.out.println(this.getClass().getSimpleName() + " " + current_time);
-//	    		JsonArray faults = new JsonArray();
 
 	    		DifferenceMessage dm = new DifferenceMessage ();
 	    		dm.difference_mrid="_"+UUID.randomUUID();
 	    		dm.timestamp = new Date().getTime();
 	        	while (pq_initiated.size() != 0 && pq_initiated.peek().timeInitiated <= current_time){
 	        		FailureEvent temp = pq_initiated.remove();
-	        		System.out.println("Remove init " + temp.timeInitiated);
 		    		SimulationFault simFault = buildSimFault(temp);
 //	        		logMessage("Adding fault " + simFault.toString());
-//		    		faults.add(simFault.toJsonElement());
 		    		dm.forward_differences.add(simFault);
 	        	}
 	        	while (pq_cleared.size() != 0 && pq_cleared.peek().timeCleared <= current_time){
 	        		FailureEvent temp = pq_cleared.remove();
-	        		System.out.println("Remove cleared " + temp.timeCleared);
 		    		SimulationFault simFault = buildSimFault(temp);
 //	        		logMessage("Remove fault " + simFault.toString());
-////		    		faults.add(simFault.toJsonElement());
 		    		dm.reverse_differences.add(simFault);
-		    		
-//		    		JsonObject justFaultMRID = new JsonObject();
-//		    		justFaultMRID.addProperty("FaultMRID", temp.faultMRID);
-//	        		logMessage("Remove fault " + justFaultMRID.toString());
-//		    		dm.reverse_differences.add(justFaultMRID);
 	        	}
-	    		
-//	    		JsonObject topElement = new JsonObject();
-//	    		topElement.add("Faults", faults);
 	    		// TODO Add difference messages and send to simulator
 	    		if (! (dm.forward_differences.isEmpty() && dm.reverse_differences.isEmpty()) ){ 
-//	    			if(dm.forward_differences.isEmpty()) dm.forward_differences = null;
-//	    			if(dm.reverse_differences.isEmpty()) dm.reverse_differences = null;
 	    			JsonObject command = createInputCommand(dm.toJsonElement(),simulationID);
 	    			command.add("input", dm.toJsonElement());
 	    			System.out.println(command.toString());
