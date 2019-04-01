@@ -379,7 +379,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		} else if (conductingEquipmentType.contains("PowerElectronicsConnection")) {
 			if(measurementType.equals("VA")) {
 				objectName = conductingEquipmentName;
-				propertyName = "measured_power_" + phases;
+				if(phases.equals("1") || phases.equals("2")) {
+					propertyName = "indiv_measured_power_" + phases;
+				} else {
+					propertyName = "measured_power_" + phases;
+				}
 			} else if (measurementType.equals("PNV")) {
 				objectName = conductingEquipmentName;
 				propertyName = "voltage_" + phases;
@@ -394,7 +398,10 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 
 		}
 		if(measurements.containsKey(objectName)) {
-			measurements.get(objectName).add(new JsonPrimitive(propertyName));
+			JsonPrimitive p = new JsonPrimitive(propertyName);
+			if(!measurements.get(objectName).contains(p)) {
+				measurements.get(objectName).add(new JsonPrimitive(propertyName));
+			}
 		} else {
 			JsonArray newMeasurements = new JsonArray();
 			newMeasurements.add(new JsonPrimitive(propertyName));
