@@ -40,11 +40,9 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
-import java.util.Date;
-
 import com.google.gson.Gson;
 
-public class FailureEvent implements Serializable{
+public class FailureEvent extends BaseEvent implements Serializable{
 	
 	/**
 	 * 
@@ -59,9 +57,9 @@ public class FailureEvent implements Serializable{
 //	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
 //	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
 //	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
-
-	public String faultMRID;
 	
+	public String faultMRID;
+
 	public String equipmentMRID;
 	
 	public String phases;
@@ -76,28 +74,18 @@ public class FailureEvent implements Serializable{
 	
 	public String PhaseConnectedFaultKind;
 
-	public Date event_date;
-	
-	public int event_type;
-	
-    public long timeInitiated;
-
-    public long timeCleared;
-	
-	public Date getEvent_date() {
-		return event_date;
-	}
-
-	public void setEvent_date(Date event_date) {
-		this.event_date = event_date;
-	}
-
-	public int getEvent_type() {
-		return event_type;
-	}
-
-	public void setEvent_type(int event_type) {
-		this.event_type = event_type;
+	public SimulationFault buildSimFault() {
+		SimulationFault simFault = new SimulationFault();
+		simFault.FaultMRID = faultMRID;
+		simFault.ObjectMRID = equipmentMRID;
+		simFault.PhaseCode = phases;
+		simFault.PhaseConnectedFaultKind = PhaseConnectedFaultKind;
+		simFault.FaultImpedance = new FaultImpedance();
+		simFault.FaultImpedance.rGround = rGround;
+		simFault.FaultImpedance.xGround = xGround;
+		simFault.FaultImpedance.rLineToLine = rLineToLine;
+		simFault.FaultImpedance.xLineToLine = xLineToLine;
+		return simFault;
 	}
 	
 	@Override
@@ -106,10 +94,10 @@ public class FailureEvent implements Serializable{
 		return gson.toJson(this);
 	}
 
-	public static FailureEvent parse(String jsonString){
+	public static BaseEvent parse(String jsonString){
 		Gson  gson = new Gson();
 		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
-		if(obj.event_date==null)
+		if(obj.faultMRID==null)
 			throw new RuntimeException("Expected attribute output_objects not found");
 		return obj;
 	}

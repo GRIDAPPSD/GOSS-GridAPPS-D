@@ -4,13 +4,17 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.PriorityQueue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.BaseEvent;
+import gov.pnnl.goss.gridappsd.dto.CommunicationFaultData;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
+import gov.pnnl.goss.gridappsd.dto.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.FailureEvent;
 import gov.pnnl.goss.gridappsd.dto.FaultImpedance; 
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -24,15 +28,19 @@ import pnnl.goss.core.GossResponseEvent;
 
 public class ProcessEvents {
 	
-    PriorityQueue<FailureEvent> pq_initiated=
-            new PriorityQueue<FailureEvent>(100, (a,b) -> Long.compare(a.timeInitiated , b.timeInitiated));
-    PriorityQueue<FailureEvent> pq_cleared=
-            new PriorityQueue<FailureEvent>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
+	PriorityBlockingQueue<BaseEvent> pq_initiated=
+            new PriorityBlockingQueue<BaseEvent>(100, (a,b) -> Long.compare(a.timeInitiated , b.timeInitiated));
+	PriorityBlockingQueue<BaseEvent> pq_cleared=
+            new PriorityBlockingQueue<BaseEvent>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
     
     LogManager logManager;
     
+    public ProcessEvents(LogManager logManager){
+    	this.logManager = logManager;	
+    }
+    
     public ProcessEvents(LogManager logManager, List<FailureEvent> failureEvents){
-    	this.logManager = logManager;
+    	this(logManager);
 		addEvents(failureEvents);	
     }
 
@@ -41,6 +49,12 @@ public class ProcessEvents {
 			pq_initiated.add(failureEvent);
 			pq_cleared.add(failureEvent);
 		}
+	}
+	
+	public void addEventCommandMessage(EventCommand eventCommand) {
+		BaseEvent baseEvent = eventCommand.message;
+		pq_initiated.add(baseEvent);
+		pq_cleared.add(baseEvent);
 	}
 	
 	public void processEvents(Client client, int simulationID) {
@@ -61,14 +75,14 @@ public class ProcessEvents {
 	    		dm.difference_mrid="_"+UUID.randomUUID();
 	    		dm.timestamp = new Date().getTime();
 	        	while (pq_initiated.size() != 0 && pq_initiated.peek().timeInitiated <= current_time){
-	        		FailureEvent temp = pq_initiated.remove();
-		    		SimulationFault simFault = buildSimFault(temp);
+	        		BaseEvent temp = pq_initiated.remove();
+		    		Object simFault = temp.buildSimFault();
 //	        		logMessage("Adding fault " + simFault.toString());
 		    		dm.forward_differences.add(simFault);
 	        	}
 	        	while (pq_cleared.size() != 0 && pq_cleared.peek().timeCleared <= current_time){
-	        		FailureEvent temp = pq_cleared.remove();
-		    		SimulationFault simFault = buildSimFault(temp);
+	        		BaseEvent temp = pq_cleared.remove();
+	        		Object simFault = temp.buildSimFault();
 //	        		logMessage("Remove fault " + simFault.toString());
 		    		dm.reverse_differences.add(simFault);
 	        	}
@@ -93,19 +107,19 @@ public class ProcessEvents {
 		return command;
 	}
 	
-	public static SimulationFault buildSimFault(FailureEvent temp) {
-		SimulationFault simFault = new SimulationFault();
-		simFault.FaultMRID = temp.faultMRID;
-		simFault.ObjectMRID = temp.equipmentMRID;
-		simFault.PhaseCode = temp.phases;
-		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;
-		simFault.FaultImpedance = new FaultImpedance();
-		simFault.FaultImpedance.rGround = temp.rGround;
-		simFault.FaultImpedance.xGround = temp.xGround;
-		simFault.FaultImpedance.rLineToLine = temp.rLineToLine;
-		simFault.FaultImpedance.xLineToLine = temp.xLineToLine;
-		return simFault;
-	}
+//	public static SimulationFault buildSimFault(FailureEvent temp) {
+//		SimulationFault simFault = new SimulationFault();
+//		simFault.FaultMRID = temp.faultMRID;
+//		simFault.ObjectMRID = temp.equipmentMRID;
+//		simFault.PhaseCode = temp.phases;
+//		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;
+//		simFault.FaultImpedance = new FaultImpedance();
+//		simFault.FaultImpedance.rGround = temp.rGround;
+//		simFault.FaultImpedance.xGround = temp.xGround;
+//		simFault.FaultImpedance.rLineToLine = temp.rLineToLine;
+//		simFault.FaultImpedance.xLineToLine = temp.xLineToLine;
+//		return simFault;
+//	}
 	
 	public void logMessage(String msgStr) {
 		LogMessage logMessageObj = new LogMessage();

@@ -84,6 +84,7 @@ import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.data.GridAppsDataSources;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -159,6 +160,8 @@ public class TestManagerImpl implements TestManager {
 	protected Process rulesProcess = null;
 	
 	protected boolean processExpectedResults = false;
+	
+	protected ProcessEvents pe = null;
 
 	public TestManagerImpl(){}
 	public TestManagerImpl(AppManager appManager,
@@ -173,6 +176,7 @@ public class TestManagerImpl implements TestManager {
 		this.simulationManager = simulationManager;
 		this.logManager = logManager;
 		this.provenTimeSeriesDataManager = provenTimeSeriesDataManager;
+		this.pe = new ProcessEvents(logManager);
 	}
 
 	
@@ -196,6 +200,7 @@ public class TestManagerImpl implements TestManager {
 	public void start(){
 		
 		try{
+			pe = new ProcessEvents(logManager);
 			LogMessage logMessageObj = createLogMessage();
 
 			logMessage(logMessageObj, "Starting "+this.getClass().getName());
@@ -224,8 +229,13 @@ public class TestManagerImpl implements TestManager {
 					logMessage(logMessageObj, msgStr);
 					
 					System.out.println("TestManager got message " + message.toString());
+					String dataStr = event.getData().toString();
+					if(dataStr.contains("command")){
+						processCommand(dataStr);
+						return;
+					}
 					
-					reqTest = RequestTest.parse(event.getData().toString());
+					reqTest = RequestTest.parse(dataStr);
 					
 					if (reqTest.getTestConfigPath() != null || reqTest.getTestScriptPath() != null){
 						testScript = loadTestScript(reqTest.getTestScriptPath());
@@ -244,8 +254,9 @@ public class TestManagerImpl implements TestManager {
 					if(testScript.getEvents() != null && testScript.getEvents().size() > 0){
 						System.out.println("TestManager to Process Events");
 						logMessage(logMessageObj,"Processing Events" );
-						 ProcessEvents pe = new ProcessEvents(logManager, testScript.getEvents());
-						 pe.processEvents(client, simulationID);
+//						 pe = new ProcessEvents(logManager, testScript.getEvents());
+						pe.addEvents(testScript.getEvents());
+						pe.processEvents(client, simulationID);
 						//TODO Process events!
 					}
 					
@@ -416,6 +427,15 @@ public class TestManagerImpl implements TestManager {
 		}	
 	}
 	
+	protected void processCommand(String dataStr) {
+//		JsonObject jsonData = CompareResults.getSimulationJson(dataStr);
+//		String command = jsonData.get("command").getAsString();
+		EventCommand eventCommand = EventCommand.parse(dataStr);
+		if(eventCommand.command.equalsIgnoreCase("CommEvent")){
+			pe.addEventCommandMessage(eventCommand);
+		}
+		
+	}
 	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
 		// output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
 //		client.subscribe("/topic/" + GridAppsDConstants.topic_FNCS_output + "." + simulationID,
