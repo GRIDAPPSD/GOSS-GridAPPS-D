@@ -65,7 +65,23 @@ public class TestConfiguration implements Serializable {
 
 	public String subregion_name;
 
-	public String line_name;
+	public String feeder_name;
+	
+	public Boolean logging;
+	
+	public Map<String,String> logging_options;
+
+	public Map<String,String> initial_conditions;
+	
+	public Map<String,String> default_values;
+	
+	public String[] outputs;
+	
+	public int historical_simulation_id;
+	
+	public TestConfiguration() {
+
+	}
 
 	public String getPower_system_configuration() {
 		return power_system_configuration;
@@ -123,12 +139,12 @@ public class TestConfiguration implements Serializable {
 		this.subregion_name = subregion_name;
 	}
 
-	public String getLine_name() {
-		return line_name;
+	public String getFeeder_name() {
+		return feeder_name;
 	}
 
 	public void setLine_name(String line_name) {
-		this.line_name = line_name;
+		this.feeder_name = line_name;
 	}
 
 	public Boolean getLogging() {
@@ -170,25 +186,15 @@ public class TestConfiguration implements Serializable {
 	public void setOutputs(String[] outputs) {
 		this.outputs = outputs;
 	}
-
-	public Boolean logging;
 	
-	public Map<String,String> logging_options;
-	
-	public Map<String,String> initial_conditions;
-	
-	public Map<String,String> default_values;
-	
-	public String[] outputs;
-
-	public TestConfiguration() {
-
-	}
-	
-	public String getPowerSystemConfiguration(){
-		return power_system_configuration;		
+	public int getHistorical_simulation_id() {
+		return historical_simulation_id;
 	}
 
+	public void setHistorical_simulation_id(int historical_simulation_id) {
+		this.historical_simulation_id = historical_simulation_id;
+	}
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();

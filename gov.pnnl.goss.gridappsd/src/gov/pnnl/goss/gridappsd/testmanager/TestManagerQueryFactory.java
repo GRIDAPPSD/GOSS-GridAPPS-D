@@ -22,7 +22,7 @@ public class TestManagerQueryFactory {
 
 	public String getFeeder() {
 		QueryHandler queryHandler = getQueryHandler();
-		String lineQuery = "SELECT ?name WHERE { " + "?s r:type c:Line. " + "?s c:IdentifiedObject.name ?name} "
+		String lineQuery = "SELECT ?name WHERE { " + "?s r:type c:Feeder. " + "?s c:IdentifiedObject.name ?name} "
 				+ "ORDER by ?name";
 		ResultSet results = queryHandler.query(lineQuery);
 		String feederName = getResultName(results);
@@ -64,9 +64,9 @@ public class TestManagerQueryFactory {
 //		if (bgHost == null || bgHost.trim().length() == 0) {
 //			bgHost = "http://localhost:9999";
 //		}
-		String bgHost = "http://localhost:9999";
-//		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/blazegraph/namespace/kb/sparql");
-		QueryHandler queryHandler = null;
+		String bgHost = "http://localhost:8889";
+		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost+"/bigdata/namespace/kb/sparql", null, "1", "manager");
+//		QueryHandler queryHandler = null;
 		return queryHandler;
 	}
 	
@@ -80,4 +80,36 @@ public class TestManagerQueryFactory {
 		return feederName;
 	}
 	
+	public void getMeasurements(){
+		QueryHandler queryHandler = getQueryHandler();
+		String feeder = "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3";
+		String subGeoRegionQuery = "SELECT ?name WHERE { " + "?s r:type c:SubGeographicalRegion. " + "?s c:IdentifiedObject.name ?name} "
+				+ "ORDER by ?name";
+		String query = "SELECT ?class ?type ?name ?bus ?phases ?eqtype ?eqname ?eqid ?trmid ?id ?ce WHERE {"+
+     "VALUES ?fdrid {\""+feeder+"\"}"+
+     "?eq c:Equipment.EquipmentContainer ?fdr."+
+     "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+    "{ ?s r:type c:Discrete. bind (\"Discrete\" as ?class)}"+
+     " UNION"+
+    "{ ?s r:type c:Analog. bind (\"Analog\" as ?class)}"+
+     "?s c:IdentifiedObject.name ?name ."+
+     "?s c:IdentifiedObject.mRID ?id ."+
+     "?s c:Measurement.PowerSystemResource ?eq ."+
+     "?s c:Measurement.Terminal ?trm ."+
+     "?trm c:Terminal.ConductingEquipment ?ce."+
+     "?s c:Measurement.measurementType ?type ."+
+     "?trm c:IdentifiedObject.mRID ?trmid."+
+     "?eq c:IdentifiedObject.mRID ?eqid."+
+     "?eq c:IdentifiedObject.name ?eqname."+
+     "?eq r:type ?typeraw."+
+      "bind(strafter(str(?typeraw),\"#\") as ?eqtype)"+
+     "?trm c:Terminal.ConnectivityNode ?cn."+
+     "?cn c:IdentifiedObject.name ?bus."+
+     "?s c:Measurement.phases ?phsraw ."+
+    "  {bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phases)}"+
+    "} ORDER BY ?class ?type ?name";
+		ResultSet results = queryHandler.query(query);
+		String subGeoName = getResultName(results);	
+		System.out.println(subGeoName);
+	}
 }

@@ -42,6 +42,8 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 public class RequestTest implements Serializable {
@@ -50,6 +52,8 @@ public class RequestTest implements Serializable {
 
 	public String expectedResult;
 	
+	public JsonObject expectedResultObject;
+
 	public int rulePort;
 	
 	public int simulationID;
@@ -58,9 +62,30 @@ public class RequestTest implements Serializable {
 	
 	public String testConfigPath;
 	
+	public TestConfiguration getTestConfig() {
+		return testConfig;
+	}
+
+	public void setTestConfig(TestConfiguration testConfig) {
+		this.testConfig = testConfig;
+	}
+
+	public TestScript getTestScript() {
+		return testScript;
+	}
+
+	public void setTestScript(TestScript testScript) {
+		this.testScript = testScript;
+	}
+
+
+	public TestConfiguration testConfig;
+	
 	public int testID;
 	
 	public String testScriptPath;
+	
+	public TestScript testScript;
 	
 	public String topic;
 
@@ -73,6 +98,10 @@ public class RequestTest implements Serializable {
 
 	public String getExpectedResult() {
 		return expectedResult;
+	}
+	
+	public JsonObject getExpectedResultObject() {
+		return expectedResultObject;
 	}
 
 	public int getRulePort() {
@@ -105,6 +134,10 @@ public class RequestTest implements Serializable {
 
 	public void setExpectedResult(String expectedResult) {
 		this.expectedResult = expectedResult;
+	}
+
+	public void setExpectedResultObject(JsonObject expectedResultObject) {
+		this.expectedResultObject = expectedResultObject;
 	}
 
 	public void setRulePort(int rulePort) {
@@ -145,10 +178,11 @@ public class RequestTest implements Serializable {
 	
 	
 	public static RequestTest parse(String jsonString){
-		Gson  gson = new Gson();
+//		Gson  gson = new Gson();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-		if(obj.testConfigPath==null)
-			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+//		if(obj.testConfigPath==null)
+//			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
 		return obj;
 	}
 
