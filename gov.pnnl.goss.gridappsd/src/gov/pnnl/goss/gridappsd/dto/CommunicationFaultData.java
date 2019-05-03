@@ -39,7 +39,10 @@ public class CommunicationFaultData extends BaseEvent implements Serializable {
 
 	@Override
 	public Object buildSimFault() {
-		// TODO Auto-generated method stub
-		return this;
+		CommunicationFaultData temp = parse(toString());
+		temp.faultMRID = null;
+		temp.status = null;
+		
+		return temp;
 	}
 }

@@ -10,7 +10,8 @@ public abstract class BaseEvent implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 4661909217634755114L;
-
+	public String faultMRID;
+	public String status;
 	public Long timeInitiated;
 	public Long timeCleared;
 

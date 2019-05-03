@@ -58,7 +58,7 @@ public class FailureEvent extends BaseEvent implements Serializable{
 //	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
 //	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
 	
-	public String faultMRID;
+//	public String faultMRID;
 
 	public String equipmentMRID;
 	

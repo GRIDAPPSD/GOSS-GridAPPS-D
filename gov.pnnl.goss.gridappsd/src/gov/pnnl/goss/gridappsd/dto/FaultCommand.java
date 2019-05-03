@@ -5,14 +5,12 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-public class EventCommand extends BaseEventCommand implements Serializable {
+public class FaultCommand extends BaseEventCommand implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -1611073142106355216L;
-//	public String command;
-//	public Integer simulation_id;
-    public CommunicationFaultData message;
+	public FailureEvent message;
 
 
 	@Override
@@ -26,10 +24,10 @@ public class EventCommand extends BaseEventCommand implements Serializable {
 		return gson.toJsonTree(this);
 	}
 
-	public static EventCommand parse(String jsonString){
+	public static FaultCommand parse(String jsonString){
 		Gson  gson = new Gson();
-		EventCommand obj = gson.fromJson(jsonString, EventCommand.class);
-		if(obj.message==null)
+		FaultCommand obj = gson.fromJson(jsonString, FaultCommand.class);
+		if(obj.command==null)
 			throw new RuntimeException("Expected attribute object not found");
 		return obj;
 	}
