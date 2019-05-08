@@ -563,8 +563,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
 
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
-        if fncs.is_initialized():
-		fncs.publish_anon(fncs_input_topic, goss_message_converted)
+        if fncs.is_initialized() and fncs_input_message["{}".format(simulation_id) != {}:
+            fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
