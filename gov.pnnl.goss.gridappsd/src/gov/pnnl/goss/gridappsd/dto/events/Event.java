@@ -47,27 +47,27 @@ public class Event implements Serializable{
 	
 	private static final long serialVersionUID = -5940543607543814505L;
 
-	public String faultMRID;
+	public String eventId;
 	
-	public int event_type;
+	public String event_type;
 	
     public long timeInitiated = 0;
 
     public long timeCleared = 0;
     
     public String getFaultMRID() {
-		return faultMRID;
+		return eventId;
 	}
 
 	public void setFaultMRID(String faultMRID) {
-		this.faultMRID = faultMRID;
+		this.eventId = faultMRID;
 	}
 
-	public int getEvent_type() {
+	public String getEvent_type() {
 		return event_type;
 	}
 
-	public void setEvent_type(int event_type) {
+	public void setEvent_type(String event_type) {
 		this.event_type = event_type;
 	}
 	

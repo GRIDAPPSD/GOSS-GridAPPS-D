@@ -101,7 +101,7 @@ public class ProcessEvents {
 	
 	public static SimulationFault buildSimFault(FailureEvent temp) {
 		SimulationFault simFault = new SimulationFault();
-		simFault.faultMRID = temp.faultMRID;
+		simFault.eventId = temp.eventId;
 		simFault.ObjectMRID = temp.equipmentMRID;
 		simFault.PhaseCode = temp.phases;
 		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;

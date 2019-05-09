@@ -70,26 +70,6 @@ public class FailureEvent extends Event{
 	
 	public String PhaseConnectedFaultKind;
 
-	public Date event_date;
-	
-	public int event_type;
-	
-    public Date getEvent_date() {
-		return event_date;
-	}
-
-	public void setEvent_date(Date event_date) {
-		this.event_date = event_date;
-	}
-
-	public int getEvent_type() {
-		return event_type;
-	}
-
-	public void setEvent_type(int event_type) {
-		this.event_type = event_type;
-	}
-	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
@@ -99,8 +79,6 @@ public class FailureEvent extends Event{
 	public static FailureEvent parse(String jsonString){
 		Gson  gson = new Gson();
 		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
-		if(obj.event_date==null)
-			throw new RuntimeException("Expected attribute event_date not found");
 		return obj;
 	}
 

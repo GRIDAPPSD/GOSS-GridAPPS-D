@@ -28,7 +28,7 @@ public class SimulationFault extends Event{
 	public static SimulationFault parse(String jsonString){
 		Gson  gson = new Gson();
 		SimulationFault obj = gson.fromJson(jsonString, SimulationFault.class);
-		if(obj.faultMRID==null)
+		if(obj.eventId==null)
 			throw new RuntimeException("Expected attribute faultMRID not found");
 		return obj;
 	}

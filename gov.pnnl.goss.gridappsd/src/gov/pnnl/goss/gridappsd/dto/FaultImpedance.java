@@ -1,8 +1,12 @@
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import com.google.gson.Gson;
 
-public class FaultImpedance {
+public class FaultImpedance extends Event{
+	
+	private static final long serialVersionUID = -9177794159357555422L;
 	public Double rGround;
 	public Double xGround;
 	public Double rLineToLine;

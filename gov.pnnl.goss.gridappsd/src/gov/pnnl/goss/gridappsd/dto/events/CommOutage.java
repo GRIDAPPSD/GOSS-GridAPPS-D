@@ -50,9 +50,9 @@ public class CommOutage extends Event{
 	
 	boolean allInputOutage = false;
 	
-	List<Object> inputOutageList = new ArrayList<Object>();
+	List<String> inputOutageList = new ArrayList<String>();
 	
-	List<Object> outputOutageList = new ArrayList<Object>();
+	List<String> outputOutageList = new ArrayList<String>();
 
 	public boolean isAllOutputOutage() {
 		return allOutputOutage;
@@ -70,19 +70,19 @@ public class CommOutage extends Event{
 		this.allInputOutage = allInputOutage;
 	}
 
-	public List<Object> getInputOutageList() {
+	public List<String> getInputOutageList() {
 		return inputOutageList;
 	}
 
-	public void setInputOutageList(List<Object> inputOutageList) {
+	public void setInputOutageList(List<String> inputOutageList) {
 		this.inputOutageList = inputOutageList;
 	}
 
-	public List<Object> getOutputOutageList() {
+	public List<String> getOutputOutageList() {
 		return outputOutageList;
 	}
 
-	public void setOutputOutageList(List<Object> outputOutageList) {
+	public void setOutputOutageList(List<String> outputOutageList) {
 		this.outputOutageList = outputOutageList;
 	}
 	
