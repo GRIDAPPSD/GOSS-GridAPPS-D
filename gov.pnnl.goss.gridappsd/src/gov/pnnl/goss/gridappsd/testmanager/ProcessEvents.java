@@ -2,13 +2,11 @@ package gov.pnnl.goss.gridappsd.testmanager;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
-import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
-import gov.pnnl.goss.gridappsd.dto.events.FailureEvent;
-import gov.pnnl.goss.gridappsd.dto.events.SimulationFault;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
@@ -27,9 +25,9 @@ import com.google.gson.JsonObject;
 public class ProcessEvents {
 	
     PriorityQueue<Event> pq_initiated=
-            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.timeInitiated , b.timeInitiated));
+            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.occuredDateTime , b.occuredDateTime));
     PriorityQueue<Event> pq_cleared=
-            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
+            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.stopDateTime , b.stopDateTime));
     
     LogManager logManager;
     
@@ -62,18 +60,18 @@ public class ProcessEvents {
 	    		DifferenceMessage dm = new DifferenceMessage ();
 	    		dm.difference_mrid="_"+UUID.randomUUID();
 	    		dm.timestamp = new Date().getTime();
-	        	while (pq_initiated.size() != 0 && pq_initiated.peek().timeInitiated <= current_time){
+	        	while (pq_initiated.size() != 0 && pq_initiated.peek().occuredDateTime <= current_time){
 	        		Event temp = pq_initiated.remove();
-	        		if(temp instanceof FailureEvent){
-	        			SimulationFault simFault = buildSimFault((FailureEvent)temp);
+	        		if(temp instanceof Fault){
+	        			Fault simFault = (Fault)temp;
 //	        			logMessage("Adding fault " + simFault.toString());
 	        			dm.forward_differences.add(simFault);
 	        		}
 	        	}
-	        	while (pq_cleared.size() != 0 && pq_cleared.peek().timeCleared <= current_time){
+	        	while (pq_cleared.size() != 0 && pq_cleared.peek().stopDateTime <= current_time){
 	        		Event temp = pq_cleared.remove();
-	        		if(temp instanceof FailureEvent){
-	        			SimulationFault simFault = buildSimFault((FailureEvent)temp);
+	        		if(temp instanceof Fault){
+	        			Fault simFault = (Fault)temp;
 //	        			logMessage("Remove fault " + simFault.toString());
 	        			dm.reverse_differences.add(simFault);
 	        		}
@@ -97,20 +95,6 @@ public class ProcessEvents {
 		command.addProperty("command", "update");
 		command.add("input", input);
 		return command;
-	}
-	
-	public static SimulationFault buildSimFault(FailureEvent temp) {
-		SimulationFault simFault = new SimulationFault();
-		simFault.eventId = temp.eventId;
-		simFault.ObjectMRID = temp.equipmentMRID;
-		simFault.PhaseCode = temp.phases;
-		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;
-		simFault.FaultImpedance = new FaultImpedance();
-		simFault.FaultImpedance.rGround = temp.rGround;
-		simFault.FaultImpedance.xGround = temp.xGround;
-		simFault.FaultImpedance.rLineToLine = temp.rLineToLine;
-		simFault.FaultImpedance.xLineToLine = temp.xLineToLine;
-		return simFault;
 	}
 	
 	public void logMessage(String msgStr) {

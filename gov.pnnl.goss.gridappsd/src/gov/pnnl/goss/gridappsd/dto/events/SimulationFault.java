@@ -1,6 +1,10 @@
 package gov.pnnl.goss.gridappsd.dto.events;
 
-import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
+import java.util.Map;
+
+import gov.pnnl.goss.gridappsd.dto.events.Fault.FaultImpedance;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseCode;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseConnectedFaultKind;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -9,10 +13,12 @@ public class SimulationFault extends Event{
 	
 	private static final long serialVersionUID = 2638861907618920676L;
 	
-	public FaultImpedance FaultImpedance;
-	public String PhaseConnectedFaultKind;
-    public String PhaseCode ;
+	public FaultImpedance impedance;
+	public Map<PhaseConnectedFaultKind,Double> PhaseConnectedFaultKind;
+    public PhaseCode PhaseCode ;
     public String ObjectMRID;
+
+	public FaultImpedance FaultImpedance;
 
 	@Override
 	public String toString() {

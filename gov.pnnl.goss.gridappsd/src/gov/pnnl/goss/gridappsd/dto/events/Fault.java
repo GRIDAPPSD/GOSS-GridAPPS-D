@@ -39,36 +39,78 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto.events;
 
-import java.util.Date;
+import java.util.Map;
 
 import com.google.gson.Gson;
 
-public class FailureEvent extends Event{
+public class Fault extends Event{
 
 	private static final long serialVersionUID = 7348798730580951117L;
 	
-//	mRID of the Fault itself
-//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
-//	Fault.phases, for the phases involved in the fault
-//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
-//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
-//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
+	public enum PhaseConnectedFaultKind {
+	    lineToGround, lineToLine, lineToLineToGround, lineOpen
+	}
+	
+	public enum FaultImpedance {
+		rGround, rLineToLine, xGround, xLineToLine
+	}
+	
+	public enum PhaseCode {
+		ABCN(225),ABC(224),ABN(193),ACN(41),BCN(97),AB(132),AC(96),BC(65),AN(129),BN(65),
+		CN(33),A(128),B(64),C(32),N(16),s1N(528),s2N(272),s12N(784),s1(512),
+		s2(256),s12(768),none(0),X(1024),XY(3072),XN(1040),XYN(3088);
+		
+		private final int value;
+		
+		PhaseCode(final int newValue){
+			value = newValue;
+		}
+		
+		public int getValue(){
+			return value;
+		}
+	}
+	
+	public FaultImpedance impedance;
+	
+	public Map<PhaseConnectedFaultKind,Double> PhaseConnectedFaultKind;
+	
+	public String equipmentMrid;
+	
+	public PhaseCode phases;
+	
+	public FaultImpedance getImpedance() {
+		return impedance;
+	}
 
-	public String equipmentMRID;
-	
-	public String phases;
-	
-	public double rGround; //Complex
-	
-	public double xGround; //Complex
-	
-	public double rLineToLine; //Complex
-	
-	public double xLineToLine; //Complex
-	
-	public String PhaseConnectedFaultKind;
+	public void setImpedance(FaultImpedance impedance) {
+		this.impedance = impedance;
+	}
+
+	public Map<PhaseConnectedFaultKind, Double> getPhaseConnectFaultKind() {
+		return PhaseConnectedFaultKind;
+	}
+
+	public void setPhaseConnectFaultKind(
+			Map<PhaseConnectedFaultKind, Double> phaseConnectFaultKind) {
+		PhaseConnectedFaultKind = phaseConnectFaultKind;
+	}
+
+	public String getEquipmentMrid() {
+		return equipmentMrid;
+	}
+
+	public void setEquipmentMrid(String equipmentMrid) {
+		this.equipmentMrid = equipmentMrid;
+	}
+
+	public PhaseCode getPhases() {
+		return phases;
+	}
+
+	public void setPhases(PhaseCode phases) {
+		this.phases = phases;
+	}
 
 	@Override
 	public String toString() {
@@ -76,9 +118,10 @@ public class FailureEvent extends Event{
 		return gson.toJson(this);
 	}
 
-	public static FailureEvent parse(String jsonString){
+	public static Fault parse(String jsonString){
 		Gson  gson = new Gson();
-		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
+		Fault obj = gson.fromJson(jsonString, Fault.class);
+		//TODO: Check for mandatory fields and impedance-faultKind combination
 		return obj;
 	}
 

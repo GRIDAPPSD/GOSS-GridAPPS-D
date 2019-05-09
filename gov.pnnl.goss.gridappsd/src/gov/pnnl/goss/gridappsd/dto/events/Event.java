@@ -51,9 +51,9 @@ public class Event implements Serializable{
 	
 	public String event_type;
 	
-    public long timeInitiated = 0;
+    public long occuredDateTime = 0;
 
-    public long timeCleared = 0;
+    public long stopDateTime = 0;
     
     public String getFaultMRID() {
 		return eventId;
@@ -72,19 +72,19 @@ public class Event implements Serializable{
 	}
 	
 	public long getTimeInitiated() {
-		return timeInitiated;
+		return occuredDateTime;
 	}
 
 	public void setTimeInitiated(long timeInitiated) {
-		this.timeInitiated = timeInitiated;
+		this.occuredDateTime = timeInitiated;
 	}
 
 	public long getTimeCleared() {
-		return timeCleared;
+		return stopDateTime;
 	}
 
 	public void setTimeCleared(long timeCleared) {
-		this.timeCleared = timeCleared;
+		this.stopDateTime = timeCleared;
 	}
 
 	@Override
@@ -96,7 +96,7 @@ public class Event implements Serializable{
 	public static Event parse(String jsonString){
 		Gson  gson = new Gson();
 		Event obj = gson.fromJson(jsonString, Event.class);
-		if(obj.timeInitiated==0 || obj.timeCleared==0)
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
 			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
