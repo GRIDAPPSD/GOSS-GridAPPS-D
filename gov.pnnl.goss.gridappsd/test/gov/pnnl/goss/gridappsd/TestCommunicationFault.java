@@ -18,22 +18,26 @@ import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.FailureEvent;
 import gov.pnnl.goss.gridappsd.dto.FaultCommand;
-import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+//import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
+import gov.pnnl.goss.gridappsd.dto.SimulationFault;
 
 
 public class TestCommunicationFault {
 	@Test
 	public void testFault() {
-//		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
 		GsonBuilder gsonBuilder = new GsonBuilder();
-		RuntimeTypeAdapterFactory<BaseEventCommand> commandAdapterFactory = RuntimeTypeAdapterFactory.of(BaseEventCommand.class, "type")
-				.registerSubtype(FaultCommand.class,"FaultCommand")
-		    .registerSubtype(EventCommand.class, "EventCommand");
+		
+//		RuntimeTypeAdapterFactory<BaseEventCommand> commandAdapterFactory = RuntimeTypeAdapterFactory.of(BaseEventCommand.class, "type")
+//				.registerSubtype(FaultCommand.class,"FaultCommand")
+//		    .registerSubtype(EventCommand.class, "EventCommand");
 		
 //		RuntimeTypeAdapterFactory<BaseEvent> eventAdapterFactory = RuntimeTypeAdapterFactory.of(BaseEvent.class, "type")
 //				.registerSubtype(FailureEvent.class,"FailureEvent")
 //		    .registerSubtype(CommunicationFaultData.class, "CommunicationFaultData");
-		gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+		
+//		gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
 //		gsonBuilder.registerTypeAdapterFactory(eventAdapterFactory);
 		gsonBuilder.setPrettyPrinting();
 		Gson gson = gsonBuilder.create();
@@ -69,12 +73,35 @@ public class TestCommunicationFault {
 		eventCommand.simulation_id = 9999999; 
 		eventCommand.message = tempComm;
 		System.out.println(gson.toJson(eventCommand, EventCommand.class));
-	
-		String tempString = "{\"type\":\"EventCommand\",\"command\": \"CommEvent\", \"simulation_id\": 9999999, \"message\": {\"inputList\": [{\"objectMRID\": \"UU123214\", \"attribute\": \"RegulatingControl.mode\"}], \"outputList\": [\"UU12323\"], \"filterAllInputs\": false, \"filterAllOutputs\": false, \"timeInitiated\": 1248156005, \"timeCleared\": 1248156008}}";
-//		EventCommand testEventCommand = EventCommand.parse(tempString);
 		
-		BaseEventCommand testEventCommand = gson.fromJson(tempString, BaseEventCommand.class);
-		System.out.println(gson.toJson(testEventCommand));
+		
+		FailureEvent simFault = new FailureEvent();
+		simFault.faultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
+		simFault.rGround = 0.0;
+		simFault.xGround = 0.5;
+		simFault.PhaseConnectedFaultKind="lineToGround";
+		FaultCommand faultCommand = new FaultCommand();
+		faultCommand.command = "FaultEvent";
+		faultCommand.simulation_id = 9999999; 
+		faultCommand.message = simFault;
+		System.out.println(gson.toJson(faultCommand));
+		
+		String faultCommandString = "{\"message\":{\"rGround\":0.0,\"xGround\":0.5,\"rLineToLine\":0.0,\"xLineToLine\":0.0,\"PhaseConnectedFaultKind\":\"lineToGround\",\"faultMRID\":\"_1f4467ee-678b-49c6-b58c-9f9462cf5ae4\"},\"command\":\"FaultEvent\",\"simulation_id\":9999999}";
+		
+		
+		String eventCommandString = "{\"type\":\"EventCommand\",\"command\": \"CommEvent\", \"simulation_id\": 9999999, \"message\": {\"inputList\": [{\"objectMRID\": \"UU123214\", \"attribute\": \"RegulatingControl.mode\"}], \"outputList\": [\"UU12323\"], \"filterAllInputs\": false, \"filterAllOutputs\": false, \"timeInitiated\": 1248156005, \"timeCleared\": 1248156008}}";
+
+		
+		if(eventCommandString.contains("CommEvent")){
+			EventCommand testEventCommand = EventCommand.parse(eventCommandString);
+			System.out.println(gson.toJson(testEventCommand));
+		} else if(eventCommandString.contains("FaultEvent")){
+			FaultCommand testEventCommand = FaultCommand.parse(eventCommandString);
+			System.out.println(gson.toJson(testEventCommand));
+		}
+			
+//		BaseEventCommand testEventCommand2 = gson.fromJson(tempString, BaseEventCommand.class);
+//		System.out.println(gson.toJson(testEventCommand2));
 		
 		System.out.println(gson.toJson(commFault));
 		

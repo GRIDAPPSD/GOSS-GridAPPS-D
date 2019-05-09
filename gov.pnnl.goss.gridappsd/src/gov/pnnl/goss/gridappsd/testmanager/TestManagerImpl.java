@@ -161,7 +161,9 @@ public class TestManagerImpl implements TestManager {
 	
 	protected boolean processExpectedResults = false;
 	
-	protected ProcessEvents pe = null;
+//	protected ProcessEvents pe = null;
+	
+	private HashMap<Integer, ProcessEvents> processEventsMap = new HashMap<Integer, ProcessEvents>(10);
 
 	public TestManagerImpl(){}
 	public TestManagerImpl(AppManager appManager,
@@ -176,7 +178,7 @@ public class TestManagerImpl implements TestManager {
 		this.simulationManager = simulationManager;
 		this.logManager = logManager;
 		this.provenTimeSeriesDataManager = provenTimeSeriesDataManager;
-		this.pe = new ProcessEvents(logManager);
+//		this.pe = new ProcessEvents(logManager);
 	}
 
 	
@@ -200,7 +202,7 @@ public class TestManagerImpl implements TestManager {
 	public void start(){
 		
 		try{
-			pe = new ProcessEvents(logManager);
+//			pe = new ProcessEvents(logManager);
 			LogMessage logMessageObj = createLogMessage();
 
 			logMessage(logMessageObj, "Starting "+this.getClass().getName());
@@ -231,7 +233,7 @@ public class TestManagerImpl implements TestManager {
 					System.out.println("TestManager got message " + message.toString());
 					String dataStr = event.getData().toString();
 					if(dataStr.contains("command")){
-						processCommand(dataStr);
+						processCommand(dataStr,client);
 						return;
 					}
 					
@@ -254,9 +256,9 @@ public class TestManagerImpl implements TestManager {
 					if(testScript.getEvents() != null && testScript.getEvents().size() > 0){
 						System.out.println("TestManager to Process Events");
 						logMessage(logMessageObj,"Processing Events" );
-//						 pe = new ProcessEvents(logManager, testScript.getEvents());
+						ProcessEvents pe = getProcessEvents(client, simulationID);
 						pe.addEvents(testScript.getEvents());
-						pe.processEvents(client, simulationID);
+//						pe.processEvents(client, simulationID);
 						//TODO Process events!
 					}
 					
@@ -419,23 +421,31 @@ public class TestManagerImpl implements TestManager {
 
 				}
 			});
-
-
 		}
 		catch(Exception e){
 			log.error("Error in test manager",e);
 		}	
 	}
 	
-	protected void processCommand(String dataStr) {
-//		JsonObject jsonData = CompareResults.getSimulationJson(dataStr);
-//		String command = jsonData.get("command").getAsString();
-		EventCommand eventCommand = EventCommand.parse(dataStr);
+	protected void processCommand(String dataStr, Client client) {
+		EventCommand eventCommand = EventCommand.parse(dataStr);	
+		int simulationID = eventCommand.simulation_id;
+		ProcessEvents pe = getProcessEvents(client, simulationID);
 		if(eventCommand.command.equalsIgnoreCase("CommEvent")){
 			pe.addEventCommandMessage(eventCommand);
-		}
-		
+		}	
 	}
+	
+	private ProcessEvents getProcessEvents(Client client, int simulationId) {
+		ProcessEvents pe;
+		if(! processEventsMap.containsKey(simulationId) ){
+			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager,client, simulationId));
+			processEventsMap.putIfAbsent(simulationId, pe);
+	    }
+		pe = processEventsMap.get(simulationId);
+		return pe;
+	}
+	
 	public void processSimulationOutput(LogMessage logMessageObj, Client client, int simulationID) {
 		// output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
 //		client.subscribe("/topic/" + GridAppsDConstants.topic_FNCS_output + "." + simulationID,

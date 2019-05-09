@@ -233,22 +233,22 @@ public class CompareResults {
 	
 	
 	
-	/**
-	 * Look up the expected with a timestamp
-	 * @param timestamp
-	 * @param jsonObject
-	 * @param expectedOutputPath
-	 * @param simOutProperties
-	 * @return
-	 */
-	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath) {
-		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutputPath);
-		if (expectedOutputMap == null) return null;
-//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-	
-		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
-	}
+//	/**
+//	 * Look up the expected with a timestamp
+//	 * @param timestamp
+//	 * @param jsonObject
+//	 * @param expectedOutputPath
+//	 * @param simOutProperties
+//	 * @return
+//	 */
+//	public TestResults compareExpectedWithSimulationOutput(String timestamp, JsonObject jsonObject, String expectedOutputPath) {
+//		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp, expectedOutputPath);
+//		if (expectedOutputMap == null) return null;
+////		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+////				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+//	
+//		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+//	}
 	
 	/**
 	 * Look up the expected with a timestamp
@@ -267,17 +267,17 @@ public class CompareResults {
 		return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 	}
 	
-	/**
-	 * compareExpectedWithSimulation
-	 * @param simOutputPath
-	 * @param expectedOutputPath
-	 * @param simOutProperties
-	 */
-	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath) {
-		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-	
-		return compareExpectedWithSimulationOutput(expectedOutputMap,  jsonObject);
-	}
+//	/**
+//	 * compareExpectedWithSimulation
+//	 * @param simOutputPath
+//	 * @param expectedOutputPath
+//	 * @param simOutProperties
+//	 */
+//	public TestResults compareExpectedWithSimulationOutput(JsonObject jsonObject, String expectedOutputPath) {
+//		Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
+//	
+//		return compareExpectedWithSimulationOutput(expectedOutputMap,  jsonObject);
+//	}
 
 	public TestResults compareExpectedWithSimulation(Map<String, JsonElement> expectedOutputMap, JsonObject jsonObject) {
 		
