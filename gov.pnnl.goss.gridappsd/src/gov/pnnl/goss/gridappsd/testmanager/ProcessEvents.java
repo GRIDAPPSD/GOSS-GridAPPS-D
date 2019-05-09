@@ -1,49 +1,51 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
+import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.FailureEvent;
+import gov.pnnl.goss.gridappsd.dto.events.SimulationFault;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 import java.util.PriorityQueue;
+import java.util.UUID;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
-import gov.pnnl.goss.gridappsd.dto.FailureEvent;
-import gov.pnnl.goss.gridappsd.dto.FaultImpedance; 
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.SimulationFault;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 public class ProcessEvents {
 	
-    PriorityQueue<FailureEvent> pq_initiated=
-            new PriorityQueue<FailureEvent>(100, (a,b) -> Long.compare(a.timeInitiated , b.timeInitiated));
-    PriorityQueue<FailureEvent> pq_cleared=
-            new PriorityQueue<FailureEvent>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
+    PriorityQueue<Event> pq_initiated=
+            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.timeInitiated , b.timeInitiated));
+    PriorityQueue<Event> pq_cleared=
+            new PriorityQueue<Event>(100, (a,b) -> Long.compare(a.timeCleared , b.timeCleared));
     
     LogManager logManager;
     
-    public ProcessEvents(LogManager logManager, List<FailureEvent> failureEvents){
+    public ProcessEvents(LogManager logManager, List<Event> events){
     	this.logManager = logManager;
-		addEvents(failureEvents);	
+		addEvents(events);	
     }
 
-	public void addEvents(List<FailureEvent> failureEvents) {
-		for (FailureEvent failureEvent : failureEvents){
-			pq_initiated.add(failureEvent);
-			pq_cleared.add(failureEvent);
+	public void addEvents(List<Event> events) {
+		for (Event event : events){
+			pq_initiated.add(event);
+			pq_cleared.add(event);
 		}
 	}
 	
-	public void processEvents(Client client, int simulationID) {
+	public void processEvents(Client client, String simulationID) {
 		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
@@ -61,16 +63,20 @@ public class ProcessEvents {
 	    		dm.difference_mrid="_"+UUID.randomUUID();
 	    		dm.timestamp = new Date().getTime();
 	        	while (pq_initiated.size() != 0 && pq_initiated.peek().timeInitiated <= current_time){
-	        		FailureEvent temp = pq_initiated.remove();
-		    		SimulationFault simFault = buildSimFault(temp);
-//	        		logMessage("Adding fault " + simFault.toString());
-		    		dm.forward_differences.add(simFault);
+	        		Event temp = pq_initiated.remove();
+	        		if(temp instanceof FailureEvent){
+	        			SimulationFault simFault = buildSimFault((FailureEvent)temp);
+//	        			logMessage("Adding fault " + simFault.toString());
+	        			dm.forward_differences.add(simFault);
+	        		}
 	        	}
 	        	while (pq_cleared.size() != 0 && pq_cleared.peek().timeCleared <= current_time){
-	        		FailureEvent temp = pq_cleared.remove();
-		    		SimulationFault simFault = buildSimFault(temp);
-//	        		logMessage("Remove fault " + simFault.toString());
-		    		dm.reverse_differences.add(simFault);
+	        		Event temp = pq_cleared.remove();
+	        		if(temp instanceof FailureEvent){
+	        			SimulationFault simFault = buildSimFault((FailureEvent)temp);
+//	        			logMessage("Remove fault " + simFault.toString());
+	        			dm.reverse_differences.add(simFault);
+	        		}
 	        	}
 	    		// TODO Add difference messages and send to simulator
 	    		if (! (dm.forward_differences.isEmpty() && dm.reverse_differences.isEmpty()) ){ 
@@ -83,7 +89,7 @@ public class ProcessEvents {
 		});
 	}
 
-	public static JsonObject createInputCommand(JsonElement message, int simulationID){
+	public static JsonObject createInputCommand(JsonElement message, String simulationID){
 		JsonObject input = new JsonObject();
 		input.addProperty("simulation_id", simulationID);
 		input.add("message", message);
@@ -95,7 +101,7 @@ public class ProcessEvents {
 	
 	public static SimulationFault buildSimFault(FailureEvent temp) {
 		SimulationFault simFault = new SimulationFault();
-		simFault.FaultMRID = temp.faultMRID;
+		simFault.faultMRID = temp.faultMRID;
 		simFault.ObjectMRID = temp.equipmentMRID;
 		simFault.PhaseCode = temp.phases;
 		simFault.PhaseConnectedFaultKind = temp.PhaseConnectedFaultKind;

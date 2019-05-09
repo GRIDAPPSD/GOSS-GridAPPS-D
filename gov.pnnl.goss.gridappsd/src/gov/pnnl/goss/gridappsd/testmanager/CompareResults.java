@@ -68,7 +68,7 @@ import com.google.gson.stream.JsonReader;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
-import gov.pnnl.goss.gridappsd.dto.TestScript;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
 import pnnl.goss.core.ClientFactory;
 
 /**
@@ -76,21 +76,14 @@ import pnnl.goss.core.ClientFactory;
 * @author jsimpson
 *
 */
-@Component
 public class CompareResults {
 	
 //	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
 	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-		
-	@ServiceDependency
-	private volatile LogManager logManager;
+	LogManager logManager;
 	
 	public CompareResults(){}
-	public CompareResults(ClientFactory clientFactory, 
-			LogManager logManager){
-		this.clientFactory = clientFactory;
+	public CompareResults(LogManager logManager){
 		this.logManager = logManager;
 	}
 	
@@ -300,9 +293,9 @@ public class CompareResults {
 	 * @param simOutProperties
 	 * @return set
 	 */
-	public HashSet<String> getMatchedProperties(TestScript testScript, SimulationOutput simOutProperties) {
+	public HashSet<String> getMatchedProperties(TestConfig testScript, SimulationOutput simOutProperties) {
 		List<SimulationOutputObject> simOutputObjects = simOutProperties.getOutputObjects();
-		Set<Entry<String, List<String>>> es = testScript.getOutputs().entrySet();
+		Set<Entry<String, List<String>>> es = null;//testScript.getOutputs().entrySet();
 		
 		HashSet<String> simOONames = new HashSet<String>();
 		for (SimulationOutputObject simulationOutputObject : simOutputObjects) {

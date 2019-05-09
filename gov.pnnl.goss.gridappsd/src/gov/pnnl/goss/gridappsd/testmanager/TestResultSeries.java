@@ -39,10 +39,14 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.testmanager;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-public class TestResultSeries {
+public class TestResultSeries implements Serializable{
+	
+	private static final long serialVersionUID = -5368089783896803654L;
+	
 	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
 	
 	public void add(String index, TestResults testResults){
