@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -39,174 +39,52 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import java.io.Serializable;
-import java.util.Date;
-import java.util.Map;
+import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonObject;
 
-public class TestConfiguration implements Serializable {
 
+public class RequestTestUpdate implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-
-	public String power_system_configuration;
-
-	public String simulation_configuration;
 	
-	public Integer durations;
-
-	public Date run_start;
-
-	public Date run_end;
-
-	public String region_name;
-
-	public String subregion_name;
-
-	public String feeder_name;
-	
-	public Boolean logging;
-	
-	public Map<String,String> logging_options;
-
-	public Map<String,String> initial_conditions;
-	
-	public Map<String,String> default_values;
-	
-	public String[] outputs;
-	
-	public int historical_simulation_id;
-	
-	public TestConfiguration() {
-
-	}
-
-	public String getPower_system_configuration() {
-		return power_system_configuration;
-	}
-
-	public void setPower_system_configuration(String power_system_configuration) {
-		this.power_system_configuration = power_system_configuration;
-	}
-
-	public String getSimulation_configuration() {
-		return simulation_configuration;
-	}
-
-	public void setSimulation_configuration(String simulation_configuration) {
-		this.simulation_configuration = simulation_configuration;
-	}
-
-	public Integer getDurations() {
-		return durations;
-	}
-
-	public void setDurations(Integer durations) {
-		this.durations = durations;
-	}
-
-	public Date getRun_start() {
-		return run_start;
-	}
-
-	public void setRun_start(Date run_start) {
-		this.run_start = run_start;
-	}
-
-	public Date getRun_end() {
-		return run_end;
-	}
-
-	public void setRun_end(Date run_end) {
-		this.run_end = run_end;
-	}
-
-	public String getRegion_name() {
-		return region_name;
-	}
-
-	public void setRegion_name(String region_name) {
-		this.region_name = region_name;
-	}
-
-	public String getSubregion_name() {
-		return subregion_name;
-	}
-
-	public void setSubregion_name(String subregion_name) {
-		this.subregion_name = subregion_name;
-	}
-
-	public String getFeeder_name() {
-		return feeder_name;
-	}
-
-	public void setLine_name(String line_name) {
-		this.feeder_name = line_name;
-	}
-
-	public Boolean getLogging() {
-		return logging;
-	}
-
-	public void setLogging(Boolean logging) {
-		this.logging = logging;
-	}
-
-	public Map<String, String> getLogging_options() {
-		return logging_options;
-	}
-
-	public void setLogging_options(Map<String, String> logging_options) {
-		this.logging_options = logging_options;
-	}
-
-	public Map<String, String> getInitial_conditions() {
-		return initial_conditions;
-	}
-
-	public void setInitial_conditions(Map<String, String> initial_conditions) {
-		this.initial_conditions = initial_conditions;
-	}
-
-	public Map<String, String> getDefault_values() {
-		return default_values;
-	}
-
-	public void setDefault_values(Map<String, String> default_values) {
-		this.default_values = default_values;
-	}
-
-	public String[] getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(String[] outputs) {
-		this.outputs = outputs;
+	public enum RequestType {
+	    new_events, update_events, query_events
 	}
 	
-	public int getHistorical_simulation_id() {
-		return historical_simulation_id;
+	RequestType command;
+
+	private List<Event> events;
+
+	public RequestType getCommand() {
+		return command;
 	}
 
-	public void setHistorical_simulation_id(int historical_simulation_id) {
-		this.historical_simulation_id = historical_simulation_id;
+	public void setCommand(RequestType command) {
+		this.command = command;
 	}
-	
+
+	public List<Event> getEvents() {
+		return events;
+	}
+
+	public void setEvents(List<Event> events) {
+		this.events = events;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-	public static TestConfiguration parse(String jsonString){
-	    Gson  gson = new Gson();
-	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
-	    if(obj.power_system_configuration==null)
-	        throw new JsonSyntaxException("Expected attribute power_system_configuration not found");
-	    return obj;
+	public static RequestTestUpdate parse(String jsonString){
+		Gson  gson = new Gson();
+		RequestTestUpdate obj = gson.fromJson(jsonString, RequestTestUpdate.class);
+		return obj;
 	}
-
 }

@@ -58,6 +58,8 @@ public class RequestSimulation implements Serializable {
 	
 	public ApplicationConfig application_config;
 	
+	public TestConfig test_config;
+	
 	public SimulationRequestType simulation_request_type = SimulationRequestType.NEW;
 	
 	public String simulation_id;  //used for pause/resume/stop requests
@@ -111,6 +113,15 @@ public class RequestSimulation implements Serializable {
 
 	public void setSimulation_id(String simulation_id) {
 		this.simulation_id = simulation_id;
+	}
+	
+
+	public TestConfig getTest_config() {
+		return test_config;
+	}
+
+	public void setTest_config(TestConfig test_config) {
+		this.test_config = test_config;
 	}
 
 	@Override

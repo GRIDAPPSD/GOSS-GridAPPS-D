@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,94 +36,64 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import com.google.gson.Gson;
 
-public class TestScript implements Serializable {
 
-	private static final long serialVersionUID = 1L;
 
-	public String name;
+public class FailureEvent extends Event{
 
-	private String test_configuration;
-
-	private String application;
+	private static final long serialVersionUID = 7348798730580951117L;
 	
-	private Map<String,List<String>> outputs;
+//	mRID of the Fault itself
+//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
+//	Fault.phases, for the phases involved in the fault
+//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
+//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
+//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
+//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
+//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
+
+	public String equipmentMRID;
 	
-	private List<RuleSettings> rules;
+	public String phases;
 	
-	public List<FailureEvent> getEvents() {
-		return events;
-	}
-
-	public void setEvents(List<FailureEvent> events) {
-		this.events = events;
-	}
-
-	private List<FailureEvent> events;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public List<RuleSettings> getRules() {
-		return rules;
-	}
-
-	public void setRules(List<RuleSettings> rules) {
-		this.rules = rules;
-	}
-
-	public TestScript() {
-
-	}
-
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
-	}
+	public double rGround; //Complex
 	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
-	}
+	public double xGround; //Complex
+	
+	public double rLineToLine; //Complex
+	
+	public double xLineToLine; //Complex
+	
+	public String PhaseConnectedFaultKind;
 
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
-	}
-
+//	public SimulationFault buildSimFault() {
+//		SimulationFault simFault = new SimulationFault();
+//		simFault.setFaultMRID(getFaultMRID());
+//		simFault.ObjectMRID = equipmentMRID;
+//		simFault.PhaseCode = phases;
+//		simFault.PhaseConnectedFaultKind = PhaseConnectedFaultKind;
+//		simFault.FaultImpedance = new FaultImpedance();
+//		simFault.FaultImpedance.rGround = rGround;
+//		simFault.FaultImpedance.xGround = xGround;
+//		simFault.FaultImpedance.rLineToLine = rLineToLine;
+//		simFault.FaultImpedance.xLineToLine = xLineToLine;
+//		return simFault;
+//	}
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
-	
-	public static TestScript parse(String jsonString){
+
+	public static FailureEvent parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new RuntimeException("Expected attribute name not found");
+		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
 		return obj;
 	}
+
 }

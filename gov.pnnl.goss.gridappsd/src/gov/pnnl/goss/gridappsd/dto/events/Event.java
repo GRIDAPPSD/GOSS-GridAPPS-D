@@ -37,68 +37,67 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import java.io.Serializable;
+
 import com.google.gson.Gson;
 
-public class FailureEvent extends BaseEvent implements Serializable{
+public class Event implements Serializable{
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7348798730580951117L;
-	
-//	mRID of the Fault itself
-//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
-//	Fault.phases, for the phases involved in the fault
-//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
-//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
-//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
-	
-//	public String faultMRID;
+	private static final long serialVersionUID = -5940543607543814505L;
 
-	public String equipmentMRID;
+	public String eventId;
 	
-	public String phases;
+	public String event_type;
 	
-	public double rGround; //Complex
-	
-	public double xGround; //Complex
-	
-	public double rLineToLine; //Complex
-	
-	public double xLineToLine; //Complex
-	
-	public String PhaseConnectedFaultKind;
+    public long occuredDateTime = 0;
 
-	public SimulationFault buildSimFault() {
-		SimulationFault simFault = new SimulationFault();
-		simFault.FaultMRID = faultMRID;
-		simFault.ObjectMRID = equipmentMRID;
-		simFault.PhaseCode = phases;
-		simFault.PhaseConnectedFaultKind = PhaseConnectedFaultKind;
-		simFault.FaultImpedance = new FaultImpedance();
-		simFault.FaultImpedance.rGround = rGround;
-		simFault.FaultImpedance.xGround = xGround;
-		simFault.FaultImpedance.rLineToLine = rLineToLine;
-		simFault.FaultImpedance.xLineToLine = xLineToLine;
-		return simFault;
+    public long stopDateTime = 0;
+    
+    public String getFaultMRID() {
+		return eventId;
+	}
+
+	public void setFaultMRID(String faultMRID) {
+		this.eventId = faultMRID;
+	}
+
+	public String getEvent_type() {
+		return event_type;
+	}
+
+	public void setEvent_type(String event_type) {
+		this.event_type = event_type;
 	}
 	
+	public long getTimeInitiated() {
+		return occuredDateTime;
+	}
+
+	public void setTimeInitiated(long timeInitiated) {
+		this.occuredDateTime = timeInitiated;
+	}
+
+	public long getTimeCleared() {
+		return stopDateTime;
+	}
+
+	public void setTimeCleared(long timeCleared) {
+		this.stopDateTime = timeCleared;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 
-	public static BaseEvent parse(String jsonString){
+	public static Event parse(String jsonString){
 		Gson  gson = new Gson();
-		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
-		if(obj.faultMRID==null)
-			throw new RuntimeException("Expected attribute output_objects not found");
+		Event obj = gson.fromJson(jsonString, Event.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
 

@@ -46,6 +46,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -61,7 +62,6 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
@@ -99,6 +99,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile DataManager dataManager;
 	
+	@ServiceDependency
+	private volatile TestManager testManager;
+	
 	ProcessNewSimulationRequest newSimulationProcess = null;
 	
 	private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
@@ -111,13 +114,15 @@ public class ProcessManagerImpl implements ProcessManager {
 			SimulationManager simulationManager,
 			LogManager logManager, 
 			AppManager appManager,
-			ProcessNewSimulationRequest newSimulationProcess){
+			ProcessNewSimulationRequest newSimulationProcess,
+			TestManager testManager){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
 		this.appManager = appManager;
 		this.newSimulationProcess = newSimulationProcess;
 		this.logManager = logManager;
+		this.testManager = testManager;
 	}
 
 	
@@ -151,7 +156,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			
 			
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this, 
-					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager));
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager));
 		}
 		catch(Exception e){
 			e.printStackTrace();

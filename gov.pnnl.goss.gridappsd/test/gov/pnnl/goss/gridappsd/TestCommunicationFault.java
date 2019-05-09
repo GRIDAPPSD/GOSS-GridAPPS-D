@@ -16,11 +16,10 @@ import gov.pnnl.goss.gridappsd.dto.CommunicationFaultData;
 import gov.pnnl.goss.gridappsd.dto.CommunicationFaultObjectPair;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.EventCommand;
-import gov.pnnl.goss.gridappsd.dto.FailureEvent;
+import gov.pnnl.goss.gridappsd.dto.events.FailureEvent;
 import gov.pnnl.goss.gridappsd.dto.FaultCommand;
 //import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
-import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
-import gov.pnnl.goss.gridappsd.dto.SimulationFault;
+import gov.pnnl.goss.gridappsd.dto.events.SimulationFault;
 
 
 public class TestCommunicationFault {
@@ -56,8 +55,8 @@ public class TestCommunicationFault {
 		commFault.value.outputList.add("UU12323");
 		commFault.value.filterAllInputs = false;
 		commFault.value.filterAllOutputs = false;
-		commFault.value.timeInitiated = 1248156005L;
-		commFault.value.timeCleared = 1248156008L;
+		commFault.value.occuredDateTime = 1248156005L;
+		commFault.value.stopDateTime = 1248156008L;
 
 		
 		System.out.println(new String (commFault.toString()));
@@ -76,7 +75,7 @@ public class TestCommunicationFault {
 		
 		
 		FailureEvent simFault = new FailureEvent();
-		simFault.faultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
+		simFault.eventId = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
 		simFault.rGround = 0.0;
 		simFault.xGround = 0.5;
 		simFault.PhaseConnectedFaultKind="lineToGround";

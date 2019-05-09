@@ -11,8 +11,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
-import gov.pnnl.goss.gridappsd.dto.FaultImpedance;
-import gov.pnnl.goss.gridappsd.dto.SimulationFault;
+import gov.pnnl.goss.gridappsd.dto.events.SimulationFault;
 
 
 
@@ -25,11 +24,11 @@ public class TestFaultMessage {
 		dm.difference_mrid="_"+UUID.randomUUID();
 
 		SimulationFault simFault = new SimulationFault();
-		simFault.FaultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
-		simFault.FaultImpedance = new FaultImpedance();
-		simFault.FaultImpedance.rGround = 0.0;
-		simFault.FaultImpedance.xGround = 0.5;
-		simFault.PhaseConnectedFaultKind="lineToGround";
+		simFault.eventId = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
+//		simFault.FaultImpedance = new FaultImpedance();
+//		simFault.FaultImpedance.rGround = 0.0;
+//		simFault.FaultImpedance.xGround = 0.5;
+//		simFault.PhaseConnectedFaultKind="lineToGround";
 		
 		JsonArray faults = new JsonArray();
 		faults.add(simFault.toJsonElement()); 

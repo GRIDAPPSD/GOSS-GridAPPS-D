@@ -39,28 +39,12 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.management.RuntimeErrorException;
-
-import org.apache.felix.dm.annotation.api.Registered;
-
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
@@ -74,6 +58,20 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import pnnl.goss.core.DataResponse;
 
 public class ProcessNewSimulationRequest {
@@ -90,16 +88,16 @@ public class ProcessNewSimulationRequest {
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			DataResponse event, Serializable message, AppManager appManager,
-			ServiceManager serviceManager) {
+			ServiceManager serviceManager, TestManager testManager) {
 		process(configurationManager, simulationManager, simulationId, message,
 				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT, appManager,
-				serviceManager);
+				serviceManager, testManager);
 	}
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			Serializable message, int simulationPort, AppManager appManager,
-			ServiceManager serviceManager) {
+			ServiceManager serviceManager, TestManager testManager) {
 
 		try {
 
@@ -291,6 +289,10 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
+			
+			// start test if requested 
+			testManager.handleTestRequest(config.getTest_config(), simContext);
+			
 
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),

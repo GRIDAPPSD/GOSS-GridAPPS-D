@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright  2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -39,150 +39,81 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import java.io.Serializable;
+import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-public class RequestTest implements Serializable {
-	
+public class TestConfig implements Serializable {
+
 	private static final long serialVersionUID = 1L;
 
-	public String expectedResult;
+	private List<Event> events;
 	
-	public JsonObject expectedResultObject;
-
-	public int rulePort;
+	private List<RuleSettings> rules;
 	
-	public int simulationID;
+	private JsonObject expedtedResults;
 	
-	public String simulationOutputObject;
+	private String compareWithSimId;
 	
-	public String testConfigPath;
-	
-	public TestConfiguration getTestConfig() {
-		return testConfig;
-	}
-
-	public void setTestConfig(TestConfiguration testConfig) {
-		this.testConfig = testConfig;
-	}
-
-	public TestScript getTestScript() {
-		return testScript;
-	}
-
-	public void setTestScript(TestScript testScript) {
-		this.testScript = testScript;
-	}
-
-
-	public TestConfiguration testConfig;
-	
-	public int testID;
-	
-	public String testScriptPath;
-	
-	public TestScript testScript;
-	
-	public String topic;
-
-	public RequestTest(){}
-
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
-	}
-
-	public String getExpectedResult() {
-		return expectedResult;
-	}
+	private String appId;
 	
 	public JsonObject getExpectedResultObject() {
-		return expectedResultObject;
+		return expedtedResults;
 	}
 
-	public int getRulePort() {
-		return rulePort;
+	public void setExpectedResultObject(JsonObject expedtedResults) {
+		this.expedtedResults = expedtedResults;
 	}
 
-	public int getSimulationID() {
-		return simulationID;
-	}	
-	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
+	public List<Event> getEvents() {
+		return events;
 	}
 
-	public String getTestConfigPath() {
-		return testConfigPath;
+	public void setEvents(List<Event> events) {
+		this.events = events;
 	}
 
-	public int getTestID() {
-		return testID;
+	public List<RuleSettings> getRules() {
+		return rules;
 	}
 
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setExpectedResult(String expectedResult) {
-		this.expectedResult = expectedResult;
-	}
-
-	public void setExpectedResultObject(JsonObject expectedResultObject) {
-		this.expectedResultObject = expectedResultObject;
-	}
-
-	public void setRulePort(int rulePort) {
-		this.rulePort = rulePort;
-	}
-
-	public void setSimulationID(int simulationID) {
-		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}
-
-	public void setTestID(int testID) {
-		this.testID = testID;
+	public void setRules(List<RuleSettings> rules) {
+		this.rules = rules;
 	}
 	
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
+	public String getCompareWithSimId() {
+		return compareWithSimId;
 	}
-	
 
-	public void setTopic(String topic) {
-		this.topic = topic;
+	public void setCompareWithSimId(String compareWithSimId) {
+		this.compareWithSimId = compareWithSimId;
 	}
 	
-	
+	public String getAppId() {
+		return appId;
+	}
+
+	public void setAppId(String appId) {
+		this.appId = appId;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-	
-	public static RequestTest parse(String jsonString){
-//		Gson  gson = new Gson();
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-//		if(obj.testConfigPath==null)
-//			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+	public static TestConfig parse(String jsonString){
+		Gson  gson = new Gson();
+		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
+		if(obj.events==null || obj.events.size()==0)
+			throw new RuntimeException("Expected attribute events not found or is empty");
+		if(obj.appId==null)
+			throw new RuntimeException("Expected attribute appId not found");
 		return obj;
 	}
-
 }

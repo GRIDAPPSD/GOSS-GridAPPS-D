@@ -7,7 +7,9 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-public class CommunicationFaultData extends BaseEvent implements Serializable {
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
+public class CommunicationFaultData extends Event implements Serializable {
 	
 	/**
 	 * 
@@ -37,11 +39,11 @@ public class CommunicationFaultData extends BaseEvent implements Serializable {
 		return obj;
 	}
 
-	@Override
+//	@Override
 	public Object buildSimFault() {
 		CommunicationFaultData temp = parse(toString());
-		temp.faultMRID = null;
-		temp.status = null;
+		temp.eventId = null;
+//		temp.status = null;
 		
 		return temp;
 	}

@@ -10,7 +10,7 @@ public class Difference implements Serializable{
 	 *  
 	 */
 	private static final long serialVersionUID = 7965569387061225456L;
-
+ 
 	public String object;
 	
 	public String attribute;
