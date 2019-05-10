@@ -1,5 +1,6 @@
 Bundle-Version: 1.0.0.${tstamp}
 Export-Package: \
 	gov.pnnl.goss.gridappsd.api,\
-	gov.pnnl.goss.gridappsd.dto
+	gov.pnnl.goss.gridappsd.dto,\
+	gov.pnnl.goss.gridappsd.dto.events
 Private-Package: gov.pnnl.goss.gridappsd.data.conversion
