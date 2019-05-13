@@ -519,8 +519,9 @@
 		public Map<String, JsonElement> getExpectedOutputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
 			if (expectedOutputObj.isJsonObject()) {
-				JsonObject jsonObject = expectedOutputObj.getAsJsonObject();				
-				JsonObject output = jsonObject.get("expected_results").getAsJsonObject();
+				JsonObject output = expectedOutputObj.getAsJsonObject();				
+//				JsonObject output = jsonObject.get("expedtedResults").getAsJsonObject();  //TODO fix spelling
+				
 				if (output.has("output") ) output = output.getAsJsonObject("output");
 				if(output.has(timestamp)){
 					expectedOutputMap = getOutputMap(output.get(timestamp).getAsJsonObject());

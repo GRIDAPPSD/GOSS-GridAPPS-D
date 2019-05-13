@@ -255,8 +255,8 @@ public class TestManagerImpl implements TestManager {
 				
 				DataResponse event = (DataResponse) message;
 				String simOutputStr = event.getData().toString();
-				if (simOutputStr.length() >= 200)
-					simOutputStr = simOutputStr.substring(0, 200);
+//				if (simOutputStr.length() >= 200)
+//					simOutputStr = simOutputStr.substring(0, 200);
 				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
 				
 				CompareResults compareResults = new CompareResults();

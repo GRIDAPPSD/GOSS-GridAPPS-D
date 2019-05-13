@@ -166,9 +166,15 @@ public class ProcessEvents {
 	        	System.out.println(getStatus().toString());
 	        	
 	    		JsonObject command = createDiffCommand(simulationID, dm, "update");
-	    		if (command != null) logMessage("Sending command to " + command.toString(), simulationID);
+	    		if (command != null){
+	    			logMessage("Sending command to " + command.toString(), simulationID);
+	    			client.publish(GridAppsDConstants.topic_FNCS_input, command.toString());
+	    		}
 	    		command = createDiffCommand(simulationID, dmComm, "CommOutage");
-	    		if (command != null) logMessage("Sending command to " + command.toString(), simulationID);
+	    		if (command != null) {
+	    			logMessage("Sending command to " + command.toString(), simulationID);
+	    			client.publish(GridAppsDConstants.FNCS_BRIDGE_PATH, command.toString());
+	    		}
 			}
 		});
 	}

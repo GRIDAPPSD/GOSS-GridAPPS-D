@@ -197,7 +197,7 @@ public class CompareResultsTest {
 		SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
 
 		assertNotEquals(simOutProperties, null);
-		getProp(simOutProperties);
+		getProp(simOutProperties); 
 
 		String sim_output = "./test/gov/pnnl/goss/gridappsd/sim_output.json";
 		String expected_output = "./test/gov/pnnl/goss/gridappsd/expected_output.json";
