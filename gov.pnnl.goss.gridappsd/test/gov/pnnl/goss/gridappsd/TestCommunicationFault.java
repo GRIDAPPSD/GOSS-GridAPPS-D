@@ -80,7 +80,7 @@ public class TestCommunicationFault {
 		simFault.xGround = 0.5;
 		simFault.PhaseConnectedFaultKind="lineToGround";
 		FaultCommand faultCommand = new FaultCommand();
-		faultCommand.command = "FaultEvent";
+		faultCommand.command = "FaultEvent"; 
 		faultCommand.simulation_id = 9999999; 
 		faultCommand.message = simFault;
 		System.out.println(gson.toJson(faultCommand));

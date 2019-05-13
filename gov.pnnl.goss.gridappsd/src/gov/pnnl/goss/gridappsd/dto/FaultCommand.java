@@ -5,14 +5,14 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-import gov.pnnl.goss.gridappsd.dto.events.FailureEvent;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 
 public class FaultCommand extends BaseEventCommand implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -1611073142106355216L;
-	public FailureEvent message;
+	public Fault message;
 
 
 	@Override

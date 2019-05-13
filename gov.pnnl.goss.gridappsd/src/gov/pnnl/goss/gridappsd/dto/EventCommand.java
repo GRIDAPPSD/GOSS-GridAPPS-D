@@ -5,6 +5,8 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+
 public class EventCommand extends BaseEventCommand implements Serializable {
 	/**
 	 * 
@@ -12,7 +14,7 @@ public class EventCommand extends BaseEventCommand implements Serializable {
 	private static final long serialVersionUID = -1611073142106355216L;
 //	public String command;
 //	public Integer simulation_id;
-    public CommunicationFaultData message;
+    public CommOutage message;
 
 
 	@Override

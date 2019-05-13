@@ -39,10 +39,21 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.FaultImpedance;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseCode;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseConnectedFaultKind;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.qpid.proton.ProtonFactory.ImplementationType;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -115,5 +126,44 @@ public class TestConfig implements Serializable {
 		if(obj.appId==null)
 			throw new RuntimeException("Expected attribute appId not found");
 		return obj;
+	}
+	
+	public static void main(String[] args){
+		
+		List<String> mrids = new ArrayList<String>();
+		mrids.add("mrid1123457899");
+		mrids.add("mrid234578908");
+		
+		
+		CommOutage commOutage = new CommOutage();
+		commOutage.event_type = CommOutage.class.getSimpleName();
+		commOutage.occuredDateTime = new Date().getTime();
+		commOutage.occuredDateTime = new Date().getTime();
+		commOutage.setAllInputOutage(true);
+		commOutage.setAllOutputOutage(true);
+		commOutage.setInputOutageList(mrids);
+		commOutage.setOutputOutageList(mrids);
+		
+		Fault fail = new Fault();
+		fail.event_type = Fault.class.getSimpleName();
+		fail.equipmentMrid = "235242342342342";
+		Map<PhaseConnectedFaultKind,Double> phaseConnectFaultKind = new HashMap<PhaseConnectedFaultKind, Double>();
+		phaseConnectFaultKind.put(PhaseConnectedFaultKind.lineToLine, 0.3);
+		phaseConnectFaultKind.put(PhaseConnectedFaultKind.lineToGround, 0.2);
+		fail.PhaseConnectedFaultKind = phaseConnectFaultKind;
+		fail.phases = PhaseCode.ABC;
+		fail.impedance = FaultImpedance.rLineToLine;
+		fail.occuredDateTime = new Date().getTime();
+		fail.stopDateTime = new Date().getTime();
+		
+		
+		List<Event> events = new ArrayList<Event>();
+		events.add(commOutage);
+		events.add(fail);
+		TestConfig testConfig = new TestConfig();
+		testConfig.appId = "sample_app";
+		testConfig.events = events;
+		
+		System.out.println(testConfig.toString());
 	}
 }

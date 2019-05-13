@@ -79,7 +79,6 @@ public class TestManagerComponentTest {
 	/**
 	 *    Succeeds when info log message is called at the start of the process manager implementation with the expected message
 	 */
-	@Test
 	public void infoCalledWhen_processManagerStarted(){
 
 //		ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
