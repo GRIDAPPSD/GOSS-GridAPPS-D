@@ -46,6 +46,7 @@ import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.DSSAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -208,12 +209,21 @@ public class ProcessNewSimulationRequest {
 
 
 
-
-			Properties simulationParams = generateSimulationParameters(config);
-			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
-			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
-
+			String simulator = config.getSimulation_config().getSimulator();
+			//generate config files for requested simulator
+			//if requested simulator is opendss
+			if(simulator.equalsIgnoreCase(DSSAllConfigurationHandler.CONFIGTARGET)){
+				Properties simulationParams = generateSimulationParameters(config);
+				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simId);
+				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+			} else { //otherwise use gridlabd
+				Properties simulationParams = generateSimulationParameters(config);
+				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
+				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+			}
+			
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
