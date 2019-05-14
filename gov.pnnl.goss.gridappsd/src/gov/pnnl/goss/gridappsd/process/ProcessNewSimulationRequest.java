@@ -51,8 +51,12 @@ import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
@@ -71,6 +75,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import pnnl.goss.core.DataResponse;
 
@@ -107,8 +114,18 @@ public class ProcessNewSimulationRequest {
 			String simulationLogTopic = GridAppsDConstants.topic_simulationLog
 					+ simId;
 
-			RequestSimulation config = RequestSimulation.parse(message
-					.toString());
+			//TODO fix
+//			RequestSimulation config = RequestSimulation.parse(message
+//					.toString());
+			GsonBuilder gsonBuilder = new GsonBuilder();
+			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+			gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+			gsonBuilder.setPrettyPrinting();
+			Gson gson = gsonBuilder.create();
+			RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+			System.out.println(config.test_config.getEvents().toString());
+			
 			config.simulation_config.setSimulation_broker_port(simulationPort);
 			logManager.log(new LogMessage(this.getClass().getName(),
 					new Integer(simulationId).toString(), new Date().getTime(),
