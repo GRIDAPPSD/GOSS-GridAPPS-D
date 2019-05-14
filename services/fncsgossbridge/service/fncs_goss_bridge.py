@@ -274,39 +274,39 @@ class GOSSListener(object):
                 #message['output'] = _get_fncs_bus_messages(simulation_id)
                 #response_msg = json.dumps(message['output'])
                 #goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
-            elif json_msg['command'] == 'CommEvent':
-                rev_diffs = json_msg.get('input',{}).get('message',{}).get('reverse_differences', [])
-                for_diffs = json_msg.get('input',{}).get('message',{}).get('reverse_differences', [])
+            elif json_msg['command'] == 'CommOutage':
+                rev_diffs = json_msg.get('input',{}).get('reverse_differences', [])
+                for_diffs = json_msg.get('input',{}).get('forward_differences', [])
                 for d in rev_diffs:
-                    if d.get('value',{}).get('filterAllInputs', False) == True:
+                    if d.get('allInputOutage', False) == True:
                         self.filter_all_commands = False
                     else:
-                        for x in d.get('value',{}).get('inputList', []):
+                        for x in d.get('inputOutageList', []):
                             try:
                                 idx = command_filter.find(x)
                                 del command_filter[idx]
                             except ValueError as ve:
                                 pass
-                    if d.get('value',{}).get('filterAllOutputs', False) == True:
+                    if d.get('allOutputOutage', False) == True:
                         self.filter_all_measurements = False
                     else:
-                        for x in d.get('value',{}).get('inputList', []):
+                        for x in d.get('outputOutageList', []):
                             try:
                                 idx = measurement_filter.find(x)
                                 del measurement_filter[idx]
                             except ValueError as ve:
                                 pass
                 for d in for_diffs:
-                    if d.get('value',{}).get('filterAllInputs', False) == True:
+                    if d.get('allInputOutage', False) == True:
                         self.filter_all_commands = True
                     else:
-                        for x in d.get('value',{}).get('inputList', []):
+                        for x in d.get('inputOutageList', []):
                             if x not in command_filter:
                                 command_filter.append(x)
-                    if d.get('value',{}).get('filterAllOutputs', False) == True:
+                    if d.get('allOutputOutage', False) == True:
                         self.filter_all_measurements = True
                     else:
-                        for x in d.get('value',{}).get('inputList', []):
+                        for x in d.get('outputOutageList', []):
                             if x not in measurement_filter:
                                 measurement_filter.append(x)
             elif json_msg['command'] == 'stop':
