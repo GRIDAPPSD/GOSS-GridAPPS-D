@@ -71,37 +71,37 @@ public class Fault extends Event{
 		}
 	}
 	
-	public FaultImpedance impedance;
+	public Map<FaultImpedance,Double> FaultImpedance;
 	
-	public Map<PhaseConnectedFaultKind,Double> PhaseConnectedFaultKind;
+	public PhaseConnectedFaultKind PhaseConnectedFaultKind;
 	
-	public String equipmentMrid;
+	public String ObjectMRID;
 	
 	public PhaseCode phases;
 	
-	public FaultImpedance getImpedance() {
-		return impedance;
+	public Map<FaultImpedance,Double> getFaultImpedance() {
+		return FaultImpedance;
 	}
 
-	public void setImpedance(FaultImpedance impedance) {
-		this.impedance = impedance;
+	public void setFaultImpedance(Map<FaultImpedance,Double> impedance) {
+		this.FaultImpedance = impedance;
 	}
 
-	public Map<PhaseConnectedFaultKind, Double> getPhaseConnectFaultKind() {
+	public PhaseConnectedFaultKind getPhaseConnectFaultKind() {
 		return PhaseConnectedFaultKind;
 	}
 
 	public void setPhaseConnectFaultKind(
-			Map<PhaseConnectedFaultKind, Double> phaseConnectFaultKind) {
+			PhaseConnectedFaultKind phaseConnectFaultKind) {
 		PhaseConnectedFaultKind = phaseConnectFaultKind;
 	}
 
-	public String getEquipmentMrid() {
-		return equipmentMrid;
+	public String getObjectMRID() {
+		return ObjectMRID;
 	}
 
-	public void setEquipmentMrid(String equipmentMrid) {
-		this.equipmentMrid = equipmentMrid;
+	public void setObjectMRID(String ObjectMRID) {
+		this.ObjectMRID = ObjectMRID;
 	}
 
 	public PhaseCode getPhases() {

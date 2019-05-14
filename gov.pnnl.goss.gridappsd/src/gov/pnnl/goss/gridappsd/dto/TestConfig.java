@@ -66,18 +66,18 @@ public class TestConfig implements Serializable {
 	
 	private List<RuleSettings> rules;
 	
-	private JsonObject expedtedResults;
+	private JsonObject expectedResults;
 	
 	private String compareWithSimId;
 	
 	private String appId;
 	
 	public JsonObject getExpectedResultObject() {
-		return expedtedResults;
+		return expectedResults;
 	}
 
-	public void setExpectedResultObject(JsonObject expedtedResults) {
-		this.expedtedResults = expedtedResults;
+	public void setExpectedResultObject(JsonObject expectedResults) {
+		this.expectedResults = expectedResults;
 	}
 
 	public List<Event> getEvents() {
@@ -146,13 +146,13 @@ public class TestConfig implements Serializable {
 		
 		Fault fail = new Fault();
 		fail.event_type = Fault.class.getSimpleName();
-		fail.equipmentMrid = "235242342342342";
-		Map<PhaseConnectedFaultKind,Double> phaseConnectFaultKind = new HashMap<PhaseConnectedFaultKind, Double>();
-		phaseConnectFaultKind.put(PhaseConnectedFaultKind.lineToLine, 0.3);
-		phaseConnectFaultKind.put(PhaseConnectedFaultKind.lineToGround, 0.2);
-		fail.PhaseConnectedFaultKind = phaseConnectFaultKind;
+		fail.ObjectMRID = "235242342342342";
+		Map<FaultImpedance,Double> faultImpedanceMap = new HashMap<FaultImpedance, Double>();
+		faultImpedanceMap.put(FaultImpedance.rGround, 0.3);
+		faultImpedanceMap.put(FaultImpedance.xGround, 0.2);
+		fail.PhaseConnectedFaultKind = PhaseConnectedFaultKind.lineToGround;
 		fail.phases = PhaseCode.ABC;
-		fail.impedance = FaultImpedance.rLineToLine;
+		fail.FaultImpedance = faultImpedanceMap;
 		fail.occuredDateTime = new Date().getTime();
 		fail.stopDateTime = new Date().getTime();
 		

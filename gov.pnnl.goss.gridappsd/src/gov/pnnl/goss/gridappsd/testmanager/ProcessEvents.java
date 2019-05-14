@@ -109,9 +109,9 @@ public class ProcessEvents {
 
 				DataResponse event = (DataResponse) message;				
 				String dataStr = event.getData().toString();
-				String subMsg = dataStr;
-				if (subMsg.length() >= 200)
-					subMsg = subMsg.substring(0, 200);
+//				String subMsg = dataStr;
+//				if (subMsg.length() >= 200)
+//					subMsg = subMsg.substring(0, 200);
 //				logMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
 				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
 				long current_time = jsonObject.get("message").getAsJsonObject().get("timestamp").getAsLong();
@@ -132,6 +132,9 @@ public class ProcessEvents {
 //	        		logMessage("Adding fault " + simFault.toString());
 	        		if(temp instanceof Fault){
 	        			Fault simFault = (Fault)temp;
+	        			simFault = Fault.parse(temp.toString());
+	        			simFault.occuredDateTime = null;
+	        			simFault.stopDateTime = null;
 //	        			logMessage("Adding fault " + simFault.toString());
 	        			dm.forward_differences.add(simFault);
 	        		}
@@ -150,6 +153,9 @@ public class ProcessEvents {
 //	        		logMessage("Remove fault " + simFault.toString());
 	        		if(temp instanceof Fault){
 	        			Fault simFault = (Fault)temp;
+	        			simFault = Fault.parse(temp.toString());
+	        			simFault.occuredDateTime = null;
+	        			simFault.stopDateTime = null;
 //	        			logMessage("Adding fault " + simFault.toString());
 	        			dm.reverse_differences.add(simFault);
 	        		}

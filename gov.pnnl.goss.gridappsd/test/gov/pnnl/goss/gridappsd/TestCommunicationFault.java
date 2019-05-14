@@ -9,17 +9,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-import gov.pnnl.goss.gridappsd.dto.BaseEvent;
-import gov.pnnl.goss.gridappsd.dto.BaseEventCommand;
 import gov.pnnl.goss.gridappsd.dto.CommunicationFault;
 import gov.pnnl.goss.gridappsd.dto.CommunicationFaultData;
 import gov.pnnl.goss.gridappsd.dto.CommunicationFaultObjectPair;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.EventCommand;
-import gov.pnnl.goss.gridappsd.dto.events.FailureEvent;
 import gov.pnnl.goss.gridappsd.dto.FaultCommand;
-//import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
-import gov.pnnl.goss.gridappsd.dto.events.SimulationFault;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 
 
 public class TestCommunicationFault {
@@ -67,18 +63,18 @@ public class TestCommunicationFault {
 		System.out.println(gson.toJson(tempComm.buildSimFault()));
 		System.out.println("************************");
 		
-		EventCommand eventCommand = new EventCommand();
-		eventCommand.command = "CommEvent";
-		eventCommand.simulation_id = 9999999; 
-		eventCommand.message = tempComm;
-		System.out.println(gson.toJson(eventCommand, EventCommand.class));
+//		EventCommand eventCommand = new EventCommand();
+//		eventCommand.command = "CommEvent";
+//		eventCommand.simulation_id = 9999999; 
+//		eventCommand.message = tempComm;
+//		System.out.println(gson.toJson(eventCommand, EventCommand.class));
 		
 		
-		FailureEvent simFault = new FailureEvent();
+		Fault simFault = new Fault();
 		simFault.eventId = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
-		simFault.rGround = 0.0;
-		simFault.xGround = 0.5;
-		simFault.PhaseConnectedFaultKind="lineToGround";
+//		simFault.impedance.rGround = 0.0;
+//		simFault.xGround = 0.5;
+//		simFault.PhaseConnectedFaultKind=simFault.PhaseConnectedFaultKind.lineToGround;
 		FaultCommand faultCommand = new FaultCommand();
 		faultCommand.command = "FaultEvent"; 
 		faultCommand.simulation_id = 9999999; 

@@ -51,9 +51,9 @@ public class Event implements Serializable{
 	
 	public String event_type;
 	
-    public long occuredDateTime = 0;
+    public Long occuredDateTime;
 
-    public long stopDateTime = 0;
+    public Long stopDateTime;
     
     public String getFaultMRID() {
 		return eventId;
