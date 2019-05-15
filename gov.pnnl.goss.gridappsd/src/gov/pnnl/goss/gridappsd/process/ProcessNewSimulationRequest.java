@@ -114,9 +114,7 @@ public class ProcessNewSimulationRequest {
 			String simulationLogTopic = GridAppsDConstants.topic_simulationLog
 					+ simId;
 
-			//TODO fix
-//			RequestSimulation config = RequestSimulation.parse(message
-//					.toString());
+
 			GsonBuilder gsonBuilder = new GsonBuilder();
 			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
 			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
@@ -124,7 +122,7 @@ public class ProcessNewSimulationRequest {
 			gsonBuilder.setPrettyPrinting();
 			Gson gson = gsonBuilder.create();
 			RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
-			System.out.println(config.test_config.getEvents().toString());
+//			System.out.println(config.test_config.getEvents().toString());
 			
 			config.simulation_config.setSimulation_broker_port(simulationPort);
 			logManager.log(new LogMessage(this.getClass().getName(),

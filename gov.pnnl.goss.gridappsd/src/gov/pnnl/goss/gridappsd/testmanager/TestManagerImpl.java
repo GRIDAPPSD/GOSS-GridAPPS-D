@@ -176,6 +176,10 @@ public class TestManagerImpl implements TestManager {
 	
 	public void handleTestRequest(TestConfig testConfig, SimulationContext simulationContext) {
 		
+		//Not testing this simulation
+		if(testConfig == null){
+			return;
+		}
 		String simulationId = simulationContext.getSimulationId();
 		String simulationDir = simulationContext.getSimulationDir();
 
