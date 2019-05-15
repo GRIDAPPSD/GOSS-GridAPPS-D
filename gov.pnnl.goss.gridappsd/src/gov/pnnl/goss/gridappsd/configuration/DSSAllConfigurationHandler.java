@@ -131,28 +131,10 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
-		String modelId = null;
 		SimulationContext simContext = null;
-		String directory = null;
 
 		logRunning("Generating all DSS configuration files using parameters: "+parameters, processId, username, logManager);
 		
-		
-		
-		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		if(simulationId == null || simulationId.trim().length()==0){
-			modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-			if(modelId==null || modelId.trim().length()==0){
-				logError("No "+MODELID+" parameter provided", processId, username, logManager);
-				throw new Exception("Missing parameter "+MODELID);
-			}
-			directory = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
-		}
-		else{
-			simContext = simulationManager.getSimulationContextForId(simulationId);
-			modelId = simContext.getRequest().getPower_system_config().getLine_name();
-			directory = simContext.getSimulationDir();
-		}
 		
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
 		if(zFraction==0) {
@@ -171,20 +153,48 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
-		
-		
+				
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		if(scheduleName!=null){
 			bWantSched = true;
 		}
+		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
+		if(directory==null || directory.trim().length()==0){
+			logError("No "+DIRECTORY+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+DIRECTORY);
+		}
 		
-		
-		
+		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+		if(modelId==null || modelId.trim().length()==0){
+			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+MODELID);
+		}
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 		if(bgHost==null || bgHost.trim().length()==0){
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
+		}
+		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		int simId = -1;
+		if(simulationID==null || simulationID.trim().length()==0){
+			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONID);
+		}
+		try{
+			simId = new Integer(simulationID);
+		}catch (Exception e) {
+			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+		}
+		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
+		if(simulationStartTime<0){
+			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
+		}
+		long simulationDuration = GridAppsDConstants.getLongProperty(parameters, SIMULATIONDURATION, 0);
+		if(simulationDuration==0){
+			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
+			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
 		
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
@@ -197,6 +207,8 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String fRoot = dir.getAbsolutePath()+File.separator+CIM2DSS_PREFIX;
 		
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		
+		//TODO add climate
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
