@@ -13,12 +13,12 @@ import com.google.gson.JsonObject;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
-import gov.pnnl.goss.gridappsd.dto.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
