@@ -1,4 +1,4 @@
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import java.io.Serializable;
 
