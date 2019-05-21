@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,81 +36,55 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 
 import com.google.gson.Gson;
 
-public class TestScript implements Serializable {
-
-	private static final long serialVersionUID = 1L;
-
-	public String name;
-
-	private String test_configuration;
-
-	private String application;
+public class Event implements Serializable{
 	
-	private Map<String,List<String>> outputs;
+	private static final long serialVersionUID = -5940543607543814505L;
+
+	public String eventId;
 	
-	private List<RuleSettings> rules;
+	public String event_type;
 	
-	public List<FailureEvent> getEvents() {
-		return events;
+    public Long occuredDateTime;
+
+    public Long stopDateTime;
+    
+    public String getFaultMRID() {
+		return eventId;
 	}
 
-	public void setEvents(List<FailureEvent> events) {
-		this.events = events;
+	public void setFaultMRID(String faultMRID) {
+		this.eventId = faultMRID;
 	}
 
-	private List<FailureEvent> events;
-
-	public String getName() {
-		return name;
+	public String getEvent_type() {
+		return event_type;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public List<RuleSettings> getRules() {
-		return rules;
-	}
-
-	public void setRules(List<RuleSettings> rules) {
-		this.rules = rules;
-	}
-
-	public TestScript() {
-
-	}
-
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
+	public void setEvent_type(String event_type) {
+		this.event_type = event_type;
 	}
 	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
+	public long getTimeInitiated() {
+		return occuredDateTime;
 	}
 
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
+	public void setTimeInitiated(long timeInitiated) {
+		this.occuredDateTime = timeInitiated;
+	}
+
+	public long getTimeCleared() {
+		return stopDateTime;
+	}
+
+	public void setTimeCleared(long timeCleared) {
+		this.stopDateTime = timeCleared;
 	}
 
 	@Override
@@ -118,12 +92,13 @@ public class TestScript implements Serializable {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
-	
-	public static TestScript parse(String jsonString){
+
+	public static Event parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new RuntimeException("Expected attribute name not found");
+		Event obj = gson.fromJson(jsonString, Event.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
+
 }
