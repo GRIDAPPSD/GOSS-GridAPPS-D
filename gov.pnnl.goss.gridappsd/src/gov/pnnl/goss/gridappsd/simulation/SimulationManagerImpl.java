@@ -188,10 +188,6 @@ public class SimulationManagerImpl implements SimulationManager{
 		return path;
 	}*/
 
-
-
-	
-
 	
 	public Map<String, SimulationContext> getSimContexts() {
 		return simContexts;

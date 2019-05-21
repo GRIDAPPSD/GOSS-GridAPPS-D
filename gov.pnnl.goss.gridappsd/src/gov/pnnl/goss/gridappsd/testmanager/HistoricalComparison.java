@@ -1,41 +1,36 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.Map.Entry;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
-import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
-
 public class HistoricalComparison {
 	
-	String provenUri = "http://localhost:18080/hybrid/rest/v1/repository/provenMessage";
-//	private TimeseriesDataManager provenTimeSeriesDataManager;
-	TimeseriesDataManager provenTimeSeriesDataManager = new ProvenTimeSeriesDataManagerImpl();
+	DataManager dataManager;
 	
-	public HistoricalComparison(TimeseriesDataManager provenTimeSeriesDataManager) {
-		this.provenTimeSeriesDataManager = provenTimeSeriesDataManager;
+	public HistoricalComparison(DataManager dataManager) {
+		this.dataManager = dataManager;
 	}
 
 	public TestResultSeries test_proven(String simulationId, JsonObject expected_output_series){
 
-//		mySend(provenUri);
-		
 		String responseStr = null;
-
-//		responseStr = query(simulationId, null, "1532971828475", null, null).result.toString();
 		responseStr = timeSeriesQuery(simulationId, "1532971828475", null, null);
 		TestResultSeries testResultSeries = processWithAllTimes(expected_output_series, simulationId, responseStr);
 		return testResultSeries;
@@ -59,29 +54,28 @@ public class HistoricalComparison {
 	}
 
 	
-	
-	public String timeSeriesQuery(String simulationId, String hasMrid, String startTime, String endTime) {
-		RequestTimeseriesData request = new RequestTimeseriesData();
-		HashMap<String,String> queryFilter = new HashMap <String,String>();
+	public String timeSeriesQuery(String simulationId, String hasMrid,
+			String startTime, String endTime) {
+
+		HashMap<String, String> queryFilter = new HashMap<String, String>();
 		queryFilter.put("hasSimulationId", simulationId);
 		queryFilter.put("startTime", startTime);
 		queryFilter.put("endTime", endTime);
+
+		RequestTimeseriesData request = new RequestTimeseriesData();
 		request.setQueryMeasurement(RequestType.PROVEN_MEASUREMENT);
 		request.setQueryFilter(queryFilter);
-		
-		
-//		RequestTimeseriesData request = new RequestTimeseriesData();
-//		request.setSimulationId(simulationId);
-//		request.setMrid(hasMrid);
-//		request.setStartTime(startTime);
-//		request.setEndTime(endTime);
-		String responseStr = null;
+
+		Serializable response = null;
+
 		try {
-			responseStr = (String) provenTimeSeriesDataManager.query(request);
+			response = dataManager.processDataRequest(request, "timeseries",
+					Integer.parseInt(simulationId), null,
+					GridAppsDConstants.username);
 		} catch (Exception e) {
-			e.printStackTrace();
+			// TODO: Log error - excpetion
 		}
-		return responseStr;
+		return response.toString();
 	}
 	
 	public void buildMeasurementObject(JsonObject innerObject, JsonElement entry) {
@@ -296,12 +290,4 @@ public class HistoricalComparison {
 		return times;
 	}
 	
-	public static void main(String[] args) {
-	
-		HistoricalComparison pq = new HistoricalComparison(new ProvenTimeSeriesDataManagerImpl());
-		String expected_output_series = "/Users/jsimpson/git/adms/gridappsd-sample-app/sample_app/tests/expected_result_series_123_full.json";
-//		pq.test_proven("194096544", expected_output_series);
-		
-//		{"queryMeasurement":"simulation","queryType":"time-series","queryFilter":{"hasSimulationId":"194096544","hasMrid":"1532971828475"}}
-	}
 }

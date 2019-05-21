@@ -39,78 +39,41 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
-public class TestScript implements Serializable {
+
+public class RequestTestUpdate implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-
-	public String name;
-
-	private String test_configuration;
-
-	private String application;
 	
-	private Map<String,List<String>> outputs;
+	public enum RequestType {
+	    new_events, update_events, query_events
+	}
 	
-	private List<RuleSettings> rules;
-	
-	public List<FailureEvent> getEvents() {
+	RequestType command;
+
+	private List<Event> events;
+
+	public RequestType getCommand() {
+		return command;
+	}
+
+	public void setCommand(RequestType command) {
+		this.command = command;
+	}
+
+	public List<Event> getEvents() {
 		return events;
 	}
 
-	public void setEvents(List<FailureEvent> events) {
+	public void setEvents(List<Event> events) {
 		this.events = events;
-	}
-
-	private List<FailureEvent> events;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public List<RuleSettings> getRules() {
-		return rules;
-	}
-
-	public void setRules(List<RuleSettings> rules) {
-		this.rules = rules;
-	}
-
-	public TestScript() {
-
-	}
-
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
-	}
-	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
 	}
 
 	@Override
@@ -119,11 +82,9 @@ public class TestScript implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static TestScript parse(String jsonString){
+	public static RequestTestUpdate parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new RuntimeException("Expected attribute name not found");
+		RequestTestUpdate obj = gson.fromJson(jsonString, RequestTestUpdate.class);
 		return obj;
 	}
 }
