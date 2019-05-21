@@ -1,11 +1,9 @@
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import java.io.Serializable;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-
-import gov.pnnl.goss.gridappsd.dto.events.Fault;
 
 public class FaultCommand extends BaseEventCommand implements Serializable {
 	/**

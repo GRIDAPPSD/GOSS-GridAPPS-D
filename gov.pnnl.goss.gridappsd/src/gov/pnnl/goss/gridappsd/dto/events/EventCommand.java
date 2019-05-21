@@ -5,8 +5,6 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-import gov.pnnl.goss.gridappsd.dto.BaseEventCommand;
-
 public class EventCommand extends BaseEventCommand implements Serializable {
 	/**
 	 * 
