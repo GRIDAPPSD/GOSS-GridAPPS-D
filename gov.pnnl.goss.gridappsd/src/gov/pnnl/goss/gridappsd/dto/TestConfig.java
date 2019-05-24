@@ -128,7 +128,7 @@ public class TestConfig implements Serializable {
 		return obj;
 	}
 	
-	public static void main(String[] args){
+public static void main(String[] args){
 		
 		List<String> mrids = new ArrayList<String>();
 		mrids.add("mrid1123457899");
@@ -147,12 +147,12 @@ public class TestConfig implements Serializable {
 		Fault fail = new Fault();
 		fail.event_type = Fault.class.getSimpleName();
 		fail.ObjectMRID = "235242342342342";
-		Map<PhaseConnectedFaultKind,Double> faultKindMap = new HashMap<PhaseConnectedFaultKind, Double>();
-		faultKindMap.put(PhaseConnectedFaultKind.lineToGround, 0.3);
-		faultKindMap.put(PhaseConnectedFaultKind.lineToLineToGround, 0.2);
-		fail.PhaseConnectedFaultKind = faultKindMap;
+		Map<FaultImpedance,Double> faultImpedanceMap = new HashMap<FaultImpedance, Double>();
+		faultImpedanceMap.put(FaultImpedance.rGround, 0.3);
+		faultImpedanceMap.put(FaultImpedance.xGround, 0.2);
+		fail.PhaseConnectedFaultKind = PhaseConnectedFaultKind.lineToGround;
 		fail.phases = PhaseCode.ABC;
-		fail.FaultImpedance = FaultImpedance.rGround;
+		fail.FaultImpedance = faultImpedanceMap;
 		fail.occuredDateTime = new Date().getTime();
 		fail.stopDateTime = new Date().getTime();
 		

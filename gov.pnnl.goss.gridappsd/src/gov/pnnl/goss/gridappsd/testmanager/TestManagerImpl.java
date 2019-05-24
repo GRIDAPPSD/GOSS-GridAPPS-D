@@ -55,11 +55,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -107,12 +108,12 @@ public class TestManagerImpl implements TestManager {
 	
 	private Random randPort = new Random();
 	
-	private enum EventStatus {
-	    SCHEDULED, INITIATED, CLEARED, CANCELLED
-	}
-	
-	private Map<String,List<Event>> TestContext = new HashMap<String, List<Event>>();
-	private Map<String,EventStatus> EventStatus = new HashMap<String, EventStatus>();
+//	private enum EventStatus {
+//	    SCHEDULED, INITIATED, CLEARED, CANCELLED
+//	}
+//	
+//	private Map<String,List<Event>> TestContext = new HashMap<String, List<Event>>();
+//	private Map<String,EventStatus> EventStatus = new HashMap<String, EventStatus>();
 	private HashMap<String, ProcessEvents> processEventsMap = new HashMap<String, ProcessEvents>(10);
 	
 
@@ -140,7 +141,7 @@ public class TestManagerImpl implements TestManager {
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 			
-			client.subscribe(GridAppsDConstants.topic_simulationTestInput+".>", new GossResponseEvent() {
+			client.subscribe(GridAppsDConstants.topic_simulationTestInput+">", new GossResponseEvent() {
 				
 				@Override
 				public void onMessage(Serializable message) {
@@ -148,10 +149,11 @@ public class TestManagerImpl implements TestManager {
 					DataResponse request;
 					if (message instanceof DataResponse){
 						request = (DataResponse)message;
-						String topic = request.getDestination();
-						String simulationId = topic.substring(topic.lastIndexOf("."), topic.length());
+						String topic = request.getReplyDestination().toString();
+						String simulationId = topic.substring(topic.lastIndexOf(".")+1, topic.length());
+						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
 						
-						if(request.getData() instanceof RequestTestUpdate){
+						if(requestTest != null){
 							
 							RequestTestUpdate requestTestUpdate = RequestTestUpdate.parse(request.getData().toString());
 							
@@ -162,7 +164,7 @@ public class TestManagerImpl implements TestManager {
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.query_events){
-								sendEventStatus(simulationId, request.getDestination());
+								sendEventStatus(simulationId, topic);
 							}
 						}
 					}
@@ -228,13 +230,42 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void updateEventForSimulation(List<Event> events, String simulationId){
+		ProcessEvents pe = processEventsMap.get(simulationId);
+		pe.updateEventTimes(events);
 		//TODO : Check and Update events status in EventStatus Map variable 
 	}
 
 	@Override
 	public void sendEventStatus(String simulationId, String replyDestination){
-		//TODO: Get events for simulationId from TestContext Map variable 
-		//TODO : Check and Send events status from EventStatus Map variable 
+//		{
+//		    "data": [
+//		        {“faultMRID" : String,
+//		        "simulation_id": int,
+//		        “faultType:”: String,
+//		        "fault": <Fault Object>,
+//		        "timeInitiated":long,
+//		        "timeCleared":long,
+//		        "status": "scheduled"},  # "scheduled", "inprogress", "cleared"
+//		    }
+//		}
+	try{
+		if (processEventsMap.containsKey(simulationId)){
+			JsonObject statusJson = processEventsMap.get(simulationId).getStatusJson();
+			client.publish(replyDestination, statusJson.toString());
+		} else {
+			String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
+			r = "";
+			System.out.println("TestManager topic dest" + replyDestination);
+			client.publish(replyDestination, r);
+		}
+	} catch (Exception e) {
+		e.printStackTrace();
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+//		this.error(null,sw.toString());
+		//TODO log error and send error response
+	}
 	}
 	
 	@Override
@@ -339,7 +370,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	/**
-	 * This method comapred simulation output with more complex rules 
+	 * This method compare simulation output with more complex rules 
 	 * using a rule engine. This is still in test mode will be available
 	 * in later release. 
 	 */

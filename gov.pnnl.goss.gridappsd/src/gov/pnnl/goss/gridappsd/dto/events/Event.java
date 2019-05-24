@@ -47,7 +47,7 @@ public class Event implements Serializable{
 	
 	private static final long serialVersionUID = -5940543607543814505L;
 
-	public String eventId;
+	public String faultMRID;
 	
 	public String event_type;
 	
@@ -56,11 +56,11 @@ public class Event implements Serializable{
     public Long stopDateTime;
     
     public String getFaultMRID() {
-		return eventId;
+		return faultMRID;
 	}
 
 	public void setFaultMRID(String faultMRID) {
-		this.eventId = faultMRID;
+		this.faultMRID = faultMRID;
 	}
 
 	public String getEvent_type() {
