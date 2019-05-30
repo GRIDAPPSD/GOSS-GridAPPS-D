@@ -107,9 +107,9 @@ public class GridAppsDConstants {
 	//Simulation Topics
 	public static final String topic_simulation = topic_prefix+".simulation";
 	public static final String topic_simulationInput = topic_simulation+".input";
-	public static final String topic_simulationOutput = topic_simulation+".output";
-	public static final String topic_simulationLog = topic_simulation+".log.";
-	public static final String topic_simulationTestOutput = topic_simulation+".test.output.";
+	public static final String topic_simulationOutput = "/topic/"+topic_simulation+".output";
+	public static final String topic_simulationLog = "/topic/"+topic_simulation+".log.";
+	public static final String topic_simulationTestOutput = "/topic/"+topic_simulation+".test.output.";
 	public static final String topic_simulationTestInput = topic_simulation+".test.input.";
 	
 	//Service Topics
