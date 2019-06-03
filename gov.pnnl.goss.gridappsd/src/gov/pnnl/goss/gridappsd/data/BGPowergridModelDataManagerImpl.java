@@ -65,7 +65,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	public static final String DATA_MANAGER_TYPE = "powergridmodel";
 	 
+
 	String endpointBaseURL;
+	String endpointNSURL;
 //	BlazegraphQueryHandler queryHandler;
 
 	@ServiceDependency 
@@ -90,6 +92,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	public BGPowergridModelDataManagerImpl(String endpoint) {
 		endpointBaseURL = endpoint;
+		endpointNSURL = endpoint;
 		//queryHandler = new BlazegraphQueryHandler(endpoint);
 //		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 	}
@@ -100,10 +103,13 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 //		System.out.println("STARTING BGPGMODELDM");
 		try{
+
 			endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+			endpointNSURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_NS_PATH);
 		}catch(Exception e){
 			e.printStackTrace();
 			endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
+			endpointNSURL = endpointBaseURL;
 		}
 		
 //		reservedModelNames.add("kb");
@@ -201,7 +207,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	@Override
 	public ResultSet queryObjectResultSet(String modelId, String mrid, String processId, String username) {
-		String query = "select ?property ?value where {<"+getEndpointURL(modelId)+"#"+mrid+"> ?property ?value}";
+		String query = "select ?property ?value where {<"+getEndpointNS(modelId)+"#"+mrid+"> ?property ?value}";
 
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
@@ -219,7 +225,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public List<String> queryObjectTypeList(String modelId, String processId, String username) {
 		String query = "select DISTINCT  ?type where {?subject rdf:type ?type ";
 		if(modelId!=null && modelId.trim().length()>0){
-			query = query+". ?subject ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
+			query = query+". ?subject ?p2 <"+getEndpointNS(null)+"#"+modelId+"> ";
 
 		}
 		query = query + "}";
@@ -243,7 +249,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		ResultSet rs = queryModelResultSet(modelId, objectType, filter, processId, username);
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			JsonArray resultArr = new JsonArray();
-			String baseUrl = getEndpointURL(modelId);
+			String baseUrl = getEndpointNS(modelId);
 			HashMap<String, JsonObject> resultObjects = new HashMap<String, JsonObject>();
 			while( rs.hasNext()) {
 				QuerySolution qs = rs.nextSolution();
@@ -293,7 +299,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			 rootDoc.appendChild(rootElement);
 			 
 			 
-			String baseUrl = getEndpointURL(modelId);
+			String baseUrl = getEndpointNS(modelId);
 			HashMap<String, List<Element>> resultObjects = new HashMap<String, List<Element>>();
 			HashMap<String, Resource> resultTypes = new HashMap<String, Resource>();
 
@@ -373,7 +379,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		}
 		
 		String query = "CONSTRUCT   { ?s ?p ?o } WHERE     { ?s ?p ?o ";
-		query = query+". ?s ?p2 <"+getEndpointURL(null)+"#"+modelId+"> ";
+		query = query+". ?s ?p2 <"+getEndpointNS(null)+"#"+modelId+"> ";
 		if(objectType!=null && objectType.trim().length()>0){
 			query = query+". ?s rdf:type <"+objectType+"> ";
 		}
@@ -495,7 +501,12 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		//if namespace already exists throw error 
 		
 	}
-	
+
+
+
+	private String getEndpointNS(String modelId){
+		return endpointNSURL;
+	}
 	private String getEndpointURL(String modelId){
 		//Originally this used a different endpoint based on the model id, with all 
 		// models in the same namespace that is not necessary
