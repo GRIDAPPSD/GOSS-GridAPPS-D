@@ -72,7 +72,7 @@ import org.w3c.dom.Element;
 
 
 public class CIMDataSQLtoRDF {
-	public static final String CIM_NS = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
+	public static final String CIM_NS = "http://iec.ch/TC57/CIM100#";
 	public static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	public static final String CIM_PREFIX = "cim:";
 	public static final String RDF_PREFIX = "rdf:";

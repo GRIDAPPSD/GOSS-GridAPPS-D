@@ -147,7 +147,9 @@ public class GridAppsDConstants {
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
+
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
+	public static final String BLAZEGRAPH_NS_PATH = "blazegraph.ns.path";
 	public static final String PROVEN_PATH = "proven.path";
         public static final String PROVEN_WRITE_PATH = "proven.write.path";
         public static final String PROVEN_QUERY_PATH = "proven.query.path";
