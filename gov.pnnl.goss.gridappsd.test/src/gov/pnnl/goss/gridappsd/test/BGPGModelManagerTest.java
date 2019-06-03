@@ -279,7 +279,7 @@ public class BGPGModelManagerTest {
 			pgDataRequest.setRequestType(PowergridModelDataRequest.RequestType.QUERY_MODEL.toString());
 			pgDataRequest.setResultFormat(PowergridModelDataRequest.ResultFormat.JSON.toString());
 			pgDataRequest.setModelId(modelId);
-			pgDataRequest.setObjectType("http://iec.ch/TC57/2012/CIM-schema-cim17#ConnectivityNode");
+			pgDataRequest.setObjectType("http://iec.ch/TC57/CIM100#ConnectivityNode");
 			pgDataRequest.setFilter("?s cim:IdentifiedObject.name 'q14733'");
 			
 			System.out.println("QUERY MODEL REQUEST: "+GridAppsDConstants.topic_requestData+".powergridmodel");
