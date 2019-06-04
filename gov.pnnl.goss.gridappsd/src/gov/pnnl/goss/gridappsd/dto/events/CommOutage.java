@@ -42,6 +42,8 @@ package gov.pnnl.goss.gridappsd.dto.events;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.Gson;
+
 public class CommOutage extends Event{
 	
 	private static final long serialVersionUID = 6374753495662389807L;
@@ -50,7 +52,7 @@ public class CommOutage extends Event{
 	
 	boolean allInputOutage = false;
 	
-	List<String> inputOutageList = new ArrayList<String>();
+	List<ObjectMridAttributeMap> inputOutageList = new ArrayList<ObjectMridAttributeMap>();
 	
 	List<String> outputOutageList = new ArrayList<String>();
 
@@ -70,20 +72,28 @@ public class CommOutage extends Event{
 		this.allInputOutage = allInputOutage;
 	}
 
-	public List<String> getInputOutageList() {
+	public List<ObjectMridAttributeMap> getInputOutageList() {
 		return inputOutageList;
 	}
 
-	public void setInputOutageList(List<String> inputOutageList) {
+	public void setInputOutageList(List<ObjectMridAttributeMap> inputOutageList) {
 		this.inputOutageList = inputOutageList;
 	}
-
+	
 	public List<String> getOutputOutageList() {
 		return outputOutageList;
 	}
 
 	public void setOutputOutageList(List<String> outputOutageList) {
 		this.outputOutageList = outputOutageList;
+	}
+
+	public static CommOutage parse(String jsonString){
+		Gson  gson = new Gson();
+		CommOutage obj = gson.fromJson(jsonString, CommOutage.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
+		return obj;
 	}
 	
 }

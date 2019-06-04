@@ -54,7 +54,12 @@ import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulationResponse;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
@@ -71,6 +76,7 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -146,7 +152,14 @@ public class ProcessEvent implements GossResponseEvent {
 					if(request!=null){
 						//make sure it doesn't fail if request is null, although it should never be null
 						try{
-							simRequest = RequestSimulation.parse(request.toString());
+							GsonBuilder gsonBuilder = new GsonBuilder();
+					        RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+					        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+					        gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+					        gsonBuilder.setPrettyPrinting();
+					        Gson gson = gsonBuilder.create();
+					        simRequest = gson.fromJson(request.toString(), RequestSimulation.class);
+							//simRequest = RequestSimulation.parse(request.toString());
 						}catch(JsonSyntaxException e){
 							e.printStackTrace();
 							//TODO log error
@@ -159,10 +172,15 @@ public class ProcessEvent implements GossResponseEvent {
 				if(simRequest!=null){
 					//if new simulation		
 					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
-						client.publish(event.getReplyDestination(), processId);
+						RequestSimulationResponse response = new RequestSimulationResponse();
+						response.setSimulationId(Integer.toString(processId));
+						//RequestSimulation config = RequestSimulation.parse(message.toString());
+						if(simRequest.getTest_config()!=null)
+							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), Integer.toString(processId)));
+						client.publish(event.getReplyDestination(), response);
 						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
-						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager, testManager);
+						newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,processManger.assignSimulationPort(processId), appManager,serviceManager, testManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
 						simulationManager.pauseSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play

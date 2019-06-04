@@ -64,6 +64,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.jms.Destination;
+
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
@@ -149,8 +151,8 @@ public class TestManagerImpl implements TestManager {
 					DataResponse request;
 					if (message instanceof DataResponse){
 						request = (DataResponse)message;
-						String topic = request.getReplyDestination().toString();
-						String simulationId = topic.substring(topic.lastIndexOf(".")+1, topic.length());
+						String requestDestination = request.getDestination();
+						String simulationId = requestDestination.substring(requestDestination.lastIndexOf(".")+1, requestDestination.length());
 						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
 						
 						if(requestTest != null){
@@ -164,7 +166,7 @@ public class TestManagerImpl implements TestManager {
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.query_events){
-								sendEventStatus(simulationId, topic);
+								sendEventStatus(simulationId, request.getReplyDestination());
 							}
 						}
 					}
@@ -204,7 +206,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	@Override
-	public void sendEventsToSimulation(List<Event> events, String simulationId){
+	public List<Event> sendEventsToSimulation(List<Event> events, String simulationId){
 		//TODO: Add simulation and events in TestContext Map variable 
 		//TODO : Update events status in EventStatus Map variable 
 //		ProcessEvents pe = new ProcessEvents(logManager, events);
@@ -212,10 +214,11 @@ public class TestManagerImpl implements TestManager {
 //		EventCommand eventCommand = EventCommand.parse(dataStr);	
 		ProcessEvents pe = getProcessEvents(client, simulationId);
 		pe.addEvents(events);
+		return pe.getEvents();
 		
 //		if(eventCommand.command.equalsIgnoreCase("CommEvent")){
 //			pe.addEventCommandMessage(eventCommand);
-//		}	
+//		}
 	}
 	
 	private ProcessEvents getProcessEvents(Client client, String simulationId) {
@@ -236,7 +239,7 @@ public class TestManagerImpl implements TestManager {
 	}
 
 	@Override
-	public void sendEventStatus(String simulationId, String replyDestination){
+	public void sendEventStatus(String simulationId, Destination replyDestination){
 //		{
 //		    "data": [
 //		        {“faultMRID" : String,
@@ -249,6 +252,7 @@ public class TestManagerImpl implements TestManager {
 //		    }
 //		}
 	try{
+		
 		if (processEventsMap.containsKey(simulationId)){
 			JsonObject statusJson = processEventsMap.get(simulationId).getStatusJson();
 			client.publish(replyDestination, statusJson.toString());

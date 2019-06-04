@@ -145,7 +145,7 @@ public class ProcessEvents {
 	}
 	
 	public void processEvents(Client client, String simulationID) {
-		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationID,
+		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
 
@@ -220,12 +220,12 @@ public class ProcessEvents {
 		JsonObject command = createDiffCommand(simulationID, dm, "update");
 		if (command != null){
 			logMessage("Sending command to " + command.toString(), simulationID);
-			client.publish(GridAppsDConstants.topic_FNCS_input, command.toString());
+			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 		command = createDiffCommand(simulationID, dmComm, "CommOutage");
 		if (command != null) {
 			logMessage("Sending command to " + command.toString(), simulationID);
-			client.publish(GridAppsDConstants.FNCS_BRIDGE_PATH, command.toString());
+			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 	}
 	
