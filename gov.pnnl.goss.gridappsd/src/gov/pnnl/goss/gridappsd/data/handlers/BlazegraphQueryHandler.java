@@ -149,7 +149,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 
 		long end = new Date().getTime();
 		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
-		ResultSetCloseable rs=  ResultSetCloseable.closeableResultSet(qexec);
+		ResultSet rs=  qexec.execSelect();
 		return rs;
 	}
 	public boolean addFeederSelection (String mRID) {
