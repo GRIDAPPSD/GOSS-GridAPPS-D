@@ -393,7 +393,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		System.out.println(query);
 		
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
-		ResultSet rs = queryHandler.query(query);
+		ResultSet rs = queryHandler.construct(query);
 		return rs;
 	}
 	
