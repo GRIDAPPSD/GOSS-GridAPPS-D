@@ -9,6 +9,11 @@ public class ObjectMridAttributeMap implements Serializable {
 	String objectMrid;
 	String attribute;
 	
+	
+	public ObjectMridAttributeMap(){
+		super();
+	}
+			
 	public ObjectMridAttributeMap(String objectMrid, String attribute) {
 		super();
 		this.objectMrid = objectMrid;
