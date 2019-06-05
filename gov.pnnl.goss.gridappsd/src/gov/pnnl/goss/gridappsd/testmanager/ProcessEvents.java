@@ -167,7 +167,8 @@ public class ProcessEvents {
 		DifferenceMessage dm = new DifferenceMessage ();
 		DifferenceMessage dmComm = new DifferenceMessage ();
 		dm.difference_mrid="_"+UUID.randomUUID();
-		dm.timestamp = new Date().getTime();
+		dm.timestamp = current_time;
+		dmComm.timestamp = current_time;
 //		System.out.println("pq_initiated.size() " +pq_initiated.size() + " pq_cleared.size() " +pq_cleared.size());
 //		
 //		if(! pq_initiated.isEmpty()){

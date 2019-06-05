@@ -270,18 +270,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 
-			} else if(event.getDestination().contains("log")){
-				Serializable request;
-				if (message instanceof DataResponse){
-					request = ((DataResponse)message).getData();
-				} else {
-					request = message;
-				}
-
-				logManager.log(LogMessage.parse(request.toString()), username, null);
-
-			}
-			else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
+			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
 				
 				RequestPlatformStatus request = RequestPlatformStatus.parse(event.getData().toString());
 				 PlatformStatus platformStatus = new PlatformStatus();
