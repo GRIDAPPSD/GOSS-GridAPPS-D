@@ -201,7 +201,7 @@ class GOSSListener(object):
                     break
                 #forward messages from FNCS to GOSS
                 if self.filter_all_measurements == False:
-                    message['output'] = _get_fncs_bus_messages(simulation_id, measurement_filter)
+                    message['output'] = _get_fncs_bus_messages(simulation_id, self.measurement_filter)
                 else:
                     message['output'] = {}
                 response_msg = json.dumps(message['output'])
@@ -209,7 +209,7 @@ class GOSSListener(object):
                     goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
                 #forward messages from GOSS to FNCS
                 while not self.goss_to_fncs_message_queue.empty():
-                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), command_filter)
+                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -283,8 +283,8 @@ class GOSSListener(object):
                     else:
                         for x in d.get('inputOutageList', []):
                             try:
-                                idx = command_filter.find(x)
-                                del command_filter[idx]
+                                idx = self.command_filter.find(x)
+                                del self.command_filter[idx]
                             except ValueError as ve:
                                 pass
                     if d.get('allOutputOutage', False) == True:
@@ -292,8 +292,8 @@ class GOSSListener(object):
                     else:
                         for x in d.get('outputOutageList', []):
                             try:
-                                idx = measurement_filter.find(x)
-                                del measurement_filter[idx]
+                                idx = self.measurement_filter.find(x)
+                                del self.measurement_filter[idx]
                             except ValueError as ve:
                                 pass
                 for d in for_diffs:
@@ -301,14 +301,14 @@ class GOSSListener(object):
                         self.filter_all_commands = True
                     else:
                         for x in d.get('inputOutageList', []):
-                            if x not in command_filter:
-                                command_filter.append(x)
+                            if x not in self.command_filter:
+                                self.command_filter.append(x)
                     if d.get('allOutputOutage', False) == True:
                         self.filter_all_measurements = True
                     else:
                         for x in d.get('outputOutageList', []):
-                            if x not in measurement_filter:
-                                measurement_filter.append(x)
+                            if x not in self.measurement_filter:
+                                self.measurement_filter.append(x)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
@@ -436,7 +436,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
             + 'configuration_zpl = {0}'.format(configuration_zpl))
 
 
-def _publish_to_fncs_bus(simulation_id, goss_message):
+def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     """publish a message received from the GOSS bus to the FNCS bus.
 
     Function arguments:
@@ -444,6 +444,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
             It must not be an empty string. Default: None.
         goss_message -- Type: string. Description: The message from the GOSS bus
             as a json string. It must not be an empty string. Default: None.
+        command_filter -- Type: list. Description: The list of
+            command attributes to filter from the simulator input.
     Function returns:
         None.
     Function exceptions:
@@ -630,7 +632,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                         for y in object_property_to_measurement_id.get(x,{}):
                             measurement = {}
                             property_name = y["property"]
-                            if y["measurment_mrid"] not in measurement_filter:
+                            if y["measurement_mrid"] not in measurement_filter:
                                 measurement["measurement_mrid"] = y["measurement_mrid"]
                                 phases = y["phases"]
                                 conducting_equipment_type_str = y["conducting_equipment_type"]
