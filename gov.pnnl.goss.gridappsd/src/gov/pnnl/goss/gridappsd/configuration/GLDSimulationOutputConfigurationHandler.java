@@ -329,7 +329,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				} else {
 					propertyName = "power_in_" + phases;
 				}
-
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
@@ -339,13 +338,16 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for ACLineSegments are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
-		} else if (conductingEquipmentType.contains("LoadBreakSwitch")) {
+		} else if (conductingEquipmentType.contains("LoadBreakSwitch") || conductingEquipmentType.contains("Recloser") || conductingEquipmentType.contains("Breaker")) {
 			if(measurementType.equals("VA")) {
 				objectName = conductingEquipmentName;
 				propertyName = "power_in_" + phases;
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
+			} else if (measurementType.equals("POS")) {
+				objectName = conductingEquipmentName;
+				propertyName = "phase_" + phases + "_state";
 			} else if (measurementType.equals("A")) {
 				objectName = conductingEquipmentName;
 				if (phases.equals("1")) {
@@ -355,7 +357,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				} else {
 					propertyName = "current_in_" + phases;
 				}
-
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for LoadBreakSwitch are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
