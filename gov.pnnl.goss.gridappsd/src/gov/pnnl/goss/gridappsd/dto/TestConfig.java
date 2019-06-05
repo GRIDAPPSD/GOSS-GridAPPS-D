@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -39,174 +39,131 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.FaultImpedance;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseCode;
+import gov.pnnl.goss.gridappsd.dto.events.Fault.PhaseConnectedFaultKind;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.proton.ProtonFactory.ImplementationType;
+
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonObject;
 
-public class TestConfiguration implements Serializable {
-
+public class TestConfig implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public String power_system_configuration;
-
-	public String simulation_configuration;
+	private List<Event> events;
 	
-	public Integer durations;
-
-	public Date run_start;
-
-	public Date run_end;
-
-	public String region_name;
-
-	public String subregion_name;
-
-	public String feeder_name;
+	private List<RuleSettings> rules;
 	
-	public Boolean logging;
+	private JsonObject expectedResults;
 	
-	public Map<String,String> logging_options;
-
-	public Map<String,String> initial_conditions;
+	private String compareWithSimId;
 	
-	public Map<String,String> default_values;
+	private String appId;
 	
-	public String[] outputs;
-	
-	public int historical_simulation_id;
-	
-	public TestConfiguration() {
-
+	public JsonObject getExpectedResultObject() {
+		return expectedResults;
 	}
 
-	public String getPower_system_configuration() {
-		return power_system_configuration;
+	public void setExpectedResultObject(JsonObject expectedResults) {
+		this.expectedResults = expectedResults;
 	}
 
-	public void setPower_system_configuration(String power_system_configuration) {
-		this.power_system_configuration = power_system_configuration;
+	public List<Event> getEvents() {
+		return events;
 	}
 
-	public String getSimulation_configuration() {
-		return simulation_configuration;
+	public void setEvents(List<Event> events) {
+		this.events = events;
 	}
 
-	public void setSimulation_configuration(String simulation_configuration) {
-		this.simulation_configuration = simulation_configuration;
+	public List<RuleSettings> getRules() {
+		return rules;
 	}
 
-	public Integer getDurations() {
-		return durations;
-	}
-
-	public void setDurations(Integer durations) {
-		this.durations = durations;
-	}
-
-	public Date getRun_start() {
-		return run_start;
-	}
-
-	public void setRun_start(Date run_start) {
-		this.run_start = run_start;
-	}
-
-	public Date getRun_end() {
-		return run_end;
-	}
-
-	public void setRun_end(Date run_end) {
-		this.run_end = run_end;
-	}
-
-	public String getRegion_name() {
-		return region_name;
-	}
-
-	public void setRegion_name(String region_name) {
-		this.region_name = region_name;
-	}
-
-	public String getSubregion_name() {
-		return subregion_name;
-	}
-
-	public void setSubregion_name(String subregion_name) {
-		this.subregion_name = subregion_name;
-	}
-
-	public String getFeeder_name() {
-		return feeder_name;
-	}
-
-	public void setLine_name(String line_name) {
-		this.feeder_name = line_name;
-	}
-
-	public Boolean getLogging() {
-		return logging;
-	}
-
-	public void setLogging(Boolean logging) {
-		this.logging = logging;
-	}
-
-	public Map<String, String> getLogging_options() {
-		return logging_options;
-	}
-
-	public void setLogging_options(Map<String, String> logging_options) {
-		this.logging_options = logging_options;
-	}
-
-	public Map<String, String> getInitial_conditions() {
-		return initial_conditions;
-	}
-
-	public void setInitial_conditions(Map<String, String> initial_conditions) {
-		this.initial_conditions = initial_conditions;
-	}
-
-	public Map<String, String> getDefault_values() {
-		return default_values;
-	}
-
-	public void setDefault_values(Map<String, String> default_values) {
-		this.default_values = default_values;
-	}
-
-	public String[] getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(String[] outputs) {
-		this.outputs = outputs;
+	public void setRules(List<RuleSettings> rules) {
+		this.rules = rules;
 	}
 	
-	public int getHistorical_simulation_id() {
-		return historical_simulation_id;
+	public String getCompareWithSimId() {
+		return compareWithSimId;
 	}
 
-	public void setHistorical_simulation_id(int historical_simulation_id) {
-		this.historical_simulation_id = historical_simulation_id;
+	public void setCompareWithSimId(String compareWithSimId) {
+		this.compareWithSimId = compareWithSimId;
 	}
 	
+	public String getAppId() {
+		return appId;
+	}
+
+	public void setAppId(String appId) {
+		this.appId = appId;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 	
-	public static TestConfiguration parse(String jsonString){
-	    Gson  gson = new Gson();
-	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
-	    if(obj.power_system_configuration==null)
-	        throw new JsonSyntaxException("Expected attribute power_system_configuration not found");
-	    return obj;
+	public static TestConfig parse(String jsonString){
+		Gson  gson = new Gson();
+		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
+		if(obj.events==null || obj.events.size()==0)
+			throw new RuntimeException("Expected attribute events not found or is empty");
+		if(obj.appId==null)
+			throw new RuntimeException("Expected attribute appId not found");
+		return obj;
 	}
-
+	
+	public static void main(String[] args){
+		
+		List<String> mrids = new ArrayList<String>();
+		mrids.add("mrid1123457899");
+		mrids.add("mrid234578908");
+		
+		
+		CommOutage commOutage = new CommOutage();
+		commOutage.event_type = CommOutage.class.getSimpleName();
+		commOutage.occuredDateTime = new Date().getTime();
+		commOutage.occuredDateTime = new Date().getTime();
+		commOutage.setAllInputOutage(true);
+		commOutage.setAllOutputOutage(true);
+		commOutage.setInputOutageList(mrids);
+		commOutage.setOutputOutageList(mrids);
+		
+		Fault fail = new Fault();
+		fail.event_type = Fault.class.getSimpleName();
+		fail.ObjectMRID = "235242342342342";
+		Map<PhaseConnectedFaultKind,Double> faultKindMap = new HashMap<PhaseConnectedFaultKind, Double>();
+		faultKindMap.put(PhaseConnectedFaultKind.lineToGround, 0.3);
+		faultKindMap.put(PhaseConnectedFaultKind.lineToLineToGround, 0.2);
+		fail.PhaseConnectedFaultKind = faultKindMap;
+		fail.phases = PhaseCode.ABC;
+		fail.FaultImpedance = FaultImpedance.rGround;
+		fail.occuredDateTime = new Date().getTime();
+		fail.stopDateTime = new Date().getTime();
+		
+		
+		List<Event> events = new ArrayList<Event>();
+		events.add(commOutage);
+		events.add(fail);
+		TestConfig testConfig = new TestConfig();
+		testConfig.appId = "sample_app";
+		testConfig.events = events;
+		
+		System.out.println(testConfig.toString());
+	}
 }

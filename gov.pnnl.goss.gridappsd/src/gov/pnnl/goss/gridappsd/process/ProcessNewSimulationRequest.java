@@ -39,6 +39,31 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.DSSAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.dto.AppInfo;
+import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -52,28 +77,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.management.RuntimeErrorException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import org.apache.felix.dm.annotation.api.Registered;
-
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.dto.AppInfo;
-import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.DataResponse;
 
 public class ProcessNewSimulationRequest {
@@ -90,16 +96,16 @@ public class ProcessNewSimulationRequest {
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			DataResponse event, Serializable message, AppManager appManager,
-			ServiceManager serviceManager) {
+			ServiceManager serviceManager, TestManager testManager) {
 		process(configurationManager, simulationManager, simulationId, message,
 				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT, appManager,
-				serviceManager);
+				serviceManager, testManager);
 	}
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			Serializable message, int simulationPort, AppManager appManager,
-			ServiceManager serviceManager) {
+			ServiceManager serviceManager, TestManager testManager) {
 
 		try {
 
@@ -109,8 +115,16 @@ public class ProcessNewSimulationRequest {
 			String simulationLogTopic = GridAppsDConstants.topic_simulationLog
 					+ simId;
 
-			RequestSimulation config = RequestSimulation.parse(message
-					.toString());
+
+			GsonBuilder gsonBuilder = new GsonBuilder();
+			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+			gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+			gsonBuilder.setPrettyPrinting();
+			Gson gson = gsonBuilder.create();
+			RequestSimulation config = gson.fromJson(message.toString(), RequestSimulation.class);
+//			System.out.println(config.test_config.getEvents().toString());
+			
 			config.simulation_config.setSimulation_broker_port(simulationPort);
 			logManager.log(new LogMessage(this.getClass().getName(),
 					new Integer(simulationId).toString(), new Date().getTime(),
@@ -193,12 +207,21 @@ public class ProcessNewSimulationRequest {
 
 
 
-
-			Properties simulationParams = generateSimulationParameters(config);
-			simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
-			simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-			configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
-
+			String simulator = config.getSimulation_config().getSimulator();
+			//generate config files for requested simulator
+			//if requested simulator is opendss
+			if(simulator.equalsIgnoreCase(DSSAllConfigurationHandler.CONFIGTARGET)){
+				Properties simulationParams = generateSimulationParameters(config);
+				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simId);
+				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+			} else { //otherwise use gridlabd
+				Properties simulationParams = generateSimulationParameters(config);
+				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
+				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+			}
+			
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
@@ -291,6 +314,10 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
+			
+			// start test if requested 
+			testManager.handleTestRequest(config.getTest_config(), simContext);
+			
 
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),

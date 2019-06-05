@@ -71,7 +71,7 @@ import org.apache.jena.util.FileManager;
 
 
 public class CIMDataRDFToGLM {
-	static final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim16#";
+	static final String nsCIM = "http://iec.ch/TC57/CIM100#";
 	static final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	static final String baseURI = "http://gridlabd";
 

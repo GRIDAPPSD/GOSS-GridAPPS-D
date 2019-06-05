@@ -37,80 +37,91 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.dto;
+package gov.pnnl.goss.gridappsd.dto.events;
 
-import java.io.Serializable;
-import java.util.Date;
+import java.util.Map;
 
 import com.google.gson.Gson;
 
-public class FailureEvent implements Serializable{
-	
-	/**
-	 * 
-	 */
+public class Fault extends Event{
+
 	private static final long serialVersionUID = 7348798730580951117L;
 	
-//	mRID of the Fault itself
-//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
-//	Fault.phases, for the phases involved in the fault
-//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
-//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
-//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
-
-	public String faultMRID;
-	
-	public String equipmentMRID;
-	
-	public String phases;
-	
-	public double rGround; //Complex
-	
-	public double xGround; //Complex
-	
-	public double rLineToLine; //Complex
-	
-	public double xLineToLine; //Complex
-	
-	public String PhaseConnectedFaultKind;
-
-	public Date event_date;
-	
-	public int event_type;
-	
-    public long timeInitiated;
-
-    public long timeCleared;
-	
-	public Date getEvent_date() {
-		return event_date;
-	}
-
-	public void setEvent_date(Date event_date) {
-		this.event_date = event_date;
-	}
-
-	public int getEvent_type() {
-		return event_type;
-	}
-
-	public void setEvent_type(int event_type) {
-		this.event_type = event_type;
+	public enum PhaseConnectedFaultKind {
+	    lineToGround, lineToLine, lineToLineToGround, lineOpen
 	}
 	
+	public enum FaultImpedance {
+		rGround, rLineToLine, xGround, xLineToLine
+	}
+	
+	public enum PhaseCode {
+		ABCN(225),ABC(224),ABN(193),ACN(41),BCN(97),AB(132),AC(96),BC(65),AN(129),BN(65),
+		CN(33),A(128),B(64),C(32),N(16),s1N(528),s2N(272),s12N(784),s1(512),
+		s2(256),s12(768),none(0),X(1024),XY(3072),XN(1040),XYN(3088);
+		
+		private final int value;
+		
+		PhaseCode(final int newValue){
+			value = newValue;
+		}
+		
+		public int getValue(){
+			return value;
+		}
+	}
+	
+	public FaultImpedance FaultImpedance;
+	
+	public Map<PhaseConnectedFaultKind,Double> PhaseConnectedFaultKind;
+	
+	public String ObjectMRID;
+	
+	public PhaseCode phases;
+	
+	public FaultImpedance getFaultImpedance() {
+		return FaultImpedance;
+	}
+
+	public void setFaultImpedance(FaultImpedance faultImpedance) {
+		FaultImpedance = faultImpedance;
+	}
+
+	public Map<PhaseConnectedFaultKind, Double> getPhaseConnectedFaultKind() {
+		return PhaseConnectedFaultKind;
+	}
+
+	public void setPhaseConnectedFaultKind(
+			Map<PhaseConnectedFaultKind, Double> phaseConnectedFaultKind) {
+		PhaseConnectedFaultKind = phaseConnectedFaultKind;
+	}
+
+	public String getObjectMRID() {
+		return ObjectMRID;
+	}
+
+	public void setObjectMRID(String ObjectMRID) {
+		this.ObjectMRID = ObjectMRID;
+	}
+
+	public PhaseCode getPhases() {
+		return phases;
+	}
+
+	public void setPhases(PhaseCode phases) {
+		this.phases = phases;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
 
-	public static FailureEvent parse(String jsonString){
+	public static Fault parse(String jsonString){
 		Gson  gson = new Gson();
-		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
-		if(obj.event_date==null)
-			throw new RuntimeException("Expected attribute output_objects not found");
+		Fault obj = gson.fromJson(jsonString, Fault.class);
+		//TODO: Check for mandatory fields and impedance-faultKind combination
 		return obj;
 	}
 

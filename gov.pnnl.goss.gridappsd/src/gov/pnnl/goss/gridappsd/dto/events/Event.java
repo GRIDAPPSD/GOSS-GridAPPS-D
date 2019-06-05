@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright  2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,153 +36,68 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.dto.events;
 
 import java.io.Serializable;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 
-public class RequestTest implements Serializable {
+public class Event implements Serializable{
 	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -5940543607543814505L;
 
-	public String expectedResult;
+	public String eventId;
 	
-	public JsonObject expectedResultObject;
+	public String event_type;
+	
+    public Long occuredDateTime;
 
-	public int rulePort;
-	
-	public int simulationID;
-	
-	public String simulationOutputObject;
-	
-	public String testConfigPath;
-	
-	public TestConfiguration getTestConfig() {
-		return testConfig;
+    public Long stopDateTime;
+    
+    public String getFaultMRID() {
+		return eventId;
 	}
 
-	public void setTestConfig(TestConfiguration testConfig) {
-		this.testConfig = testConfig;
+	public void setFaultMRID(String faultMRID) {
+		this.eventId = faultMRID;
 	}
 
-	public TestScript getTestScript() {
-		return testScript;
+	public String getEvent_type() {
+		return event_type;
 	}
 
-	public void setTestScript(TestScript testScript) {
-		this.testScript = testScript;
-	}
-
-
-	public TestConfiguration testConfig;
-	
-	public int testID;
-	
-	public String testScriptPath;
-	
-	public TestScript testScript;
-	
-	public String topic;
-
-	public RequestTest(){}
-
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
-	}
-
-	public String getExpectedResult() {
-		return expectedResult;
+	public void setEvent_type(String event_type) {
+		this.event_type = event_type;
 	}
 	
-	public JsonObject getExpectedResultObject() {
-		return expectedResultObject;
+	public long getTimeInitiated() {
+		return occuredDateTime;
 	}
 
-	public int getRulePort() {
-		return rulePort;
+	public void setTimeInitiated(long timeInitiated) {
+		this.occuredDateTime = timeInitiated;
 	}
 
-	public int getSimulationID() {
-		return simulationID;
-	}	
-	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
+	public long getTimeCleared() {
+		return stopDateTime;
 	}
 
-	public String getTestConfigPath() {
-		return testConfigPath;
+	public void setTimeCleared(long timeCleared) {
+		this.stopDateTime = timeCleared;
 	}
 
-	public int getTestID() {
-		return testID;
-	}
-
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setExpectedResult(String expectedResult) {
-		this.expectedResult = expectedResult;
-	}
-
-	public void setExpectedResultObject(JsonObject expectedResultObject) {
-		this.expectedResultObject = expectedResultObject;
-	}
-
-	public void setRulePort(int rulePort) {
-		this.rulePort = rulePort;
-	}
-
-	public void setSimulationID(int simulationID) {
-		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}
-
-	public void setTestID(int testID) {
-		this.testID = testID;
-	}
-	
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
-	}
-	
-
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
-	
-	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
-	
-	
-	public static RequestTest parse(String jsonString){
-//		Gson  gson = new Gson();
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-//		if(obj.testConfigPath==null)
-//			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+
+	public static Event parse(String jsonString){
+		Gson  gson = new Gson();
+		Event obj = gson.fromJson(jsonString, Event.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
 

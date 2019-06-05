@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.testmanager;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,7 +49,11 @@ import java.util.Map.Entry;
  * @author jsimpson
  *
  */
-public class TestResults {
+public class TestResults implements Serializable{
+	
+	private static final long serialVersionUID = -6171952609185593742L;
+	
+	long simulationTimestamp;
 	
 	public Map<String, HashMap<String, String[]>> objectPropComparison = new HashMap<String, HashMap<String, String[]>>();
 	

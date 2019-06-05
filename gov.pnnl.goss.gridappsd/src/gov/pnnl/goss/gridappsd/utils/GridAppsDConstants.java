@@ -109,6 +109,8 @@ public class GridAppsDConstants {
 	public static final String topic_simulationInput = topic_simulation+".input";
 	public static final String topic_simulationOutput = topic_simulation+".output";
 	public static final String topic_simulationLog = topic_simulation+".log.";
+	public static final String topic_simulationTestOutput = topic_simulation+".test.output.";
+	public static final String topic_simulationTestInput = topic_simulation+".test.input.";
 	
 	//Service Topics
 	public static final String topic_service = topic_prefix+".simulation";
@@ -145,7 +147,9 @@ public class GridAppsDConstants {
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
+
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
+	public static final String BLAZEGRAPH_NS_PATH = "blazegraph.ns.path";
 	public static final String PROVEN_PATH = "proven.path";
         public static final String PROVEN_WRITE_PATH = "proven.write.path";
         public static final String PROVEN_QUERY_PATH = "proven.query.path";

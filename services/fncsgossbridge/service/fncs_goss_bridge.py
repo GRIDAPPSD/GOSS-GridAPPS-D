@@ -1003,7 +1003,7 @@ def _create_cim_object_map(map_file=None):
                             "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
-                            "type" : "regu:lator"
+                            "type" : "regulator"
                         }
                 for y in switches:
                     object_mrid_to_name[y.get("mRID")] = {
