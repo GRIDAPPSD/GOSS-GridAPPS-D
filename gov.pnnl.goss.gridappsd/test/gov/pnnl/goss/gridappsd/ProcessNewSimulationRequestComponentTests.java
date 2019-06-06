@@ -50,6 +50,7 @@ import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 
 import java.io.File;
@@ -107,7 +108,8 @@ public class ProcessNewSimulationRequestComponentTests {
 		
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
-		request.process(configurationManager, simulationManager, simulationId, event, REQUEST_SIMULATION_CONFIG,appManager, serviceManager, testManager);
+		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager);
 		
 		//	request simulation object parsed successfully and first log info call made
 		Mockito.verify(logManager, Mockito.times(3)).log(argCaptorLogMessage.capture(), argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
@@ -157,7 +159,9 @@ public class ProcessNewSimulationRequestComponentTests {
 		
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
-		request.process(configurationManager, simulationManager, simulationId, event, "Bad"+REQUEST_SIMULATION_CONFIG, appManager, serviceManager, testManager);
+		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+		requestSimulation.getPower_system_config().setGeographicalRegion_name("Bad");
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager, serviceManager, testManager);
 		
 //		try {
 //			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
@@ -230,7 +234,8 @@ public class ProcessNewSimulationRequestComponentTests {
 		
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
-		request.process(configurationManager, simulationManager, simulationId, event, REQUEST_SIMULATION_CONFIG,appManager, serviceManager, testManager);
+		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager);
 		
 		
 //		request error log call made
