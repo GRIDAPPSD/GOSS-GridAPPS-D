@@ -152,14 +152,7 @@ public class ProcessEvent implements GossResponseEvent {
 					if(request!=null){
 						//make sure it doesn't fail if request is null, although it should never be null
 						try{
-							GsonBuilder gsonBuilder = new GsonBuilder();
-					        RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
-					        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
-					        gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
-					        gsonBuilder.setPrettyPrinting();
-					        Gson gson = gsonBuilder.create();
-					        simRequest = gson.fromJson(request.toString(), RequestSimulation.class);
-							//simRequest = RequestSimulation.parse(request.toString());
+							simRequest = RequestSimulation.parse(request.toString());
 						}catch(JsonSyntaxException e){
 							e.printStackTrace();
 							//TODO log error
