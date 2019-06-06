@@ -54,7 +54,6 @@ import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -201,9 +200,10 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
+			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), outID, buscoords, guids, loadScale,
+					bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 		} else {
-			cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantZip, zFraction, iFraction, pFraction);
+			cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that
