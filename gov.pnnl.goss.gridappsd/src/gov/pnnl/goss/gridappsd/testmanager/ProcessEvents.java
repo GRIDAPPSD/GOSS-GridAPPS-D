@@ -77,6 +77,7 @@ public class ProcessEvents {
 		}
 		
 		event.setFaultMRID("_"+UUID.randomUUID());
+		event.setEvent_type(event.getClass().getSimpleName());
 		feStatusMap.put(event.getFaultMRID(), event);
 		eventStatus.put(event.getFaultMRID(), EventStatus.SCHEDULED);
 		pq_initiated.add(event);

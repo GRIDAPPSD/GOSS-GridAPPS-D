@@ -252,7 +252,8 @@ public class SimulationProcess extends Thread {
                         log.info(processName+": "+line.substring(0,Math.min(200, line.length())));
                     }
                 } catch (IOException e) {
-                    log.error("Error on process "+processName, e);
+                	if(!(e.getMessage().contains("Stream closed")))
+                		log.error("Error on process "+processName, e);
                 }
             }
         }.start();
