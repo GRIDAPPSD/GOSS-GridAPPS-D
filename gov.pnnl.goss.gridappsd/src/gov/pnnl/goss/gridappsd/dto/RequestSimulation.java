@@ -150,7 +150,7 @@ public class RequestSimulation implements Serializable {
 			for(Event event : obj.getTest_config().getEvents()){
 				if(event.occuredDateTime==0 || event.stopDateTime==0)
 					throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
-				if(event.occuredDateTime <= event.stopDateTime)
+				if(event.occuredDateTime >= event.stopDateTime)
 					throw new RuntimeException("occuredDateTime cannot be less or equal to stopDateTime for an event");
 			}
 		}
