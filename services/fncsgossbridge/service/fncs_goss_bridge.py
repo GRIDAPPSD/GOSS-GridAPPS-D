@@ -611,12 +611,24 @@ def _get_fncs_bus_messages(simulation_id):
                                         measurement["angle"] = ang_deg
                                     else:
                                         measurement["value"] = int(val_str)
-                                elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
+                                elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection"]:
                                     val = complex(val_str)
                                     (mag,ang_rad) = cmath.polar(val)
                                     ang_deg = math.degrees(ang_rad)
                                     measurement["magnitude"] = mag
                                     measurement["angle"] = ang_deg
+                                elif conducting_equipment_type in ["LoadBreakSwitch","Recloser","Breaker"]:
+                                    if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                        val = complex(val_str)
+                                        (mag,ang_rad) = cmath.polar(val)
+                                        ang_deg = math.degrees(ang_rad)
+                                        measurement["magnitude"] = mag
+                                        measurement["angle"] = ang_deg
+                                    else:
+                                        if val_str == "OPEN":
+                                            measurement["value"] = 0
+                                        else:
+                                            measurement["value"] = 1
                                 elif conducting_equipment_type == "RatioTapChanger":
                                     if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                         val = complex(val_str)
@@ -879,16 +891,19 @@ def _create_cim_object_map(map_file=None):
                                 property_name = "current_in_" + phases
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
-                    elif "LoadBreakSwitch" in conducting_equipment_type:
+                    elif "LoadBreakSwitch" in conducting_equipment_type or "Recloser" in conducting_equipment_type or "Breaker" in conducting_equipment_type:
                         if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "power_in_" + phases;
+                            object_name = conducting_equipment_name
+                            property_name = "power_in_" + phases
                         elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
+                            object_name = connectivity_node
+                            property_name = "voltage_" + phases
+                        elif measurement_type == "POS":
+                            object_name = conducting_equipment_name
+                            property_name = "phase_" + phases + "_state"
                         elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            property_name = "current_in_" + phases;
+                            object_name = conducting_equipment_name
+                            property_name = "current_in_" + phases
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
                     elif "EnergyConsumer" in conducting_equipment_type:
