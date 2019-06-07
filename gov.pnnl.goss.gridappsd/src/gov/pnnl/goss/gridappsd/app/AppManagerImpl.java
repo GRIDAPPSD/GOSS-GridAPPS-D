@@ -650,7 +650,14 @@ public class AppManagerImpl implements AppManager {
 	public void stopAppInstance(String instanceId) {
 		instanceId = instanceId.trim();
 		AppInstance instance = appInstances.get(instanceId);
-		instance.getProcess().destroy();
+		AppType type = instance.getApp_info().getType();
+		if(type.equals(AppInfo.AppType.REMOTE)){
+			//Note: currently there is only one instance of a remote app allowed, this stops the app for all instances used
+			remoteAppMonitor.stopRemoteApplication(instance.getApp_info().getId());
+		} else {
+			if(instance.getProcess()!=null)
+				instance.getProcess().destroy();
+		}
 		appInstances.remove(instanceId);
 
 	}
