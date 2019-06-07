@@ -164,7 +164,7 @@ public class LogManagerImpl implements LogManager {
 		if(logString.length() > 200 && message.getLogLevel()!=LogLevel.ERROR) {
 			logString = logString.substring(0,200);
 		}
-		/*switch(message.getLogLevel()) {
+		switch(message.getLogLevel()) {
 			case TRACE:	log.trace(logString);
 						break;
 			case DEBUG:	log.debug(logString);
@@ -179,8 +179,8 @@ public class LogManagerImpl implements LogManager {
 						break;
 			default:	log.debug(logString);
 						break;
-				
-		}*/
+			
+		}
 		
 		if(storeToDb)
 			store(source,requestId,timestamp,log_message,logLevel,processStatus,username);
