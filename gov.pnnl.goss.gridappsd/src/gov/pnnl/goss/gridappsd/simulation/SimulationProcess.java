@@ -126,21 +126,22 @@ public class SimulationProcess extends Thread {
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
             client.subscribe(GridAppsDConstants.topic_FNCS_output, gossFncsResponseEvent);
+            
+            logManager.log(new LogMessage(this.getClass().getSimpleName(),
+                    Integer.toString(simulationId),
+                    new Date().getTime(),
+                    "Checking fncs is initialized, currently "+isInitialized.isInited,
+                    LogLevel.INFO,
+                    ProcessStatus.RUNNING,
+                    true),GridAppsDConstants.username,
+                    GridAppsDConstants.topic_platformLog);
 
             int initAttempts = 0;
             while(!isInitialized.isInited && initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
                 //Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
                 //TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
                 //This call would return true/false for initialization and simulation output of time step 0.
-                logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                        Integer.toString(simulationId),
-                        new Date().getTime(),
-                        "Checking fncs is initialized, currently "+isInitialized.isInited,
-                        LogLevel.INFO,
-                        ProcessStatus.RUNNING,
-                        true),GridAppsDConstants.username,
-                        GridAppsDConstants.topic_platformLog);
-
+                
                 client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
                 initAttempts++;
                 Thread.sleep(1000);
@@ -165,7 +166,7 @@ public class SimulationProcess extends Thread {
                             Integer.toString(simulationId),
                             new Date().getTime(),
                             "Checking if FNCS simulation is finished, currently "+isFinished.isFinished,
-                            LogLevel.INFO,
+                            LogLevel.DEBUG,
                             ProcessStatus.RUNNING,
                             true),GridAppsDConstants.username,
                             GridAppsDConstants.topic_platformLog);
@@ -234,7 +235,7 @@ public class SimulationProcess extends Thread {
                 Integer.toString(simulationId),
                 new Date().getTime(),
                 "Sending start simulation to bridge.",
-                LogLevel.INFO,
+                LogLevel.DEBUG,
                 ProcessStatus.RUNNING,
                 true),GridAppsDConstants.username,
                 GridAppsDConstants.topic_platformLog);
@@ -285,7 +286,7 @@ public class SimulationProcess extends Thread {
                         Integer.toString(simulationId),
                         new Date().getTime(),
                          "FNCS-GOSS Bridge response:"+dataResponse.getData(),
-                            LogLevel.INFO,
+                            LogLevel.DEBUG,
                             ProcessStatus.RUNNING,
                         true),GridAppsDConstants.username,
                         GridAppsDConstants.topic_platformLog);
@@ -293,15 +294,15 @@ public class SimulationProcess extends Thread {
                 Gson  gson = new Gson();
 
                 FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
-                log.debug("FNCS output message: "+responseJson);
+                //log.debug("FNCS output message: "+responseJson);
                 if("isInitialized".equals(responseJson.command)){
                     log.debug("FNCS Initialized response: "+responseJson);
                     if("True".equals(responseJson.response)){
-                        log.info("FNCS is initialized "+initializedTracker);
+                        //log.info("FNCS is initialized "+initializedTracker);
                         initializedTracker.isInited = true;
                     }
                 } else if("simulationFinished".equals(responseJson.command)) {
-                    log.debug("FNCS simulation finished");
+                    //log.debug("FNCS simulation finished");
                     simulationTracker.isFinished = true;
                 }
 

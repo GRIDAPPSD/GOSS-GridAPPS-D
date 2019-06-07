@@ -322,7 +322,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 						simulationId, new Date().getTime(),
 						"Starting service with command "+ String.join(" ",commands), 
-						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						LogLevel.INFO, ProcessStatus.RUNNING, true), 
 						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
@@ -478,7 +478,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+	                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
 	                }
 	            } catch (IOException e) {
 	            	if(!(e.getMessage().contains("Stream closed"))){

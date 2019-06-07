@@ -51,6 +51,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	
 	public static final String DATA_MANAGER_TYPE = "timeseries";
 	
+	public static int count = 0;
+	
 	List<String> keywords = null;
 	String requestId = null;
 	Gson  gson = new Gson();
@@ -58,7 +60,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         String provenQueryUri = null;
         String provenWriteUri = null;
 
-	ProvenProducer provenProducer = new ProvenProducer();
+	ProvenProducer provenQueryProducer = new ProvenProducer();
+	ProvenProducer provenWriteProducer = new ProvenProducer();
+	
 	
 	@Start
 	public void start(){
@@ -72,22 +76,44 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
                 provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
-                provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);		
+                provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);	
+                provenQueryProducer.restProducer(provenQueryUri, null, null);
+                provenWriteProducer.restProducer(provenWriteUri, null, null);
+                
 		try{
 		
 			Credentials credentials = new UsernamePasswordCredentials(
 			GridAppsDConstants.username, GridAppsDConstants.password);
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
+			Client outputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
 			
-			client.subscribe("/topic/"+GridAppsDConstants.topic_simulation+".>", new GossResponseEvent() {
+			inputClient.subscribe("/topic/"+GridAppsDConstants.topic_simulation+".input.>", new GossResponseEvent() {
 				@Override
 				public void onMessage(Serializable message) {
 					DataResponse event = (DataResponse)message;
 					try{
-						if(event.getDestination().contains("output"))
-								storeSimulationOutput(event.getData());
-						else if(event.getDestination().contains("input"))
-							storeSimulationInput(event.getData());
+						storeSimulationOutput(event.getData());
+					}catch(Exception e){
+						
+						StringWriter sw = new StringWriter();
+						PrintWriter pw = new PrintWriter(sw);
+						e.printStackTrace(pw);
+						String sStackTrace = sw.toString(); // stack trace as a string
+						System.out.println(sStackTrace);
+						logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
+								new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace, 
+								LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+								GridAppsDConstants.topic_platformLog);
+					}
+				}
+			});
+			
+			outputClient.subscribe("/topic/"+GridAppsDConstants.topic_simulation+".output.>", new GossResponseEvent() {
+				@Override
+				public void onMessage(Serializable message) {
+					DataResponse event = (DataResponse)message;
+					try{
+						storeSimulationOutput(event.getData());
 					}catch(Exception e){
 						
 						StringWriter sw = new StringWriter();
@@ -107,6 +133,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		}
 	}
 	
+	
 	@Override
 	public Serializable handle(Serializable requestContent, String processId,
 			String username) throws Exception {
@@ -124,9 +151,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		provenProducer.restProducer(provenQueryUri, null, null);
-		provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-		ProvenResponse response = provenProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+		provenQueryProducer.restProducer(provenQueryUri, null, null);
+		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		TimeSeriesResult result = TimeSeriesResult.parse(response.data.toString());
 		if(result.getMeasurements().get(0).getPoints().size()==0)
 			return null;
@@ -146,8 +173,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public void storeSimulationOutput(Serializable message) throws Exception {
 	       try {
-                      provenProducer.restProducer(provenWriteUri, null, null);
-                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                      provenWriteProducer.sendBulkMessage(message.toString(),  null);
+                      
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -159,8 +186,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public void storeSimulationInput(Serializable message) throws Exception {
                try {
-                      provenProducer.restProducer(provenWriteUri, null, null);
-                      ProvenResponse pmr = provenProducer.sendBulkMessage(message.toString(),  null);
+                      provenWriteProducer.sendBulkMessage(message.toString(),  null);
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
