@@ -138,6 +138,7 @@ public class GridAppsDConstants {
 	public static final String topic_FNCS = topic_prefix+".fncs";
 	public static final String topic_FNCS_input = topic_FNCS+".input";
 	public static final String topic_FNCS_output = topic_FNCS+".output";
+	public static final String topic_FNCS_timestamp = topic_FNCS+".timestamp";
 	
 	
 	public static final String FNCS_PATH = "fncs.path";

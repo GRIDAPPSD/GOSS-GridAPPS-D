@@ -146,7 +146,7 @@ public class ProcessEvents {
 	}
 	
 	public void processEvents(Client client, String simulationID) {
-		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationID,
+		client.subscribe(GridAppsDConstants.topic_FNCS_timestamp + "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
 
@@ -157,7 +157,7 @@ public class ProcessEvents {
 //					subMsg = subMsg.substring(0, 200);
 //				logMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
 				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
-				long current_time = jsonObject.get("message").getAsJsonObject().get("timestamp").getAsLong();
+				long current_time = jsonObject.get("timestamp").getAsLong();
 
 				processAtTime(client, simulationID, current_time);
 			}

@@ -173,13 +173,14 @@ difference_attribute_map = {
 
 class GOSSListener(object):
 
-    def __init__(self, sim_length):
+    def __init__(self, sim_length, sim_start):
         self.goss_to_fncs_message_queue = Queue()
         self.start_simulation = False
         self.stop_simulation = False
         self.pause_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
+        self.simulation_start = sim_start
         self.simulation_time = 0
         self.measurement_filter = []
         self.command_filter = []
@@ -198,6 +199,7 @@ class GOSSListener(object):
                     if fncs.is_initialized():
                         fncs.die()
                     break
+                goss_connection.send("goss.gridappsd.fncs.timestamp.{}".format(simulation_id), json.dumps({"timestamp": current_time + self.simulation_start}))
                 #forward messages from FNCS to GOSS
                 if self.filter_all_measurements == False:
                     message['output'] = _get_fncs_bus_messages(simulation_id, self.measurement_filter)
@@ -736,7 +738,7 @@ def _done_with_time_step(current_time):
 
 
 def _register_with_goss(sim_id,username,password,goss_server='localhost',
-                      stomp_port='61613', sim_duration=86400):
+                      stomp_port='61613', sim_duration=86400, sim_start=0):
     """Register with the GOSS server broker and return.
 
     Function arguments:
@@ -770,7 +772,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
         raise ValueError(
             'stomp_port must be a nonempty string.\n'
             + 'stomp_port = {0}'.format(stomp_port))
-    goss_listener_instance = GOSSListener(sim_duration)
+    goss_listener_instance = GOSSListener(sim_duration, sim_start)
     goss_connection = stomp.Connection12([(goss_server, stomp_port)])
     goss_connection.start()
     goss_connection.connect(username,password, wait=True)
@@ -1065,10 +1067,10 @@ def _keep_alive(is_realtime):
             simulation_ran = True
 
 
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400, sim_start=0):
 
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration)
+    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration, sim_start)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
     _keep_alive(is_realtime)
@@ -1092,4 +1094,5 @@ if __name__ == "__main__":
     sim_request = json.loads(opts.simulation_request.replace("\'",""))
     run_realtime = sim_request["simulation_config"]["run_realtime"]
     sim_duration = sim_request["simulation_config"]["duration"]
-    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
+    sim_start_str = int(sim_request["simulation_config"]["start_time"])
+    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration, sim_start_str)
