@@ -3,14 +3,6 @@ FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
 
-# Get the gridappsd-python from the proper repository
-RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
-  && cd gridappsd-python \
-  && pip3 install . \
-  && pip install . \
-  && rm -rf /root/.cache/pip/wheels
-
 # Copy initial applications and services into the container.
 # 
 # NOTE: developers should mount a volume over the top of these or
