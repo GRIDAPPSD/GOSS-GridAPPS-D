@@ -40,6 +40,8 @@
 
 package gov.pnnl.goss.gridappsd.log;
 
+import java.io.Serializable;
+
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -56,6 +58,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.Client;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 
@@ -94,6 +98,24 @@ public class LogManagerImpl implements LogManager {
 			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(
 					GridAppsDConstants.username, GridAppsDConstants.password);
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+			
+			
+			client.subscribe(GridAppsDConstants.topic_simulationLog+">", new GossResponseEvent() {
+				
+				@Override
+				public void onMessage(Serializable message) {
+					
+					
+					DataResponse event = (DataResponse)message;
+					String username = event.getUsername();
+					log(LogMessage.parse(event.getData().toString()), username, null);
+					
+				}
+
+			});
+			
+			
+			
 			logMessage.setLogLevel(LogLevel.DEBUG);
 			logMessage.setSource(this.getClass().getName());
 			logMessage.setProcessStatus(ProcessStatus.RUNNING);
@@ -157,7 +179,7 @@ public class LogManagerImpl implements LogManager {
 						break;
 			default:	log.debug(logString);
 						break;
-				
+			
 		}
 		
 		if(storeToDb)
@@ -175,7 +197,7 @@ public class LogManagerImpl implements LogManager {
 		//TODO: Save log in data store using DataManager
 		logDataManager.store(source, requestId, timestamp,
 				log_message, log_level, process_status, username);
-		log.debug("log saved");
+		//log.debug("log saved");
 
 	}
 

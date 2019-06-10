@@ -71,7 +71,7 @@ public class TestCommunicationFault {
 		
 		
 		Fault simFault = new Fault();
-		simFault.eventId = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
+		simFault.faultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
 //		simFault.impedance.rGround = 0.0;
 //		simFault.xGround = 0.5;
 //		simFault.PhaseConnectedFaultKind=simFault.PhaseConnectedFaultKind.lineToGround;

@@ -39,9 +39,11 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.service;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -62,6 +64,7 @@ import org.apache.felix.dm.annotation.api.Start;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.EnvironmentVariable;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -319,7 +322,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 						simulationId, new Date().getTime(),
 						"Starting service with command "+ String.join(" ",commands), 
-						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						LogLevel.INFO, ProcessStatus.RUNNING, true), 
 						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
@@ -360,6 +363,8 @@ public class ServiceManagerImpl implements ServiceManager{
 			} else {
 				throw new RuntimeException("Type not recognized "+serviceInfo.getType());
 			}
+			
+			
 		} catch (IOException e) {
 			
 			StringWriter sw = new StringWriter();
@@ -400,6 +405,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		//add to service instances map
 		serviceInstances.put(instanceId, serviceInstance);
 		
+		watch(serviceInstance);
 		
 		return instanceId;
 		
@@ -462,6 +468,26 @@ public class ServiceManagerImpl implements ServiceManager{
 	@ConfigurationDependency(pid=CONFIG_PID)
 	public synchronized void updated(Dictionary<String, ?> config)  {
 		this.configurationProperties = config;
+	}
+	
+	private void watch(final ServiceInstance serviceInstance) {
+		System.out.println("WATCHING "+serviceInstance.getInstance_id());
+	    new Thread() {
+	        public void run() {
+	            BufferedReader input = new BufferedReader(new InputStreamReader(serviceInstance.getProcess().getInputStream()));
+	            String line = null;
+	            try {
+	                while ((line = input.readLine()) != null) {
+	                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+	                }
+	            } catch (IOException e) {
+	            	if(!(e.getMessage().contains("Stream closed"))){
+	            	e.printStackTrace();
+                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+	            	}
+	            }
+	        }
+	    }.start();
 	}
 	
 	

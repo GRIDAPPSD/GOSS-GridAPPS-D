@@ -541,7 +541,7 @@ public class AppManagerImpl implements AppManager {
 			logManager.log(new LogMessage(this.getClass().getSimpleName(),
 					simulationId, new Date().getTime(),
 					"Starting app with command "+ String.join(" ",commands),
-					LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+					LogLevel.INFO, ProcessStatus.RUNNING, true),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 			try {
 				process = processAppBuilder.start();
@@ -650,7 +650,10 @@ public class AppManagerImpl implements AppManager {
 	public void stopAppInstance(String instanceId) {
 		instanceId = instanceId.trim();
 		AppInstance instance = appInstances.get(instanceId);
-		instance.getProcess().destroy();
+		if(instance.getApp_info().getType().equals(AppInfo.AppType.REMOTE))
+			remoteAppMonitor.stopRemoteApplication(instance.getApp_info().getId());
+		else
+			instance.getProcess().destroy();
 		appInstances.remove(instanceId);
 
 	}
@@ -743,7 +746,7 @@ public class AppManagerImpl implements AppManager {
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.INFO, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
+	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();

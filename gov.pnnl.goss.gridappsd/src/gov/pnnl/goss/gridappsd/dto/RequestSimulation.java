@@ -39,9 +39,14 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 public class RequestSimulation implements Serializable {
@@ -132,10 +137,23 @@ public class RequestSimulation implements Serializable {
 	
 	
 	public static RequestSimulation parse(String jsonString){
-		Gson  gson = new Gson();
-		RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
+		GsonBuilder gsonBuilder = new GsonBuilder();
+        RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+        gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+        gsonBuilder.setPrettyPrinting();
+        Gson gson = gsonBuilder.create();
+        RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
 		if(obj.power_system_config==null)
 			throw new JsonSyntaxException("Expected attribute power_system_config not found");
+		if(obj.test_config!=null){
+			for(Event event : obj.getTest_config().getEvents()){
+				if(event.occuredDateTime==0 || event.stopDateTime==0)
+					throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
+				if(event.occuredDateTime >= event.stopDateTime)
+					throw new RuntimeException("occuredDateTime cannot be greater than or equal to stopDateTime for an event");
+			}
+		}
 		return obj;
 	}
 }

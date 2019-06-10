@@ -45,6 +45,8 @@ import gov.pnnl.goss.gridappsd.dto.events.Event;
 
 import java.util.List;
 
+import javax.jms.Destination;
+
 import com.google.gson.JsonObject;
 
 public interface TestManager {
@@ -69,8 +71,9 @@ public interface TestManager {
 	 * This method injects Events in a currently running simulation. 
 	 * @param events List of Event objects
 	 * @param simulationId Id of currently running simulation
+	 * @return 
 	 */
-	public void sendEventsToSimulation(List<Event> events, String simulationId);
+	public List<Event> sendEventsToSimulation(List<Event> events, String simulationId);
 	
 	/**
 	 * This method compares output from the currently running simulation with 
@@ -102,8 +105,8 @@ public interface TestManager {
 	/**
 	 * This method published status of events for the simulationId
 	 * @param simulationId Id of currently running simulation
-	 * @param replyDestination Name of the reply queue for the status
+	 * @param replyDestination reply queue for the status
 	 */
-	public void sendEventStatus(String simulationId, String replyDestination);
+	public void sendEventStatus(String simulationId, Destination replyDestination);
 	
 }

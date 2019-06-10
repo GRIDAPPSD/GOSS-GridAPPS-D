@@ -39,15 +39,19 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto.events;
 
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+
 import java.io.Serializable;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Event implements Serializable{
 	
 	private static final long serialVersionUID = -5940543607543814505L;
 
-	public String eventId;
+	public String faultMRID;
 	
 	public String event_type;
 	
@@ -56,11 +60,11 @@ public class Event implements Serializable{
     public Long stopDateTime;
     
     public String getFaultMRID() {
-		return eventId;
+		return faultMRID;
 	}
 
 	public void setFaultMRID(String faultMRID) {
-		this.eventId = faultMRID;
+		this.faultMRID = faultMRID;
 	}
 
 	public String getEvent_type() {
@@ -94,10 +98,17 @@ public class Event implements Serializable{
 	}
 
 	public static Event parse(String jsonString){
-		Gson  gson = new Gson();
-		Event obj = gson.fromJson(jsonString, Event.class);
+		GsonBuilder gsonBuilder = new GsonBuilder();
+        RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+        gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+        gsonBuilder.setPrettyPrinting();
+        Gson gson = gsonBuilder.create();
+        Event obj = gson.fromJson(jsonString, Event.class);
 		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
 			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
+		if(obj.occuredDateTime <= obj.stopDateTime)
+			throw new RuntimeException("occuredDateTime cannot be less or equal to stopDateTime for an event");
 		return obj;
 	}
 
