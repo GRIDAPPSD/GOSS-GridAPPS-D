@@ -615,7 +615,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
             }
 
             fncs_output = fncs.get_value(simulation_id)
-            fncs_output_dict = json_loads_byteified(fncs_output)
+            fncs_output_dict = json.loads(fncs_output) #json_loads_byteified(fncs_output)
 
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
@@ -860,8 +860,8 @@ def _create_cim_object_map(map_file=None):
         object_mrid_to_name = None
     else:
         try:
-            with open(map_file, "r") as file_input_stream:
-                file_dict = json_load_byteified(file_input_stream)
+            with open(map_file, "r", encoding="utf-8") as file_input_stream:
+                file_dict = json.load(file_input_stream) #json_load_byteified(file_input_stream)
             feeders = file_dict.get("feeders",[])
             object_property_to_measurement_id = {}
             object_mrid_to_name = {}
