@@ -192,7 +192,7 @@ class GOSSListener(object):
             message = {}
             current_time = 0;
             message['command'] = 'nextTimeStep'
-            for current_time in xrange(self.simulation_length):
+            for current_time in range(self.simulation_length):
                 while self.pause_simulation == True:
                     time.sleep(1)
                 if self.stop_simulation == True:
