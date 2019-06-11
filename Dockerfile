@@ -14,6 +14,11 @@ RUN sudo apt-get update && sudo apt-get install -y software-properties-common \
   && rm -rf /var/cache/apt/archives/* \
   && rm -rf /root/.cache/pip/wheels
 
+# TODO remove after we modify the base container to do this properly
+RUN mkdir -p /usr/local/lib/python3.6/dist-packages/fncs
+RUN cp /usr/local/lib/python3.5/dist-packages/fncs/fncs.py /usr/local/lib/python3.6/dist-packages/fncs/fncs.py
+
+
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
