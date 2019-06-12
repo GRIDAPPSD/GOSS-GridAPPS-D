@@ -138,7 +138,11 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				log.error("source = " + source);
 				log.error("message = " + log_message);
 			} catch (SQLException e) {
-				e.printStackTrace();
+				log.error("Error while storing log:");
+				log.error("error = " + e.getMessage());
+				log.error("source = " + source);
+				log.error("message = " + log_message);
+				log.error("error = " + e.getMessage());
 			}
 		} else {
 			//Need to log a warning to file, that the connection did not exist
