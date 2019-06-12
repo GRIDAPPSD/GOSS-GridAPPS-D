@@ -100,7 +100,7 @@ public class LogManagerImpl implements LogManager {
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 			
 			
-			client.subscribe(GridAppsDConstants.topic_simulationLog+">", new GossResponseEvent() {
+			client.subscribe("/topic/"+GridAppsDConstants.topic_simulationLog+">", new GossResponseEvent() {
 				
 				@Override
 				public void onMessage(Serializable message) {
