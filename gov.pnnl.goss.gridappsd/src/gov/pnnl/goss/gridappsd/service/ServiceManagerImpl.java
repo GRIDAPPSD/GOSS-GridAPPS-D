@@ -478,12 +478,12 @@ public class ServiceManagerImpl implements ServiceManager{
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+	                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), GridAppsDConstants.username, GridAppsDConstants.topic_simulationLog+simulationId);
 	                }
 	            } catch (IOException e) {
 	            	if(!(e.getMessage().contains("Stream closed"))){
 	            	e.printStackTrace();
-                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), GridAppsDConstants.username, GridAppsDConstants.topic_platformLog);
+                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), GridAppsDConstants.username, GridAppsDConstants.topic_simulationLog+simulationId);
 	            	}
 	            }
 	        }
