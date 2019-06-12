@@ -26,6 +26,18 @@ RUN cd ${TEMP_DIR} \
   && pip3 install . \
   && rm -rf /root/.cache/pip/wheels
 
+# Get the gridappsd-sensor-simulator from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b develop  \
+  && cd gridappsd-sensor-simulator \
+  && pip3 install -r requirements.txt \
+  && mkdir -p /gridappsd/services/gridappsd-sensor-simulator \
+  && rm .git -rf \ 
+  && cp * /gridappsd/services/gridappsd-sensor-simulator \
+  && cp /gridappsd/services/gridappsd-sensor-simulator/sensor_simulator.config /gridappsd/services/ \
+  && rm -rf /root/.cache/pip/wheels
+
+
 # Copy initial applications and services into the container.
 # 
 # NOTE: developers should mount a volume over the top of these or
