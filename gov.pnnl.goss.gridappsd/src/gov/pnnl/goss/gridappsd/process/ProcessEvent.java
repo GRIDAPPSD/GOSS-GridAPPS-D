@@ -45,15 +45,21 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulationResponse;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
@@ -70,6 +76,7 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -96,12 +103,14 @@ public class ProcessEvent implements GossResponseEvent {
 	LogManager logManager;
 	ServiceManager serviceManager;
 	DataManager dataManager;
+	TestManager testManager;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
-			AppManager appManager, LogManager logManager, ServiceManager serviceManager, DataManager dataManager){
+			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
+			DataManager dataManager, TestManager testManager){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -111,6 +120,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.logManager = logManager;
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
+		this.testManager = testManager;
 	}
 
 
@@ -155,10 +165,15 @@ public class ProcessEvent implements GossResponseEvent {
 				if(simRequest!=null){
 					//if new simulation		
 					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
-						client.publish(event.getReplyDestination(), processId);
+						RequestSimulationResponse response = new RequestSimulationResponse();
+						response.setSimulationId(Integer.toString(processId));
+						//RequestSimulation config = RequestSimulation.parse(message.toString());
+						if(simRequest.getTest_config()!=null)
+							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), Integer.toString(processId)));
+						client.publish(event.getReplyDestination(), response);
 						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
-						newSimulationProcess.process(configurationManager, simulationManager, processId, event.getData(),processManger.assignSimulationPort(processId), appManager,serviceManager);
+						newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,processManger.assignSimulationPort(processId), appManager,serviceManager, testManager);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
 						simulationManager.pauseSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play
@@ -248,18 +263,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 
-			} else if(event.getDestination().contains("log")){
-				Serializable request;
-				if (message instanceof DataResponse){
-					request = ((DataResponse)message).getData();
-				} else {
-					request = message;
-				}
-
-				logManager.log(LogMessage.parse(request.toString()), username, null);
-
-			}
-			else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
+			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
 				
 				RequestPlatformStatus request = RequestPlatformStatus.parse(event.getData().toString());
 				 PlatformStatus platformStatus = new PlatformStatus();

@@ -133,6 +133,8 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
 		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
 		parameters.put("directory",simulationContext.getSimulationDir());
+		parameters.put("simulation_start_time",simulationContext.getRequest().getSimulation_config().getStart_time());
+		parameters.put("simulation_duration",simulationContext.getRequest().getSimulation_config().getDuration());
 		
 		File simulationDir = new File(simulationContext.getSimulationDir());
 		File commandFile = new File(simulationDir,"opendsscmdInput.txt");

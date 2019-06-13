@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -36,76 +36,55 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
+ ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import java.io.Serializable;
-import java.util.Date;
+import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
-public class FailureEvent implements Serializable{
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7348798730580951117L;
-	
-//	mRID of the Fault itself
-//	mRID of the Terminal for EquipmentFault; CIM can traverse this to any EnergyConsumer, ACLineSegment or other faulted component
-//	Fault.phases, for the phases involved in the fault
-//	Fault.kind (lineToGround, lineToLine, lineToLineToGround)
-//	Fault.FaultImpedance.rGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.xGround, for lineToGround and lineToLineToGround faults
-//	Fault.FaultImpedance.rLineToLine, for lineToLine and lineToLineToGround faults
-//	Fault.FaultImpedance.xLineToLine, for lineToLine and lineToLineToGround faults
 
-	public String faultMRID;
-	
-	public String equipmentMRID;
-	
-	public String phases;
-	
-	public String rGround; //Complex
-	
-	public String xGround; //Complex
-	
-	public String rLineToLine; //Complex
-	
-	public String xLineToLine; //Complex
+public class RequestTestUpdate implements Serializable {
 
-	public Date event_date;
+	private static final long serialVersionUID = 1L;
 	
-	public int event_type;
-	
-	public Date getEvent_date() {
-		return event_date;
-	}
-
-	public void setEvent_date(Date event_date) {
-		this.event_date = event_date;
-	}
-
-	public int getEvent_type() {
-		return event_type;
-	}
-
-	public void setEvent_type(int event_type) {
-		this.event_type = event_type;
+	public enum RequestType {
+	    new_events, update_events, query_events
 	}
 	
+	RequestType command;
+
+	private List<Event> events;
+
+	public RequestType getCommand() {
+		return command;
+	}
+
+	public void setCommand(RequestType command) {
+		this.command = command;
+	}
+
+	public List<Event> getEvents() {
+		return events;
+	}
+
+	public void setEvents(List<Event> events) {
+		this.events = events;
+	}
+
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
-
-	public static FailureEvent parse(String jsonString){
+	
+	public static RequestTestUpdate parse(String jsonString){
 		Gson  gson = new Gson();
-		FailureEvent obj = gson.fromJson(jsonString, FailureEvent.class);
-		if(obj.event_date==null)
-			throw new RuntimeException("Expected attribute output_objects not found");
+		RequestTestUpdate obj = gson.fromJson(jsonString, RequestTestUpdate.class);
 		return obj;
 	}
-
 }

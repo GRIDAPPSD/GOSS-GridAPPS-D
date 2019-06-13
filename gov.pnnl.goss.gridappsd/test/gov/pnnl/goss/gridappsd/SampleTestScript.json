@@ -1,0 +1,34 @@
+ {
+	"name": "sample_app",
+	"test_configuration": "./SampleTestConfig.json",
+	"application": "sample_app",
+	"outputs":
+   		 {"substation_link": ["xf_hvmv_sub"],
+   		  "regulator_list": ["reg_FEEDER_REG", "reg_VREG2", "reg_VREG3", "reg_VREG4"],
+   		  "regulator_configuration_list": ["rcon_FEEDER_REG", "rcon_VREG2", "rcon_VREG3", "rcon_VREG4"],
+   		  "capacitor_list": ["cap_capbank0a","cap_capbank0b", "cap_capbank0c", "cap_capbank1a", "cap_capbank1b", "cap_capbank1c", "cap_capbank2a", "cap_capbank2b", "cap_capbank2c", "cap_capbank3"],
+   		  "voltage_measurements": ["nd_l2955047", "nd_l3160107", "nd_l2673313", "nd_l2876814", "nd_m1047574", "nd_l3254238"]
+	   	},
+  "log" : {
+        "name":"string",
+        "location":"ref_location1234"
+    },
+   "events" : [
+       {"faultMRID" : "1234",
+       "equipmentMRID" : "12345",
+       "phases": "ABC",
+       "kind" : "lineToGround",
+       "rGround":0.5,
+       "xGround":0.5,
+       "rLineToLine":0.5,
+       "xLineToLine":0.5,
+       "timeInitiated":1500638400,
+       "timeCleared":1500598800
+       }
+   ],
+    "rules":[
+       {"name": "app_rules.py",
+        "port": 5000,
+        "topic":"input"
+     }  ]
+}

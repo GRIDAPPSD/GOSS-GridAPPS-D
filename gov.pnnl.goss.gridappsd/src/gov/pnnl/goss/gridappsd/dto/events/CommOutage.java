@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright  2017, Battelle Memorial Institute All rights reserved.
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -36,120 +36,64 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.dto.events;
 
-import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
-public class RequestTest implements Serializable {
+public class CommOutage extends Event{
 	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 6374753495662389807L;
 
-	public String expectedResult;
+	boolean allOutputOutage = false;
 	
-	public int rulePort;
+	boolean allInputOutage = false;
 	
-	public int simulationID;
+	List<ObjectMridAttributeMap> inputOutageList = new ArrayList<ObjectMridAttributeMap>();
 	
-	public String simulationOutputObject;
-	
-	public String testConfigPath;
-	
-	public int testID;
-	
-	public String testScriptPath;
-	
-	public String topic;
+	List<String> outputOutageList = new ArrayList<String>();
 
-	public RequestTest(){}
-
-	public RequestTest(String testConfigPath, String testScriptPath){
-		this.testConfigPath = testConfigPath;
-		this.testScriptPath = testScriptPath;
+	public boolean isAllOutputOutage() {
+		return allOutputOutage;
 	}
 
-	public String getExpectedResult() {
-		return expectedResult;
+	public void setAllOutputOutage(boolean allOutputOutage) {
+		this.allOutputOutage = allOutputOutage;
 	}
 
-	public int getRulePort() {
-		return rulePort;
+	public boolean isAllInputOutage() {
+		return allInputOutage;
 	}
 
-	public int getSimulationID() {
-		return simulationID;
-	}	
-	
-	public String getSimulationOutputObject() {
-		return simulationOutputObject;
+	public void setAllInputOutage(boolean allInputOutage) {
+		this.allInputOutage = allInputOutage;
 	}
 
-	public String getTestConfigPath() {
-		return testConfigPath;
+	public List<ObjectMridAttributeMap> getInputOutageList() {
+		return inputOutageList;
 	}
 
-	public int getTestID() {
-		return testID;
-	}
-
-	public String getTestScriptPath() {
-		return testScriptPath;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setExpectedResult(String expectedResult) {
-		this.expectedResult = expectedResult;
-	}
-
-	public void setRulePort(int rulePort) {
-		this.rulePort = rulePort;
-	}
-
-	public void setSimulationID(int simulationID) {
-		this.simulationID = simulationID;
-	}
-
-	public void setSimulationOutputObject(String simulationOutputObject) {
-		this.simulationOutputObject = simulationOutputObject;
-	}
-
-	public void setTestConfigPath(String testConfigPath) {
-		this.testConfigPath = testConfigPath;
-	}
-
-	public void setTestID(int testID) {
-		this.testID = testID;
+	public void setInputOutageList(List<ObjectMridAttributeMap> inputOutageList) {
+		this.inputOutageList = inputOutageList;
 	}
 	
-	public void setTestScriptPath(String testScriptPath) {
-		this.testScriptPath = testScriptPath;
+	public List<String> getOutputOutageList() {
+		return outputOutageList;
 	}
-	
 
-	public void setTopic(String topic) {
-		this.topic = topic;
+	public void setOutputOutageList(List<String> outputOutageList) {
+		this.outputOutageList = outputOutageList;
 	}
-	
-	
-	@Override
-	public String toString() {
+
+	public static CommOutage parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-	
-	public static RequestTest parse(String jsonString){
-		Gson  gson = new Gson();
-		RequestTest obj = gson.fromJson(jsonString, RequestTest.class);
-		if(obj.testConfigPath==null)
-			throw new JsonSyntaxException("Expected attribute testConfigPath not found");
+		CommOutage obj = gson.fromJson(jsonString, CommOutage.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
-
+	
 }

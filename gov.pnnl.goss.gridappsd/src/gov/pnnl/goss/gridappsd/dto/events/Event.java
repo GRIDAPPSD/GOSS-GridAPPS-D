@@ -36,157 +36,59 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.dto;
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.dto.events;
+
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.Map;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.GsonBuilder;
 
-public class TestConfiguration implements Serializable {
-
-
-	private static final long serialVersionUID = 1L;
-
-	public String power_system_configuration;
-
-	public String simulation_configuration;
+public class Event implements Serializable{
 	
-	public Integer durations;
+	private static final long serialVersionUID = -5940543607543814505L;
 
-	public Date run_start;
-
-	public Date run_end;
-
-	public String region_name;
-
-	public String subregion_name;
-
-	public String line_name;
-
-	public String getPower_system_configuration() {
-		return power_system_configuration;
-	}
-
-	public void setPower_system_configuration(String power_system_configuration) {
-		this.power_system_configuration = power_system_configuration;
-	}
-
-	public String getSimulation_configuration() {
-		return simulation_configuration;
-	}
-
-	public void setSimulation_configuration(String simulation_configuration) {
-		this.simulation_configuration = simulation_configuration;
-	}
-
-	public Integer getDurations() {
-		return durations;
-	}
-
-	public void setDurations(Integer durations) {
-		this.durations = durations;
-	}
-
-	public Date getRun_start() {
-		return run_start;
-	}
-
-	public void setRun_start(Date run_start) {
-		this.run_start = run_start;
-	}
-
-	public Date getRun_end() {
-		return run_end;
-	}
-
-	public void setRun_end(Date run_end) {
-		this.run_end = run_end;
-	}
-
-	public String getRegion_name() {
-		return region_name;
-	}
-
-	public void setRegion_name(String region_name) {
-		this.region_name = region_name;
-	}
-
-	public String getSubregion_name() {
-		return subregion_name;
-	}
-
-	public void setSubregion_name(String subregion_name) {
-		this.subregion_name = subregion_name;
-	}
-
-	public String getLine_name() {
-		return line_name;
-	}
-
-	public void setLine_name(String line_name) {
-		this.line_name = line_name;
-	}
-
-	public Boolean getLogging() {
-		return logging;
-	}
-
-	public void setLogging(Boolean logging) {
-		this.logging = logging;
-	}
-
-	public Map<String, String> getLogging_options() {
-		return logging_options;
-	}
-
-	public void setLogging_options(Map<String, String> logging_options) {
-		this.logging_options = logging_options;
-	}
-
-	public Map<String, String> getInitial_conditions() {
-		return initial_conditions;
-	}
-
-	public void setInitial_conditions(Map<String, String> initial_conditions) {
-		this.initial_conditions = initial_conditions;
-	}
-
-	public Map<String, String> getDefault_values() {
-		return default_values;
-	}
-
-	public void setDefault_values(Map<String, String> default_values) {
-		this.default_values = default_values;
-	}
-
-	public String[] getOutputs() {
-		return outputs;
-	}
-
-	public void setOutputs(String[] outputs) {
-		this.outputs = outputs;
-	}
-
-	public Boolean logging;
+	public String faultMRID;
 	
-	public Map<String,String> logging_options;
+	public String event_type;
 	
-	public Map<String,String> initial_conditions;
-	
-	public Map<String,String> default_values;
-	
-	public String[] outputs;
+    public Long occuredDateTime;
 
-	public TestConfiguration() {
+    public Long stopDateTime;
+    
+    public String getFaultMRID() {
+		return faultMRID;
+	}
 
+	public void setFaultMRID(String faultMRID) {
+		this.faultMRID = faultMRID;
+	}
+
+	public String getEvent_type() {
+		return event_type;
+	}
+
+	public void setEvent_type(String event_type) {
+		this.event_type = event_type;
 	}
 	
-	public String getPowerSystemConfiguration(){
-		return power_system_configuration;		
+	public long getTimeInitiated() {
+		return occuredDateTime;
+	}
+
+	public void setTimeInitiated(long timeInitiated) {
+		this.occuredDateTime = timeInitiated;
+	}
+
+	public long getTimeCleared() {
+		return stopDateTime;
+	}
+
+	public void setTimeCleared(long timeCleared) {
+		this.stopDateTime = timeCleared;
 	}
 
 	@Override
@@ -194,13 +96,20 @@ public class TestConfiguration implements Serializable {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
-	
-	public static TestConfiguration parse(String jsonString){
-	    Gson  gson = new Gson();
-	    TestConfiguration obj = gson.fromJson(jsonString, TestConfiguration.class);
-	    if(obj.power_system_configuration==null)
-	        throw new JsonSyntaxException("Expected attribute power_system_configuration not found");
-	    return obj;
+
+	public static Event parse(String jsonString){
+		GsonBuilder gsonBuilder = new GsonBuilder();
+        RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+        gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+        gsonBuilder.setPrettyPrinting();
+        Gson gson = gsonBuilder.create();
+        Event obj = gson.fromJson(jsonString, Event.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
+		if(obj.occuredDateTime <= obj.stopDateTime)
+			throw new RuntimeException("occuredDateTime cannot be less or equal to stopDateTime for an event");
+		return obj;
 	}
 
 }

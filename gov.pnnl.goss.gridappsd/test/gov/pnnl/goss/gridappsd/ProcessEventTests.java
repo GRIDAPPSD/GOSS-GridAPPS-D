@@ -39,43 +39,35 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd;
 
-import static org.junit.Assert.assertEquals;
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
+import gov.pnnl.goss.gridappsd.process.ProcessEvent;
+import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
+import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.text.ParseException;
-import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogDataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ProcessManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.data.BGPowergridModelDataManagerImpl;
-import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
-import gov.pnnl.goss.gridappsd.data.DataRequest;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
-import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
-import gov.pnnl.goss.gridappsd.process.ProcessEvent;
-import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
-import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessEventTests {
@@ -100,6 +92,8 @@ public class ProcessEventTests {
 	ClientFactory clientFactory;
 	@Mock 
 	Client client;
+	@Mock
+	TestManager testManager;
 	
 	@Captor
 	ArgumentCaptor<String> argCaptor;
@@ -118,7 +112,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
@@ -149,7 +143,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		
@@ -173,7 +167,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		

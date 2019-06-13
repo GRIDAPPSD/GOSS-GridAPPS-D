@@ -39,42 +39,42 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.dto;
 
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
-public class TestScript implements Serializable {
+public class TestConfig implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public String name;
-
-	private String test_configuration;
-
-	private String application;
-	
-	private Map<String,List<String>> outputs;
+	private List<Event> events;
 	
 	private List<RuleSettings> rules;
 	
-	public List<FailureEvent> getEvents() {
+	private JsonObject expectedResults;
+	
+	private String compareWithSimId;
+	
+	private String appId;
+	
+	public JsonObject getExpectedResultObject() {
+		return expectedResults;
+	}
+
+	public void setExpectedResultObject(JsonObject expectedResults) {
+		this.expectedResults = expectedResults;
+	}
+
+	public List<Event> getEvents() {
 		return events;
 	}
 
-	public void setEvents(List<FailureEvent> events) {
+	public void setEvents(List<Event> events) {
 		this.events = events;
-	}
-
-	private List<FailureEvent> events;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public List<RuleSettings> getRules() {
@@ -84,33 +84,21 @@ public class TestScript implements Serializable {
 	public void setRules(List<RuleSettings> rules) {
 		this.rules = rules;
 	}
-
-	public TestScript() {
-
+	
+	public String getCompareWithSimId() {
+		return compareWithSimId;
 	}
 
-	public String getTest_configuration() {
-		return test_configuration;
-	}
-
-	public void setTest_configuration(String test_configuration) {
-		this.test_configuration = test_configuration;
-	}
-
-	public String getApplication() {
-		return application;
-	}
-
-	public void setApplication(String application) {
-		this.application = application;
+	public void setCompareWithSimId(String compareWithSimId) {
+		this.compareWithSimId = compareWithSimId;
 	}
 	
-	public Map<String, List<String>> getOutputs() {
-		return outputs;
+	public String getAppId() {
+		return appId;
 	}
 
-	public void setOutputs(Map<String, List<String>> outputs) {
-		this.outputs = outputs;
+	public void setAppId(String appId) {
+		this.appId = appId;
 	}
 
 	@Override
@@ -119,11 +107,13 @@ public class TestScript implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public static TestScript parse(String jsonString){
+	public static TestConfig parse(String jsonString){
 		Gson  gson = new Gson();
-		TestScript obj = gson.fromJson(jsonString, TestScript.class);
-		if(obj.name==null)
-			throw new RuntimeException("Expected attribute name not found");
+		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
+		if(obj.events==null || obj.events.size()==0)
+			throw new RuntimeException("Expected attribute events not found or is empty");
+		if(obj.appId==null)
+			throw new RuntimeException("Expected attribute appId not found");
 		return obj;
 	}
 }

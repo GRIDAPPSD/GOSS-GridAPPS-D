@@ -38,6 +38,7 @@
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
 import traceback
+from readline import get_begidx
 """
 Created on Jan 6, 2017
 
@@ -69,7 +70,6 @@ except:
         sys.stdout.write("Running tests.\n")
         fncs = {}
 
-debugFile = open("/tmp/fncs_bridge_log.txt", "w")
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 output_to_simulation_manager = 'goss.gridappsd.fncs.output'
 output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
@@ -173,35 +173,44 @@ difference_attribute_map = {
 
 class GOSSListener(object):
 
-    def __init__(self, sim_length):
+    def __init__(self, sim_length, sim_start):
         self.goss_to_fncs_message_queue = Queue()
         self.start_simulation = False
         self.stop_simulation = False
         self.pause_simulation = False
         self.simulation_finished = True
         self.simulation_length = sim_length
+        self.simulation_start = sim_start
         self.simulation_time = 0
+        self.measurement_filter = []
+        self.command_filter = []
+        self.filter_all_commands = False
+        self.filter_all_measurements = False
 
     def run_simulation(self,run_realtime):
         try:
             message = {}
             current_time = 0;
             message['command'] = 'nextTimeStep'
-            for current_time in xrange(self.simulation_length):
+            for current_time in range(self.simulation_length):
                 while self.pause_simulation == True:
                     time.sleep(1)
                 if self.stop_simulation == True:
                     if fncs.is_initialized():
                         fncs.die()
                     break
+                goss_connection.send("goss.gridappsd.fncs.timestamp.{}".format(simulation_id), json.dumps({"timestamp": current_time + self.simulation_start}))
                 #forward messages from FNCS to GOSS
-                message['output'] = _get_fncs_bus_messages(simulation_id)
+                if self.filter_all_measurements == False:
+                    message['output'] = _get_fncs_bus_messages(simulation_id, self.measurement_filter)
+                else:
+                    message['output'] = {}
                 response_msg = json.dumps(message['output'])
                 if message['output']!={}:
                     goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
                 #forward messages from GOSS to FNCS
                 while not self.goss_to_fncs_message_queue.empty():
-                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get())
+                    _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'done with timestep '+str(current_time)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -245,7 +254,8 @@ class GOSSListener(object):
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
             elif json_msg['command'] == 'update':
                 message['command'] = 'update'
-                self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
+                if self.filter_all_commands == False:
+                    self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
                 #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
             elif json_msg['command'] == 'StartSimulation':
                 if self.start_simulation == False:
@@ -265,6 +275,41 @@ class GOSSListener(object):
                 #message['output'] = _get_fncs_bus_messages(simulation_id)
                 #response_msg = json.dumps(message['output'])
                 #goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+            elif json_msg['command'] == 'CommOutage':
+                rev_diffs = json_msg.get('input',{}).get('reverse_differences', [])
+                for_diffs = json_msg.get('input',{}).get('forward_differences', [])
+                for d in rev_diffs:
+                    if d.get('allInputOutage', False) == True:
+                        self.filter_all_commands = False
+                    else:
+                        for x in d.get('inputOutageList', []):
+                            try:
+                                idx = self.command_filter.find(x)
+                                del self.command_filter[idx]
+                            except ValueError as ve:
+                                pass
+                    if d.get('allOutputOutage', False) == True:
+                        self.filter_all_measurements = False
+                    else:
+                        for x in d.get('outputOutageList', []):
+                            try:
+                                idx = self.measurement_filter.find(x)
+                                del self.measurement_filter[idx]
+                            except ValueError as ve:
+                                pass
+                for d in for_diffs:
+                    if d.get('allInputOutage', False) == True:
+                        self.filter_all_commands = True
+                    else:
+                        for x in d.get('inputOutageList', []):
+                            if x not in self.command_filter:
+                                self.command_filter.append(x)
+                    if d.get('allOutputOutage', False) == True:
+                        self.filter_all_measurements = True
+                    else:
+                        for x in d.get('outputOutageList', []):
+                            if x not in self.measurement_filter:
+                                self.measurement_filter.append(x)
             elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
@@ -392,7 +437,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
             + 'configuration_zpl = {0}'.format(configuration_zpl))
 
 
-def _publish_to_fncs_bus(simulation_id, goss_message):
+def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     """publish a message received from the GOSS bus to the FNCS bus.
 
     Function arguments:
@@ -400,6 +445,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
             It must not be an empty string. Default: None.
         goss_message -- Type: string. Description: The message from the GOSS bus
             as a json string. It must not be an empty string. Default: None.
+        command_filter -- Type: list. Description: The list of
+            command attributes to filter from the simulator input.
     Function returns:
         None.
     Function exceptions:
@@ -432,90 +479,95 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
         fncs_input_message = {"{}".format(simulation_id) : {}}
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         for x in forward_differences_list:
-            object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
-            # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
-            object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
-            # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
-            object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
-            # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
-            object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
-            # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
-            object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
-            # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
-            cim_attribute = x.get("attribute")
-
-            object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
-            # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
-            phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
-            # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
-            if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
-                fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
-            if cim_attribute == "RegulatingControl.mode":
-                val = x.get("value")
-                if val == 0:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
-                elif val == 2:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
-                elif val == 3:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+            command_pair = {
+                "objectMRID": x.get("object", ""),
+                "attribute": x.get("attribute", "")
+            }
+            if command_pair not in command_filter:
+                object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
+                # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
+                object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
+                # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
+                object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
+                # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
+                object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
+                # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
+                object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
+                # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
+                cim_attribute = x.get("attribute")
+    
+                object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
+                # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
+                phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
+                # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
+                if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
+                if cim_attribute == "RegulatingControl.mode":
+                    val = x.get("value")
+                    if val == 0:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                    elif val == 2:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                    elif val == 3:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                    else:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                        _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+                elif cim_attribute == "RegulatingControl.targetDeadband":
+                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                elif cim_attribute == "RegulatingControl.targetValue":
+                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                elif cim_attribute == "ShuntCompensator.aVRDelay":
+                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                elif cim_attribute == "ShuntCompensator.sections":
+                    if x.get("value") == 1:
+                        val = "CLOSED"
+                    else:
+                        val = "OPEN"
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
+                elif cim_attribute == "Switch.open":
+                    if x.get("value") == 1:
+                        val = "OPEN"
+                    else:
+                        val = "CLOSED"
+                    for y in object_total_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
+                elif cim_attribute == "TapChanger.initialDelay":
+                    for y in object_property_list:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                elif cim_attribute == "TapChanger.step":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                elif cim_attribute == "TapChanger.lineDropCompensation":
+                    if x.get("value") == 1:
+                        val = "LINE_DROP_COMP"
+                    else:
+                        val = "MANUAL"
+                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
+                elif cim_attribute == "TapChanger.lineDropR":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                elif cim_attribute == "TapChanger.lineDropX":
+                    for y in object_phases:
+                      fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                elif cim_attribute == "PowerElectronicsConnection.p":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
+                elif cim_attribute == "PowerElectronicsConnection.q":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
                 else:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                    _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
-            elif cim_attribute == "RegulatingControl.targetDeadband":
-                for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-            elif cim_attribute == "RegulatingControl.targetValue":
-                for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-            elif cim_attribute == "ShuntCompensator.aVRDelay":
-                for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-            elif cim_attribute == "ShuntCompensator.sections":
-                if x.get("value") == 1:
-                    val = "CLOSED"
-                else:
-                    val = "OPEN"
-                for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
-            elif cim_attribute == "Switch.open":
-                if x.get("value") == 1:
-                    val = "OPEN"
-                else:
-                    val = "CLOSED"
-                for y in object_total_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
-            elif cim_attribute == "TapChanger.initialDelay":
-                for y in object_property_list:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-            elif cim_attribute == "TapChanger.step":
-                for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-            elif cim_attribute == "TapChanger.lineDropCompensation":
-                if x.get("value") == 1:
-                    val = "LINE_DROP_COMP"
-                else:
-                    val = "MANUAL"
-                fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
-            elif cim_attribute == "TapChanger.lineDropR":
-                for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-            elif cim_attribute == "TapChanger.lineDropX":
-                for y in object_phases:
-                  fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-            elif cim_attribute == "PowerElectronicsConnection.p":
-                for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
-            elif cim_attribute == "PowerElectronicsConnection.q":
-                for y in object_phases:
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
-            else:
-                _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
+                    _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
 
 
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
-        if fncs.is_initialized():
-		fncs.publish_anon(fncs_input_topic, goss_message_converted)
+        if fncs.is_initialized() and fncs_input_message["{}".format(simulation_id)] != {}:
+            fncs.publish_anon(fncs_input_topic, goss_message_converted)
     except ValueError as ve:
         raise ValueError(ve)
     except Exception as ex:
@@ -525,12 +577,14 @@ def _publish_to_fncs_bus(simulation_id, goss_message):
 
 
 
-def _get_fncs_bus_messages(simulation_id):
+def _get_fncs_bus_messages(simulation_id, measurement_filter):
     """publish a message received from the GOSS bus to the FNCS bus.
 
     Function arguments:
         simulation_id -- Type: string. Description: The simulation id.
             It must not be an empty string. Default: None.
+        measurement_filter -- Type: list. Description: The list of
+            measurement id's to filter from the simulator output.
     Function returns:
         fncs_output -- Type: string. Description: The json structured output
             from the simulation. If no output was sent from the simulation then
@@ -561,7 +615,7 @@ def _get_fncs_bus_messages(simulation_id):
             }
 
             fncs_output = fncs.get_value(simulation_id)
-            fncs_output_dict = json_loads_byteified(fncs_output)
+            fncs_output_dict = json.loads(fncs_output) #json_loads_byteified(fncs_output)
 
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
@@ -579,58 +633,71 @@ def _get_fncs_bus_messages(simulation_id):
                         for y in object_property_to_measurement_id.get(x,{}):
                             measurement = {}
                             property_name = y["property"]
-                            measurement["measurement_mrid"] = y["measurement_mrid"]
-                            phases = y["phases"]
-                            conducting_equipment_type_str = y["conducting_equipment_type"]
-                            prop_val_str = gld_properties_dict.get(property_name, None)
-                            if prop_val_str == None:
-                                err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
-                                _send_simulation_status('RUNNING', err_msg, 'WARN')
-                                #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
-                            else:
-                                val_str = str(prop_val_str).split(" ")[0]
-                                conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
-                                if conducting_equipment_type == "LinearShuntCompensator":
-                                    if property_name in ["shunt_"+phases,"voltage_"+phases]:
-                                        val = complex(val_str)
-                                        (mag,ang_rad) = cmath.polar(val)
-                                        ang_deg = math.degrees(ang_rad)
-                                        measurement["magnitude"] = mag
-                                        measurement["angle"] = ang_deg
-                                    else:
-                                        if val_str == "OPEN":
-                                            measurement["value"] = 0
-                                        else:
-                                            measurement["value"] = 1
-                                elif conducting_equipment_type == "PowerTransformer":
-                                    if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                        val = complex(val_str)
-                                        (mag,ang_rad) = cmath.polar(val)
-                                        ang_deg = math.degrees(ang_rad)
-                                        measurement["magnitude"] = mag
-                                        measurement["angle"] = ang_deg
-                                    else:
-                                        measurement["value"] = int(val_str)
-                                elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
-                                    val = complex(val_str)
-                                    (mag,ang_rad) = cmath.polar(val)
-                                    ang_deg = math.degrees(ang_rad)
-                                    measurement["magnitude"] = mag
-                                    measurement["angle"] = ang_deg
-                                elif conducting_equipment_type == "RatioTapChanger":
-                                    if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                        val = complex(val_str)
-                                        (mag,ang_rad) = cmath.polar(val)
-                                        ang_deg = math.degrees(ang_rad)
-                                        measurement["magnitude"] = mag
-                                        measurement["angle"] = ang_deg
-                                    else:
-                                        measurement["value"] = int(val_str)
+                            if y["measurement_mrid"] not in measurement_filter:
+                                measurement["measurement_mrid"] = y["measurement_mrid"]
+                                phases = y["phases"]
+                                conducting_equipment_type_str = y["conducting_equipment_type"]
+                                prop_val_str = gld_properties_dict.get(property_name, None)
+                                if prop_val_str == None:
+                                    err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
+                                    _send_simulation_status('RUNNING', err_msg, 'WARN')
+                                    #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                                 else:
-                                    _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                    raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
-                                    # Should it raise runtime?
-                                cim_measurements_dict["message"]["measurements"].append(measurement)
+                                    val_str = str(prop_val_str).split(" ")[0]
+                                    conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
+                                    if conducting_equipment_type == "LinearShuntCompensator":
+                                        if property_name in ["shunt_"+phases,"voltage_"+phases]:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
+                                        else:
+                                            if val_str == "OPEN":
+                                                measurement["value"] = 0
+                                            else:
+                                                measurement["value"] = 1
+                                    elif conducting_equipment_type == "PowerTransformer":
+                                        if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
+                                        else:
+                                            measurement["value"] = int(val_str)
+                                    elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection"]:
+                                        val = complex(val_str)
+                                        (mag,ang_rad) = cmath.polar(val)
+                                        ang_deg = math.degrees(ang_rad)
+                                        measurement["magnitude"] = mag
+                                        measurement["angle"] = ang_deg
+                                    elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
+                                        if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
+                                        else:
+                                            if val_str == "OPEN":
+                                                measurement["value"] = 0
+                                            else:
+                                                measurement["value"] = 1
+                                    elif conducting_equipment_type == "RatioTapChanger":
+                                        if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
+                                        else:
+                                            measurement["value"] = int(val_str)
+                                    else:
+                                        _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
+                                        raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
+                                        # Should it raise runtime?
+                                    cim_measurements_dict["message"]["measurements"].append(measurement)
                 cim_output = cim_measurements_dict
             else:
                 err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
@@ -683,7 +750,7 @@ def _done_with_time_step(current_time):
 
 
 def _register_with_goss(sim_id,username,password,goss_server='localhost',
-                      stomp_port='61613', sim_duration=86400):
+                      stomp_port='61613', sim_duration=86400, sim_start=0):
     """Register with the GOSS server broker and return.
 
     Function arguments:
@@ -717,7 +784,7 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
         raise ValueError(
             'stomp_port must be a nonempty string.\n'
             + 'stomp_port = {0}'.format(stomp_port))
-    goss_listener_instance = GOSSListener(sim_duration)
+    goss_listener_instance = GOSSListener(sim_duration, sim_start)
     goss_connection = stomp.Connection12([(goss_server, stomp_port)])
     goss_connection.start()
     goss_connection.connect(username,password, wait=True)
@@ -746,7 +813,7 @@ def _send_simulation_status(status, message, log_level):
     Function exceptions:
         RuntimeError()
     """
-    simulation_status_topic = "goss.gridappsd.process.simulation.log.{}".format(simulation_id)
+    simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
 
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
@@ -764,9 +831,7 @@ def _send_simulation_status(status, message, log_level):
             "storeToDb" : True
         }
         status_str = json.dumps(status_message)
-        debugFile.write("{}\n\n".format(status_str))
-        goss_connection.send(simulation_status_topic, status_str)
-        goss_connection.send("/topic/goss.gridappsd.simulation.log.{}".format(simulation_id),status_str)
+        goss_connection.send(simulation_status_topic,status_str,headers={'GOSS_HAS_SUBJECT':True,'GOSS_SUBJECT':'system'})
 
 
 def _byteify(data, ignore_dicts = False):
@@ -795,8 +860,8 @@ def _create_cim_object_map(map_file=None):
         object_mrid_to_name = None
     else:
         try:
-            with open(map_file, "r") as file_input_stream:
-                file_dict = json_load_byteified(file_input_stream)
+            with open(map_file, "r", encoding="utf-8") as file_input_stream:
+                file_dict = json.load(file_input_stream) #json_load_byteified(file_input_stream)
             feeders = file_dict.get("feeders",[])
             object_property_to_measurement_id = {}
             object_mrid_to_name = {}
@@ -879,13 +944,16 @@ def _create_cim_object_map(map_file=None):
                                 property_name = "current_in_" + phases
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
-                    elif "LoadBreakSwitch" in conducting_equipment_type:
+                    elif "LoadBreakSwitch" in conducting_equipment_type or "Recloser" in conducting_equipment_type or "Breaker" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
+                        elif measurement_type == "POS":
+                            object_name = conducting_equipment_name
+                            property_name = "phase_" + phases + "_state"
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
@@ -951,7 +1019,7 @@ def _create_cim_object_map(map_file=None):
                             "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
-                            "type" : "regu:lator"
+                            "type" : "regulator"
                         }
                 for y in switches:
                     object_mrid_to_name[y.get("mRID")] = {
@@ -1014,10 +1082,10 @@ def _keep_alive(is_realtime):
             simulation_ran = True
 
 
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400, sim_start=0):
 
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration)
+    _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration, sim_start)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
     _keep_alive(is_realtime)
@@ -1041,5 +1109,5 @@ if __name__ == "__main__":
     sim_request = json.loads(opts.simulation_request.replace("\'",""))
     run_realtime = sim_request["simulation_config"]["run_realtime"]
     sim_duration = sim_request["simulation_config"]["duration"]
-    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration)
-    debugFile.close()
+    sim_start_str = int(sim_request["simulation_config"]["start_time"])
+    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration, sim_start_str)

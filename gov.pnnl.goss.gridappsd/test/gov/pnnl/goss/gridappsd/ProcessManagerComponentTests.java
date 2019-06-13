@@ -41,6 +41,16 @@ package gov.pnnl.goss.gridappsd;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
 import static org.junit.Assert.assertNotNull;
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
+import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
 
@@ -54,15 +64,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.process.ProcessManagerImpl;
-import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
@@ -91,6 +92,9 @@ public class ProcessManagerComponentTests {
 
 	@Mock
 	ProcessNewSimulationRequest newSimulationProcess;
+	
+	@Mock
+	TestManager testManager;
 
 
 	@Captor
@@ -228,7 +232,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory,
 											configurationManager, simulationManager,
-											 logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess, testManager);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -316,7 +320,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory,
 											configurationManager, simulationManager,
-											 logManager, appManager, newSimulationProcess);
+											 logManager, appManager, newSimulationProcess, testManager);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -329,7 +333,7 @@ public class ProcessManagerComponentTests {
 		ArgumentCaptor<Serializable> argCaptorSerializable= ArgumentCaptor.forClass(Serializable.class) ;
 
 		Mockito.verify(newSimulationProcess).process(Mockito.any(), Mockito.any(),
-				Mockito.anyInt(),Mockito.any(),argCaptorSerializable.capture(), Mockito.any(),Mockito.any());
+				Mockito.anyInt(),Mockito.any(),Mockito.any(), Mockito.any(),Mockito.any(), Mockito.any());
 		String messageString = argCaptorSerializable.getValue().toString();
 
 		assertNotNull(RequestSimulation.parse(messageString));

@@ -55,7 +55,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class BlazegraphQueryHandler implements QueryHandler {
 	String endpoint;
-	final String nsCIM = "http://iec.ch/TC57/2012/CIM-schema-cim17#";
+	final String nsCIM = "http://iec.ch/TC57/CIM100#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
 
@@ -92,8 +92,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	}
 	@Override
 	public ResultSetCloseable query(String szQuery) { 
-		String qPrefix = "PREFIX r: <" + nsRDF + "> PREFIX c: <" + nsCIM + "> PREFIX rdf: <" + nsRDF + "> PREFIX cim: <" + nsCIM + "> PREFIX xsd:<" + nsXSD + "> ";
-		Query query = QueryFactory.create (qPrefix + szQuery);
+		Query query = QueryFactory.create (Q_PREFIX + szQuery);
 		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
 
 		long start = new Date().getTime();
@@ -105,12 +104,12 @@ public class BlazegraphQueryHandler implements QueryHandler {
 //				System.out.println ("\n***");
 //				System.out.println (szQuery);
 //				System.out.println ("***");
-				StringBuilder buf = new StringBuilder (qPrefix + szQuery.substring (0, idx) + insertion_point + " VALUES ?fdrid {\"");
+				StringBuilder buf = new StringBuilder (Q_PREFIX + szQuery.substring (0, idx) + insertion_point + " VALUES ?fdrid {\"");
 				buf.append (mRID + "\"} " + szQuery.substring (idx + insertion_point.length()));
 //				System.out.println ("Sending " + buf.toString());
 				query = QueryFactory.create (buf.toString());
 			} else {
-				query = QueryFactory.create (qPrefix + szQuery);
+				query = QueryFactory.create (Q_PREFIX + szQuery);
 			}
 		} //else {
 		//	query = QueryFactory.create (qPrefix + szQuery);
@@ -120,6 +119,37 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		long end = new Date().getTime();
 		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
 		ResultSetCloseable rs=  ResultSetCloseable.closeableResultSet(qexec);
+		return rs;
+	}
+	@Override
+	public ResultSet construct(String szQuery) { 
+		Query query = QueryFactory.create (Q_PREFIX + szQuery); 
+		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
+
+		long start = new Date().getTime();
+
+		if (mRID!=null && mRID.trim().length()>0) { // try to insert a VALUES block for the feeder mRID of interest
+			String insertion_point = "WHERE {";
+			int idx = szQuery.lastIndexOf (insertion_point);
+			if (idx >= 0) {
+//				System.out.println ("\n***");
+//				System.out.println (szQuery);
+//				System.out.println ("***");
+				StringBuilder buf = new StringBuilder (Q_PREFIX + szQuery.substring (0, idx) + insertion_point + " VALUES ?fdrid {\"");
+				buf.append (mRID + "\"} " + szQuery.substring (idx + insertion_point.length()));
+//				System.out.println ("Sending " + buf.toString());
+				query = QueryFactory.create (buf.toString());
+			} else {
+				query = QueryFactory.create (Q_PREFIX + szQuery);
+			}
+		} //else {
+		//	query = QueryFactory.create (qPrefix + szQuery);
+		//}
+		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
+
+		long end = new Date().getTime();
+		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
+		ResultSet rs=  qexec.execSelect();
 		return rs;
 	}
 	public boolean addFeederSelection (String mRID) {
