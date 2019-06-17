@@ -192,7 +192,7 @@ class GOSSListener(object):
             message = {}
             current_time = 0;
             message['command'] = 'nextTimeStep'
-            for current_time in xrange(self.simulation_length):
+            for current_time in range(self.simulation_length):
                 while self.pause_simulation == True:
                     time.sleep(1)
                 if self.stop_simulation == True:
@@ -615,7 +615,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
             }
 
             fncs_output = fncs.get_value(simulation_id)
-            fncs_output_dict = json_loads_byteified(fncs_output)
+            fncs_output_dict = json.loads(fncs_output) #json_loads_byteified(fncs_output)
 
             sim_dict = fncs_output_dict.get(simulation_id, None)
 
@@ -666,12 +666,24 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                                             measurement["angle"] = ang_deg
                                         else:
                                             measurement["value"] = int(val_str)
-                                    elif conducting_equipment_type in ["ACLineSegment","LoadBreakSwitch","EnergyConsumer","PowerElectronicsConnection"]:
+                                    elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection"]:
                                         val = complex(val_str)
                                         (mag,ang_rad) = cmath.polar(val)
                                         ang_deg = math.degrees(ang_rad)
                                         measurement["magnitude"] = mag
                                         measurement["angle"] = ang_deg
+                                    elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
+                                        if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
+                                        else:
+                                            if val_str == "OPEN":
+                                                measurement["value"] = 0
+                                            else:
+                                                measurement["value"] = 1
                                     elif conducting_equipment_type == "RatioTapChanger":
                                         if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                             val = complex(val_str)
@@ -848,8 +860,8 @@ def _create_cim_object_map(map_file=None):
         object_mrid_to_name = None
     else:
         try:
-            with open(map_file, "r") as file_input_stream:
-                file_dict = json_load_byteified(file_input_stream)
+            with open(map_file, "r", encoding="utf-8") as file_input_stream:
+                file_dict = json.load(file_input_stream) #json_load_byteified(file_input_stream)
             feeders = file_dict.get("feeders",[])
             object_property_to_measurement_id = {}
             object_mrid_to_name = {}
@@ -932,13 +944,16 @@ def _create_cim_object_map(map_file=None):
                                 property_name = "current_in_" + phases
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
-                    elif "LoadBreakSwitch" in conducting_equipment_type:
+                    elif "LoadBreakSwitch" in conducting_equipment_type or "Recloser" in conducting_equipment_type or "Breaker" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
+                        elif measurement_type == "POS":
+                            object_name = conducting_equipment_name
+                            property_name = "phase_" + phases + "_state"
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
