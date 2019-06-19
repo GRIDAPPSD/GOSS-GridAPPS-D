@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -23,6 +24,7 @@ import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -37,7 +39,6 @@ public class ProcessEvents {
 //	private Map<String,List<Event>> TestContext = new HashMap<String, List<Event>>();
     HashMap <String,Event> feStatusMap = new HashMap<String,Event>();
 	private List<Event> events = new ArrayList<Event>();
-	private Gson  gson = new Gson();
 	
     public List<Event> getEvents() {
 		return events;
@@ -51,26 +52,32 @@ public class ProcessEvents {
 	int cleared = 0;
 	int initied = 0;
 	
-    LogManager logManager;
-    String simulationID;
+    private LogManager logManager;
+    private String simulationID;
+	private long start_time;
+	private int duration;
 
-    public ProcessEvents(LogManager logManager, List<Event> events){
+    public ProcessEvents(LogManager logManager, List<Event> events, long start_time, int duration){
     	this.logManager = logManager;
-		addEvents(events);	
+		addEvents(events);
+    	this.duration = duration;
+    	this.start_time = start_time;
     }
     
-    public ProcessEvents(LogManager logManager, Client client, String simulationID){
+    public ProcessEvents(LogManager logManager, Client client, String simulationID,  long start_time, int duration){
     	System.out.println("New " + this.getClass().getSimpleName());
     	this.logManager = logManager;
     	this.simulationID = simulationID;
-    	processEvents(client, simulationID);
+    	this.duration = duration;
+    	this.start_time = start_time;
+    	processEvents(client);
     }
 	
 	public void addEvents(List<Event> events) {
 		events.forEach(event -> {addEvent(event);});
 	}
 
-	private void addEvent(Event event) {
+	public void addEvent(Event event) {
 		if(event.occuredDateTime >= event.stopDateTime){
 			logMessage("Invalid command event.occuredDateTime >= event.stopDateTime.", simulationID);
 			return;
@@ -121,7 +128,7 @@ public class ProcessEvents {
 //
 //		JsonObject topElement = new JsonObject();
 //		topElement.add("data", data);
-		JsonObject topElement =getStatus(eventStatus,events);
+		JsonObject topElement = getStatus(eventStatus,events);
 		return topElement;
 	}
 	
@@ -145,7 +152,7 @@ public class ProcessEvents {
 		addEvent(baseEvent);
 	}
 	
-	public void processEvents(Client client, String simulationID) {
+	public void processEvents(Client client) {
 		client.subscribe(GridAppsDConstants.topic_FNCS_timestamp + "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
@@ -170,12 +177,35 @@ public class ProcessEvents {
 		dm.difference_mrid="_"+UUID.randomUUID();
 		dm.timestamp = current_time;
 		dmComm.timestamp = current_time;
+		if (! pq_initiated.isEmpty())
+				System.out.println("Processing at time " + current_time + " " + pq_initiated.peek().occuredDateTime);
 //		System.out.println("pq_initiated.size() " +pq_initiated.size() + " pq_cleared.size() " +pq_cleared.size());
 //		
 //		if(! pq_initiated.isEmpty()){
 //			System.out.println(pq_initiated.size() +" pq_initiated.peek().timeInitiated " + 
 //							pq_initiated.peek().occuredDateTime + " current_time " + current_time);
 //		}
+		while (! pq_initiated.isEmpty() && pq_initiated.peek().occuredDateTime < current_time &&
+			   ! pq_cleared.isEmpty() && pq_cleared.peek().stopDateTime < current_time){
+			Event temp = pq_initiated.remove();
+			pq_cleared.remove();
+			System.out.println("Fault event occures before the simulation start");
+			logMessage("Fault event occures before the simulation start " + temp.toString(), simulationID);
+    		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
+			initied++;
+			cleared++;
+		}
+		long end_time = start_time + duration;
+		while (! pq_initiated.isEmpty() && pq_initiated.peek().occuredDateTime > end_time){
+				Event temp = pq_initiated.remove();
+				pq_cleared.remove();
+				System.out.println("Fault event occures after the simulation end");
+				logMessage("Fault event occures after the simulation end" + temp.toString(), simulationID);
+	    		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
+				initied++;
+				cleared++;
+			}
+		
     	while (! pq_initiated.isEmpty() && pq_initiated.peek().occuredDateTime <= current_time){
     		Event temp = pq_initiated.remove();
 //    		Object simFault = temp.buildSimFault();
@@ -192,6 +222,11 @@ public class ProcessEvents {
     			CommOutage simFault = (CommOutage)temp;
 //    			logMessage("Adding fault " + simFault.toString());
     			dmComm.forward_differences.add(simFault);
+    		}
+    		if(temp instanceof ScheduledCommandEvent){
+    			ScheduledCommandEvent simFault = (ScheduledCommandEvent)temp;
+    			dm.forward_differences.addAll(simFault.getMessage().forward_differences);
+    			dm.reverse_differences.addAll(simFault.getMessage().reverse_differences);
     		}
     		eventStatus.put(temp.getFaultMRID(),EventStatus.INITIATED);
     		initied++;
@@ -213,30 +248,40 @@ public class ProcessEvents {
 //    			logMessage("Adding fault " + simFault.toString());
     			dmComm.reverse_differences.add(simFault);
     		}
+    		if(temp instanceof ScheduledCommandEvent){
+    			ScheduledCommandEvent simFault = (ScheduledCommandEvent)temp;
+    			// Reverse it
+    			dm.forward_differences.addAll(simFault.getMessage().reverse_differences);
+    			dm.reverse_differences.addAll(simFault.getMessage().forward_differences);
+    		}
     		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
     		cleared++;
     	}
-//    	System.out.println("initied " +initied + " cleared " + cleared);
-//    	System.out.println(getStatus().toString());
+    	
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.setPrettyPrinting();
+		Gson gson = gsonBuilder.create();
     	
 		JsonObject command = createDiffCommand(simulationID, dm, "update");
 		if (command != null){
+			System.out.println("Message to platform at time "+ current_time);
+			System.out.println(gson.toJson(command));
 			logMessage("Sending command to " + command.toString(), simulationID);
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 		command = createDiffCommand(simulationID, dmComm, "CommOutage");
 		if (command != null) {
+			command.add("input", dmComm.toJsonElement());
+			System.out.println("Message to platform at time " + current_time);
+			System.out.println(gson.toJson(command));
 			logMessage("Sending command to " + command.toString(), simulationID);
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 	}
 	
 	public static JsonObject createDiffCommand(String simulationID, DifferenceMessage dm, String commandStr) {
-		// TODO Add difference messages and send to simulator
 		if (! (dm.forward_differences.isEmpty() && dm.reverse_differences.isEmpty()) ){ 
 			JsonObject command = createInputCommand(dm.toJsonElement(), simulationID,commandStr);
-			command.add("input", dm.toJsonElement());
-//			System.out.println(command.toString());
 			return command;
 		}
 		return null;

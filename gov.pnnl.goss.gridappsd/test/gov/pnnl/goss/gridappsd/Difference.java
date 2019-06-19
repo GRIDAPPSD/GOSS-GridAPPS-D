@@ -5,7 +5,7 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 
 public class Difference implements Serializable{
-	
+	 
 	/**
 	 *  
 	 */

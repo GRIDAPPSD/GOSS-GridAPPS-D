@@ -88,7 +88,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 
 
@@ -111,7 +111,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/SampleTestConfig.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/SampleTestConfig.json";
@@ -129,7 +129,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/exampleTestScript.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/exampleTestScript.json";
