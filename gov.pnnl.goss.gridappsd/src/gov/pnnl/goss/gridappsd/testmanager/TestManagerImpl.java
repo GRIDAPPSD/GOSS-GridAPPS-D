@@ -142,6 +142,7 @@ public class TestManagerImpl implements TestManager {
 		this.clientFactory = clientFactory;
 		this.logManager = logManager;
 		this.dataManger = dataManager;
+		this.simulationManager = simulationManager;
 	}
 
 	
@@ -247,11 +248,7 @@ public class TestManagerImpl implements TestManager {
 	private ProcessEvents getProcessEvents(Client client, String simulationId) {
 		ProcessEvents pe;
 		if(! processEventsMap.containsKey(simulationId) ){
-			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
-			int duration = simulationContext.getRequest().getSimulation_config().getDuration();
-			long start_time = simulationContext.getRequest().getSimulation_config().getStart_time();
-			
-			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId, start_time, duration));
+			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId, simulationManager));
 			processEventsMap.putIfAbsent(simulationId, pe);
 	    }
 		pe = processEventsMap.get(simulationId);

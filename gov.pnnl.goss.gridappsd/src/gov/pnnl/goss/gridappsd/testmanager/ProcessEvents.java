@@ -16,10 +16,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.EventCommand;
@@ -53,6 +55,7 @@ public class ProcessEvents {
 	int initied = 0;
 	
     private LogManager logManager;
+    private SimulationManager simulationManager;
     private String simulationID;
 	private long start_time;
 	private int duration;
@@ -64,12 +67,11 @@ public class ProcessEvents {
     	this.start_time = start_time;
     }
     
-    public ProcessEvents(LogManager logManager, Client client, String simulationID,  long start_time, int duration){
+    public ProcessEvents(LogManager logManager, Client client, String simulationID,  SimulationManager simulationManager){
     	System.out.println("New " + this.getClass().getSimpleName());
     	this.logManager = logManager;
     	this.simulationID = simulationID;
-    	this.duration = duration;
-    	this.start_time = start_time;
+    	this.simulationManager = simulationManager;
     	processEvents(client);
     }
 	
@@ -165,6 +167,9 @@ public class ProcessEvents {
 //				logMessage(this.getClass().getSimpleName() + "recevied message: " + subMsg + " on topic " + event.getDestination());
 				JsonObject jsonObject = CompareResults.getSimulationJson(dataStr);
 				long current_time = jsonObject.get("timestamp").getAsLong();
+				SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationID);
+				duration = simulationContext.getRequest().getSimulation_config().getDuration();
+				start_time = simulationContext.getRequest().getSimulation_config().getStart_time();
 
 				processAtTime(client, simulationID, current_time);
 			}
@@ -177,6 +182,7 @@ public class ProcessEvents {
 		dm.difference_mrid="_"+UUID.randomUUID();
 		dm.timestamp = current_time;
 		dmComm.timestamp = current_time;
+		
 		if (! pq_initiated.isEmpty())
 				System.out.println("Processing at time " + current_time + " " + pq_initiated.peek().occuredDateTime);
 //		System.out.println("pq_initiated.size() " +pq_initiated.size() + " pq_cleared.size() " +pq_cleared.size());

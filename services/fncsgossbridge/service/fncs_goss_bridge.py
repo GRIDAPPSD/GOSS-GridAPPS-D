@@ -122,13 +122,13 @@ difference_attribute_map = {
     "PowerElectronicsConnection.p": {
         "inverter": {
             "property": ["P_Out"],
-            "prefix": "inv_"
+            "prefix": "inv_pv_"
         }
     },
     "PowerElectronicsConnection.q": {
         "inverter": {
             "property": ["Q_Out"],
-            "prefix": "inv_"
+            "prefix": "inv_pv_"
         }
     },
     "Switch.open" : {
@@ -284,8 +284,9 @@ class GOSSListener(object):
                     else:
                         for x in d.get('inputOutageList', []):
                             try:
-                                idx = self.command_filter.find(x)
-                                del self.command_filter[idx]
+                                #idx = self.command_filter.find(x)
+                                #del self.command_filter[idx]
+                                self.command_filter.remove(x)
                             except ValueError as ve:
                                 pass
                     if d.get('allOutputOutage', False) == True:
@@ -293,8 +294,9 @@ class GOSSListener(object):
                     else:
                         for x in d.get('outputOutageList', []):
                             try:
-                                idx = self.measurement_filter.find(x)
-                                del self.measurement_filter[idx]
+                                #idx = self.measurement_filter.find(x)
+                                #del self.measurement_filter[idx]
+                                self.measurement_filter.remove(x)
                             except ValueError as ve:
                                 pass
                 for d in for_diffs:

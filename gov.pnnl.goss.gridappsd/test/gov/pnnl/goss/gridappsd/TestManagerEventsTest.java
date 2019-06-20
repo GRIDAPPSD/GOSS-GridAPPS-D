@@ -95,7 +95,7 @@ public class TestManagerEventsTest {
 	public void testAddEvents() {
 		CommOutage co = new CommOutage();
 		ObjectMridAttributeMap objectMap = new ObjectMridAttributeMap();
-		objectMap.setObjectMrid("123");
+		objectMap.setObjectMRID("123");
 		objectMap.setAttribute("Shunt");
 		co.getInputOutageList().add(objectMap);
 		System.out.println(gson.toJson(co));
@@ -106,10 +106,14 @@ public class TestManagerEventsTest {
 //		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"outputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"impedance\": \"rLineToLine\", \"PhaseConnectedFaultKind\": {\"lineToGround\": 0.2, \"lineToLine\": 0.3}, \"equipmentMrid\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
 //		String testCfg1 = "{\"events\":[{\"allOutputOutage\": true,\"allInputOutage\": true, \"inputOutageList\": [{\"objectMrid\": \"123\",\"attribute\": \"Shunt\" }], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}], \"appId\": \"sample_app\"}";
 //		String testCfg1 = "{\"events\":[{\"event_type\": \"CommOutage\"}], \"appId\": \"sample_app\"}";
-		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [{\"objectMrid\": \"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"attribute\": \"ShuntCompensator.sections\"}, {\"objectMrid\": \"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"attribute\": \"ShuntCompensator.sections\"}], \"outputOutageList\": [\"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"61A547FB-9F68-5635-BB4C-F7F537FD824E\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.2, \"xGround\": 0.3}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
+		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [{\"objectMRID\": \"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"attribute\": \"ShuntCompensator.sections\"}, {\"objectMRID\": \"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"attribute\": \"ShuntCompensator.sections\"}], \"outputOutageList\": [\"61A547FB-9F68-5635-BB4C-F7F537FD824E\", \"61A547FB-9F68-5635-BB4C-F7F537FD824E\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.2, \"xGround\": 0.3}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
 //		TestConfig tc = TestConfig.parse(testCfg1);
 		TestConfig tc = gson.fromJson(testCfg1, TestConfig.class);
 //		System.out.println(gson.toJson(tc));
+		
+		Event firstEvent = tc.getEvents().get(0);
+		assertEquals(CommOutage.class,firstEvent.getClass());
+		assertEquals("61A547FB-9F68-5635-BB4C-F7F537FD824E",(( CommOutage) firstEvent).getInputOutageList().get(0).getObjectMRID());
 		
 		JsonObject status = processEvent.getStatusJson();
 		assertEquals(0, status.get("data").getAsJsonArray().size());
@@ -130,7 +134,7 @@ public class TestManagerEventsTest {
 //		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"outputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"impedance\": \"rLineToLine\", \"PhaseConnectedFaultKind\": {\"lineToGround\": 0.2, \"lineToLine\": 0.3}, \"equipmentMrid\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
 //		TestConfig tc = TestConfig.parse(testCfg1);
 		
-		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [{\"objectMrid\": \"mrid1123457899\", \"attribute\": \"ShuntThing\"}, {\"objectMrid\": \"mrid234578908\", \"attribute\": \"SwitchThing\"}], \"outputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.2, \"xGround\": 0.3}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
+		String testCfg1 = "{\"events\": [{\"allOutputOutage\": true, \"allInputOutage\": true, \"inputOutageList\": [{\"objectMRID\": \"mrid1123457899\", \"attribute\": \"ShuntThing\"}, {\"objectMRID\": \"mrid234578908\", \"attribute\": \"SwitchThing\"}], \"outputOutageList\": [\"mrid1123457899\", \"mrid234578908\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.2, \"xGround\": 0.3}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}], \"appId\": \"sample_app\"}";
 		TestConfig tc = gson.fromJson(testCfg1, TestConfig.class);
 		
 		processEvent.addEvents(tc.getEvents());
@@ -228,7 +232,7 @@ public class TestManagerEventsTest {
 	
 	@Test 
 	public void testParseSchedule(){
-		String testCfg1 ="{\"events\": [{\"allOutputOutage\": false, \"allInputOutage\": false, \"inputOutageList\": [{\"objectMrid\": \"_30E704EB-29F1-FA2C-D797-6E25DFEF0A9B\", \"attribute\": \"ShuntCompensator.sections\"}, {\"objectMrid\": \"_BFB56ABA-A1F4-E1C9-F43F-B6889A8336C6\", \"attribute\": \"ShuntCompensator.sections\"}], \"outputOutageList\": [\"_FF7722DD-151E-7018-10CA-297882C1A5AE\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.001, \"xGround\": 0.001}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}, {\"message\": {\"timestamp\": 1248130812, \"difference_mrid\": \"1234\", \"forward_differences\": [{\"object\": \"1234\", \"attribute\": \"ShuntCompensator.sections\", \"value\": \"0\"}], \"reverse_differences\": [{\"object\": \"1234\", \"attribute\": \"ShuntCompensator.sections\", \"value\": \"1\"}]}, \"event_type\": \"ScheduledCommandEvent\", \"occuredDateTime\": 1248130812, \"stopDateTime\": 1248130842}], \"appId\": \"sample_app\"}";
+		String testCfg1 ="{\"events\": [{\"allOutputOutage\": false, \"allInputOutage\": false, \"inputOutageList\": [{\"objectMrid\": \"_30E704EB-29F1-FA2C-D797-6E25DFEF0A9B\", \"attribute\": \"ShuntCompensator.sections\"}, {\"objectMrid\": \"_BFB56ABA-A1F4-E1C9-F43F-B6889A8336C6\", \"attribute\": \"ShuntCompensator.sections\"}], \"outputOutageList\": [\"_FF7722DD-151E-7018-10CA-297882C1A5AE\"], \"event_type\": \"CommOutage\", \"occuredDateTime\": 1248130819, \"stopDateTime\": 1248130824}, {\"PhaseConnectedFaultKind\": \"rLineToLine\", \"FaultImpedance\": {\"rGround\": 0.001, \"xGround\": 0.001}, \"ObjectMRID\": \"235242342342342\", \"phases\": \"ABC\", \"event_type\": \"Fault\", \"occuredDateTime\": 1248130809, \"stopDateTime\": 1248130816}, {\"message\": {\"forward_differences\": [{\"object\": \"1234\", \"attribute\": \"ShuntCompensator.sections\", \"value\": \"0\"}], \"reverse_differences\": [{\"object\": \"1234\", \"attribute\": \"ShuntCompensator.sections\", \"value\": \"1\"}]}, \"event_type\": \"ScheduledCommandEvent\", \"occuredDateTime\": 1248130812, \"stopDateTime\": 1248130842}], \"appId\": \"sample_app\"}";
 		TestConfig tc = gson.fromJson(testCfg1, TestConfig.class);
 		Event event = tc.getEvents().get(2);
 		System.out.println("Parsed ScheduledCommandEvent");
