@@ -182,9 +182,7 @@ public class ProcessEvents {
 		dm.difference_mrid="_"+UUID.randomUUID();
 		dm.timestamp = current_time;
 		dmComm.timestamp = current_time;
-		
-		if (! pq_initiated.isEmpty())
-				System.out.println("Processing at time " + current_time + " " + pq_initiated.peek().occuredDateTime);
+
 //		System.out.println("pq_initiated.size() " +pq_initiated.size() + " pq_cleared.size() " +pq_cleared.size());
 //		
 //		if(! pq_initiated.isEmpty()){
@@ -195,7 +193,7 @@ public class ProcessEvents {
 			   ! pq_cleared.isEmpty() && pq_cleared.peek().stopDateTime < current_time){
 			Event temp = pq_initiated.remove();
 			pq_cleared.remove();
-			System.out.println("Fault event occures before the simulation start");
+//			System.out.println("Fault event occures before the simulation start");
 			logMessage("Fault event occures before the simulation start " + temp.toString(), simulationID);
     		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
 			initied++;
@@ -205,7 +203,7 @@ public class ProcessEvents {
 		while (! pq_initiated.isEmpty() && pq_initiated.peek().occuredDateTime > end_time){
 				Event temp = pq_initiated.remove();
 				pq_cleared.remove();
-				System.out.println("Fault event occures after the simulation end");
+//				System.out.println("Fault event occures after the simulation end");
 				logMessage("Fault event occures after the simulation end" + temp.toString(), simulationID);
 	    		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
 				initied++;
@@ -270,16 +268,16 @@ public class ProcessEvents {
     	
 		JsonObject command = createDiffCommand(simulationID, dm, "update");
 		if (command != null){
-			System.out.println("Message to platform at time "+ current_time);
-			System.out.println(gson.toJson(command));
+//			System.out.println("Message to platform at time "+ current_time);
+//			System.out.println(gson.toJson(command));
 			logMessage("Sending command to " + command.toString(), simulationID);
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 		command = createDiffCommand(simulationID, dmComm, "CommOutage");
 		if (command != null) {
 			command.add("input", dmComm.toJsonElement());
-			System.out.println("Message to platform at time " + current_time);
-			System.out.println(gson.toJson(command));
+//			System.out.println("Message to platform at time " + current_time);
+//			System.out.println(gson.toJson(command));
 			logMessage("Sending command to " + command.toString(), simulationID);
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
