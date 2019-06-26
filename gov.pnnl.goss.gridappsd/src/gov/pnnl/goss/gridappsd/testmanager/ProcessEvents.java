@@ -100,12 +100,9 @@ public class ProcessEvents {
 		}
 		for (Event tempEvent : q) {
 			if(tempEvent.faultMRID.equals(e.faultMRID)){
-				System.out.println(System.identityHashCode(tempEvent));
 				if (q.remove(tempEvent)){
-					System.out.println(System.identityHashCode(tempEvent.occuredDateTime));
 					tempEvent.occuredDateTime = e.occuredDateTime;
 					tempEvent.stopDateTime = e.stopDateTime;
-					System.out.println(System.identityHashCode(tempEvent.occuredDateTime));
 					q.add(tempEvent);
 				} else{
 					logMessage("Could not update event " + e.toString(), simulationID);
@@ -118,14 +115,6 @@ public class ProcessEvents {
 		for (Event event : events) {
 			updateQueue(pq_initiated,event);
 			updateQueue(pq_cleared,event);
-			System.out.println(System.identityHashCode(event.occuredDateTime));
-//			Event statusEvent = feStatusMap.get(event.getFaultMRID());
-//			System.out.println(System.identityHashCode(statusEvent));
-//			System.out.println(System.identityHashCode(statusEvent.occuredDateTime));
-//			if (statusEvent != null){
-//				statusEvent.occuredDateTime = event.occuredDateTime;
-//				statusEvent.stopDateTime = event.stopDateTime;
-//			}
 		}	
 	}
 	
