@@ -15,4 +15,16 @@ public interface TimeseriesDataManager {
 	
 	void storeSimulationInput(Serializable simulationIput) throws Exception;
 
+	void storeServiceOutput(Serializable message, String serviceId,
+			String instanceId) throws Exception;
+
+	void storeServiceInput(Serializable message, String serviceId,
+			String instanceId) throws Exception;
+
+	void storeAppOutput(Serializable message, String appId, String instanceId)
+			throws Exception;
+
+	void storeAppInput(Serializable message, String appId, String instanceId)
+			throws Exception;
+
 }

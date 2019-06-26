@@ -173,7 +173,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public void storeSimulationOutput(Serializable message) throws Exception {
 	       try {
-                      provenWriteProducer.sendBulkMessage(message.toString(),  null);
+                      provenWriteProducer.sendBulkMessage(message.toString(), "PROVEN_MEASUREMENT" ,null);
                       
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
@@ -181,12 +181,52 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                 }
 	}
 	
-	
-	
 	@Override
 	public void storeSimulationInput(Serializable message) throws Exception {
                try {
-                      provenWriteProducer.sendBulkMessage(message.toString(),  null);
+                      provenWriteProducer.sendBulkMessage(message.toString(), "PROVEN_MEASUREMENT" ,null);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
+	}
+	
+	@Override
+	public void storeServiceOutput(Serializable message, String serviceId, String instanceId) throws Exception {
+	       try {
+                      provenWriteProducer.sendBulkMessage(message.toString(), serviceId , instanceId);
+                      
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
+	}
+	
+	@Override
+	public void storeServiceInput(Serializable message, String serviceId, String instanceId) throws Exception {
+               try {
+                      provenWriteProducer.sendBulkMessage(message.toString(), serviceId ,instanceId);
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
+	}
+	
+	@Override
+	public void storeAppOutput(Serializable message, String appId, String instanceId) throws Exception {
+	       try {
+                      provenWriteProducer.sendBulkMessage(message.toString(), appId ,instanceId);
+                      
+                } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
+	}
+	
+	@Override
+	public void storeAppInput(Serializable message, String appId, String instanceId) throws Exception {
+               try {
+                      provenWriteProducer.sendBulkMessage(message.toString(), appId ,instanceId);
                 } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
