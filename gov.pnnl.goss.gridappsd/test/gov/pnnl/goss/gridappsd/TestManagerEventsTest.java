@@ -194,6 +194,7 @@ public class TestManagerEventsTest {
 			String request_update = "{\"events\": [{\"faultMRID\": \""+faultMRID +"\", \"occuredDateTime\": "+occuredDateTime+", \"stopDateTime\": "+stopDateTime+"}], \"command\": \"update_events\"}";
 			
 			RequestTestUpdate reqTest1 = RequestTestUpdate.parse(request_update);
+			System.out.println("Update event");
 			System.out.println(reqTest1.toString());
 			assertEquals(reqTest1.getCommand().toString(), "update_events");
 			

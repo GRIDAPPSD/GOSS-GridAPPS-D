@@ -188,6 +188,9 @@ public class TestManagerImpl implements TestManager {
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.update_events){
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
+								String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
+								System.out.println("TestManager topic dest" + request.getReplyDestination());
+								client.publish(request.getReplyDestination(), r);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.query_events){
 								sendEventStatus(simulationId, request.getReplyDestination());

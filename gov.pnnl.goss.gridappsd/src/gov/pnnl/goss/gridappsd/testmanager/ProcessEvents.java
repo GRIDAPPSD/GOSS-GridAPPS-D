@@ -94,10 +94,38 @@ public class ProcessEvents {
 		events.add(event);
 	}
 
-	public void updateEventTimes(List<Event> events) {
+	public void updateQueue(PriorityBlockingQueue<Event> q ,Event e){
+		if(e.faultMRID == null){
+			logMessage("Could not update event. The faultMRID is null.", simulationID);
+		}
+		for (Event tempEvent : q) {
+			if(tempEvent.faultMRID.equals(e.faultMRID)){
+				System.out.println(System.identityHashCode(tempEvent));
+				if (q.remove(tempEvent)){
+					System.out.println(System.identityHashCode(tempEvent.occuredDateTime));
+					tempEvent.occuredDateTime = e.occuredDateTime;
+					tempEvent.stopDateTime = e.stopDateTime;
+					System.out.println(System.identityHashCode(tempEvent.occuredDateTime));
+					q.add(tempEvent);
+				} else{
+					logMessage("Could not update event " + e.toString(), simulationID);
+				}
+			}
+		}
+	}
+	
+	public void updateEventTimes(List<Event> events) { 
 		for (Event event : events) {
-			feStatusMap.get(event.getFaultMRID()).occuredDateTime = event.occuredDateTime;
-			feStatusMap.get(event.getFaultMRID()).stopDateTime = event.stopDateTime;
+			updateQueue(pq_initiated,event);
+			updateQueue(pq_cleared,event);
+			System.out.println(System.identityHashCode(event.occuredDateTime));
+//			Event statusEvent = feStatusMap.get(event.getFaultMRID());
+//			System.out.println(System.identityHashCode(statusEvent));
+//			System.out.println(System.identityHashCode(statusEvent.occuredDateTime));
+//			if (statusEvent != null){
+//				statusEvent.occuredDateTime = event.occuredDateTime;
+//				statusEvent.stopDateTime = event.stopDateTime;
+//			}
 		}	
 	}
 	
