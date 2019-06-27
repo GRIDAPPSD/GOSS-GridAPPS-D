@@ -125,8 +125,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //				" ?tank c:TransformerTank.PowerTransformer ?pxf."+
 //				" ?pxf c:IdentifiedObject.name ?key"+
 //				"} GROUP BY ?key ORDER BY ?key";
-		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
-		
+		//BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
+		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://192.168.99.100:8889/bigdata/namespace/kb/sparql");
+		bg.endpointNSURL = "http://localhost:8889/bigdata/sparql";
 		try {
 //			String query = "select ?s ?p ?o where {?s r:type c:ConnectivityNode. ?s ?p ?o}";
 //			System.out.println(bg.query("ieee13", query, "JSON"));
@@ -136,7 +137,13 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryModelNameList("12345", "user"));
 //			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "http://iec.ch/TC57/2012/CIM-schema-cim17#PowerTransformer", "?s c:IdentifiedObject.name 't5138260a'", "JSON", "12345", "user"));
 //			System.out.println(bg.queryModelNames("XML"));
-			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
+//			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
+			
+//			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
+//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
+			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", null, "12345", "user"));
+//			System.out.println
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -207,7 +214,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	@Override
 	public ResultSet queryObjectResultSet(String modelId, String mrid, String processId, String username) {
-		String query = "select ?property ?value where {<"+getEndpointNS(modelId)+"#"+mrid+"> ?property ?value}";
+		String query = "select ?property ?value where {<"+getEndpointNS(mrid)+"> ?property ?value}";
 
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.query(query);
@@ -225,7 +232,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public List<String> queryObjectTypeList(String modelId, String processId, String username) {
 		String query = "select DISTINCT  ?type where {?subject rdf:type ?type ";
 		if(modelId!=null && modelId.trim().length()>0){
-			query = query+". ?subject ?p2 <"+getEndpointNS(null)+"#"+modelId+"> ";
+			query = query+". ?subject ?p2 <"+getEndpointNS(modelId)+"> ";
 
 		}
 		query = query + "}";
@@ -248,121 +255,12 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		String result = null;
 		ResultSet rs = queryModelResultSet(modelId, objectType, filter, processId, username);
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
-			JsonArray resultArr = new JsonArray();
-			String baseUrl = getEndpointNS(modelId);
-			HashMap<String, JsonObject> resultObjects = new HashMap<String, JsonObject>();
-			while( rs.hasNext()) {
-				QuerySolution qs = rs.nextSolution();
-				String subject = qs.getResource(SUBJECT).getLocalName();
-				JsonObject obj = new JsonObject();
-				if(resultObjects.containsKey(subject)){
-					obj = resultObjects.get(subject);
-				} else {
-					obj.add("id",  new JsonPrimitive(subject));
-					resultObjects.put(subject, obj);
-				}
-				
-				String propertyName = qs.getResource(PREDICATE).getURI();
-				String  value = "";
-				if(qs.get(OBJECT).isLiteral()){
-					Literal literal = qs.getLiteral(OBJECT);
-					value = literal.toString();
-				} else {
-					Resource resource = qs.getResource(OBJECT);
-					value = resource.toString();
-					if(value.startsWith(baseUrl+"#")){
-						value = value.substring(baseUrl.length()+1);
-					}
-				}
-//				qs.getResource("object").toString())
-				obj.add(propertyName, new JsonPrimitive(value));
-				
-			}
-			
-			for(JsonObject obj: resultObjects.values()){
-				resultArr.add(obj);
-			}
-			
-			result = resultArr.toString();
+			result = resultSetToJson(rs);
 		} else if(resultFormat.equals(ResultFormat.XML.toString())){
-			DocumentBuilderFactory factory =
-			        DocumentBuilderFactory.newInstance();
-			factory.setNamespaceAware(true);
-			
-
-			 DocumentBuilder builder =
-			            factory.newDocumentBuilder();
-			 Document rootDoc = builder.newDocument();
-			 Element rootElement = getXMLElementWithPrefix(rootDoc, nsRDF, "RDF");
-			 rootElement.setAttribute("xmlns:cim", nsCIM);
-			 rootElement.setAttribute("xmlns:rdf", nsRDF);
-			 rootDoc.appendChild(rootElement);
-			 
-			 
-			String baseUrl = getEndpointNS(modelId);
-			HashMap<String, List<Element>> resultObjects = new HashMap<String, List<Element>>();
-			HashMap<String, Resource> resultTypes = new HashMap<String, Resource>();
-
-			while( rs.hasNext()) {
-				QuerySolution qs = rs.nextSolution();
-				Resource subjectRes = qs.getResource(SUBJECT);
-				String subject = subjectRes.getLocalName();
-				List<Element> objs = null;
-				if(resultObjects.containsKey(subject)){
-					objs = resultObjects.get(subject);
-				} else {
-					objs = new ArrayList<Element>();
-					resultObjects.put(subject, objs);
-				}
-				
-				Resource property = qs.getResource(PREDICATE);
-				if(property.getURI().equals(RDF_TYPE)){
-					Resource type = qs.getResource(OBJECT);
-					resultTypes.put(subject, type);
-				} else {
-					Element tmp = getXMLElementWithPrefix(rootDoc, property.getNameSpace(), property.getLocalName());
-					String  value = "";
-					if(qs.get(OBJECT).isLiteral()){
-						Literal literal = qs.getLiteral(OBJECT);
-						value = literal.toString();
-						tmp.setTextContent(value);
-					} else {
-						Resource resource = qs.getResource(OBJECT);
-						value = resource.toString();
-						if(value.startsWith(baseUrl+"#")){
-							value = value.substring(baseUrl.length());
-						}
-						tmp.setAttributeNS(nsRDF, RDF_RESOURCE, value);
-					}
-					objs.add(tmp);
-				}
-				
-			}
-			
-			//Build result elements based on types and properties
-			for(String subject: resultTypes.keySet()){
-				Resource subjectRes = resultTypes.get(subject);
-				List<Element> elements = resultObjects.get(subject);
-				Element element = getXMLElementWithPrefix(rootDoc, subjectRes.getNameSpace(), subjectRes.getLocalName());
-				element.setAttributeNS(nsRDF, RDF_ID, subject);
-				for(Element child: elements){
-					element.appendChild(child);
-				}
-				rootElement.appendChild(element);
-			}
-			
-			
-			TransformerFactory tranFactory = TransformerFactory.newInstance();
-		    Transformer transformer = tranFactory.newTransformer();
-	        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-	        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-
-		    StringWriter resultWriter = new StringWriter();
-		    transformer.transform(new DOMSource(rootDoc), new StreamResult(resultWriter));
-			result = resultWriter.toString();
+			result = resultSetToXML(rs);
 //			ResultSetFormatter.outputAsXML(resultString, rs);
-
 		} else {
+			//TODO throw error
 			//logManager.log(new LogMessage(processId, timestamp, logMessage, logLevel, processStatus, storeToDb), username);
 		}
 		
@@ -379,7 +277,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		}
 		
 		String query = "CONSTRUCT   { ?s ?p ?o } WHERE     { ?s ?p ?o ";
-		query = query+". ?s ?p2 <"+getEndpointNS(null)+"#"+modelId+"> ";
+		query = query+". ?s ?p2 <"+getEndpointNS(modelId)+"> ";
 		if(objectType!=null && objectType.trim().length()>0){
 			query = query+". ?s rdf:type <"+objectType+"> ";
 		}
@@ -390,7 +288,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			query = query+". "+filter;
 		}
 		query = query+"}";
-		System.out.println(query);
+//		System.out.println(query);
 		
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
 		ResultSet rs = queryHandler.construct(query);
@@ -402,11 +300,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	public String queryModelNames(String resultFormat, String processId, String username) {
 		return formatStringList(queryModelNameList(processId, username), "modelNames", resultFormat);
 	}
-	
-	
-	
-
-	
 	
 	
 	@Override
@@ -426,37 +319,172 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			models.add(qs.get("fid").toString());
 		}
 
-//		RemoteRepositoryManager repo = new RemoteRepositoryManager(
-//				endpointBaseURL, false);
-//		try{
-//			GraphQueryResult res = repo.getRepositoryDescriptions();
-//	
-//			while (res.hasNext()) {
-//				Statement stmt = res.next();
-//				if (stmt.getPredicate()
-//						.toString()
-//						.equals(SD.KB_NAMESPACE.stringValue())) {
-//					
-//					String name = stmt.getObject().stringValue();
-//					if(!reservedModelNames.contains(name)){
-//						models.add(name);
-//					}
-//				}
-//				
-//			}	
-//			res.close();
-//		}catch(Exception e){
-//			e.printStackTrace();
-//			//TODO log message
-//		} finally {
-//			try {
-//				repo.close();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		System.out.println("MODELS "+models);
 		return models;
+	}
+	
+	@Override
+	public String queryObjectIds(String resultFormat, String modelId, String objectType, String processId, String username) {
+		return formatStringList(queryObjectIdsList(modelId, objectType, processId, username), "objectIds", resultFormat);
+
+	}
+	@Override
+	public List<String> queryObjectIdsList(String modelId, String objectType, String processId, String username) {
+		
+		if(modelId==null){
+			throw new RuntimeException("queryObjectIds: model id missing");
+		}
+		List<String> objectIds = new ArrayList<String>();
+		String query = "SELECT DISTINCT ?s WHERE {"+
+				  " ?s ?p <"+getEndpointNS(modelId)+"> .";
+		if(objectType!=null && objectType.trim().length()>0){
+			query = query + " ?s rdf:type <"+nsCIM+objectType+"> .";
+		}
+		query = query+ "}";
+//		System.out.println(query);
+		ResultSet rs = queryResultSet(getEndpointURL(modelId), query, processId, username);
+		while(rs.hasNext()){
+			QuerySolution qs = rs.nextSolution();
+			objectIds.add(qs.get("s").toString());
+		}
+		return objectIds;
+	}
+	@Override
+	public String queryObjectDictByType(String resultFormat, String modelId, String objectType, String objectId, String processId, String username) throws Exception {
+		String result = null;
+		ResultSet rs = queryObjectDictByTypeResultSet(modelId, objectType, objectId, processId, username);
+		if(resultFormat.equals(ResultFormat.JSON.toString())){
+			result = resultSetToJson(rs);
+		} else if(resultFormat.equals(ResultFormat.XML.toString())){
+			result = resultSetToXML(rs);
+//			ResultSetFormatter.outputAsXML(resultString, rs);
+		} else {
+			//TODO throw error
+			//logManager.log(new LogMessage(processId, timestamp, logMessage, logLevel, processStatus, storeToDb), username);
+		}
+		
+		//TODO
+		logStatus("COMPLETE");
+		
+		return result;
+	}
+	
+	
+	@Override
+	public ResultSet queryObjectDictByTypeResultSet(String modelId, String objectType,
+			String objectId, String processId, String username) {
+
+		if(modelId==null){
+			throw new RuntimeException("queryObjectDict: model id missing");
+		}
+		
+		String query = "";
+		String subject = "?s";
+		if(objectId!=null && objectId.trim().length()>0){
+			subject = "<"+getEndpointNS(objectId)+">";
+		}
+				
+		query = "CONSTRUCT   { "+subject+" ?p ?o } WHERE     { "+ 
+			  subject+" ?p ?o . "+ 
+			  subject+" ?p2 <"+getEndpointNS(modelId)+"> . ";
+		if(objectType!=null && objectType.trim().length()>0){
+			query = query + subject+" rdf:type <"+nsCIM+objectType+"> .";
+		}  
+		query = query+ "}";
+//		System.out.println(query);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
+		ResultSet rs = queryHandler.construct(query);
+		return rs;
+		
+		
+	}
+	@Override
+	public String queryMeasurementDictByObject(String resultFormat, String modelId, String objectId, String processId, String username) throws Exception {
+		String result = null;
+		ResultSet rs = queryMeasurementDictByObjectResultSet(modelId, objectId, processId, username);
+		if(resultFormat.equals(ResultFormat.JSON.toString())){
+			JsonArray resultArr = new JsonArray();
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				JsonObject obj = new JsonObject();
+				obj.add("id", new JsonPrimitive(qs.getLiteral("id").getString()));
+				obj.add("type", new JsonPrimitive(qs.getLiteral("type").getString()));
+				obj.add("class", new JsonPrimitive(qs.getLiteral("class").getString()));
+				obj.add("name", new JsonPrimitive(qs.getLiteral("name").getString()));
+				obj.add("bus", new JsonPrimitive(qs.getLiteral("bus").getString()));
+				obj.add("phases", new JsonPrimitive(qs.getLiteral("phases").getString()));
+				obj.add("eqtype", new JsonPrimitive(qs.getLiteral("eqtype").getString()));
+				obj.add("eqname", new JsonPrimitive(qs.getLiteral("eqname").getString()));
+				obj.add("eqid", new JsonPrimitive(qs.getLiteral("eqid").getString()));
+				obj.add("trmid", new JsonPrimitive(qs.getLiteral("trmid").getString()));
+				
+				resultArr.add(obj);
+			}
+			
+			result = resultArr.toString();
+		} else if(resultFormat.equals(ResultFormat.XML.toString())){
+			result = resultSetToXML(rs);
+//			ResultSetFormatter.outputAsXML(resultString, rs);
+		} else {
+			//TODO throw error
+			//logManager.log(new LogMessage(processId, timestamp, logMessage, logLevel, processStatus, storeToDb), username);
+		}
+		
+		//TODO
+		logStatus("COMPLETE");
+		
+		return result;
+	}
+	@Override
+	public ResultSet queryMeasurementDictByObjectResultSet( String modelId, String objectId, String processId, String username) {
+		if(modelId==null){
+			throw new RuntimeException("queryMeasurementDict: model id missing");
+		}
+		
+		String query = "";
+//		String subject = "?s";
+//		if(objectId!=null && objectId.trim().length()>0){
+//			subject = "<"+objectId+">";
+//		}
+				
+//		query = "CONSTRUCT   { ?s ?p ?o } WHERE     { "+ 
+//			  subject+" ?p ?o . "+ 
+//			  subject+" ?p2 <"+modelId+"> . ";
+//		if(objectId!=null && objectId.trim().length()>0){
+//			query = query + subject+" rdf:type <"+objectId+"> .";
+//		}  
+//		query = query+ "}";
+		
+		query = "SELECT ?class ?type ?name ?bus ?phases ?eqtype ?eqname ?eqid ?trmid ?id WHERE { "+
+			     "?eq c:Equipment.EquipmentContainer ?fdr. "+
+			     "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				 "	 { ?s r:type c:Discrete. bind (\"Discrete\" as ?class)} "+
+				 "	   UNION "+
+				 "	 { ?s r:type c:Analog. bind (\"Analog\" as ?class)} ";
+		if(objectId!=null && objectId.trim().length()>0){			  
+			query = query+"?s ?p <"+getEndpointNS(objectId)+">. ";
+		}
+		query = query+"	 ?s c:IdentifiedObject.name ?name . "+
+					  "?s c:IdentifiedObject.mRID ?id . "+
+					  "?s c:Measurement.PowerSystemResource ?eq . "+
+					  "?s c:Measurement.Terminal ?trm . "+
+					  "?s c:Measurement.measurementType ?type . "+
+					  "?trm c:IdentifiedObject.mRID ?trmid. "+
+					  "?eq c:IdentifiedObject.mRID ?eqid. "+
+					  "?eq c:IdentifiedObject.name ?eqname. "+
+			          "?eq c:Equipment.EquipmentContainer <"+getEndpointNS(modelId)+">. "+
+					  "?eq r:type ?typeraw. "+
+					  " bind(strafter(str(?typeraw),\"#\") as ?eqtype) "+
+					  "?trm c:Terminal.ConnectivityNode ?cn. "+
+					  "?cn c:IdentifiedObject.name ?bus. "+
+					  "?s c:Measurement.phases ?phsraw . "+
+					  "  {bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phases)} "+
+					  "} ORDER BY ?class ?type ?name ";
+		
+		
+		
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
+		ResultSet rs = queryHandler.construct(query);
+		return rs;
 	}
 	
 	
@@ -485,6 +513,134 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //	}
 	
 	
+	protected String resultSetToJson(ResultSet rs){
+		JsonArray resultArr = new JsonArray();
+		String baseUrl = getEndpointNS(null);
+		HashMap<String, JsonObject> resultObjects = new HashMap<String, JsonObject>();
+		while( rs.hasNext()) {
+			QuerySolution qs = rs.nextSolution();
+			String subject = qs.getResource(SUBJECT).getLocalName();
+			JsonObject obj = new JsonObject();
+			if(resultObjects.containsKey(subject)){
+				obj = resultObjects.get(subject);
+			} else {
+				obj.add("id",  new JsonPrimitive(subject));
+				resultObjects.put(subject, obj);
+			}
+			
+			String propertyName = qs.getResource(PREDICATE).getURI();
+			if(propertyName.startsWith(nsCIM)){
+				propertyName = propertyName.substring(nsCIM.length());
+			} else if(propertyName.startsWith(nsRDF)){
+				propertyName = propertyName.substring(nsRDF.length());
+			}
+			
+			String  value = "";
+			if(qs.get(OBJECT).isLiteral()){
+				Literal literal = qs.getLiteral(OBJECT);
+				value = literal.toString();
+			} else {
+				Resource resource = qs.getResource(OBJECT);
+				value = resource.toString();
+				if(value.startsWith(baseUrl+"#")){
+					value = value.substring(baseUrl.length()+1);
+				} else if(value.startsWith(nsCIM)){
+					value = value.substring(nsCIM.length());
+				} else if(value.startsWith(nsRDF)){
+					value = value.substring(nsRDF.length());
+				}
+			}
+//			qs.getResource("object").toString())
+			obj.add(propertyName, new JsonPrimitive(value));
+			
+		}
+		
+		for(JsonObject obj: resultObjects.values()){
+			resultArr.add(obj);
+		}
+		
+		return resultArr.toString();
+	}
+	
+	
+	protected String resultSetToXML(ResultSet rs) throws Exception {
+		DocumentBuilderFactory factory =
+		        DocumentBuilderFactory.newInstance();
+		factory.setNamespaceAware(true);
+		
+
+		 DocumentBuilder builder =
+		            factory.newDocumentBuilder();
+		 Document rootDoc = builder.newDocument();
+		 Element rootElement = getXMLElementWithPrefix(rootDoc, nsRDF, "RDF");
+		 rootElement.setAttribute("xmlns:cim", nsCIM);
+		 rootElement.setAttribute("xmlns:rdf", nsRDF);
+		 rootDoc.appendChild(rootElement);
+		 
+		 
+		String baseUrl = getEndpointNS(null);
+		HashMap<String, List<Element>> resultObjects = new HashMap<String, List<Element>>();
+		HashMap<String, Resource> resultTypes = new HashMap<String, Resource>();
+
+		while( rs.hasNext()) {
+			QuerySolution qs = rs.nextSolution();
+			Resource subjectRes = qs.getResource(SUBJECT);
+			String subject = subjectRes.getLocalName();
+			List<Element> objs = null;
+			if(resultObjects.containsKey(subject)){
+				objs = resultObjects.get(subject);
+			} else {
+				objs = new ArrayList<Element>();
+				resultObjects.put(subject, objs);
+			}
+			
+			Resource property = qs.getResource(PREDICATE);
+			if(property.getURI().equals(RDF_TYPE)){
+				Resource type = qs.getResource(OBJECT);
+				resultTypes.put(subject, type);
+			} else {
+				Element tmp = getXMLElementWithPrefix(rootDoc, property.getNameSpace(), property.getLocalName());
+				String  value = "";
+				if(qs.get(OBJECT).isLiteral()){
+					Literal literal = qs.getLiteral(OBJECT);
+					value = literal.toString();
+					tmp.setTextContent(value);
+				} else {
+					Resource resource = qs.getResource(OBJECT);
+					value = resource.toString();
+					if(value.startsWith(baseUrl+"#")){
+						value = value.substring(baseUrl.length());
+					}
+					tmp.setAttributeNS(nsRDF, RDF_RESOURCE, value);
+				}
+				objs.add(tmp);
+			}
+			
+		}
+		
+		//Build result elements based on types and properties
+		for(String subject: resultTypes.keySet()){
+			Resource subjectRes = resultTypes.get(subject);
+			List<Element> elements = resultObjects.get(subject);
+			Element element = getXMLElementWithPrefix(rootDoc, subjectRes.getNameSpace(), subjectRes.getLocalName());
+			element.setAttributeNS(nsRDF, RDF_ID, subject);
+			for(Element child: elements){
+				element.appendChild(child);
+			}
+			rootElement.appendChild(element);
+		}
+		
+		
+		TransformerFactory tranFactory = TransformerFactory.newInstance();
+	    Transformer transformer = tranFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+
+	    StringWriter resultWriter = new StringWriter();
+	    transformer.transform(new DOMSource(rootDoc), new StreamResult(resultWriter));
+		return resultWriter.toString();
+	}
+	
 	protected void logStatus(String status) throws Exception{
 //		Credentials credentials = new UsernamePasswordCredentials(
 //				GridAppsDConstants.username, GridAppsDConstants.password);
@@ -505,15 +661,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 
 	private String getEndpointNS(String modelId){
+		if(modelId!=null) {
+			return endpointNSURL+"#"+modelId;
+		}
 		return endpointNSURL;
 	}
 	private String getEndpointURL(String modelId){
 		//Originally this used a different endpoint based on the model id, with all 
 		// models in the same namespace that is not necessary
-		if(endpointBaseURL==null){
+//		if(endpointBaseURL==null){
 			//TODO log error status
 			//throw new Exception(bg endpoint not available);
-		}
+//		}
 //		if(modelId==null) {
 //			return endpointBaseURL+"/sparql";
 //		}
@@ -694,5 +853,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				+ "} ORDER by  ?"+FEEDER_NAME;
 		return queryResultSet(null, modelNameQuery, processId, username);
 	}
+	
 
 }
