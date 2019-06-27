@@ -406,7 +406,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			while( rs.hasNext()) {
 				QuerySolution qs = rs.nextSolution();
 				JsonObject obj = new JsonObject();
-				obj.add("id", new JsonPrimitive(qs.getLiteral("id").getString()));
+				obj.add("measid", new JsonPrimitive(qs.getLiteral("measid").getString()));
 				obj.add("type", new JsonPrimitive(qs.getLiteral("type").getString()));
 				obj.add("class", new JsonPrimitive(qs.getLiteral("class").getString()));
 				obj.add("name", new JsonPrimitive(qs.getLiteral("name").getString()));
@@ -454,7 +454,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //		}  
 //		query = query+ "}";
 		
-		query = "SELECT ?class ?type ?name ?bus ?phases ?eqtype ?eqname ?eqid ?trmid ?id WHERE { "+
+		query = "SELECT ?class ?type ?name ?bus ?phases ?eqtype ?eqname ?eqid ?trmid ?measid WHERE { "+
 			     "?eq c:Equipment.EquipmentContainer ?fdr. "+
 			     "?fdr c:IdentifiedObject.mRID ?fdrid. "+
 				 "	 { ?s r:type c:Discrete. bind (\"Discrete\" as ?class)} "+
@@ -464,7 +464,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			query = query+"?s ?p <"+getEndpointNS(objectId)+">. ";
 		}
 		query = query+"	 ?s c:IdentifiedObject.name ?name . "+
-					  "?s c:IdentifiedObject.mRID ?id . "+
+					  "?s c:IdentifiedObject.mRID ?measid . "+
 					  "?s c:Measurement.PowerSystemResource ?eq . "+
 					  "?s c:Measurement.Terminal ?trm . "+
 					  "?s c:Measurement.measurementType ?type . "+
