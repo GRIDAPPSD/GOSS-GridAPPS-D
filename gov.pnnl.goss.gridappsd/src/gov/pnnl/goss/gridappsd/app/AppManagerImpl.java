@@ -413,6 +413,12 @@ public class AppManagerImpl implements AppManager {
 		appId = appId.trim();
 		return apps.get(appId);
 	}
+	
+	@Override
+	public String getAppIdForInstance(String appInstanceId) {
+		appInstanceId = appInstanceId.trim();
+		return appInstances.get(appInstanceId).getApp_info().getId();
+	}
 
 	@Override
 	public void deRegisterApp(String appId) {

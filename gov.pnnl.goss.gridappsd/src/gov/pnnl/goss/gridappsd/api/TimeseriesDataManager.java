@@ -11,20 +11,20 @@ public interface TimeseriesDataManager {
 	
 	Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception;
 	
-	void storeSimulationOutput(Serializable simulationOutput) throws Exception;
+	void storeSimulationOutput(String simulationId) throws Exception;
 	
-	void storeSimulationInput(Serializable simulationIput) throws Exception;
+	void storeSimulationInput(String simulationId) throws Exception;
 
-	void storeServiceOutput(Serializable message, String serviceId,
+	void storeServiceOutput(String simulationId, String serviceId,
 			String instanceId) throws Exception;
 
-	void storeServiceInput(Serializable message, String serviceId,
+	void storeServiceInput(String simulationId, String serviceId,
 			String instanceId) throws Exception;
 
-	void storeAppOutput(Serializable message, String appId, String instanceId)
+	void storeAppOutput(String simulationId, String appId, String instanceId)
 			throws Exception;
 
-	void storeAppInput(Serializable message, String appId, String instanceId)
+	void storeAppInput(String simulationId, String appId, String instanceId)
 			throws Exception;
 
 }

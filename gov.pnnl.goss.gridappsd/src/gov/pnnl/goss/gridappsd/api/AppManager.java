@@ -95,6 +95,13 @@ public interface AppManager {
 	AppInfo getApp(String appId); //Would return through message bus appInfo object
 	
 	/**
+	 * Returns application id for the application instance id.
+	 * @param appInstanceId Instance id of the application
+	 * @return Application id
+	 */
+	String getAppIdForInstance(String appInstanceId);
+	
+	/**
 	 * Unregisters app with the requested id
 	 * @param appId Registered ID of the app to de-register
 	 */
