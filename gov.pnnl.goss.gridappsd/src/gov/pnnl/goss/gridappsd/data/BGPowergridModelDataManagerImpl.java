@@ -139,10 +139,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryModelNames("XML"));
 //			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
 			
-//			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
+			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
 //			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
 //			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
-			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", null, "12345", "user"));
+//			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", null, "12345", "user"));
 //			System.out.println
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -341,10 +341,15 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		}
 		query = query+ "}";
 //		System.out.println(query);
+		String baseUrl = getEndpointNS(null);
 		ResultSet rs = queryResultSet(getEndpointURL(modelId), query, processId, username);
 		while(rs.hasNext()){
 			QuerySolution qs = rs.nextSolution();
-			objectIds.add(qs.get("s").toString());
+			String value = qs.get("s").toString();
+			if(value.startsWith(baseUrl+"#")){
+				value = value.substring(baseUrl.length()+1);
+			} 
+			objectIds.add(value);
 		}
 		return objectIds;
 	}
