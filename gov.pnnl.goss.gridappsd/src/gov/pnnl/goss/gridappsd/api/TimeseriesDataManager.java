@@ -3,6 +3,7 @@ package gov.pnnl.goss.gridappsd.api;
 import java.io.Serializable;
 
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
 public interface TimeseriesDataManager {
 //	public enum ResultFormat {
@@ -26,5 +27,7 @@ public interface TimeseriesDataManager {
 
 	void storeAppInput(String simulationId, String appId, String instanceId)
 			throws Exception;
+
+	void storeAllData(SimulationContext simulationContext) throws Exception;
 
 }

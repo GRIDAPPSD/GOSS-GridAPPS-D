@@ -101,6 +101,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable handle(Serializable requestContent, String processId,
 			String username) throws Exception {
+		if(requestContent instanceof SimulationContext){
+			storeAllData((SimulationContext)requestContent);
+		}
 		if(requestContent instanceof RequestTimeseriesData){
 			return query((RequestTimeseriesData)requestContent);
 		}
@@ -135,21 +138,22 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	}
 	
 	
-	
-    public void storeAllData(String simulationId) throws Exception{
+	@Override
+    public void storeAllData(SimulationContext simulationContext) throws Exception{
+    	
+    	String simulationId = simulationContext.getSimulationId();
     	
     	storeSimulationInput(simulationId);
     	storeSimulationOutput(simulationId);
-        SimulationContext simContext = simulationManager.getSimulationContextForId(simulationId);
         
-        for(String instanceId: simContext.getServiceInstanceIds()){
+        for(String instanceId: simulationContext.getServiceInstanceIds()){
         	String serviceId = serviceManager.getServiceIdForInstance(instanceId);
         	storeServiceInput(simulationId, serviceId, instanceId);
         	storeServiceOutput(simulationId, serviceId, instanceId);
         	
         }
         
-        for(String instanceId: simContext.getAppInstanceIds()){
+        for(String instanceId: simulationContext.getAppInstanceIds()){
         	String appId = appManager.getAppIdForInstance(instanceId);
         	storeAppInput(simulationId, appId, instanceId);
         	storeAppOutput(simulationId, appId, instanceId);
@@ -194,22 +198,22 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	
 	@Override
 	public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+".output."+simulationId, serviceId, instanceId);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
 	}
 	
 	@Override
 	public void storeServiceInput(String simulationId, String serviceId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+".input."+simulationId, serviceId, instanceId);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".input", serviceId, instanceId);
 	}
 	
 	@Override
 	public void storeAppOutput(String simulationId, String appId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+".output."+simulationId, appId, instanceId);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".output", appId, instanceId);
 	}
 	
 	@Override
 	public void storeAppInput(String simulationId, String appId, String instanceId) throws Exception {
-    	subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+".output."+simulationId, appId, instanceId);
+    	subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".input", appId, instanceId);
 	}
 
 }

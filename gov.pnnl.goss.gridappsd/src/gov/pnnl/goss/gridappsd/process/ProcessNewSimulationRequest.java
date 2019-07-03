@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.process;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -88,16 +89,17 @@ public class ProcessNewSimulationRequest {
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			DataResponse event, RequestSimulation simRequest, AppManager appManager,
-			ServiceManager serviceManager, TestManager testManager) {
+			ServiceManager serviceManager, TestManager testManager,
+			DataManager dataManager) {
 		process(configurationManager, simulationManager, simulationId, simRequest,
 				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT, appManager,
-				serviceManager, testManager);
+				serviceManager, testManager, dataManager);
 	}
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			RequestSimulation simRequest, int simulationPort, AppManager appManager,
-			ServiceManager serviceManager, TestManager testManager) {
+			ServiceManager serviceManager, TestManager testManager,DataManager dataManager) {
 
 		try {
 
@@ -296,6 +298,8 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("connectedAppInstanceIds",connectedAppInstanceIds);
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
+			
+			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username);
 			
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
