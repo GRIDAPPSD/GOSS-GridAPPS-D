@@ -310,12 +310,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("Pos")) {
 				objectName = conductingEquipmentName;
 				propertyName = "tap_" + phases;
-			} else if (measurementType.equals("PNV")) {
-				objectName = connectivityNode;
-				propertyName = "voltage_"+phases;
-			} else if (measurementType.equals("A")) {
-				objectName = conductingEquipmentName;
-				propertyName = "current_out_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for RatioTapChanger are VA, PNV, A, and Pos.\nmeasurementType = %s.",measurementType));
 			}

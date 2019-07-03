@@ -61,6 +61,8 @@ import time
 import stomp
 import yaml
 
+from gridappsd import GridAPPSD, utils
+
 try:
     from fncs import fncs
 except:
@@ -132,15 +134,23 @@ difference_attribute_map = {
         }
     },
     "PowerElectronicsConnection.p": {
-        "inverter": {
+        "pv": {
             "property": ["P_Out"],
-            "prefix": "inv_"
+            "prefix": "inv_pv_"
+        },
+        "battery": {
+            "property": ["P_Out"],
+            "prefix": "inv_bat_"
         }
     },
     "PowerElectronicsConnection.q": {
-        "inverter": {
-            "property": ["Q_Out"],
-            "prefix": "inv_"
+        "pv": {
+            "property": ["P_Out"],
+            "prefix": "inv_pv_"
+        },
+        "battery": {
+            "property": ["P_Out"],
+            "prefix": "inv_bat_"
         }
     },
     "Switch.open" : {
@@ -386,7 +396,7 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
         message_str = 'Registering with FNCS broker '+str(simulation_id)+' and broker '+broker_location
         ('STARTED', message_str, 'INFO')
 
-        message_str = 'still connected to goss 1 '+str(goss_connection.is_connected())
+        message_str = 'still connected to goss 1 '+str(goss_connection.connected)
         _send_simulation_status('STARTED', message_str, 'INFO')
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
             raise ValueError(
@@ -808,14 +818,19 @@ def _register_with_goss(sim_id,username,password,goss_server='localhost',
             'stomp_port must be a nonempty string.\n'
             + 'stomp_port = {0}'.format(stomp_port))
     goss_listener_instance = GOSSListener(sim_duration, sim_start)
-    goss_connection = stomp.Connection12([(goss_server, stomp_port)])
-    goss_connection.start()
-    goss_connection.connect(username,password, wait=True)
-    goss_connection.set_listener('GOSSListener', goss_listener_instance)
-    goss_connection.subscribe(input_from_goss_topic,1)
-    goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
+    
+    #goss_connection = stomp.Connection12([(goss_server, stomp_port)])
+    #goss_connection.start()
+    #goss_connection.connect(username,password, wait=True)
+    goss_connection = GridAPPSD(simulation_id, address=utils.get_gridappsd_address(),
+                                username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
+    #goss_connection.set_listener('GOSSListener', goss_listener_instance)
+    #goss_connection.subscribe(input_from_goss_topic,1)
+    #goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
+    goss_connection.subscribe(input_from_goss_topic, goss_listener_instance)
+    goss_connection.subscribe("{}{}".format(simulation_input_topic, simulation_id), goss_listener_instance)
 
-    message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.is_connected())
+    message_str = 'Registered with GOSS on topic '+input_from_goss_topic+' '+str(goss_connection.connected)
     _send_simulation_status('STARTED', message_str, 'INFO')
 
 
@@ -854,7 +869,7 @@ def _send_simulation_status(status, message, log_level):
             "storeToDb" : True
         }
         status_str = json.dumps(status_message)
-        goss_connection.send(simulation_status_topic,status_str,headers={'GOSS_HAS_SUBJECT':True,'GOSS_SUBJECT':'system'})
+        goss_connection.send(simulation_status_topic,status_str)
 
 
 def _byteify(data, ignore_dicts = False):
@@ -893,6 +908,7 @@ def _create_cim_object_map(map_file=None):
                 capacitors = x.get("capacitors",[])
                 regulators = x.get("regulators",[])
                 switches = x.get("switches",[])
+                batteries = x.get("batteries", [])
                 solarpanels = x.get("solarpanels",[])
                 synchronousMachines = x.get("synchronousmachines", [])
                 breakers = x.get("breakers", [])
@@ -1071,7 +1087,14 @@ def _create_cim_object_map(map_file=None):
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "inverter"
+                        "type" : "pv"
+                    }
+                for y in batteries:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "battery"
                     }
                 for y in synchronousMachines:
                     object_mrid_to_name[y.get("mRID")] = {
