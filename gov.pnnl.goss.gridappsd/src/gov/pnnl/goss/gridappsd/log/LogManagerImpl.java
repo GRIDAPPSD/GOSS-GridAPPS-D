@@ -41,6 +41,7 @@
 package gov.pnnl.goss.gridappsd.log;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -158,6 +159,11 @@ public class LogManagerImpl implements LogManager {
 		String requestId = message.getProcessId();
 		long timestamp = message.getTimestamp();
 		String log_message = message.getLogMessage();
+
+		// if timestamp not set via message then set to wall clock time.
+		if (timestamp == 0)
+			timestamp = new Date().getTime();
+
 		//Default log message to empty if it is null to prevent sql error
 		if(log_message==null)
 			log_message = "";
@@ -206,10 +212,8 @@ public class LogManagerImpl implements LogManager {
 	private void store(String source, String requestId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
 
-		//TODO: Save log in data store using DataManager
 		logDataManager.store(source, requestId, timestamp,
 				log_message, log_level, process_status, username);
-		//log.debug("log saved");
 
 	}
 
