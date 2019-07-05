@@ -107,6 +107,18 @@ difference_attribute_map = {
             "prefix" : "rcon_"
         }
     },
+    "RotatingMachine.p" : {
+        "diesel_dg" : {
+            "property" : ["real_power_out_{}"],
+            "prefix" : "dg_"
+        }
+    },
+    "RotatingMachine.q" : {
+        "diesel_dg" : {
+            "property" : ["reactive_power_out_{}"],
+            "prefix" : "dg_"
+        }
+    },
     "ShuntCompensator.aVRDelay" : {
         "capacitor" : {
             "property" : ["dwell_time"],
@@ -133,6 +145,10 @@ difference_attribute_map = {
     },
     "Switch.open" : {
         "switch" : {
+            "property" : ["phase_{}_state"],
+            "prefix" : "swt_"
+        },
+        "recloser" : {
             "property" : ["phase_{}_state"],
             "prefix" : "swt_"
         }
@@ -165,7 +181,6 @@ difference_attribute_map = {
     "TapChanger.lineDropX" : {
         "regulator" : {
             "property" : ["compensator_x_setting_{}"],
-
             "prefix" : "rcon_"
         }
     }
@@ -508,6 +523,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                     val = x.get("value")
                     if val == 0:
                         fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                    if val == 1:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                     elif val == 2:
                         fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
                     elif val == 3:
@@ -521,6 +538,12 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                 elif cim_attribute == "RegulatingControl.targetValue":
                     for y in difference_attribute_map[cim_attribute][object_type]["property"]:
                         fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                elif cim_attribute == "RotatingMachine.p":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                elif cim_attribute == "RotatingMachine.q":
+                    for y in object_phases:
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                 elif cim_attribute == "ShuntCompensator.aVRDelay":
                     for y in difference_attribute_map[cim_attribute][object_type]["property"]:
                         fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
@@ -668,7 +691,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                                             measurement["angle"] = ang_deg
                                         else:
                                             measurement["value"] = int(val_str)
-                                    elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection"]:
+                                    elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
                                         val = complex(val_str)
                                         (mag,ang_rad) = cmath.polar(val)
                                         ang_deg = math.degrees(ang_rad)
@@ -873,6 +896,9 @@ def _create_cim_object_map(map_file=None):
                 regulators = x.get("regulators",[])
                 switches = x.get("switches",[])
                 solarpanels = x.get("solarpanels",[])
+                synchronousMachines = x.get("synchronousmachines", [])
+                breakers = x.get("breakers", [])
+                reclosers = x.get("reclosers", [])
                 #TODO: add more object types to handle
                 for y in measurements:
                     measurement_type = y.get("measurementType")
@@ -953,7 +979,7 @@ def _create_cim_object_map(map_file=None):
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
-                        elif measurement_type == "POS":
+                        elif measurement_type == "Pos":
                             object_name = conducting_equipment_name
                             property_name = "phase_" + phases + "_state"
                         elif measurement_type == "A":
@@ -991,6 +1017,18 @@ def _create_cim_object_map(map_file=None):
                             property_name = "measured_current_" + phases;
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
+                    elif "SynchronousMachine" in conducting_equipment_type:
+                        if measurement_type == "VA":
+                            object_name = conducting_equipment_name;
+                            property_name = "power_out_" + phases;
+                        elif measurement_type == "PNV":
+                            object_name = connectivity_node;
+                            property_name = "voltage_" + phases;
+                        elif measurement_type == "A":
+                            object_name = connectivity_node;
+                            property_name = "measured_current_" + phases;
+                        else:
+                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     else:
                         raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\conducting_equipment_type = {}.".format(conducting_equipment_type))
 
@@ -1036,6 +1074,27 @@ def _create_cim_object_map(map_file=None):
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
                         "type" : "inverter"
+                    }
+                for y in synchronousMachines:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "diesel_dg"
+                    }
+                for y in breakers:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "switch"
+                    }
+                for y in reclosers:
+                    object_mrid_to_name[y.get("mRID")] = {
+                        "name" : y.get("name"),
+                        "phases" : y.get("phases"),
+                        "total_phases" : y.get("phases"),
+                        "type" : "recloser"
                     }
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
