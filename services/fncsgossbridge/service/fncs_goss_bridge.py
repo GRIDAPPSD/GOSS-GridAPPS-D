@@ -362,7 +362,29 @@ class GOSSListener(object):
             if fncs.is_initialized():
                 fncs.die()
 
-
+    def get_gld_object_name(self, object_mrid):
+        prefix = ""
+        stored_object = object_mrid_to_name.get(object_mrid)
+        if stored_object == None:
+            cim_object_dict = goss_connection.query_object(object_mrid, model_mrid)
+            object_base_name = cim_object_dict.get["name",""]
+            object_type = cim_object_dict.get["type",""]
+            if object_type == "LinearShuntCompensator":
+                prefix = "cap_"
+            elif object_type == "PowerTransformer":
+                prefix = "xf_"
+            elif object_type == "ACLineSegment":
+                prefix = "line_"
+            elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
+                prefix = "sw_"
+            elif object_type == "RatioTapChanger":
+                prefix = "reg_"
+        else:
+            object_base_name = stored_object.get("name","")
+            prefix = stored_object.get("prefix","")
+        object_name = prefix + object_base_name
+        return object_name
+        
     def on_error(self, headers, message):
         message_str = 'Error in goss listener '+str(message)
         _send_simulation_status('ERROR', message_str, 'ERROR')
@@ -503,100 +525,137 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
         fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
         fncs_input_message = {"{}".format(simulation_id) : {}}
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
+        reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
+        fault_list = []
         for x in forward_differences_list:
             command_pair = {
                 "objectMRID": x.get("object", ""),
                 "attribute": x.get("attribute", "")
             }
-            if command_pair not in command_filter:
-                object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
-                # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
-                object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
-                # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
-                object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
-                # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
-                object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
-                # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
-                object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
-                # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
-                cim_attribute = x.get("attribute")
+            if x.get("attribute", "") != "IdentifiedObject.Fault":
+                if command_pair not in command_filter:
+                    object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
+                    # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
+                    object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
+                    # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
+                    object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
+                    # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
+                    object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
+                    # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
+                    object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
+                    # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
+                    cim_attribute = x.get("attribute")
+        
+                    object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
+                    # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
+                    phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
+                    # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
+                    if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
+                    if cim_attribute == "RegulatingControl.mode":
+                        val = x.get("value")
+                        if val == 0:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                        if val == 1:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                        elif val == 2:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                        elif val == 3:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                        else:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                            _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+                    elif cim_attribute == "RegulatingControl.targetDeadband":
+                        for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                    elif cim_attribute == "RegulatingControl.targetValue":
+                        for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                    elif cim_attribute == "RotatingMachine.p":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                    elif cim_attribute == "RotatingMachine.q":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                    elif cim_attribute == "ShuntCompensator.aVRDelay":
+                        for y in difference_attribute_map[cim_attribute][object_type]["property"]:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                    elif cim_attribute == "ShuntCompensator.sections":
+                        if x.get("value") == 1:
+                            val = "CLOSED"
+                        else:
+                            val = "OPEN"
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
+                    elif cim_attribute == "Switch.open":
+                        if x.get("value") == 1:
+                            val = "OPEN"
+                        else:
+                            val = "CLOSED"
+                        for y in object_total_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
+                    elif cim_attribute == "TapChanger.initialDelay":
+                        for y in object_property_list:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
+                    elif cim_attribute == "TapChanger.step":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                    elif cim_attribute == "TapChanger.lineDropCompensation":
+                        if x.get("value") == 1:
+                            val = "LINE_DROP_COMP"
+                        else:
+                            val = "MANUAL"
+                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
+                    elif cim_attribute == "TapChanger.lineDropR":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                    elif cim_attribute == "TapChanger.lineDropX":
+                        for y in object_phases:
+                          fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
+                    elif cim_attribute == "PowerElectronicsConnection.p":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
+                    elif cim_attribute == "PowerElectronicsConnection.q":
+                        for y in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
+                    else:
+                        _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
     
-                object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
-                # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
-                phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
-                # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
-                if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
-                if cim_attribute == "RegulatingControl.mode":
-                    val = x.get("value")
-                    if val == 0:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
-                    if val == 1:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                    elif val == 2:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
-                    elif val == 3:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+            else:
+                fault_val_dict = {}
+                fault_val_dict["name"] = x.get("object")
+                fault_val_dict["fault_object"] = (x.get("value")).get("ObjectMRID")
+                phases = (x.get("value")).get("PhaseCode")
+                type = (x.get("value")).get("PhaseConnectedFaultKind")
+                fault_type = ""
+                if type == "lineToGround":
+                    fault_type = "SLG-{}".format(phases)
+                elif type == "lineToLine":
+                    if len(phases) == 3:
+                        fault_type = "TLL"
                     else:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                        _send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
-                elif cim_attribute == "RegulatingControl.targetDeadband":
-                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-                elif cim_attribute == "RegulatingControl.targetValue":
-                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-                elif cim_attribute == "RotatingMachine.p":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
-                elif cim_attribute == "RotatingMachine.q":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
-                elif cim_attribute == "ShuntCompensator.aVRDelay":
-                    for y in difference_attribute_map[cim_attribute][object_type]["property"]:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-                elif cim_attribute == "ShuntCompensator.sections":
-                    if x.get("value") == 1:
-                        val = "CLOSED"
+                        fault_type = "LL-{}".format(phases)
+                elif type == "lineToLineToGround":
+                    if len(phases) == 3:
+                        fault_type = "TLG"
                     else:
-                        val = "OPEN"
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
-                elif cim_attribute == "Switch.open":
-                    if x.get("value") == 1:
-                        val = "OPEN"
+                        fault_type = "DLG-{}".format(phases)
+                elif type == "lineOpen":
+                    if len(phases) == 3:
+                        fault_type = "OC3"
+                    elif len(phases) == 2:
+                        fault_type = "OC2-{}".format(phases)
                     else:
-                        val = "CLOSED"
-                    for y in object_total_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
-                elif cim_attribute == "TapChanger.initialDelay":
-                    for y in object_property_list:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
-                elif cim_attribute == "TapChanger.step":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-                elif cim_attribute == "TapChanger.lineDropCompensation":
-                    if x.get("value") == 1:
-                        val = "LINE_DROP_COMP"
-                    else:
-                        val = "MANUAL"
-                    fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
-                elif cim_attribute == "TapChanger.lineDropR":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-                elif cim_attribute == "TapChanger.lineDropX":
-                    for y in object_phases:
-                      fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = x.get("value")
-                elif cim_attribute == "PowerElectronicsConnection.p":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
-                elif cim_attribute == "PowerElectronicsConnection.q":
-                    for y in object_phases:
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = x.get("value")
-                else:
-                    _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
-
-
+                        fault_type = "OC-{}".format(phases)
+                fault_val_dict["type"] = fault_type
+                fault_list.append(fault_val_dict)
+        for x in reverse_differences_list:
+            if x.get("attribute", "") == "IdentifiedObject.Fault":
+                fault_val_dict = {}
+                fault_val_dict["name"] = x.get("object")
+                fault_list.append(fault_val_dict)
+        if len(fault_list) != 0:
+            fncs_input_message["{}".format(simulation_id)]["external_event_handler"]["external_fault_event"] = fault_list
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         if fncs.is_initialized() and fncs_input_message["{}".format(simulation_id)] != {}:
@@ -893,6 +952,7 @@ def _byteify(data, ignore_dicts = False):
 def _create_cim_object_map(map_file=None):
     global object_property_to_measurement_id
     global object_mrid_to_name
+    global model_mrid
     if map_file==None:
         object_property_to_measurement_id = None
         object_mrid_to_name = None
@@ -904,6 +964,7 @@ def _create_cim_object_map(map_file=None):
             object_property_to_measurement_id = {}
             object_mrid_to_name = {}
             for x in feeders:
+                model_mrid = x.get["mrid",""]
                 measurements = x.get("measurements",[])
                 capacitors = x.get("capacitors",[])
                 regulators = x.get("regulators",[])
@@ -1062,7 +1123,8 @@ def _create_cim_object_map(map_file=None):
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "capacitor"
+                        "type" : "capacitor",
+                        "prefix" : "cap_"
                     }
                 for y in regulators:
                     object_mrids = y.get("mRID",[])
@@ -1073,49 +1135,56 @@ def _create_cim_object_map(map_file=None):
                             "name" : object_name,
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
-                            "type" : "regulator"
+                            "type" : "regulator",
+                            "prefix" : "reg_"
                         }
                 for y in switches:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "switch"
+                        "type" : "switch",
+                        "prefix" : "sw_"
                     }
                 for y in solarpanels:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "pv"
+                        "type" : "pv",
+                        "prefix" : "pv_"
                     }
                 for y in batteries:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "battery"
+                        "type" : "battery",
+                        "prefix" : "batt_"
                     }
                 for y in synchronousMachines:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "diesel_dg"
+                        "type" : "diesel_dg",
+                        "prefix" : "dg_"
                     }
                 for y in breakers:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "switch"
+                        "type" : "switch",
+                        "prefix" : "sw_"
                     }
                 for y in reclosers:
                     object_mrid_to_name[y.get("mRID")] = {
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "recloser"
+                        "type" : "recloser",
+                        "prefix" : "sw_"
                     }
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
