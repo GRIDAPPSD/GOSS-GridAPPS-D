@@ -72,6 +72,13 @@ public interface ServiceManager {
 	ServiceInfo getService(String service_id); //Would return through message bus appInfo object
 	
 	/**
+	 * Returns service id for a service instance id. 
+	 * @param serviceInstanceId Instance id of a running or ran service
+	 * @return Service Id for the passed instance id.
+	 */
+	String getServiceIdForInstance(String serviceInstanceId);
+	
+	/**
 	 * Unregisters service with the requested id
 	 * @param service_id  Registered ID of the service to de-register
 	 */

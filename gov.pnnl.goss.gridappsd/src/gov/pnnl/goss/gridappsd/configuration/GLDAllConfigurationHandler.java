@@ -72,7 +72,6 @@ import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherCon
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -242,7 +241,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		try {
 			if(useClimate){
 				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
-				weatherRequest.setQueryMeasurement(RequestType.weather);
+				weatherRequest.setQueryMeasurement("weather");
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
 				Map<String, String> queryFilter = new HashMap<String, String>();
 				
