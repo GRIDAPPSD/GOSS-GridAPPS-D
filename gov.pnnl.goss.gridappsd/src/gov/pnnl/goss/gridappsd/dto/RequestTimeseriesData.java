@@ -12,21 +12,17 @@ public class RequestTimeseriesData implements Serializable {
 	
 	private static final long serialVersionUID = -820277813503252519L;
 	
-	public enum RequestType {
-	    weather, PROVEN_MEASUREMENT
-	}
-	
-	RequestType queryMeasurement;
+	String queryMeasurement;
 	Map<String,String> queryFilter;
 	//ResultFormat responseFormat = ResultFormat.JSON;
 	String responseFormat ="JSON";
 	private String queryType = "time-series";
 	
-	public RequestType getQueryMeasurement() {
+	public String getQueryMeasurement() {
 		return queryMeasurement;
 	}
 
-	public void setQueryMeasurement(RequestType queryMeasurement) {
+	public void setQueryMeasurement(String queryMeasurement) {
 		this.queryMeasurement = queryMeasurement;
 	}
 
@@ -55,7 +51,7 @@ public class RequestTimeseriesData implements Serializable {
 	public static RequestTimeseriesData parse(String jsonString){
 		Gson  gson = new Gson();
 		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
-		if(obj.queryMeasurement==RequestType.PROVEN_MEASUREMENT)
+		if(obj.queryMeasurement.equals("simulation"))
 			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
 				throw new JsonSyntaxException("Expected filter simulation_id not found.");
 		return obj;
