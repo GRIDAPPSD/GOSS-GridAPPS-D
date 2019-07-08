@@ -139,9 +139,21 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryModelNames("XML"));
 //			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
 			
-			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
-//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
-//			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
+//			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
+			//test with both object id and type
+			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+			//test with only object id
+			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+			//test with only object type
+			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
+			//test with neither object or type, should fail
+			try{
+			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, null, "12345", "user"));    //ieee123
+			}catch (Exception e) {
+				System.out.println("Expected error "+e.getMessage());
+				// TODO: handle exception
+			}
+			//			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
 //			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", null, "12345", "user"));
 //			System.out.println
 		} catch (Exception e) {
@@ -382,6 +394,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			throw new RuntimeException("queryObjectDict: model id missing");
 		}
 		
+		if((objectType==null || objectType.trim().length()==0) && (objectId==null || objectId.trim().length()==0)) {
+			throw new RuntimeException("queryObjectDict: both object id and object type missing, at least one required");
+		}
+		
 		String query = "";
 		String subject = "?s";
 		if(objectId!=null && objectId.trim().length()>0){
@@ -391,7 +407,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		query = "CONSTRUCT   { "+subject+" ?p ?o } WHERE     { "+ 
 			  subject+" ?p ?o . "+ 
 			  subject+" ?p2 <"+getEndpointNS(modelId)+"> . ";
-		if(objectType!=null && objectType.trim().length()>0){
+		if((objectId==null || objectId.trim().length()==0) && objectType!=null && objectType.trim().length()>0){
 			query = query + subject+" rdf:type <"+nsCIM+objectType+"> .";
 		}  
 		query = query+ "}";
