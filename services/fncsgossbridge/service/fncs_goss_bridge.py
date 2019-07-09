@@ -366,7 +366,7 @@ class GOSSListener(object):
         prefix = ""
         stored_object = object_mrid_to_name.get(object_mrid)
         if stored_object == None:
-            cim_object_dict = goss_connection.query_object(object_mrid, model_mrid)
+            cim_object_dict = goss_connection.query_object_dictionary(model_id=model_mrid, obejct_id=object_mrid)
             object_base_name = cim_object_dict.get["name",""]
             object_type = cim_object_dict.get["type",""]
             if object_type == "LinearShuntCompensator":
@@ -964,7 +964,7 @@ def _create_cim_object_map(map_file=None):
             object_property_to_measurement_id = {}
             object_mrid_to_name = {}
             for x in feeders:
-                model_mrid = x.get["mrid",""]
+                model_mrid = x.get("mrid","")
                 measurements = x.get("measurements",[])
                 capacitors = x.get("capacitors",[])
                 regulators = x.get("regulators",[])
