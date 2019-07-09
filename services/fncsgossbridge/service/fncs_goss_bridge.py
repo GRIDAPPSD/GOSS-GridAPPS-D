@@ -145,11 +145,11 @@ difference_attribute_map = {
     },
     "PowerElectronicsConnection.q": {
         "pv": {
-            "property": ["P_Out"],
+            "property": ["Q_Out"],
             "prefix": "inv_pv_"
         },
         "battery": {
-            "property": ["P_Out"],
+            "property": ["Q_Out"],
             "prefix": "inv_bat_"
         }
     },
