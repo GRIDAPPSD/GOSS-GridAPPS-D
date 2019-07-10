@@ -526,7 +526,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                 + '\ngoss_message = {0}'.format(goss_message))
         fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
         fncs_input_message = {"{}".format(simulation_id) : {}}
-        fncs_input_message["{}".format(simulation_id)]["external_event_handler"] = {}
+        fncs_input_message["{}".format(simulation_id)]["external_event"] = {}
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
         fault_list = []
@@ -658,7 +658,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                 fault_val_dict["name"] = x.get("object")
                 fault_list.append(fault_val_dict)
         if len(fault_list) != 0:
-            fncs_input_message["{}".format(simulation_id)]["external_event_handler"]["external_fault_event"] = fault_list
+            fncs_input_message["{}".format(simulation_id)]["external_event"]["external_fault_events"] = fault_list
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         if fncs.is_initialized() and fncs_input_message["{}".format(simulation_id)] != {}:
