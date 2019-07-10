@@ -39,91 +39,31 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto.events;
 
-import java.util.List;
-import java.util.Map;
-
 import com.google.gson.Gson;
 
-public class Fault extends Event{
+import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 
-	private static final long serialVersionUID = 7348798730580951117L;
+public class ScheduledCommandEvent extends Event{
+
+	private static final long serialVersionUID = 2435694477772334059L;
+
+	DifferenceMessage message;
 	
-	public enum PhaseConnectedFaultKind {
-	    lineToGround, lineToLine, lineToLineToGround, lineOpen
-	}
-	
-	public enum FaultImpedance {
-		rGround, rLineToLine, xGround, xLineToLine
-	}
-	
-	public enum PhaseCode {
-		ABCN(225),ABC(224),ABN(193),ACN(41),BCN(97),AB(132),AC(96),BC(65),AN(129),BN(65),
-		CN(33),A(128),B(64),C(32),N(16),s1N(528),s2N(272),s12N(784),s1(512),
-		s2(256),s12(768),none(0),X(1024),XY(3072),XN(1040),XYN(3088);
-		
-		private final int value;
-		
-		PhaseCode(final int newValue){
-			value = newValue;
-		}
-		
-		public int getValue(){
-			return value;
-		}
+	public void setMessage(DifferenceMessage dm) {
+		message=dm;
 	}
 	
-	public Map<FaultImpedance,Double> FaultImpedance;
-	
-	public PhaseConnectedFaultKind PhaseConnectedFaultKind;
-	
-	public List<String> ObjectMRID;
-	
-	public PhaseCode phases;
-	
-	public Map<FaultImpedance,Double> getFaultImpedance() {
-		return FaultImpedance;
+	public DifferenceMessage getMessage() {
+		return message;
 	}
 
-	public void setFaultImpedance(Map<FaultImpedance,Double> impedance) {
-		this.FaultImpedance = impedance;
-	}
-
-	public PhaseConnectedFaultKind getPhaseConnectFaultKind() {
-		return PhaseConnectedFaultKind;
-	}
-
-	public void setPhaseConnectFaultKind(
-			PhaseConnectedFaultKind phaseConnectFaultKind) {
-		PhaseConnectedFaultKind = phaseConnectFaultKind;
-	}
-
-	public List<String> getObjectMRID() {
-		return ObjectMRID;
-	}
-
-	public void setObjectMRID(List<String> ObjectMRID) {
-		this.ObjectMRID = ObjectMRID;
-	}
-
-	public PhaseCode getPhases() {
-		return phases;
-	}
-
-	public void setPhases(PhaseCode phases) {
-		this.phases = phases;
-	}
-
-	@Override
-	public String toString() {
+	public static ScheduledCommandEvent parse(String jsonString){
 		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-
-	public static Fault parse(String jsonString){
-		Gson  gson = new Gson();
-		Fault obj = gson.fromJson(jsonString, Fault.class);
-		//TODO: Check for mandatory fields and impedance-faultKind combination
+		ScheduledCommandEvent obj = gson.fromJson(jsonString, ScheduledCommandEvent.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
 		return obj;
 	}
 
+	
 }

@@ -309,8 +309,9 @@ class GOSSListener(object):
                     else:
                         for x in d.get('inputOutageList', []):
                             try:
-                                idx = self.command_filter.find(x)
-                                del self.command_filter[idx]
+                                #idx = self.command_filter.find(x)
+                                #del self.command_filter[idx]
+                                self.command_filter.remove(x)
                             except ValueError as ve:
                                 pass
                     if d.get('allOutputOutage', False) == True:
@@ -318,8 +319,9 @@ class GOSSListener(object):
                     else:
                         for x in d.get('outputOutageList', []):
                             try:
-                                idx = self.measurement_filter.find(x)
-                                del self.measurement_filter[idx]
+                                #idx = self.measurement_filter.find(x)
+                                #del self.measurement_filter[idx]
+                                self.measurement_filter.remove(x)
                             except ValueError as ve:
                                 pass
                 for d in for_diffs:
@@ -367,7 +369,7 @@ class GOSSListener(object):
         stored_object = object_mrid_to_name.get(object_mrid)
         if stored_object == None:
             cim_object_dict = goss_connection.query_object_dictionary(model_id=model_mrid, obejct_id=object_mrid)
-            object_base_name = cim_object_dict.get["name",""]
+            object_base_name = cim_object_dict.get["IdentifiedObject.name",""]
             object_type = cim_object_dict.get["type",""]
             if object_type == "LinearShuntCompensator":
                 prefix = "cap_"
@@ -524,6 +526,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                 + '\ngoss_message = {0}'.format(goss_message))
         fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
         fncs_input_message = {"{}".format(simulation_id) : {}}
+        fncs_input_message["{}".format(simulation_id)]["external_event_handler"] = {}
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
         fault_list = []
@@ -623,24 +626,24 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     
             else:
                 fault_val_dict = {}
-                fault_val_dict["name"] = x.get("object")
+                fault_val_dict["name"] = x.get("object")               
                 fault_val_dict["fault_object"] = (x.get("value")).get("ObjectMRID")
                 phases = (x.get("value")).get("PhaseCode")
-                type = (x.get("value")).get("PhaseConnectedFaultKind")
+                fault_kind_type = (x.get("value")).get("PhaseConnectedFaultKind")
                 fault_type = ""
-                if type == "lineToGround":
+                if fault_kind_type == "lineToGround":
                     fault_type = "SLG-{}".format(phases)
-                elif type == "lineToLine":
+                elif fault_kind_type == "lineToLine":
                     if len(phases) == 3:
                         fault_type = "TLL"
                     else:
                         fault_type = "LL-{}".format(phases)
-                elif type == "lineToLineToGround":
+                elif fault_kind_type == "lineToLineToGround":
                     if len(phases) == 3:
                         fault_type = "TLG"
                     else:
                         fault_type = "DLG-{}".format(phases)
-                elif type == "lineOpen":
+                elif fault_kind_type == "lineOpen":
                     if len(phases) == 3:
                         fault_type = "OC3"
                     elif len(phases) == 2:

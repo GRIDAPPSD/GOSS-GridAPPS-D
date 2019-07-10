@@ -41,13 +41,18 @@ package gov.pnnl.goss.gridappsd.testmanager;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
 import gov.pnnl.goss.gridappsd.dto.RuleSettings;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.BufferedReader;
@@ -84,6 +89,8 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 
@@ -106,6 +113,9 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile DataManager dataManger;
 	
+	@ServiceDependency
+	private volatile SimulationManager simulationManager;
+	
 	private Hashtable<String, AtomicInteger> rulePorts = new Hashtable<String, AtomicInteger>();
 	
 	private Random randPort = new Random();
@@ -118,23 +128,32 @@ public class TestManagerImpl implements TestManager {
 //	private Map<String,EventStatus> EventStatus = new HashMap<String, EventStatus>();
 	private HashMap<String, ProcessEvents> processEventsMap = new HashMap<String, ProcessEvents>(10);
 	
-
 	Client client;
+	
+	Gson gson;
 	
 	String testOutputTopic = GridAppsDConstants.topic_simulationTestOutput;
 
 	public TestManagerImpl(){}
 	public TestManagerImpl(ClientFactory clientFactory, 
 			LogManager logManager,
-			DataManager dataManager){
+			DataManager dataManager,
+			SimulationManager simulationManager){
 		this.clientFactory = clientFactory;
 		this.logManager = logManager;
 		this.dataManger = dataManager;
+		this.simulationManager = simulationManager;
 	}
 
 	
 	@Start
 	public void start() {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+		.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
+		gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+		gsonBuilder.setPrettyPrinting();
+		this.gson = gsonBuilder.create();
 
 		try {
 
@@ -155,15 +174,23 @@ public class TestManagerImpl implements TestManager {
 						String simulationId = requestDestination.substring(requestDestination.lastIndexOf(".")+1, requestDestination.length());
 						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
 						
+						
 						if(requestTest != null){
 							
-							RequestTestUpdate requestTestUpdate = RequestTestUpdate.parse(request.getData().toString());
+//							RequestTestUpdate requestTestUpdate = RequestTestUpdate.parse(request.getData().toString());
+							RequestTestUpdate requestTestUpdate = gson.fromJson(request.getData().toString(),RequestTestUpdate.class);
 							
 							if(requestTestUpdate.getCommand() == RequestType.new_events){
 								sendEventsToSimulation(requestTestUpdate.getEvents(), simulationId);
+								String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
+								System.out.println("TestManager topic dest" + request.getReplyDestination());
+								client.publish(request.getReplyDestination(), r);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.update_events){
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
+								String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
+								System.out.println("TestManager topic dest" + request.getReplyDestination());
+								client.publish(request.getReplyDestination(), r);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.query_events){
 								sendEventStatus(simulationId, request.getReplyDestination());
@@ -224,7 +251,7 @@ public class TestManagerImpl implements TestManager {
 	private ProcessEvents getProcessEvents(Client client, String simulationId) {
 		ProcessEvents pe;
 		if(! processEventsMap.containsKey(simulationId) ){
-			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId));
+			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId, simulationManager));
 			processEventsMap.putIfAbsent(simulationId, pe);
 	    }
 		pe = processEventsMap.get(simulationId);
@@ -258,7 +285,7 @@ public class TestManagerImpl implements TestManager {
 			client.publish(replyDestination, statusJson.toString());
 		} else {
 			String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
-			r = "";
+//			r = "";
 			System.out.println("TestManager topic dest" + replyDestination);
 			client.publish(replyDestination, r);
 		}
