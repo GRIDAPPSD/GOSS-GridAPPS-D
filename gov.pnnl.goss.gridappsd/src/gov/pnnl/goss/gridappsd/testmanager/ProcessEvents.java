@@ -234,8 +234,8 @@ public class ProcessEvents {
 //    		Object simFault = temp.buildSimFault();
 //    		logMessage("Adding fault " + simFault.toString());
     		if(temp instanceof Fault){
-    			Difference simFault = createFaultDiff((Fault) temp); 
-    			dm.forward_differences.add(simFault);
+    			List<Difference> simFaults = createFaultDiff((Fault) temp); 
+    			dm.forward_differences.addAll(simFaults);
     		}
     		if(temp instanceof CommOutage){
     			CommOutage simFault = (CommOutage)temp;
@@ -255,8 +255,8 @@ public class ProcessEvents {
 //    		Object simFault = temp.buildSimFault();
 //    		logMessage("Remove fault " + simFault.toString());
     		if(temp instanceof Fault){
-    			Difference simFault = createFaultDiff((Fault) temp); 
-    			dm.reverse_differences.add(simFault);
+    			List<Difference> simFaults = createFaultDiff((Fault) temp); 
+    			dm.reverse_differences.addAll(simFaults);
     		}
     		if(temp instanceof CommOutage){
     			CommOutage simFault = (CommOutage)temp;
@@ -293,22 +293,27 @@ public class ProcessEvents {
 		}
 	}
 	
-	public static Difference createFaultDiff(Fault fault1){
-		JsonElement jobject = new JsonParser().parse(fault1.toString());
-		JsonObject value = new JsonObject();
-
-		value.addProperty("ObjectMRID", fault1.ObjectMRID);
-		value.addProperty("PhaseConnectedFaultKind", fault1.PhaseConnectedFaultKind.toString());
-		value.addProperty("PhaseCode", fault1.phases.toString());
-		value.add("FaultImpedance", jobject.getAsJsonObject().get("FaultImpedance").getAsJsonObject());
-		jobject.getAsJsonObject().add("value", value);
+	public static List<Difference> createFaultDiff(Fault fault1){
 		
-		Difference diff = new Difference();
-		diff.object = fault1.ObjectMRID;
-		diff.attribute = "IdentifiedObject.Fault";
-		diff.value = value;
-		System.out.println(diff.toString());
-		return diff;
+		JsonElement jobject = new JsonParser().parse(fault1.toString());
+		ArrayList<Difference> diffs = new ArrayList<Difference>();
+		for (String ObjectMRID : fault1.ObjectMRID) {
+			JsonObject value = new JsonObject();
+
+			value.addProperty("ObjectMRID", ObjectMRID);
+			value.addProperty("PhaseConnectedFaultKind", fault1.PhaseConnectedFaultKind.toString());
+			value.addProperty("PhaseCode", fault1.phases.toString());
+			value.add("FaultImpedance", jobject.getAsJsonObject().get("FaultImpedance").getAsJsonObject());
+			jobject.getAsJsonObject().add("value", value);
+			
+			Difference diff = new Difference();
+			diff.object = ObjectMRID;
+			diff.attribute = "IdentifiedObject.Fault";
+			diff.value = value;
+			System.out.println(diff.toString());
+			diffs.add(diff);
+		}
+		return diffs;
 	}
 	
 	public static JsonObject createDiffCommand(String simulationID, DifferenceMessage dm, String commandStr) {

@@ -369,7 +369,7 @@ class GOSSListener(object):
         stored_object = object_mrid_to_name.get(object_mrid)
         if stored_object == None:
             cim_object_dict = goss_connection.query_object_dictionary(model_id=model_mrid, obejct_id=object_mrid)
-            object_base_name = cim_object_dict.get["name",""]
+            object_base_name = cim_object_dict.get["IdentifiedObject.name",""]
             object_type = cim_object_dict.get["type",""]
             if object_type == "LinearShuntCompensator":
                 prefix = "cap_"
@@ -626,7 +626,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     
             else:
                 fault_val_dict = {}
-                fault_val_dict["name"] = x.get("object")
+                fault_val_dict["name"] = x.get("object")               
                 fault_val_dict["fault_object"] = (x.get("value")).get("ObjectMRID")
                 phases = (x.get("value")).get("PhaseCode")
                 fault_kind_type = (x.get("value")).get("PhaseConnectedFaultKind")
