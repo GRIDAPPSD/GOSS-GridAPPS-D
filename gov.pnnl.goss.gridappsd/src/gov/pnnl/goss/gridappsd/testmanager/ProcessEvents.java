@@ -14,9 +14,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.Difference;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -232,11 +234,7 @@ public class ProcessEvents {
 //    		Object simFault = temp.buildSimFault();
 //    		logMessage("Adding fault " + simFault.toString());
     		if(temp instanceof Fault){
-    			Fault simFault = (Fault)temp;
-    			simFault = Fault.parse(temp.toString());
-    			simFault.occuredDateTime = null;
-    			simFault.stopDateTime = null;
-//    			logMessage("Adding fault " + simFault.toString());
+    			Difference simFault = createFaultDiff((Fault) temp); 
     			dm.forward_differences.add(simFault);
     		}
     		if(temp instanceof CommOutage){
@@ -257,11 +255,7 @@ public class ProcessEvents {
 //    		Object simFault = temp.buildSimFault();
 //    		logMessage("Remove fault " + simFault.toString());
     		if(temp instanceof Fault){
-    			Fault simFault = (Fault)temp;
-    			simFault = Fault.parse(temp.toString());
-    			simFault.occuredDateTime = null;
-    			simFault.stopDateTime = null;
-//    			logMessage("Adding fault " + simFault.toString());
+    			Difference simFault = createFaultDiff((Fault) temp); 
     			dm.reverse_differences.add(simFault);
     		}
     		if(temp instanceof CommOutage){
@@ -281,7 +275,6 @@ public class ProcessEvents {
     	
 		GsonBuilder gsonBuilder = new GsonBuilder();
 		gsonBuilder.setPrettyPrinting();
-		Gson gson = gsonBuilder.create();
     	
 		JsonObject command = createDiffCommand(simulationID, dm, "update");
 		if (command != null){
@@ -298,6 +291,24 @@ public class ProcessEvents {
 			logMessage("Sending command to " + command.toString(), simulationID);
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
+	}
+	
+	public static Difference createFaultDiff(Fault fault1){
+		JsonElement jobject = new JsonParser().parse(fault1.toString());
+		JsonObject value = new JsonObject();
+
+		value.addProperty("ObjectMRID", fault1.ObjectMRID);
+		value.addProperty("PhaseConnectedFaultKind", fault1.PhaseConnectedFaultKind.toString());
+		value.addProperty("PhaseCode", fault1.phases.toString());
+		value.add("FaultImpedance", jobject.getAsJsonObject().get("FaultImpedance").getAsJsonObject());
+		jobject.getAsJsonObject().add("value", value);
+		
+		Difference diff = new Difference();
+		diff.object = fault1.ObjectMRID;
+		diff.attribute = "IdentifiedObject.Fault";
+		diff.value = value;
+		System.out.println(diff.toString());
+		return diff;
 	}
 	
 	public static JsonObject createDiffCommand(String simulationID, DifferenceMessage dm, String commandStr) {

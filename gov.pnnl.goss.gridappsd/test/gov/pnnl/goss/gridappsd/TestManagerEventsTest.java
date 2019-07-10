@@ -24,6 +24,7 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.Difference;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
@@ -242,7 +243,7 @@ public class TestManagerEventsTest {
 	
 	private ScheduledCommandEvent createScheduledEvent() {
 		DifferenceMessage dm = new DifferenceMessage ();
-		Difference forward = new Difference(); 
+		Difference forward = new Difference();
 		forward.attribute = "ShuntCompensator.sections";
 		forward.object = "1234";
 		forward.value = "0";

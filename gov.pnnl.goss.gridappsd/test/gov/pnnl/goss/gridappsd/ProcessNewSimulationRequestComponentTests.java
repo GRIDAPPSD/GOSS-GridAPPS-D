@@ -238,7 +238,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
-		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager, dataManager);
 		
 		
 //		request error log call made

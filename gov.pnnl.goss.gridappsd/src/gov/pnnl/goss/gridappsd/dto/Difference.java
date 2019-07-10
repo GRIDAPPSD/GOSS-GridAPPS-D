@@ -1,4 +1,4 @@
-package gov.pnnl.goss.gridappsd;
+package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
 
@@ -13,9 +13,9 @@ public class Difference implements Serializable{
  
 	public String object;
 	
-	public String attribute;
+	public String attribute; 
 
-	public String value;
+	public Object value;
 	
 	@Override
 	public String toString() {
