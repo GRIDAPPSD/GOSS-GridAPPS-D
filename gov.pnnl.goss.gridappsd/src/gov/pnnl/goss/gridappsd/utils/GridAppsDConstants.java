@@ -176,10 +176,11 @@ public class GridAppsDConstants {
 	 * @return
 	 */
 	public static double getDoubleProperty(Properties props, String keyName, double defaultValue){
-		System.out.println(props);
 		if(props.containsKey(keyName)){
-			String val = props.getProperty(keyName);
-			return new Double(val).doubleValue();
+		        Object val = props.get(keyName);
+			if(val!=null) {
+ 				return new Double(val.toString()).doubleValue();
+			}
 		}
 		
 		return defaultValue;
@@ -192,10 +193,14 @@ public class GridAppsDConstants {
 	 * @return
 	 */
 	public static boolean getBooleanProperty(Properties props, String keyName, boolean defaultValue){
-		System.out.println(props);
 		if(props.containsKey(keyName)){
-			String val = props.getProperty(keyName);
-			return new Boolean(val).booleanValue();
+			Object val = props.get(keyName);
+			if(val!=null) {
+				return new Boolean(val.toString()).booleanValue();
+			}
+			//return new Boolean(val).booleanValue();
+		} else {
+			System.out.println("Key not found returning default");
 		}
 		
 		return defaultValue;
@@ -210,7 +215,8 @@ public class GridAppsDConstants {
 	 */
 	public static String getStringProperty(Properties props, String keyName, String defaultValue){
 		if(props.containsKey(keyName)){
-			return props.getProperty(keyName);
+			Object val = props.get(keyName);
+			if(val!=null) return val.toString();
 		}
 		
 		return defaultValue;

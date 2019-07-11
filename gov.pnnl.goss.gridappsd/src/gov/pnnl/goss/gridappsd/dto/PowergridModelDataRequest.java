@@ -9,7 +9,7 @@ public class PowergridModelDataRequest implements Serializable{
 	private static final long serialVersionUID = 8897993506912096791L;
 
 	public enum RequestType {
-	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO
+	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO, QUERY_OBJECT_IDS, QUERY_OBJECT_DICT, QUERY_OBJECT_MEASUREMENTS
 	}
 	public enum ResultFormat {
 	    JSON, XML, CSV 

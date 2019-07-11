@@ -6,7 +6,7 @@ public class ObjectMridAttributeMap implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	String objectMrid;
+	String objectMRID;
 	String attribute;
 	
 	
@@ -14,17 +14,17 @@ public class ObjectMridAttributeMap implements Serializable {
 		super();
 	}
 			
-	public ObjectMridAttributeMap(String objectMrid, String attribute) {
+	public ObjectMridAttributeMap(String objectMRID, String attribute) {
 		super();
-		this.objectMrid = objectMrid;
+		this.objectMRID = objectMRID;
 		this.attribute = attribute;
 	}
 	
-	public String getObjectMrid() {
-		return objectMrid;
+	public String getObjectMRID() {
+		return objectMRID;
 	}
-	public void setObjectMrid(String objectMrid) {
-		this.objectMrid = objectMrid;
+	public void setObjectMRID(String objectMRID) {
+		this.objectMRID = objectMRID;
 	}
 	public String getAttribute() {
 		return attribute;

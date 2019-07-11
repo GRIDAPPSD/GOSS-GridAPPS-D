@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 
 import java.io.Serializable;
 
@@ -139,7 +140,7 @@ public class RequestSimulation implements Serializable {
 	public static RequestSimulation parse(String jsonString){
 		GsonBuilder gsonBuilder = new GsonBuilder();
         RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
-        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class,"ScheduledCommandEvent");
         gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
         gsonBuilder.setPrettyPrinting();
         Gson gson = gsonBuilder.create();

@@ -232,6 +232,12 @@ public class ServiceManagerImpl implements ServiceManager{
 		service_id = service_id.trim();
 		return services.get(service_id);
 	}
+	
+	@Override
+	public String getServiceIdForInstance(String serviceInstanceId) {
+		serviceInstanceId = serviceInstanceId.trim();
+		return serviceInstances.get(serviceInstanceId).getService_info().getId();
+	}
 
 	@Override
 	public String startService(String serviceId,

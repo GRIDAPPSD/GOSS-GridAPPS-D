@@ -2,7 +2,6 @@ package gov.pnnl.goss.gridappsd.testmanager;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
@@ -63,7 +62,7 @@ public class HistoricalComparison {
 		queryFilter.put("endTime", endTime);
 
 		RequestTimeseriesData request = new RequestTimeseriesData();
-		request.setQueryMeasurement(RequestType.PROVEN_MEASUREMENT);
+		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 
 		Serializable response = null;
@@ -206,7 +205,7 @@ public class HistoricalComparison {
 		for (String mrid : keySet) {
 //			String response = query(simulationId, mrid, null,null,null).result.toString();
 			String response = timeSeriesQuery(simulationId, mrid, null,null);
-			if (response.contains("PROVEN_MEASUREMENT"))
+			if (response.contains("simulation"))
 				return response;
 		}
 		return null;
@@ -220,7 +219,7 @@ public class HistoricalComparison {
 //		for (String mrid : keySet) {
 ////			String response = query(simulationId, mrid, null,null,null).result.toString();
 //			String response = timeSeriesQuery(simulationId, mrid, null,null);
-//			if (response.contains("PROVEN_MEASUREMENT"))
+//			if (response.contains("simulation"))
 //				return response;
 //		}
 //		return null;
