@@ -33,8 +33,8 @@ public interface PowergridModelDataManager {
 	String queryObjectDictByType(String resultFormat, String modelId, String objectType, String objectId, String processId, String username) throws Exception ;
 	ResultSet queryObjectDictByTypeResultSet(String modelId, String objectType, String objectId, String processId, String username);
 	
-	String queryMeasurementDictByObject(String resultFormat, String modelId, String objectId, String processId, String username) throws Exception ;
-	ResultSet queryMeasurementDictByObjectResultSet(String modelId, String objectId, String processId, String username);
+	String queryMeasurementDictByObject(String resultFormat, String modelId, String objectType, String objectId, String processId, String username) throws Exception ;
+	ResultSet queryMeasurementDictByObjectResultSet(String modelId, String objectType, String objectId, String processId, String username);
 	
 	
 	void putModel(String modelId, String model, String inputFormat, String processId, String username);
