@@ -69,7 +69,7 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
 				//TODO send error
 			}
-			return dataManager.queryMeasurementDictByObject(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectId(), processId, username);
+			return dataManager.queryMeasurementDictByObject(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getObjectId(), processId, username);
 		}  else {
 			//TODO report error, request type not recognized
 			System.out.println("DOESNT RECOGNIZE REQUEST TYPE "+pgDataRequest.requestType);
