@@ -363,29 +363,6 @@ class GOSSListener(object):
             self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
-
-    def get_gld_object_name(self, object_mrid):
-        prefix = ""
-        stored_object = object_mrid_to_name.get(object_mrid)
-        if stored_object == None:
-            cim_object_dict = goss_connection.query_object_dictionary(model_id=model_mrid, obejct_id=object_mrid)
-            object_base_name = cim_object_dict.get["IdentifiedObject.name",""]
-            object_type = cim_object_dict.get["type",""]
-            if object_type == "LinearShuntCompensator":
-                prefix = "cap_"
-            elif object_type == "PowerTransformer":
-                prefix = "xf_"
-            elif object_type == "ACLineSegment":
-                prefix = "line_"
-            elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
-                prefix = "sw_"
-            elif object_type == "RatioTapChanger":
-                prefix = "reg_"
-        else:
-            object_base_name = stored_object.get("name","")
-            prefix = stored_object.get("prefix","")
-        object_name = prefix + object_base_name
-        return object_name
         
     def on_error(self, headers, message):
         message_str = 'Error in goss listener '+str(message)
@@ -486,6 +463,30 @@ def _register_with_fncs_broker(broker_location='tcp://localhost:5570'):
             + 'configuration_zpl = {0}'.format(configuration_zpl))
 
 
+def _get_gld_object_name(object_mrid):
+    prefix = ""
+    stored_object = object_mrid_to_name.get(object_mrid)
+    if stored_object == None:
+        cim_object_dict = goss_connection.query_object_dictionary(model_id=model_mrid, obejct_id=object_mrid)
+        object_base_name = (cim_object_dict.get("data",[]))[0].get("IdentifiedObject.name","")
+        object_type = (cim_object_dict.get("data",[]))[0].get("type","")
+        if object_type == "LinearShuntCompensator":
+            prefix = "cap_"
+        elif object_type == "PowerTransformer":
+            prefix = "xf_"
+        elif object_type == "ACLineSegment":
+            prefix = "line_"
+        elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
+            prefix = "sw_"
+        elif object_type == "RatioTapChanger":
+            prefix = "reg_"
+    else:
+        object_base_name = stored_object.get("name","")
+        prefix = stored_object.get("prefix","")
+    object_name = prefix + object_base_name
+    return object_name
+    
+
 def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     """publish a message received from the GOSS bus to the FNCS bus.
 
@@ -526,7 +527,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                 + '\ngoss_message = {0}'.format(goss_message))
         fncs_input_topic = '{0}/fncs_input'.format(simulation_id)
         fncs_input_message = {"{}".format(simulation_id) : {}}
-        fncs_input_message["{}".format(simulation_id)]["external_event"] = {}
+        fncs_input_message["{}".format(simulation_id)]["external_event_handler"] = {}
         forward_differences_list = test_goss_message_format["message"]["forward_differences"]
         reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
         fault_list = []
@@ -626,10 +627,11 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
     
             else:
                 fault_val_dict = {}
-                fault_val_dict["name"] = x.get("object")               
-                fault_val_dict["fault_object"] = (x.get("value")).get("ObjectMRID")
-                phases = (x.get("value")).get("PhaseCode")
-                fault_kind_type = (x.get("value")).get("PhaseConnectedFaultKind")
+                fault_val_dict["name"] = x.get("object","")
+                fault_object_mrid = (x.get("value",{})).get("ObjectMRID","")               
+                fault_val_dict["fault_object"] = _get_gld_object_name(fault_object_mrid)
+                phases = (x.get("value",{})).get("PhaseCode","")
+                fault_kind_type = (x.get("value",{})).get("PhaseConnectedFaultKind","")
                 fault_type = ""
                 if fault_kind_type == "lineToGround":
                     fault_type = "SLG-{}".format(phases)
@@ -655,10 +657,10 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
         for x in reverse_differences_list:
             if x.get("attribute", "") == "IdentifiedObject.Fault":
                 fault_val_dict = {}
-                fault_val_dict["name"] = x.get("object")
+                fault_val_dict["name"] = x.get("object", "")
                 fault_list.append(fault_val_dict)
         if len(fault_list) != 0:
-            fncs_input_message["{}".format(simulation_id)]["external_event"]["external_fault_events"] = fault_list
+            fncs_input_message["{}".format(simulation_id)]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
         goss_message_converted = json.dumps(fncs_input_message)
         _send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
         if fncs.is_initialized() and fncs_input_message["{}".format(simulation_id)] != {}:
