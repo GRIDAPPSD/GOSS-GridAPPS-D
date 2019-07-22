@@ -307,7 +307,7 @@ public class ProcessEvents {
 			jobject.getAsJsonObject().add("value", value);
 			
 			Difference diff = new Difference();
-			diff.object = ObjectMRID;
+			diff.object = fault1.faultMRID;
 			diff.attribute = "IdentifiedObject.Fault";
 			diff.value = value;
 			System.out.println(diff.toString());

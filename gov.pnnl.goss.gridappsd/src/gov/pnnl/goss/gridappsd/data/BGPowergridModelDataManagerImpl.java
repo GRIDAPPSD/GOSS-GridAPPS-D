@@ -141,21 +141,23 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			
 //			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
 			//test with both object id and type
-			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
 			//test with only object id
-			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
 			//test with only object type
-			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
 			//test with neither object or type, should fail
-			try{
-			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, null, "12345", "user"));    //ieee123
-			}catch (Exception e) {
-				System.out.println("Expected error "+e.getMessage());
-				// TODO: handle exception
-			}
+//			try{
+//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, null, "12345", "user"));    //ieee123
+//			}catch (Exception e) {
+//				System.out.println("Expected error "+e.getMessage());
+//				// TODO: handle exception
+//			}
 			//			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
-//			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", null, "12345", "user"));
-//			System.out.println
+			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3",  null, "_7A02B3B0-2746-EB24-45A5-C3FBA8ACB88E", "12345", "user"));
+			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));
+
+			//			System.out.println
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -419,9 +421,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	@Override
-	public String queryMeasurementDictByObject(String resultFormat, String modelId, String objectId, String processId, String username) throws Exception {
+	public String queryMeasurementDictByObject(String resultFormat, String modelId, String objectType, String objectId, String processId, String username) throws Exception {
 		String result = null;
-		ResultSet rs = queryMeasurementDictByObjectResultSet(modelId, objectId, processId, username);
+		ResultSet rs = queryMeasurementDictByObjectResultSet(modelId, objectType, objectId, processId, username);
 		if(resultFormat.equals(ResultFormat.JSON.toString())){
 			JsonArray resultArr = new JsonArray();
 			while( rs.hasNext()) {
@@ -456,7 +458,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return result;
 	}
 	@Override
-	public ResultSet queryMeasurementDictByObjectResultSet( String modelId, String objectId, String processId, String username) {
+	public ResultSet queryMeasurementDictByObjectResultSet( String modelId, String objectType, String objectId, String processId, String username) {
 		if(modelId==null){
 			throw new RuntimeException("queryMeasurementDict: model id missing");
 		}
@@ -494,13 +496,16 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 					  "?eq c:IdentifiedObject.name ?eqname. "+
 			          "?eq c:Equipment.EquipmentContainer <"+getEndpointNS(modelId)+">. "+
 					  "?eq r:type ?typeraw. "+
-					  " bind(strafter(str(?typeraw),\"#\") as ?eqtype) "+
-					  "?trm c:Terminal.ConnectivityNode ?cn. "+
+					  " bind(strafter(str(?typeraw),\"#\") as ?eqtype) ";
+					  
+		if((objectId==null || objectId.trim().length()==0) && objectType!=null && objectType.trim().length()>0){
+			query = query + "?eq r:type <"+nsCIM+objectType+"> .";
+		}  
+		query = query+"?trm c:Terminal.ConnectivityNode ?cn. "+
 					  "?cn c:IdentifiedObject.name ?bus. "+
 					  "?s c:Measurement.phases ?phsraw . "+
 					  "  {bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phases)} "+
 					  "} ORDER BY ?class ?type ?name ";
-		
 		
 		
 		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
