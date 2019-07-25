@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto.events;
 
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -75,7 +76,7 @@ public class Fault extends Event{
 	
 	public PhaseConnectedFaultKind PhaseConnectedFaultKind;
 	
-	public String ObjectMRID;
+	public List<String> ObjectMRID;
 	
 	public PhaseCode phases;
 	
@@ -96,11 +97,11 @@ public class Fault extends Event{
 		PhaseConnectedFaultKind = phaseConnectFaultKind;
 	}
 
-	public String getObjectMRID() {
+	public List<String> getObjectMRID() {
 		return ObjectMRID;
 	}
 
-	public void setObjectMRID(String ObjectMRID) {
+	public void setObjectMRID(List<String> ObjectMRID) {
 		this.ObjectMRID = ObjectMRID;
 	}
 

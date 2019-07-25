@@ -2,4 +2,4 @@
 rm -rf gov.pnnl.goss/gridappsd/generated
 ./gradlew export
 
-docker build --no-cache --network=host -t gridappsd .
+docker build --no-cache --network=host -t gridappsd:local .

@@ -30,7 +30,6 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 //import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 //import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
@@ -88,7 +87,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 
 
@@ -111,7 +110,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/SampleTestConfig.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/SampleTestConfig.json";
@@ -129,7 +128,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/exampleTestScript.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/exampleTestScript.json";
@@ -196,7 +195,7 @@ public class TestManagerComponentTest {
 		RequestTimeseriesData request = new RequestTimeseriesData();
 		HashMap<String,String> queryFilter = new HashMap <String,String>();
 		queryFilter.put("hasSimulationId", "182942650");
-		request.setQueryMeasurement(RequestType.PROVEN_MEASUREMENT);
+		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 //		request.setSimulationId("1278337149");
 		String responseStr = null;
@@ -206,7 +205,7 @@ public class TestManagerComponentTest {
 			provenProducer.restProducer(provenUri, null, null);
 			provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), null);
 //			gov.pnnl.proven.message.ProvenMessage pm;
-//			ProvenResponse response = provenProducer.sendMessage("{\"queryMeasurement\": \"PROVEN_MEASUREMENT\", \"queryFilter\": {\"hasSimulationId\": \"182942650\"},\"responseFormat\": \"JSON\"}", 22);
+//			ProvenResponse response = provenProducer.sendMessage("{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"hasSimulationId\": \"182942650\"},\"responseFormat\": \"JSON\"}", 22);
 //			responseStr = provenTimeSeriesDataManager.query(request).toString();
 		} catch (Exception e) {
 			e.printStackTrace();

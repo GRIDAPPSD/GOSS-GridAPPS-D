@@ -72,7 +72,6 @@ import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherCon
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData.RequestType;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -242,7 +241,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		try {
 			if(useClimate){
 				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
-				weatherRequest.setQueryMeasurement(RequestType.weather);
+				weatherRequest.setQueryMeasurement("weather");
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
 				Map<String, String> queryFilter = new HashMap<String, String>();
 				
@@ -393,7 +392,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				if(useClimate) {
 					startupFileWriter.println("module climate;");
 				}
+				startupFileWriter.println("module reliability;");
 
+				
 				startupFileWriter.println("object fncs_msg {");
 				startupFileWriter.println("     name "+simulationID+";");
 				startupFileWriter.println("     message_type JSON;");
@@ -413,6 +414,17 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("         interval 1;");
 				startupFileWriter.println("         limit 120;");
 				startupFileWriter.println("}");*/
+				
+				startupFileWriter.println("object fault_check {");
+				startupFileWriter.println("     name fault_check_object;");
+				startupFileWriter.println("     check_mode ONCHANGE;");
+				startupFileWriter.println("     eventgen_object external_event_handler;");
+				startupFileWriter.println("     output_filename fault_check_output.txt;");
+				startupFileWriter.println("}");
+				startupFileWriter.println("object eventgen {");
+				startupFileWriter.println("     name external_event_handler;");
+				startupFileWriter.println("     use_external_faults TRUE;");
+				startupFileWriter.println("}");
 				
 				if(useClimate) {
 					startupFileWriter.println("object csv_reader {");

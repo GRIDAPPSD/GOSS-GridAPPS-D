@@ -37,91 +37,33 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/
-package gov.pnnl.goss.gridappsd.api;
+package gov.pnnl.goss.gridappsd.dto.events;
 
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.ServiceInstance;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import com.google.gson.Gson;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
+import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 
-public interface ServiceManager {
+public class ScheduledCommandEvent extends Event{
 
-	/**
-	 * Register a new service with GridAPPS-D Service manager, registered services will be persisted
-	 * @param serviceInfo  Service info file that includes details about the service configuration
-	 * @param servicePackage  Zip file containing files required by the service, this includes persistent config files and executable files.  
-	 * 
-	 */
-	void registerService(ServiceInfo serviceInfo, Serializable servicePackage);
-	
-	/**
-	 * Lists the currently registered services
-	 * @return List of ServiceInfo objects describing the configurations of the registered services
-	 */
-	List<ServiceInfo> listServices();  //Would return through message bus list of appInfo objects
-	
-	/**
-	 * Returns service configuration for the requested service ID
-	 * @param service_id  Registered ID of the desired service
-	 * @return ServiceInfo object containing service configuration
-	 */
-	ServiceInfo getService(String service_id); //Would return through message bus appInfo object
-	
-	/**
-	 * Returns service id for a service instance id. 
-	 * @param serviceInstanceId Instance id of a running or ran service
-	 * @return Service Id for the passed instance id.
-	 */
-	String getServiceIdForInstance(String serviceInstanceId);
-	
-	/**
-	 * Unregisters service with the requested id
-	 * @param service_id  Registered ID of the service to de-register
-	 */
-	void deRegisterService(String service_id); 
-	
-	/**
-	 * Start service instance
-	 * @param service_id  Registered ID of the desired service
-	 * @param runtimeOptions Runtime options for the service instance, in most cases these will be passed in on the command-line 
-	 * @return String containing service instance ID
-	 */
-	String startService(String service_id, String runtimeOptions);  //may also need input/output topics or simulation id
-	
-	String startServiceForSimultion(String service_id, String runtimeOptions, Map<String, Object> simulationContext);  //may also need input/output topics??
-	
-	/**
-	 * Stops all instances of the service with requested service ID
-	 * @param service_id  Registered ID of the service to 
-	 */
-	void stopService(String service_id);  
-	
-	/**
-	 * Lists currently running service instances
-	 * @return  List of ServiceInstance objects
-	 */
-	List<ServiceInstance> listRunningServices(); 
+	private static final long serialVersionUID = 2435694477772334059L;
 
-	/**
-	 * Lists currently running service instances for the requested service ID
-	 * @param serviceId  Registered ID of the service to list
-	 * @return List of ServiceInstance objects
-	 */
-	List<ServiceInstance> listRunningServices(String serviceId);
-
-	/**
-	 * Stops service instance
-	 * @param instanceId  ID of the service instance to stop
-	 */
-	void stopServiceInstance(String instanceId);
+	DifferenceMessage message;
 	
-	/**
-	 * Get the directory where the service configurations are stored
-	 * @return File location of the directory containing service configurations
-	 */
-	File getServiceConfigDirectory();
+	public void setMessage(DifferenceMessage dm) {
+		message=dm;
+	}
+	
+	public DifferenceMessage getMessage() {
+		return message;
+	}
+
+	public static ScheduledCommandEvent parse(String jsonString){
+		Gson  gson = new Gson();
+		ScheduledCommandEvent obj = gson.fromJson(jsonString, ScheduledCommandEvent.class);
+		if(obj.occuredDateTime==0 || obj.stopDateTime==0)
+			throw new RuntimeException("Expected attribute timeInitiated or timeCleared is not found");
+		return obj;
+	}
+
+	
 }

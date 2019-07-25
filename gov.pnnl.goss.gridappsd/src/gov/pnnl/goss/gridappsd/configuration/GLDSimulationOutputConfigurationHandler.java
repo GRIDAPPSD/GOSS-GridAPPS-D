@@ -310,12 +310,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("Pos")) {
 				objectName = conductingEquipmentName;
 				propertyName = "tap_" + phases;
-			} else if (measurementType.equals("PNV")) {
-				objectName = connectivityNode;
-				propertyName = "voltage_"+phases;
-			} else if (measurementType.equals("A")) {
-				objectName = conductingEquipmentName;
-				propertyName = "current_out_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for RatioTapChanger are VA, PNV, A, and Pos.\nmeasurementType = %s.",measurementType));
 			}
@@ -345,7 +339,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("PNV")) {
 				objectName = connectivityNode;
 				propertyName = "voltage_" + phases;
-			} else if (measurementType.equals("POS")) {
+			} else if (measurementType.equals("Pos")) {
 				objectName = conductingEquipmentName;
 				propertyName = "phase_" + phases + "_state";
 			} else if (measurementType.equals("A")) {
@@ -393,6 +387,19 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "measured_current_" + phases;
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+			}
+		} else if (conductingEquipmentType.contains("SynchronousMachine")) {
+			if(measurementType.equals("VA")) {
+				objectName = conductingEquipmentName;
+				propertyName = "power_out_" + phases;
+			} else if (measurementType.equals("PNV")) {
+				objectName = connectivityNode;
+				propertyName = "voltage_" + phases;
+			} else if (measurementType.equals("A")) {
+				objectName = conductingEquipmentName;
+				propertyName = "current_out_" + phases;
+			} else {
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
 		} else {
 			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, RatioTapChanger, LoadBreakSwitch, EnergyConsumer, PowerElectronicsConnection, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));

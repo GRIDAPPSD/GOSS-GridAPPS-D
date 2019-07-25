@@ -3,22 +3,6 @@ FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
 
-# Update to use python 3.6 as default for python3.
-RUN sudo apt-get update && sudo apt-get install -y software-properties-common \ 
-  && sudo add-apt-repository ppa:deadsnakes/ppa \
-  && sudo apt-get update && sudo apt-get install -y python3.6 python3.6-dev \
-  && sudo /usr/bin/update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1 \
-  && sudo /usr/bin/update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1 \
-  && sudo sudo /usr/bin/update-alternatives  --set python /usr/bin/python3.6 \
-  && sudo sudo /usr/bin/update-alternatives  --set python3 /usr/bin/python3.6 \
-  && rm -rf /var/cache/apt/archives/* \
-  && rm -rf /root/.cache/pip/wheels
-
-# TODO remove after we modify the base container to do this properly
-RUN mkdir -p /usr/local/lib/python3.6/dist-packages/fncs
-RUN cp /usr/local/lib/python3.5/dist-packages/fncs/fncs.py /usr/local/lib/python3.6/dist-packages/fncs/fncs.py
-
-
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \

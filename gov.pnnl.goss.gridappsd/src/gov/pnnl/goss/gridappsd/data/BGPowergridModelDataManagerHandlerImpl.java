@@ -55,7 +55,22 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 				//TODO send error
 			}
 			return dataManager.queryObjectTypes(pgDataRequest.getModelId(), pgDataRequest.getResultFormat(), processId, username);
-		} else {
+		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT_IDS.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			return dataManager.queryObjectIds(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), processId, username);
+		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT_DICT.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			return dataManager.queryObjectDictByType(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getObjectId(), processId, username);
+		} else if(PowergridModelDataRequest.RequestType.QUERY_OBJECT_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			return dataManager.queryMeasurementDictByObject(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getObjectId(), processId, username);
+		}  else {
 			//TODO report error, request type not recognized
 			System.out.println("DOESNT RECOGNIZE REQUEST TYPE "+pgDataRequest.requestType);
 		}
