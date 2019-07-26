@@ -282,7 +282,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
 		PrintWriter startupFileWriter = new PrintWriter(startupFile);
-		generateStartupFile(parameters, tempDataPath, startupFileWriter, modelId, processId, username, useClimate);
+		generateStartupFile(parameters, tempDataPath, startupFileWriter, modelId, processId, username, useClimate, useHouses);
 		
 		//Generate outputs file
 		PrintWriter simulationOutputs = new PrintWriter(tempDataPath+File.separator+MEASUREMENTOUTPUTS_FILENAME);
@@ -301,7 +301,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	}
 	
 	
-	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate) throws Exception{
+	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate, boolean useHouses) throws Exception{
 		logRunning("Generating startup file for GridLAB-D configuration using parameters: "+parameters, processId, username, logManager);
 
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
@@ -337,9 +337,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 		
 		double nominalv = 0;
-		
-		
-		
+			
 		try{
 			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
 					+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
@@ -381,7 +379,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				startupFileWriter.println("#set relax_naming_rules=1");
 				startupFileWriter.println("#set profiler=1");
 				startupFileWriter.println("#set minimum_timestep=0.1");
-				
+				if (useHouses) {
+					startupFileWriter.println("module residential {");
+					startupFileWriter.println("     implicit_enduses NONE;");
+					startupFileWriter.println("}");
+				}
 				startupFileWriter.println("module connection;");
 				startupFileWriter.println("module generators;");
 				startupFileWriter.println("module tape;");
