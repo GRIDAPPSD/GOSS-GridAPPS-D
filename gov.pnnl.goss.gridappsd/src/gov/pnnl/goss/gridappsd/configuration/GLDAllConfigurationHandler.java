@@ -344,7 +344,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
 					+ "?s c:ConductingEquipment.BaseVoltage ?lev."
 					+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
-					+ "} ORDER by DESC(?vnom");
+					+ "} ORDER by DESC(?vnom)";
 			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
 			QuerySolution binding = rs.nextSolution();
 			String vnom = ((Literal) binding.get("vnom")).toString();
