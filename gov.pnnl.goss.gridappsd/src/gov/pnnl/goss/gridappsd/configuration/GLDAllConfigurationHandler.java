@@ -339,20 +339,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		double nominalv = 0;
 			
 		try{
-			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"
-					+ " ?fdr c:IdentifiedObject.mRID '"+modelId+"'. "
-					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr."
-					+ "?s c:ConductingEquipment.BaseVoltage ?lev."
-					+ " ?lev c:BaseVoltage.nominalVoltage ?vnom."
-					+ "} ORDER by DESC(?vnom)";
+			String nominalVoltageQuery = "SELECT (MAX(xsd:float(?vnom)) AS ?vnomvoltage) WHERE {"
+					+ "?fdr c:IdentifiedObject.mRID '" + modelId + "'. "
+					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr. "
+					+ "?s c:ConductingEquipment.BaseVoltage ?lev. " + "?lev c:BaseVoltage.nominalVoltage ?vnom."
+					+ "}";
+			// ORDER by DESC(?vnom)";
 			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
 			QuerySolution binding = rs.nextSolution();
-			String vnom = ((Literal) binding.get("vnom")).toString();
-			nominalv = new Double(vnom).doubleValue()/sqrt3;
+			Double vnom = binding.getLiteral("vnomvoltage").getDouble();
+			nominalv = vnom / sqrt3;
 		}catch (Exception e) {
 			//send error and fail in vnom not found in model or bad format
 			logError("Could not find valid nominal voltage for feeder:"+modelId, processId, username, logManager);
-			throw new Exception("Could not find valid nominal voltage for feeder:"+modelId);
+			// Throw the real exception because its could just be a problem with the query
+			// itself.
+			throw e;
 		}
 		//add an include reference to the base glm 
 				String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
