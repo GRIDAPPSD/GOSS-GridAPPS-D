@@ -1038,7 +1038,7 @@ def _create_cim_object_map(map_file=None):
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
-        _send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
+        #_send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
 
 
 def json_loads_byteified(json_text):
