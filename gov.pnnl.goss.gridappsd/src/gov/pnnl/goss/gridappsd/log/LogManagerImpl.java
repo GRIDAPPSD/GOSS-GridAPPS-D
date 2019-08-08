@@ -170,6 +170,7 @@ public class LogManagerImpl implements LogManager {
 		LogLevel logLevel = message.getLogLevel();
 		ProcessStatus processStatus = message.getProcessStatus();
 		Boolean storeToDb = message.getStoreToDb();
+		String process_type = message.getProcess_type();
 
 		String logString;
 		if(requestId!=null)
@@ -200,7 +201,7 @@ public class LogManagerImpl implements LogManager {
 		}
 
 		if(storeToDb)
-			store(source,requestId,timestamp,log_message,logLevel,processStatus,username);
+			store(source,requestId,timestamp,log_message,logLevel,processStatus,username,process_type);
 
 	}
 
@@ -210,10 +211,10 @@ public class LogManagerImpl implements LogManager {
 	}
 
 	private void store(String source, String requestId, long timestamp,
-			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
+			String log_message, LogLevel log_level, ProcessStatus process_status, String username, String process_type) {
 
 		logDataManager.store(source, requestId, timestamp,
-				log_message, log_level, process_status, username);
+				log_message, log_level, process_status, username, process_type);
 
 	}
 
@@ -234,7 +235,8 @@ public class LogManagerImpl implements LogManager {
 			LogLevel log_level = message.getLogLevel();
 			ProcessStatus process_status = message.getProcessStatus();
 			String username = "system";
-			logDataManager.query(source, requestId, timestamp, log_level, process_status, username);
+			String process_type = message.getProcess_type();
+			logDataManager.query(source, requestId, timestamp, log_level, process_status, username, process_type);
 		}
 		else{
 			logDataManager.query(message.getQuery());

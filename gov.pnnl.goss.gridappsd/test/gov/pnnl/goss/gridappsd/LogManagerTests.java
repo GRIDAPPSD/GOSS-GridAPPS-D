@@ -96,7 +96,7 @@ public class LogManagerTests {
 		
 		Mockito.verify(logDataManager).store(argCaptor.capture(),argCaptor.capture(),  
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
 		assertEquals(4, allStringValues.size());
@@ -128,7 +128,7 @@ public class LogManagerTests {
 		
 		Mockito.verify(logDataManager).store(argCaptor.capture(),argCaptor.capture(),  
 				argLongCaptor.capture(), argCaptor.capture(),
-				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture());
+				argLogLevelCaptor.capture(), argProcessStatusCaptor.capture(),argCaptor.capture(),argCaptor.capture());
 		
 		List<String> allStringValues = argCaptor.getAllValues();
 		assertEquals(4, allStringValues.size());
