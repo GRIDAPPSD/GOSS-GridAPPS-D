@@ -1,30 +1,30 @@
 package gov.pnnl.goss.gridappsd.data.conversion;
 
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesKeyValuePair;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesRowResult;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
-
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesRowResult;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
 public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConverter {
@@ -88,14 +88,14 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	@Override
 	public void convert(String inputContent, PrintWriter outputContent) throws Exception {
 		boolean headerPrinted = false;
-		TimeSeriesResult resultObj = TimeSeriesResult.parse(inputContent);
-		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
+		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(inputContent);
+		//for(TimeSeriesKeyValuePair record: resultObj.getEntryMap()){
 			if(!headerPrinted){
-				printGLDHeader(record, outputContent);
+				printGLDHeader(resultObj.getData().get(0), outputContent);
 				headerPrinted = true;
 			}
-			convertRecord(record, outputContent);
-		}
+			convertRecord(resultObj, outputContent);
+		//}
 	}
 
 	@Override
@@ -103,27 +103,26 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		boolean headerPrinted = false;
 		
 		String strContent = IOUtils.toString(inputContent);
-		TimeSeriesResult resultObj = TimeSeriesResult.parse(strContent);
-		for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
+		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
+		//for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
 			if(!headerPrinted){
-				printGLDHeader(record, outputContent);
+				printGLDHeader(resultObj.getData().get(0), outputContent);
 				headerPrinted = true;
 			}
-			convertRecord(record, outputContent);
-		}
+			convertRecord(resultObj, outputContent);
+		//}
 	}
 
-	protected void printGLDHeader(TimeSeriesMeasurementResult record, PrintWriter outputContent){
+	protected void printGLDHeader(HashMap<String,Object> map, PrintWriter outputContent){
 		//TODO this needs to come from data or tags within proven
 		String placeStr="", yearStr="", latlong = "";
 		
 		try{
-		HashMap<String, String> map = record.getPoints().get(0).getRow().getEntryMap();
-		placeStr = map.get(PLACE);
+		placeStr = map.get(PLACE).toString();
 		placeStr = placeStr.replaceAll("\"", "");
 		latlong = map.get(LATITUDE)+","+map.get(LONGITUDE);
 		
-		String dateStr = map.get(DATE);
+		String dateStr = map.get(DATE).toString();
 		String[] dateArr = StringUtils.split(dateStr,"/");
 		yearStr = dateArr[2];
 		}catch (Exception e) {
@@ -138,10 +137,10 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		outputContent.println("temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
 	}
 	
-	protected void convertRecord(TimeSeriesMeasurementResult record, PrintWriter outputContent){
+	protected void convertRecord(TimeSeriesEntryResult record, PrintWriter outputContent){
 		//See https://github.com/gridlab-d/gridlab-d/blob/master/climate/climate.cpp for gridlabd format requirements
-		for(TimeSeriesRowResult result: record.getPoints()){
-			Map<String, String> map = result.getRow().getEntryMap();
+		for(HashMap<String,Object> map: record.getData()){
+			//Map<String, Object> map = record.getData();
 			
 			//String dateStr = map.get(DATE);
 			//String timeStr = map.get(MST);
@@ -151,7 +150,8 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 				Calendar c = Calendar.getInstance();
 				//For both the start and end time, set the year to the one that currently has data in the database
 				//TODO either we need more weather data in the database, or make this more flexible where we only have to search by month/day
-				c.setTime(new Date(Long.parseLong(map.get("time"))*1000));
+				long longTime = new Double(map.get(TIME).toString()).longValue();
+				c.setTime(new Date(longTime*1000));
 				c.set(Calendar.YEAR, 2013);
 				//Date datetime = sdfIn.parse(dateStr+" "+timeStr);
 				outputContent.print(sdfOut.format(c.getTime())+",");
@@ -196,10 +196,10 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 		}
 	}
 	
-	protected double readDouble(Map<String, String> map, String key, double minimumValue){
+	protected double readDouble(Map<String, Object> map, String key, double minimumValue){
 		double result = 0;
 		if(map.containsKey(key)){
-			String strVal = map.get(key);
+			String strVal = map.get(key).toString();
 			try {
 				double res = new Double(strVal);
 				if(res<minimumValue){
