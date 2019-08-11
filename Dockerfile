@@ -21,6 +21,15 @@ RUN cd ${TEMP_DIR} \
   && cp /gridappsd/services/gridappsd-sensor-simulator/sensor_simulator.config /gridappsd/services/ \
   && rm -rf /root/.cache/pip/wheels
 
+# Get the gridappsd-sensor-simulator from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-voltage-violation -b master \
+  && cd gridappsd-voltage-violation \
+  && mkdir -p /gridappsd/services/gridappsd-voltage-violation \
+  && rm .git -rf \ 
+  && cp * /gridappsd/services/gridappsd-voltage-violation \
+  && cp /gridappsd/services/gridappsd-voltage-violation/voltage-violation.config /gridappsd/services/ 
+
 
 # Copy initial applications and services into the container.
 # 

@@ -131,7 +131,7 @@ public class ProcessEvent implements GossResponseEvent {
 		String username  = GridAppsDConstants.username;
 
 		int processId = ProcessManagerImpl.generateProcessId();
-		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
+		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination());
 
 
 		try{ 
@@ -201,7 +201,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 				String type = requestTopicExtension;
 
-				this.debug(processId, "Received data request of type: "+type);
+				this.debug(processId, "Received data request of type: "+type,null);
 
 				Serializable request;
 				if (message instanceof DataResponse){
@@ -320,7 +320,7 @@ public class ProcessEvent implements GossResponseEvent {
 	}
 
 
-	private void debug(int processId, String message) {
+	private void debug(int processId, String message, String process_type) {
 
 		LogMessage logMessage = new LogMessage();
 		logMessage.setSource(this.getClass().getSimpleName());
@@ -330,7 +330,8 @@ public class ProcessEvent implements GossResponseEvent {
 		logMessage.setLogMessage(message);
 		logMessage.setStoreToDb(true);
 		logMessage.setTimestamp(new Date().getTime());
-
+		if(process_type!=null)
+			logMessage.setProcess_type(process_type);
 		logManager.log(logMessage, GridAppsDConstants.topic_platformLog);	
 
 	}

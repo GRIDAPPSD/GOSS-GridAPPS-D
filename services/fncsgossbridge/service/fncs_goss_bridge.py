@@ -61,7 +61,7 @@ import time
 import stomp
 import yaml
 
-from gridappsd import GridAPPSD, utils
+from gridappsd import GridAPPSD, utils, topics
 
 try:
     from fncs import fncs
@@ -247,6 +247,7 @@ class GOSSListener(object):
             message['command'] = 'simulationFinished'
             del message['output']
             goss_connection.send(output_to_simulation_manager, json.dumps(message))
+            _send_simulation_status('COMPLETE', 'Simulation {} has finsihed.'.format(simulation_id), 'INFO')
         except Exception as e:
             message_str = 'Error in run simulation '+str(e)
             _send_simulation_status('ERROR', message_str, 'ERROR')
@@ -1194,7 +1195,7 @@ def _create_cim_object_map(map_file=None):
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
-        _send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
+        #_send_simulation_status('STARTED', str(object_mrid_to_name), 'INFO')
 
 
 def json_loads_byteified(json_text):

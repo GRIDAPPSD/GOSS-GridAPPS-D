@@ -116,12 +116,22 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 
 	@Override
 	public void store(String source, String processId, long timestamp,
-			String log_message, LogLevel log_level, ProcessStatus process_status, String username) {
+			String log_message, LogLevel log_level, ProcessStatus process_status, String username, String process_type) {
 		
 		if(connection!=null){
 			try {
 				
-				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log VALUES (default, ?, ?, ?, ?, ?, ?,?)");
+				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log ("
+						+ "id, "
+						+ "source, "
+						+ "process_id, "
+						+ "timestamp, "
+						+ "log_message, "
+						+ "log_level, "
+						+ "process_status, "
+						+ "username, "
+						+ "process_type) "
+						+ "VALUES (default, ?, ?, ?, ?, ?, ?,?,?)");
 				preparedStatement.setString(1, source);
 				preparedStatement.setString(2, processId);
 				preparedStatement.setTimestamp(3, new Timestamp(timestamp));
@@ -129,6 +139,8 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.setString(5, log_level.toString());
 				preparedStatement.setString(6, process_status.toString());
 				preparedStatement.setString(7, username);
+				preparedStatement.setString(8, process_type);
+				
 				
 				preparedStatement.executeUpdate();
 				
@@ -181,7 +193,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 
 	@Override
 	public Serializable query(String source, String processId, long timestamp, LogLevel log_level, ProcessStatus process_status,
-			String username) {
+			String username, String process_type) {
 		
 		if(connection==null){
 			try {
@@ -315,7 +327,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		if(request.getQuery()!=null)
 			return this.query(request.getQuery());
 		else
-			return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername());
+			return this.query(request.getSource(), request.getProcessId(), request.getTimestamp(), request.getLogLevel(),request.getProcessStatus(), request.getUsername(), request.getProcess_type());
 
 	}
 	
