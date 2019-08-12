@@ -1101,7 +1101,7 @@ def _create_cim_object_map(map_file=None):
                     elif "SynchronousMachine" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
-                            property_name = "power_out_" + phases;
+                            property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
                             object_name = connectivity_node;
                             property_name = "voltage_" + phases;
