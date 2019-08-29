@@ -55,6 +55,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.ServiceConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
@@ -242,6 +243,21 @@ public class ProcessNewSimulationRequest {
 
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
+			
+			if (simRequest.service_configs == null) {
+				logManager.log(new LogMessage(this.getClass().getSimpleName(),
+						simId,
+						new Date().getTime(),
+						"No services found in request  ="+simRequest.getSimulation_config().getSimulator(),
+						LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+			}
+			else{
+				for(ServiceConfig serviceConfig : simRequest.service_configs){
+					serviceManager.startServiceForSimultion(serviceConfig.getId(), serviceConfig.getUser_input(), simulationContext);
+				}
+			}
+			
+			
 
 			if (simRequest.application_config == null) {
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),

@@ -65,7 +65,7 @@ public class RequestSimulation implements Serializable {
 	
 	public ApplicationConfig application_config;
 	
-	public List<ServiceConfig> service_config;
+	public List<ServiceConfig> service_configs;
 	
 	public TestConfig test_config;
 	

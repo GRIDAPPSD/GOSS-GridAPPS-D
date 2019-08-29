@@ -50,12 +50,12 @@ public class ServiceInstance implements Serializable{
 	
 	String instance_id;
 	ServiceInfo servcie_info;
-	String runtime_options;
+	HashMap<String, UserInput> runtime_options;
 	String simulation_id;
 	Process process;
 	
 	
-	public ServiceInstance(String instance_id, ServiceInfo servcie_info, String runtime_options, String simulation_id, Process process){
+	public ServiceInstance(String instance_id, ServiceInfo servcie_info, HashMap<String, UserInput> runtime_options, String simulation_id, Process process){
 		this.instance_id = instance_id;
 		this.servcie_info = servcie_info;
 		this.runtime_options = runtime_options;
@@ -80,11 +80,11 @@ public class ServiceInstance implements Serializable{
 		this.servcie_info = servcie_info;
 	}
 
-	public String getRuntime_options() {
+	public HashMap<String, UserInput> getRuntime_options() {
 		return runtime_options;
 	}
 
-	public void setRuntime_options(String runtime_options) {
+	public void setRuntime_options(HashMap<String, UserInput> runtime_options) {
 		this.runtime_options = runtime_options;
 	}
 
