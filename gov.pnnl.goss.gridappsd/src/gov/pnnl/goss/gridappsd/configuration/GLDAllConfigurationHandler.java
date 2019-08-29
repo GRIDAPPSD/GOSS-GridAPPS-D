@@ -423,6 +423,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.println("     check_mode ONCHANGE;");
 		startupFileWriter.println("     eventgen_object external_event_handler;");
 		startupFileWriter.println("     output_filename fault_check_output.txt;");
+		startupFileWriter.println("     strictly_radial FALSE;");
+		startupFileWriter.println("     grid_association TRUE;");
 		startupFileWriter.println("}");
 		startupFileWriter.println("object eventgen {");
 		startupFileWriter.println("     name external_event_handler;");
