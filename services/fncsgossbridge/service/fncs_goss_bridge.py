@@ -155,11 +155,11 @@ difference_attribute_map = {
     },
     "Switch.open" : {
         "switch" : {
-            "property" : ["status"],
+            "property" : ["phase_{}_state"],
             "prefix" : "swt_"
         },
         "recloser" : {
-            "property" : ["status"],
+            "property" : ["phase_{}_state"],
             "prefix" : "swt_"
         }
     },
@@ -211,6 +211,7 @@ class GOSSListener(object):
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
+        self.message_id_list = []
 
     def run_simulation(self,run_realtime):
         try:
@@ -259,17 +260,23 @@ class GOSSListener(object):
     def on_message(self, headers, msg):
         message = {}
         try:
-            header_str = 'reviced message header ' +str(headers);
-            message_str = 'received message '+str(msg)
+            headers_dict = yaml.safe_load(str(headers))
+            destination = headers_dict['destination']
+            message_id = headers_dict['message-id']
+            if str(destination).startswith('/temp-queue'):
+                return
+            if str(message_id) in self.message_id_list:
+                return
+            self.message_id_list.append(str(message_id))
+            message_str = 'received message '+str(headers)+'________________'+str(msg)
 
             if fncs.is_initialized():
-                _send_simulation_status('RUNNING', header_str, 'DEBUG')
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
             else:
-                _send_simulation_status('STARTED', header_str, 'DEBUG')
                 _send_simulation_status('STARTED', message_str, 'DEBUG')
             json_msg = yaml.safe_load(str(msg))
-            if json_msg.get('command', '') == 'isInitialized':
+            #print("\n{}\n".format(json_msg['command']))
+            if json_msg['command'] == 'isInitialized':
                 message_str = 'isInitialized check: '+str(is_initialized)
                 if fncs.is_initialized():
                     _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -280,12 +287,12 @@ class GOSSListener(object):
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 goss_connection.send(output_to_simulation_manager , json.dumps(message))
-            elif json_msg.get('command', '') == 'update':
+            elif json_msg['command'] == 'update':
                 message['command'] = 'update'
                 if self.filter_all_commands == False:
                     self.goss_to_fncs_message_queue.put(json.dumps(json_msg['input']))
                 #_publish_to_fncs_bus(simulation_id, json.dumps(json_msg['input'])) #does not return
-            elif json_msg.get('command', '') == 'StartSimulation':
+            elif json_msg['command'] == 'StartSimulation':
                 if self.start_simulation == False:
                     self.start_simulation = True
                 #message['command'] = 'nextTimeStep'
@@ -303,7 +310,7 @@ class GOSSListener(object):
                 #message['output'] = _get_fncs_bus_messages(simulation_id)
                 #response_msg = json.dumps(message['output'])
                 #goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
-            elif json_msg.get('command', '') == 'CommOutage':
+            elif json_msg['command'] == 'CommOutage':
                 rev_diffs = json_msg.get('input',{}).get('reverse_differences', [])
                 for_diffs = json_msg.get('input',{}).get('forward_differences', [])
                 for d in rev_diffs:
@@ -340,30 +347,28 @@ class GOSSListener(object):
                         for x in d.get('outputOutageList', []):
                             if x not in self.measurement_filter:
                                 self.measurement_filter.append(x)
-            elif json_msg.get('command', '') == 'stop':
+            elif json_msg['command'] == 'stop':
                 message_str = 'Stopping the simulation'
                 _send_simulation_status('CLOSED', message_str, 'INFO')
                 self.stop_simulation = True
                 if fncs.is_initialized():
                     if self.simulation_finished == False:
                         fncs.die()
-            elif json_msg.get('command', '') == 'pause':
+            elif json_msg['command'] == 'pause':
                 if self.pause_simulation == True:
                     _send_simulation_status('PAUSED', 'The simulation is already paused.', 'WARN')
                 else:
                     self.pause_simulation = True
                     _send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
-            elif json_msg.get('command', '') == 'resume':
+            elif json_msg['command'] == 'resume':
                 if self.pause_simulation == False:
                     _send_simulation_status('RUNNING', 'The simulation is already running.', 'WARN')
                 else:
                     self.pause_simulation = False
                     _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
-            elif json_msg.get('command', '') == '':
-                _send_simulation_status('WARNING', 'The message recieved did not have a command key. Ignoring malformed message.', 'WARN')
 
         except Exception as e:
-            message_str = 'Error in command '+str(e)
+            message_str = 'Error '+str(e)+' in command '+str(msg)
             _send_simulation_status('ERROR', message_str, 'ERROR')
             self.stop_simulation = True
             if fncs.is_initialized():
@@ -601,7 +606,8 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                             val = "OPEN"
                         else:
                             val = "CLOSED"
-                        fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
+                        for y in object_total_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
                     elif cim_attribute == "TapChanger.initialDelay":
                         for y in object_property_list:
                             fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][y] = x.get("value")
@@ -693,10 +699,6 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
     Function exceptions:
         ValueError()
     """
-    propertyName = ""
-    objectName = ""
-    objectType = ""
-    propertyValue = ""
     try:
         fncs_output = None
         if simulation_id == None or simulation_id == '' or type(simulation_id) != str:
@@ -729,7 +731,6 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                 if simulation_time != 0:
                     cim_measurements_dict["message"]["timestamp"] = simulation_time
                 for x in object_property_to_measurement_id.keys():
-                    objectName = x
                     gld_properties_dict = sim_dict.get(x,None)
                     if gld_properties_dict == None:
                         err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
@@ -739,14 +740,11 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                         for y in object_property_to_measurement_id.get(x,{}):
                             measurement = {}
                             property_name = y["property"]
-                            propertyName = property_name
                             if y["measurement_mrid"] not in measurement_filter:
                                 measurement["measurement_mrid"] = y["measurement_mrid"]
                                 phases = y["phases"]
                                 conducting_equipment_type_str = y["conducting_equipment_type"]
                                 prop_val_str = gld_properties_dict.get(property_name, None)
-                                propertyValue = prop_val_str
-                                objectType = conducting_equipment_type_str
                                 if prop_val_str == None:
                                     err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
                                     _send_simulation_status('RUNNING', err_msg, 'WARN')
@@ -815,8 +813,6 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
         #_send_simulation_status('RUNNING', message_str, 'INFO')
         return cim_output
         #return fncs_output
-    except ValueError as ve:
-        raise RuntimeError("{}.\nObject Name: {}\nObject Type: {}\nProperty Name: {}\n Property Value{}".format(str(ve), objectName, objectType, propertyName, propertyValue))
     except Exception as e:
         message_str = 'Error on get FncsBusMessages for '+str(simulation_id)+' '+str(traceback.format_exc())
         print(message_str)
