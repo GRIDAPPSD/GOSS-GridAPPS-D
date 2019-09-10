@@ -14,7 +14,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.proven.api.producer.ProvenProducer;
 import gov.pnnl.proven.api.producer.ProvenResponse;
@@ -125,8 +125,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenQueryProducer.restProducer(provenQueryUri, null, null);
 		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
-		TimeSeriesResult result = TimeSeriesResult.parse(response.data.toString());
-		if(result.getMeasurements().get(0).getPoints().size()==0)
+		TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
+		if(result.getData().size()==0)
 			return null;
 		String origFormat = "PROVEN_"+requestTimeseriesData.getQueryMeasurement().toString();
 		String responseFormat = requestTimeseriesData.getResponseFormat();

@@ -1,32 +1,46 @@
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+
+import org.apache.jena.ext.com.google.common.reflect.TypeToken;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 
 public class TimeSeriesEntryResult {
-	List<TimeSeriesKeyValuePair> entry;
+	ArrayList<HashMap<String,Object>> data;
+	
 
-	public List<TimeSeriesKeyValuePair> getEntry() {
-		if(entry==null){
-			entry = new ArrayList<TimeSeriesKeyValuePair>();
+	public ArrayList<HashMap<String,Object>> getData() {
+		if(data==null){
+			data = new ArrayList<HashMap<String,Object>>();
 		}
-		return entry;
+		return data;
 	}
 
-	public void setEntry(List<TimeSeriesKeyValuePair> entry) {
-		this.entry = entry;
+	public void setData(ArrayList<HashMap<String,Object>> data) {
+		this.data = data;
 	}
 	
 	
-	public HashMap<String, String>  getEntryMap() {
-		HashMap<String, String> map = new HashMap<String, String>();
-		for(TimeSeriesKeyValuePair pair: getEntry()){
-			map.put(pair.getKey(), pair.getValue());
-		}
-		return map;
-		
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	public static TimeSeriesEntryResult parse(String jsonString) {
+		Type listType = new TypeToken<ArrayList<HashMap<String, Object>>>(){}.getType();
+		Gson  gson = new Gson();
+		TimeSeriesEntryResult obj = new TimeSeriesEntryResult();
+		ArrayList<HashMap<String, Object>> data = gson.fromJson(jsonString, listType);
+		obj.setData(data);
+		if(obj.data==null)
+			throw new JsonSyntaxException("Expected attribute measurements not found");
+		return obj;
 	}
 	
 }

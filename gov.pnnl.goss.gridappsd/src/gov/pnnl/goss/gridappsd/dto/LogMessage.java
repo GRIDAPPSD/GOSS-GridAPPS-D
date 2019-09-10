@@ -62,6 +62,7 @@ public class LogMessage implements Serializable {
 	LogLevel logLevel;
 	ProcessStatus processStatus;
 	Boolean storeToDb = true;
+	String process_type;
 
 	public LogMessage(){}
 
@@ -119,6 +120,14 @@ public class LogMessage implements Serializable {
 	}
 	public void setStoreToDb(Boolean storeToDb) {
 		this.storeToDb = storeToDb;
+	}
+	
+	public String getProcess_type() {
+		return process_type;
+	}
+
+	public void setProcess_type(String process_type) {
+		this.process_type = process_type;
 	}
 
 	public static LogMessage parse(String jsonString) throws JsonSyntaxException {

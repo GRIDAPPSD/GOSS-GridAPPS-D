@@ -8,29 +8,22 @@ import com.google.gson.JsonSyntaxException;
 
 public class TimeSeriesResult {
 	
-	List<TimeSeriesMeasurementResult> measurements;
+	List<TimeSeriesMeasurementResult> data;
 	
 	public List<TimeSeriesMeasurementResult> getMeasurements() {
-		return measurements;
+		return data;
 	}
 
-	public void setMeasurements(List<TimeSeriesMeasurementResult> measurements) {
-		this.measurements = measurements;
+	public void setMeasurements(List<TimeSeriesMeasurementResult> data) {
+		this.data = data;
 	}
 	
-	public void addMeasurement(TimeSeriesMeasurementResult measurement) {
-		if(this.measurements == null){
-			this.measurements = new ArrayList<TimeSeriesMeasurementResult>();
+	public void addMeasurement(TimeSeriesMeasurementResult data) {
+		if(this.data == null){
+			this.data = new ArrayList<TimeSeriesMeasurementResult>();
 		}
-		this.measurements.add(measurement);
+		this.data.add(data);
 	}
-
-	
-	
-	
-	
-	
-	
 	
 	@Override
 	public String toString() {
@@ -41,7 +34,7 @@ public class TimeSeriesResult {
 	public static TimeSeriesResult parse(String jsonString) {
 		Gson  gson = new Gson();
 		TimeSeriesResult obj = gson.fromJson(jsonString, TimeSeriesResult.class);
-		if(obj.measurements==null)
+		if(obj.data==null)
 			throw new JsonSyntaxException("Expected attribute measurements not found");
 		return obj;
 	}
