@@ -4,7 +4,7 @@
 	org.apache.felix.dependencymanager.runtime,\
 	biz.aQute.bnd.annotation,\
 	pnnl.goss.core.core-api;version=latest,\
-	pnnl.goss.core.goss-core-security,\
+	pnnl.goss.core.goss-core-security;version=latest,\
 	pnnl.goss.core.goss-core-server-api,\
 	pnnl.goss.core.goss-client;version=latest,\
 	pnnl.goss.core.goss-core-server,\
@@ -32,8 +32,8 @@
 	blazegraph.cim2glm;version=10.0.3,\
 	httpclient,\
 	com.bigdata.rdf,\
-    proven-client;version=0.2.2,\
-    proven-message;version=0.4
+	proven-client;version=0.2.2,\
+	proven-message;version=0.4
 		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
