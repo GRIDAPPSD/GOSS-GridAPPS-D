@@ -52,9 +52,6 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 public class GridAppsDConstants {
 	
-	//user credentials
-	public static final String username = "system";
-	public static final String password = "manager";
 	
 	//topics
 	public static final String topic_prefix = "goss.gridappsd";

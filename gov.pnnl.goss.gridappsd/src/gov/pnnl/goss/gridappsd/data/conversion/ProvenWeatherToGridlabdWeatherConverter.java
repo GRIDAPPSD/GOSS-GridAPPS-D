@@ -2,13 +2,11 @@ package gov.pnnl.goss.gridappsd.data.conversion;
 
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -25,6 +23,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.security.SecurityConfig;
 
 @Component
 public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConverter {
@@ -53,6 +52,8 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	private volatile DataManager dataManager;
 	@ServiceDependency 
 	private volatile LogManager logManager;
+	@ServiceDependency 
+	private volatile SecurityConfig securityConfig;
 	
 	/*static{
 	    sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -78,7 +79,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 						new LogMessage(this.getClass().getName(), new Integer(
 								0).toString(), new Date().getTime(),
 								"No Data manager available for "+getClass(), LogLevel.WARN,
-								ProcessStatus.RUNNING, false), "system",
+								ProcessStatus.RUNNING, false), securityConfig.getManagerUser(),
 						GridAppsDConstants.topic_platformLog);
 			}
 		}

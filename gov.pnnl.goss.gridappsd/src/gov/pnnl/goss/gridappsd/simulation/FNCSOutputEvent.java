@@ -48,6 +48,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.GossResponseEvent;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -62,7 +63,8 @@ public class FNCSOutputEvent implements GossResponseEvent {
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
-	
+	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
 	/**
 	 * message is in the JSON string format
 	 * {}
@@ -72,7 +74,7 @@ public class FNCSOutputEvent implements GossResponseEvent {
 		
 		try {
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			

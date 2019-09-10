@@ -46,6 +46,7 @@ import java.util.Date;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
@@ -81,6 +83,9 @@ public class LogManagerImpl implements LogManager {
 
 	@ServiceDependency
 	ClientFactory clientFactory;
+	
+	@ServiceDependency
+	SecurityConfig securityConfig;
 
 	Client client;
 
@@ -104,8 +109,8 @@ public class LogManagerImpl implements LogManager {
 	public void start() {
 		LogMessage logMessage = new LogMessage();
 		try {
-			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+			Credentials credentials = new UsernamePasswordCredentials(
+					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 
 
@@ -206,7 +211,7 @@ public class LogManagerImpl implements LogManager {
 
 	@Override
 	public void log(LogMessage message, String topic) {
-		this.log(message, GridAppsDConstants.username, topic);
+		this.log(message, securityConfig.getManagerUser(), topic);
 	}
 
 	private void store(String source, String requestId, long timestamp,

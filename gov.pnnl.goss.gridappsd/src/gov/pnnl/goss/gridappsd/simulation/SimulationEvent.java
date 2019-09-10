@@ -48,8 +48,10 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.security.SecurityConfig;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 
@@ -68,6 +70,8 @@ public class SimulationEvent implements GossResponseEvent {
 	
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
+	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
 	
 	/**
 	 * message is in the JSON string format
@@ -77,8 +81,10 @@ public class SimulationEvent implements GossResponseEvent {
 	public void onMessage(Serializable message) {
 		
 		try {
+			DataResponse event = (DataResponse)message;
+			
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			

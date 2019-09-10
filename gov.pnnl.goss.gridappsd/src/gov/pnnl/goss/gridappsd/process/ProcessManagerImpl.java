@@ -65,6 +65,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.security.SecurityConfig;
 
 
 
@@ -94,6 +95,9 @@ public class ProcessManagerImpl implements ProcessManager {
 
 	@ServiceDependency
 	private volatile ServiceManager serviceManager;
+	
+	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
 
 	@ServiceDependency
 	private volatile DataManager dataManager;
@@ -132,9 +136,13 @@ public class ProcessManagerImpl implements ProcessManager {
 		LogMessage logMessageObj = new LogMessage();
 
 		try{
+			 
+			
+				Credentials credentials = new UsernamePasswordCredentials(
+						securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 
 			logMessageObj.setLogLevel(LogLevel.DEBUG);
@@ -163,7 +171,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogLevel(LogLevel.ERROR);
 			logMessageObj.setLogMessage(e.getMessage());
-			logManager.log(logMessageObj, GridAppsDConstants.username);
+			logManager.log(logMessageObj, securityConfig.getManagerUser());
 		}
 
 	}

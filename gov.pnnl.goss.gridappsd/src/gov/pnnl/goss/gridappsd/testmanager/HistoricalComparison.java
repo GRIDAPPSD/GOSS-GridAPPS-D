@@ -22,9 +22,11 @@ import com.google.gson.JsonObject;
 public class HistoricalComparison {
 	
 	DataManager dataManager;
+	String username;
 	
-	public HistoricalComparison(DataManager dataManager) {
+	public HistoricalComparison(DataManager dataManager, String username) {
 		this.dataManager = dataManager;
+		this.username = username;
 	}
 
 	public TestResultSeries test_proven(String simulationId, JsonObject expected_output_series){
@@ -70,7 +72,7 @@ public class HistoricalComparison {
 		try {
 			response = dataManager.processDataRequest(request, "timeseries",
 					Integer.parseInt(simulationId), null,
-					GridAppsDConstants.username);
+					username);
 		} catch (Exception e) {
 			// TODO: Log error - excpetion
 		}

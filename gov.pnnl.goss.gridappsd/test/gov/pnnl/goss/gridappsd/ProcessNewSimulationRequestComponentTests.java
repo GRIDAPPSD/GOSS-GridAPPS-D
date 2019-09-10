@@ -112,7 +112,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
-		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager,dataManager);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager,dataManager,TestConstants.SYSTEM_USER_NAME);
 		
 		//	request simulation object parsed successfully and first log info call made
 		Mockito.verify(logManager, Mockito.times(3)).log(argCaptorLogMessage.capture(), argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
@@ -164,7 +164,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
 		requestSimulation.getPower_system_config().setGeographicalRegion_name("Bad");
-		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager, serviceManager, testManager,dataManager);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager, serviceManager, testManager,dataManager,TestConstants.SYSTEM_USER_NAME);
 		
 //		try {
 //			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
@@ -200,7 +200,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
-		request.process(configurationManager, simulationManager, simulationId, event, null, appManager, serviceManager, testManager,dataManager);
+		request.process(configurationManager, simulationManager, simulationId, event, null, appManager, serviceManager, testManager,dataManager,TestConstants.SYSTEM_USER_NAME);
 		
 //		try {
 //			Mockito.verify(statusReporter).reportStatus(Mockito.any(), argCaptor.capture());
@@ -238,7 +238,7 @@ public class ProcessNewSimulationRequestComponentTests {
 		int simulationId =  Math.abs(new Random().nextInt());
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
-		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager, dataManager);
+		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager, dataManager,TestConstants.SYSTEM_USER_NAME);
 		
 		
 //		request error log call made

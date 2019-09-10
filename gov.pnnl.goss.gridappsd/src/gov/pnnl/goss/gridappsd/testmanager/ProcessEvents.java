@@ -61,19 +61,22 @@ public class ProcessEvents {
     private String simulationID;
 	private long start_time;
 	private int duration;
+	private String username;
 
-    public ProcessEvents(LogManager logManager, List<Event> events, long start_time, int duration){
+    public ProcessEvents(LogManager logManager, List<Event> events, long start_time, int duration, String username){
     	this.logManager = logManager;
+    	this.username = username;
 		addEvents(events);
     	this.duration = duration;
     	this.start_time = start_time;
     }
     
-    public ProcessEvents(LogManager logManager, Client client, String simulationID,  SimulationManager simulationManager){
+    public ProcessEvents(LogManager logManager, Client client, String simulationID,  SimulationManager simulationManager, String username){
     	System.out.println("New " + this.getClass().getSimpleName());
     	this.logManager = logManager;
     	this.simulationID = simulationID;
     	this.simulationManager = simulationManager;
+    	this.username = username;
     	processEvents(client);
     }
 	
@@ -344,7 +347,7 @@ public class ProcessEvents {
 		logMessageObj.setStoreToDb(true);
 		logMessageObj.setTimestamp(new Date().getTime());
 		logMessageObj.setLogMessage(msgStr);
-		logManager.log(logMessageObj,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		logManager.log(logMessageObj,username,GridAppsDConstants.topic_platformLog);
 	}
 
 }

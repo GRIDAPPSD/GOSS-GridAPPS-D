@@ -36,6 +36,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.security.SecurityConfig;
 
 import com.google.gson.Gson;
 
@@ -63,6 +64,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@ServiceDependency
 	private volatile AppManager appManager;
 	
+	@ServiceDependency
+	private volatile SecurityConfig securityConfig;
+	
 	public static final String DATA_MANAGER_TYPE = "timeseries";
 	
 	public static int count = 0;
@@ -76,8 +80,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 	ProvenProducer provenQueryProducer = new ProvenProducer();
 	ProvenProducer provenWriteProducer = new ProvenProducer();
-	Credentials credentials = new UsernamePasswordCredentials(
-			GridAppsDConstants.username, GridAppsDConstants.password);
+//	Credentials credentials = new UsernamePasswordCredentials(
+//			GridAppsDConstants.username, GridAppsDConstants.password);
 	
 	@Start
 	public void start(){
@@ -163,6 +167,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     
     
     private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId) throws Exception{
+    	
+    	Credentials credentials = new UsernamePasswordCredentials(
+				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
         Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override

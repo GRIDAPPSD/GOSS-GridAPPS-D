@@ -90,20 +90,19 @@ public class ProcessNewSimulationRequest {
 			SimulationManager simulationManager, int simulationId,
 			DataResponse event, RequestSimulation simRequest, AppManager appManager,
 			ServiceManager serviceManager, TestManager testManager,
-			DataManager dataManager) {
+			DataManager dataManager, String username) {
 		process(configurationManager, simulationManager, simulationId, simRequest,
 				SimulationConfig.DEFAULT_SIMULATION_BROKER_PORT, appManager,
-				serviceManager, testManager, dataManager);
+				serviceManager, testManager, dataManager, username);
 	}
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, int simulationId,
 			RequestSimulation simRequest, int simulationPort, AppManager appManager,
-			ServiceManager serviceManager, TestManager testManager,DataManager dataManager) {
+			ServiceManager serviceManager, TestManager testManager,DataManager dataManager, String username) {
 
 		try {
 
-			String username = GridAppsDConstants.username;
 			String source = this.getClass().getSimpleName();
 			String simId = new Integer(simulationId).toString();
 			String simulationLogTopic = GridAppsDConstants.topic_simulationLog
@@ -169,6 +168,7 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
 			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
 			}catch(NullPointerException e){
@@ -319,7 +319,7 @@ public class ProcessNewSimulationRequest {
 								"Process Initialization error: "
 										+ e.getMessage(), LogLevel.ERROR,
 								ProcessStatus.ERROR, false),
-						GridAppsDConstants.username,
+						username,
 						GridAppsDConstants.topic_platformLog);
 
 			} catch (Exception e1) {

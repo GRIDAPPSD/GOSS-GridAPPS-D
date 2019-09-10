@@ -55,11 +55,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulationResponse;
-import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
-import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
-import gov.pnnl.goss.gridappsd.dto.events.Event;
-import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.PrintWriter;
@@ -76,7 +72,6 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -128,8 +123,8 @@ public class ProcessEvent implements GossResponseEvent {
 	public void onMessage(Serializable message) {
 
 		DataResponse event = (DataResponse)message;
-		String username  = GridAppsDConstants.username;
-
+		String username  = event.getUsername();
+		
 		int processId = ProcessManagerImpl.generateProcessId();
 		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
 
@@ -173,7 +168,7 @@ public class ProcessEvent implements GossResponseEvent {
 						client.publish(event.getReplyDestination(), response);
 						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
-						newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,processManger.assignSimulationPort(processId), appManager,serviceManager, testManager, dataManager);
+						newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,processManger.assignSimulationPort(processId), appManager,serviceManager, testManager, dataManager, username);
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { //if pause
 						simulationManager.pauseSimulation(simRequest.getSimulation_id());
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { //if play

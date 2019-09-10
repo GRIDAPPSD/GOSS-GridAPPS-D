@@ -83,7 +83,7 @@ public class TestManagerEventsTest {
 	@Before
 	public void beforeTests(){
 		List<Event> events = new ArrayList<Event>();
-		processEvent = new ProcessEvents(logManager, events, start_time, 120);
+		processEvent = new ProcessEvents(logManager, events, start_time, 120, TestConstants.SYSTEM_USER_NAME);
 		GsonBuilder gsonBuilder = new GsonBuilder();
 		RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
 		.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
