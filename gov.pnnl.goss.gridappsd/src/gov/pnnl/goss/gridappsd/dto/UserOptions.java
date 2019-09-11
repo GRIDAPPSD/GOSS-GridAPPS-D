@@ -2,7 +2,9 @@ package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
 
-public class UserInput implements Serializable {
+import com.google.gson.Gson;
+
+public class UserOptions implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -11,5 +13,11 @@ public class UserInput implements Serializable {
 	String type;
 	Object help_example;
 	Object default_value;
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 	
 }

@@ -65,7 +65,7 @@ public class ServiceInfo implements Serializable {
 	List<String> output_topics;
 	List<String> static_args;
 	String execution_path;
-	HashMap<String,UserInput> user_input;
+	HashMap<String,UserOptions> user_input;
 	ServiceType type;
 	boolean launch_on_startup;
 	List<String> service_dependencies;

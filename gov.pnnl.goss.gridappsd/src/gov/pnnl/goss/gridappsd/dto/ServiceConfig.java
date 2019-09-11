@@ -8,7 +8,8 @@ public class ServiceConfig implements Serializable {
 	private static final long serialVersionUID = -2413334775260242364L;
 	
 	String id;
-	HashMap<String,UserInput> user_input;
+	HashMap<String,Object> user_options;
+	Object user_value;
 	
 	public String getId() {
 		return id;
@@ -16,11 +17,11 @@ public class ServiceConfig implements Serializable {
 	public void setId(String id) {
 		this.id = id;
 	}
-	public HashMap<String, UserInput> getUser_input() {
-		return user_input;
+	public HashMap<String, Object> getUser_options() {
+		return user_options;
 	}
-	public void setUser_input(HashMap<String, UserInput> user_input) {
-		this.user_input = user_input;
+	public void setUser_input(HashMap<String, Object> user_options) {
+		this.user_options = user_options;
 	}
 	
 	
