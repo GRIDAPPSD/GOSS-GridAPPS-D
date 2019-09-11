@@ -242,6 +242,7 @@ public class ProcessNewSimulationRequest {
 			}
 
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
+			List<String> connectServiceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
 			
 			if (simRequest.service_configs == null) {
@@ -253,7 +254,9 @@ public class ProcessNewSimulationRequest {
 			}
 			else{
 				for(ServiceConfig serviceConfig : simRequest.service_configs){
-					serviceManager.startServiceForSimultion(serviceConfig.getId(), serviceConfig.getUser_input(), simulationContext);
+					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), serviceConfig.getUser_input(), simulationContext);
+					connectServiceInstanceIds.add(serviceInstanceId);
+					connectServiceIds.add(serviceConfig.getId());
 				}
 			}
 			
@@ -269,7 +272,6 @@ public class ProcessNewSimulationRequest {
 			else {
 				for (ApplicationObject app : simRequest.application_config
 						.getApplications()) {
-					// TODO: Ask Tara: is simulation id same as request id
 					AppInfo appInfo = appManager.getApp(app.getName());
 					if(appInfo==null) {
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -286,16 +288,15 @@ public class ProcessNewSimulationRequest {
 					List<String> prereqsList = appManager.getApp(app.getName())
 							.getPrereqs();
 					for (String prereqs : prereqsList) {
-						//TODO: remove this if condition after hardcoded pre-reqs are removed from sample-app config file.
-						if(prereqs.equals("fncs") || prereqs.equals("fncsgossbridge"))
-							continue;
-						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
-						connectServiceInstanceIds.add(serviceInstanceId);
-						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-								+ prereqs + " with instance id "
-								+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-								GridAppsDConstants.topic_simulationLog
-										+ simulationId);
+						if(!connectServiceIds.contains(prereqs)){
+							String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
+							connectServiceInstanceIds.add(serviceInstanceId);
+							logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+									+ prereqs + " with instance id "
+									+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+									GridAppsDConstants.topic_simulationLog
+											+ simulationId);
+						}
 					}
 
 					String appInstanceId = appManager.startAppForSimultion(app
