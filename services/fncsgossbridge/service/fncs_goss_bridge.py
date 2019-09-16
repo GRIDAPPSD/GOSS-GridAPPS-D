@@ -211,7 +211,6 @@ class GOSSListener(object):
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
-        self.message_id_list = []
 
     def run_simulation(self,run_realtime):
         try:
@@ -260,14 +259,6 @@ class GOSSListener(object):
     def on_message(self, headers, msg):
         message = {}
         try:
-            headers_dict = yaml.safe_load(str(headers))
-            destination = headers_dict['destination']
-            message_id = headers_dict['message-id']
-            if str(destination).startswith('/temp-queue'):
-                return
-            if str(message_id) in self.message_id_list:
-                return
-            self.message_id_list.append(str(message_id))
             message_str = 'received message '+str(headers)+'________________'+str(msg)
 
             if fncs.is_initialized():
