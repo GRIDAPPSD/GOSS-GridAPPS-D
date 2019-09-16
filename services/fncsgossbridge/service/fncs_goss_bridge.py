@@ -1082,7 +1082,7 @@ def _create_cim_object_map(map_file=None):
                             property_name = "voltage_" + phases;
                         elif measurement_type == "Pos":
                             object_name = conducting_equipment_name
-                            property_name = "phase_" + phases + "_state"
+                            property_name = "status"
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
