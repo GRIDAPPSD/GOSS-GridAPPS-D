@@ -13,6 +13,8 @@ public class UserOptions implements Serializable {
 	String type;
 	Object help_example;
 	Object default_value;
+	Object min_value;
+	Object max_value;
 	
 	@Override
 	public String toString() {
