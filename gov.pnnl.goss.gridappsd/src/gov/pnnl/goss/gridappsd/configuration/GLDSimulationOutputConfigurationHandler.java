@@ -341,7 +341,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				propertyName = "voltage_" + phases;
 			} else if (measurementType.equals("Pos")) {
 				objectName = conductingEquipmentName;
-				propertyName = "status";
+				propertyName = "phase_" + phases + "_state";
 			} else if (measurementType.equals("A")) {
 				objectName = conductingEquipmentName;
 				if (phases.equals("1")) {
