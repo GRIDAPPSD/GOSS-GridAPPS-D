@@ -84,7 +84,6 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 	ClientFactory clientFactory;
 	
 	private Connection connection;
-	private PreparedStatement preparedStatement;
 	Client client;
 	
 	public static final String DATA_MANAGER_TYPE = "log";
@@ -121,7 +120,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		if(connection!=null){
 			try {
 				
-				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log ("
+				PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log ("
 						+ "id, "
 						+ "source, "
 						+ "process_id, "
@@ -140,7 +139,6 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.setString(6, process_status.toString());
 				preparedStatement.setString(7, username);
 				preparedStatement.setString(8, process_type);
-				
 				
 				preparedStatement.executeUpdate();
 				
@@ -167,7 +165,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		if(connection!=null){
 			try {
 				
-				preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?,?)");
+				PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?,?)");
 				preparedStatement.setString(1, test_id);
 				preparedStatement.setString(2, processId);
 				preparedStatement.setString(3, mrid);
@@ -255,7 +253,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 					queryString+=" timestamp="+timestamp;
 				}
 
-			preparedStatement = connection.prepareStatement(queryString);
+			PreparedStatement preparedStatement = connection.prepareStatement(queryString);
 			
 			ResultSet rs = preparedStatement.executeQuery();
 			
@@ -299,7 +297,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		
 		if(connection!=null){
 			try{
-				preparedStatement = connection.prepareStatement(queryString);
+				PreparedStatement preparedStatement = connection.prepareStatement(queryString);
 				ResultSet rs = preparedStatement.executeQuery();
 				return this.getJSONFromResultSet(rs);
 		}catch (SQLException e) {
