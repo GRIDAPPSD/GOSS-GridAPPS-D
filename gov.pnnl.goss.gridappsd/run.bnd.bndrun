@@ -79,7 +79,7 @@
 	javax.servlet-api,\
 	com.bigdata.rdf,\
 	proven-message;version=0.4,\
-	proven-client;version=0.2.2,\
+	proven-client;version=0.2.3,\
 	javax.ws.rs-api,\
 	org.apache.commons.codec,\
 	shacl,\
