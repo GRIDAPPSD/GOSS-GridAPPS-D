@@ -67,6 +67,7 @@ import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.dto.AppInstance;
 import gov.pnnl.goss.gridappsd.dto.EnvironmentVariable;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.UserOptions;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
@@ -241,12 +242,12 @@ public class ServiceManagerImpl implements ServiceManager{
 
 	@Override
 	public String startService(String serviceId,
-			String runtimeOptions) {
+			HashMap<String, Object> runtimeOptions) {
 		return startServiceForSimultion(serviceId, runtimeOptions, null);	
 	}
 
 	@Override
-	public String startServiceForSimultion(String serviceId, String runtimeOptions,  Map<String, Object> simulationContext) {
+	public String startServiceForSimultion(String serviceId, HashMap<String, Object> runtimeOptions,  Map<String, Object> simulationContext) {
 		
 		if(simulationId == null)
 			this.simulationId = simulationContext.get("simulationId").toString();
@@ -311,7 +312,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		}
 	    
 		if(runtimeOptions!=null){
-			commands.add(runtimeOptions);
+			commands.add(runtimeOptions.toString());
 		}
 		
 	    
