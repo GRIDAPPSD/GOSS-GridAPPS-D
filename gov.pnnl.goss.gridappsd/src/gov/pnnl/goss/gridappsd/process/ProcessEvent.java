@@ -126,7 +126,7 @@ public class ProcessEvent implements GossResponseEvent {
 		String username  = event.getUsername();
 		
 		int processId = ProcessManagerImpl.generateProcessId();
-		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination());
+		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination(), username);
 
 
 		try{ 
@@ -151,10 +151,10 @@ public class ProcessEvent implements GossResponseEvent {
 						}catch(JsonSyntaxException e){
 							e.printStackTrace();
 							//TODO log error
-							sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+							sendError(client, event.getReplyDestination(), e.getMessage(), processId, username);
 						}
 					} else {
-						sendError(client, event.getReplyDestination(), "Simulation request is null", processId);
+						sendError(client, event.getReplyDestination(), "Simulation request is null", processId, username);
 					}
 				}
 				if(simRequest!=null){
@@ -176,10 +176,10 @@ public class ProcessEvent implements GossResponseEvent {
 					} else if (simRequest.simulation_request_type.equals(SimulationRequestType.STOP)) { //if stop
 						simulationManager.endSimulation(simRequest.getSimulation_id());
 					} else{
-						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId);
+						sendError(client, event.getReplyDestination(), "Simulation request type not recognized: "+simRequest.simulation_request_type, processId, username);
 					}
 				} else {
-					sendError(client, event.getReplyDestination(), "Simulation request could not be parsed", processId);
+					sendError(client, event.getReplyDestination(), "Simulation request could not be parsed", processId, username);
 				}
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestApp )){
 				appManager.process(processId, event, message);
@@ -196,7 +196,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 				String type = requestTopicExtension;
 
-				this.debug(processId, "Received data request of type: "+type,null);
+				this.debug(processId, "Received data request of type: "+type,null, username);
 
 				Serializable request;
 				if (message instanceof DataResponse){
@@ -207,7 +207,7 @@ public class ProcessEvent implements GossResponseEvent {
 
 				Response r = dataManager.processDataRequest(request, type, processId, configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), username);
 				//client.publish(event.getReplyDestination(), r);
-				sendData(client, event.getReplyDestination(), ((DataResponse)r).getData(), processId);
+				sendData(client, event.getReplyDestination(), ((DataResponse)r).getData(), processId, username);
 
 
 			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestConfig)){
@@ -227,7 +227,7 @@ public class ProcessEvent implements GossResponseEvent {
 						configRequest = ConfigurationRequest.parse(request.toString());
 					}catch(JsonSyntaxException e){
 						//TODO log error
-						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+						sendError(client, event.getReplyDestination(), e.getMessage(), processId, username);
 					}
 				}
 				if(configRequest!=null){
@@ -239,22 +239,22 @@ public class ProcessEvent implements GossResponseEvent {
 						StringWriter sww = new StringWriter();
 						PrintWriter pw = new PrintWriter(sww);
 						e.printStackTrace(pw);
-						this.error(processId,sww.toString());
-						sendError(client, event.getReplyDestination(), e.getMessage(), processId);
+						this.error(processId,sww.toString(), username);
+						sendError(client, event.getReplyDestination(), e.getMessage(), processId, username);
 					}
 					String result = sw.toString();
 					
 					if(configRequest.getConfigurationType().equals("YBus Export")){
 						Gson gson = new Gson();
 						YBusExportResponse response = gson.fromJson(result, YBusExportResponse.class);
-						sendData(client, event.getReplyDestination(), response, processId);
+						sendData(client, event.getReplyDestination(), response, processId, username);
 					}
 					else
-						sendData(client, event.getReplyDestination(), result, processId);
+						sendData(client, event.getReplyDestination(), result, processId, username);
 
 				} else {
-					this.error(processId, "No valid configuration request received, request: "+request);
-					sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request, processId);
+					this.error(processId, "No valid configuration request received, request: "+request, username);
+					sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request, processId, username);
 				}
 
 
@@ -276,13 +276,13 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString());
-			sendError(client, event.getReplyDestination(), sw.toString(), processId);
+			this.error(processId,sw.toString(), username);
+			sendError(client, event.getReplyDestination(), sw.toString(), processId, username);
 		}
 	}
 
 
-	private void sendData(Client client, Destination replyDestination, Serializable data, int processId){
+	private void sendData(Client client, Destination replyDestination, Serializable data, int processId, String username){
 		try {
 			String r = "{\"data\":"+data+",\"responseComplete\":true,\"id\":\""+processId+"\"}";
 			/*DataResponse r = new DataResponse();
@@ -294,13 +294,13 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString());
+			this.error(processId,sw.toString(), username);
 			//TODO log error and send error response
 		}
 	}
 
 
-	private void sendError(Client client, Destination replyDestination, String error, int processId){
+	private void sendError(Client client, Destination replyDestination, String error, int processId, String username){
 		try {
 			DataResponse r = new DataResponse();
 			r.setError(new DataError(error));
@@ -310,12 +310,12 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString());
+			this.error(processId,sw.toString(), username);
 		}
 	}
 
 
-	private void debug(int processId, String message, String process_type) {
+	private void debug(int processId, String message, String process_type, String username) {
 
 		LogMessage logMessage = new LogMessage();
 		logMessage.setSource(this.getClass().getSimpleName());
@@ -327,11 +327,11 @@ public class ProcessEvent implements GossResponseEvent {
 		logMessage.setTimestamp(new Date().getTime());
 		if(process_type!=null)
 			logMessage.setProcess_type(process_type);
-		logManager.log(logMessage, GridAppsDConstants.topic_platformLog);	
+		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
 
 	}
 
-	private void error(int processId, String message) {
+	private void error(int processId, String message, String username) {
 
 		LogMessage logMessage = new LogMessage();
 		logMessage.setSource(this.getClass().getSimpleName());
@@ -342,7 +342,7 @@ public class ProcessEvent implements GossResponseEvent {
 		logMessage.setStoreToDb(true);
 		logMessage.setTimestamp(new Date().getTime());
 
-		logManager.log(logMessage, GridAppsDConstants.topic_platformLog);	
+		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
 
 	}
 

@@ -210,10 +210,10 @@ public class LogManagerImpl implements LogManager {
 
 	}
 
-	@Override
-	public void log(LogMessage message, String topic) {
-		this.log(message, securityConfig.getManagerUser(), topic);
-	}
+//	@Override
+//	public void log(LogMessage message, String topic) {
+//		this.log(message, securityConfig.getManagerUser(), topic);
+//	}
 
 	private void store(String source, String requestId, long timestamp,
 			String log_message, LogLevel log_level, ProcessStatus process_status, String username, String process_type) {

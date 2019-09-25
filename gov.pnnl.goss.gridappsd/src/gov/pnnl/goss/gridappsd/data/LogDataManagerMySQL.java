@@ -150,6 +150,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.executeUpdate();
 				
 			} catch (Exception e) {
+				e.printStackTrace();
 				log.error("Error while storing log:");
 				log.error("error = " + e.getMessage());
 				log.error("source = " + source);
@@ -184,6 +185,8 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.executeUpdate();
 				
 			} catch (DataTruncation e) {
+				e.printStackTrace();
+
 				log.error("Error while storing log:");
 				log.error("error = " + e.getMessage());
 			} catch (SQLException e) {

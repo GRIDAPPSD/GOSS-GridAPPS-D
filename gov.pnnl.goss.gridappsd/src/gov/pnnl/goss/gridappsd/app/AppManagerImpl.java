@@ -276,7 +276,7 @@ public class AppManagerImpl implements AppManager {
 				String.format("Found %s applications", apps.size()),
 				LogLevel.INFO,
 				ProcessStatus.RUNNING,
-				true),securityConfig.getManagerUser());
+				true),securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -555,6 +555,7 @@ public class AppManagerImpl implements AppManager {
 					simulationId, new Date().getTime(),
 					"Starting app with command "+ String.join(" ",commands),
 					LogLevel.INFO, ProcessStatus.RUNNING, true),
+					securityConfig.getManagerUser(),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 			try {
 				process = processAppBuilder.start();

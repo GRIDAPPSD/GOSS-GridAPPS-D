@@ -133,7 +133,7 @@ public class ProcessNewSimulationRequest {
 					"Creating simulation and power grid model files for simulation Id "
 							+ simulationId,
 							LogLevel.INFO,
-							ProcessStatus.RUNNING,true), simulationLogTopic);
+							ProcessStatus.RUNNING,true), username, simulationLogTopic);
 
 
 //			StringWriter simulationConfigDirOut = new StringWriter();
@@ -168,6 +168,7 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
 			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			System.out.println("SET USERNAME FOR SIMCONTEXT "+username);
 			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
@@ -177,13 +178,13 @@ public class ProcessNewSimulationRequest {
 							simId,
 							new Date().getTime(),
 							"Cannot find service with id ="+simRequest.getSimulation_config().getSimulator(),
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path() == null){
 					logManager.log(new LogMessage(this.getClass().getSimpleName(),
 							simId,
 							new Date().getTime(),
 							"Cannot find execution path for service ="+simRequest.getSimulation_config().getSimulator(),
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 				}
 				e.printStackTrace();
 			}
@@ -209,7 +210,7 @@ public class ProcessNewSimulationRequest {
 			logManager
 					.log(new LogMessage(source, simId,new Date().getTime(),
 							"Simulation and power grid model files generated for simulation Id ",LogLevel.DEBUG, ProcessStatus.RUNNING,true),
-							simulationLogTopic);
+							username, simulationLogTopic);
 
 
 			// Start Apps and Services
@@ -229,13 +230,13 @@ public class ProcessNewSimulationRequest {
 							simId,
 							new Date().getTime(),
 							"Cannot find service with id ="+simRequest.getSimulation_config().getSimulator(),
-							LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.WARN, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 				}else if(serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path() == null){
 					logManager.log(new LogMessage(this.getClass().getSimpleName(),
 							simId,
 							new Date().getTime(),
 							"Cannot find execution path for service ="+simRequest.getSimulation_config().getSimulator(),
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+							LogLevel.DEBUG, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 				}
 				e.printStackTrace();
 			}
@@ -248,7 +249,7 @@ public class ProcessNewSimulationRequest {
 						simId,
 						new Date().getTime(),
 						"No applications found in request  ="+simRequest.getSimulation_config().getSimulator(),
-						LogLevel.WARN, ProcessStatus.RUNNING, true), GridAppsDConstants.topic_simulationLog+simulationId);
+						LogLevel.WARN, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 			}
 			else {
 				for (ApplicationObject app : simRequest.application_config
@@ -259,7 +260,7 @@ public class ProcessNewSimulationRequest {
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
 								String.valueOf(simulationId), new Date().getTime(),
 								"Cannot start application "+ app.getName() +". Application not available",
-								LogLevel.ERROR, ProcessStatus.ERROR, true), GridAppsDConstants.topic_simulationLog
+								LogLevel.ERROR, ProcessStatus.ERROR, true), username, GridAppsDConstants.topic_simulationLog
 								+ simulationId);
 						throw new RuntimeException("Cannot start application "+ app.getName() +". Application not available");
 
@@ -278,6 +279,7 @@ public class ProcessNewSimulationRequest {
 						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
 								+ prereqs + " with instance id "
 								+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+								username, 
 								GridAppsDConstants.topic_simulationLog
 										+ simulationId);
 					}
@@ -289,6 +291,7 @@ public class ProcessNewSimulationRequest {
 							new LogMessage(source, simId, new Date().getTime(),"Started "
 									+ app.getName() + " with instance id "
 									+ appInstanceId, LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+							username,
 							GridAppsDConstants.topic_simulationLog + simulationId);
 
 				}
@@ -304,10 +307,12 @@ public class ProcessNewSimulationRequest {
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Starting simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
+					username,
 					simulationLogTopic);
 			simulationManager.startSimulation(simulationId, simRequest.getSimulation_config(),simContext, simulationContext);
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),
 					"Started simulation for id " + simulationId,LogLevel.DEBUG, ProcessStatus.RUNNING,true),
+					username,
 					simulationLogTopic);
 
 		} catch (Exception e) {

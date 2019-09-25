@@ -90,6 +90,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
 				new Date().getTime(), "Starting "+this.getClass().getSimpleName(), 
 				LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+				securityConfig.getManagerUser(),
 				GridAppsDConstants.topic_platformLog);
 		
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
@@ -187,6 +188,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
                             new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace, 
                             LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+                    		event.getUsername(),
                             GridAppsDConstants.topic_platformLog);
                 }
             }

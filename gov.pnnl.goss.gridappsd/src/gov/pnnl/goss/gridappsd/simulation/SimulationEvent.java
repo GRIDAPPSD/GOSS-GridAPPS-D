@@ -82,6 +82,7 @@ public class SimulationEvent implements GossResponseEvent {
 		
 		try {
 			DataResponse event = (DataResponse)message;
+			String username = event.getUsername();
 			
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());

@@ -138,7 +138,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				String.format("Found %s services", services.size()), 
 				LogLevel.INFO, 
 				ProcessStatus.RUNNING, 
-				true),securityConfig.getManagerUser());
+				true),securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -331,6 +331,7 @@ public class ServiceManagerImpl implements ServiceManager{
 						simulationId, new Date().getTime(),
 						"Starting service with command "+ String.join(" ",commands), 
 						LogLevel.INFO, ProcessStatus.RUNNING, true), 
+						securityConfig.getManagerUser(),
 						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
@@ -346,6 +347,7 @@ public class ServiceManagerImpl implements ServiceManager{
 						simulationId, new Date().getTime(),
 						"Starting service with command "+ String.join(" ",commands), 
 						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						securityConfig.getManagerUser(),
 						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 				
@@ -361,6 +363,7 @@ public class ServiceManagerImpl implements ServiceManager{
 						simulationId, new Date().getTime(),
 						"Starting service with command "+ String.join(" ",commands), 
 						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+						securityConfig.getManagerUser(),
 						GridAppsDConstants.topic_simulationLog+simulationId);
 				process = processServiceBuilder.start();
 	
@@ -395,6 +398,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					LogLevel.ERROR,
 					ProcessStatus.ERROR,
 					true), 
+					securityConfig.getManagerUser(),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 					simulationId, 
@@ -403,6 +407,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					LogLevel.ERROR,
 					ProcessStatus.ERROR,
 					true), 
+					securityConfig.getManagerUser(),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 		}
 		
