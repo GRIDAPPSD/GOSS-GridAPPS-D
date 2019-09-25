@@ -44,6 +44,7 @@ Created on Jan 6, 2017
 
 @author: fish334
 @author: poorva1209
+@author: craig8
 """
 import argparse
 import cmath
@@ -71,6 +72,8 @@ except:
     else:
         sys.stdout.write("Running tests.\n")
         fncs = {}
+
+__version__ = '2019.9.0'
 
 input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
 output_to_simulation_manager = 'goss.gridappsd.fncs.output'
@@ -677,7 +680,7 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
 
 
 def _get_fncs_bus_messages(simulation_id, measurement_filter):
-    """publish a message received from the GOSS bus to the FNCS bus.
+    """ retrieve the measurment dictionary from the FNCS message bus
 
     Function arguments:
         simulation_id -- Type: string. Description: The simulation id.
@@ -713,7 +716,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                 "simulation_id": simulation_id,
                 "message" : {
                     "timestamp" : int(time.mktime(t_now.timetuple())),
-                    "measurements" : []
+                    "measurements" : {}
                 }
             }
 
@@ -804,7 +807,8 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                                         _send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
                                         raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                         # Should it raise runtime?
-                                    cim_measurements_dict["message"]["measurements"].append(measurement)
+                                    # change to be a dictionary rather than an array
+                                    cim_measurements_dict['message']["measurements"][measurement["measurement_mrid"]] = measurement
                 cim_output = cim_measurements_dict
             else:
                 err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
