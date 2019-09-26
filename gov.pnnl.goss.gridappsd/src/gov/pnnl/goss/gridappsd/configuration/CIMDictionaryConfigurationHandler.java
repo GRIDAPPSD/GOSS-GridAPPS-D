@@ -83,6 +83,7 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 	public static final String TYPENAME = "CIM Dictionary";
 	public static final String MODELID = "model_id";
 	public static final String SIMULATIONID = "simulation_id";
+	public static final String USEHOUSES = "use_houses";
 	
 	public CIMDictionaryConfigurationHandler() {
 	}
@@ -112,6 +113,7 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -149,9 +151,9 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		CIMImporter cimImporter = new CIMImporter(); 
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)));
+			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)),useHouses);
 		} else {
-			cimImporter.generateDictionaryFile(queryHandler, out);
+			cimImporter.generateDictionaryFile(queryHandler, out, useHouses);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that
