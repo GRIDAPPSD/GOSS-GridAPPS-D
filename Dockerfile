@@ -23,7 +23,7 @@ RUN cd ${TEMP_DIR} \
 
 # Get the gridappsd-sensor-simulator from the proper repository
 RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-voltage-violation -b master \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-voltage-violation -b develop \
   && cd gridappsd-voltage-violation \
   && mkdir -p /gridappsd/services/gridappsd-voltage-violation \
   && rm .git -rf \ 
