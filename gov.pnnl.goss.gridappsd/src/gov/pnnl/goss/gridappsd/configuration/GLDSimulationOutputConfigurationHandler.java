@@ -100,6 +100,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String MODELID = "model_id";
 	public static final String DICTIONARY_FILE = "dictionary_file";
 	public static final String SIMULATIONID = "simulation_id";
+	public static final String USEHOUSES = "use_houses";
 
 	public GLDSimulationOutputConfigurationHandler() {
 	}
@@ -132,6 +133,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		logRunning("Generating simulation output configuration file using parameters: "+parameters, processId, username, logManager);
 		File dictFile = null;
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -180,7 +182,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			StringWriter dictionaryStringOutput = new StringWriter();
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
 			
-			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput);
+			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses);
 			String dictOut = dictionaryStringOutput.toString();
 			measurementFileReader = null;
 			if(dictFile!=null && dictFile.getName().length()>0 && !dictFile.exists()){
@@ -191,7 +193,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			measurementFileReader = new StringReader(dictOut);
 		}
 		
-		String result = CreateGldPubs(measurementFileReader, processId, username);
+		String result = CreateGldPubs(measurementFileReader, processId, username, useHouses);
 
 		if(configFile!=null){
 			FileWriter fw = new FileWriter(configFile);
@@ -209,7 +211,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	
 	
 	
-	String CreateGldPubs(Reader measurementFileReader, String processId, String username) throws FileNotFoundException {
+	String CreateGldPubs(Reader measurementFileReader, String processId, String username, boolean useHouses) throws FileNotFoundException {
 		String jsonObjStr = "";
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		JsonObject gldConfigObj = new JsonObject();
@@ -226,7 +228,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				Map<String, JsonArray> measurements = new HashMap<String, JsonArray>();
 				while(feederMeasurementsIter.hasNext()) {
 					JsonObject feederMeasurement = (JsonObject) feederMeasurementsIter.next();
-					parseMeasurement(measurements, feederMeasurement);
+					parseMeasurement(measurements, feederMeasurement, useHouses);
 				}
 				for(Map.Entry<String, JsonArray> entry : measurements.entrySet()) {
 					gldConfigObj.add(entry.getKey(), entry.getValue());
@@ -250,7 +252,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		return jsonObjStr;
 	}
 	
-	void parseMeasurement(Map<String, JsonArray> measurements, JsonObject measurement) throws JsonParseException{
+	void parseMeasurement(Map<String, JsonArray> measurements, JsonObject measurement, boolean useHouses) throws JsonParseException{
 		String objectName;
 		String propertyName;
 		String measurementType;
@@ -358,7 +360,10 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			if(measurementType.equals("VA")) {
 				objectName = conductingEquipmentName;
 				if(phases.equals("1") || phases.equals("2")) {
-					propertyName = "measured_power_" + phases;
+					if(useHouses)
+						propertyName = "indiv_measured_power_" + phases;
+					else
+						propertyName = "measured_power_" + phases;
 				} else {
 					propertyName = "measured_power_" + phases;
 				}
