@@ -55,6 +55,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.dto.ServiceConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
@@ -242,7 +243,25 @@ public class ProcessNewSimulationRequest {
 			}
 
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
+			List<String> connectServiceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
+			
+			if (simRequest.service_configs == null) {
+				logManager.log(new LogMessage(this.getClass().getSimpleName(),
+						simId,
+						new Date().getTime(),
+						"No services found in request  ="+simRequest.getSimulation_config().getSimulator(),
+						LogLevel.WARN, ProcessStatus.RUNNING, true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+			}
+			else{
+				for(ServiceConfig serviceConfig : simRequest.service_configs){
+					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), null, simulationContext);
+					connectServiceInstanceIds.add(serviceInstanceId);
+					connectServiceIds.add(serviceConfig.getId());
+				}
+			}
+			
+			
 
 			if (simRequest.application_config == null) {
 				logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -254,7 +273,6 @@ public class ProcessNewSimulationRequest {
 			else {
 				for (ApplicationObject app : simRequest.application_config
 						.getApplications()) {
-					// TODO: Ask Tara: is simulation id same as request id
 					AppInfo appInfo = appManager.getApp(app.getName());
 					if(appInfo==null) {
 						logManager.log(new LogMessage(this.getClass().getSimpleName(),
@@ -271,17 +289,17 @@ public class ProcessNewSimulationRequest {
 					List<String> prereqsList = appManager.getApp(app.getName())
 							.getPrereqs();
 					for (String prereqs : prereqsList) {
-						//TODO: remove this if condition after hardcoded pre-reqs are removed from sample-app config file.
-						if(prereqs.equals("fncs") || prereqs.equals("fncsgossbridge"))
-							continue;
-						String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
-						connectServiceInstanceIds.add(serviceInstanceId);
-						logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
-								+ prereqs + " with instance id "
-								+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-								username, 
-								GridAppsDConstants.topic_simulationLog
-										+ simulationId);
+
+						if(!connectServiceIds.contains(prereqs)){
+							String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
+							connectServiceInstanceIds.add(serviceInstanceId);
+							logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+									+ prereqs + " with instance id "
+									+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+									username,
+									GridAppsDConstants.topic_simulationLog
+											+ simulationId);
+						}
 					}
 
 					String appInstanceId = appManager.startAppForSimultion(app

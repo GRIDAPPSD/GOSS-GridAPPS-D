@@ -45,6 +45,7 @@ import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 
 import java.io.Serializable;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -63,6 +64,8 @@ public class RequestSimulation implements Serializable {
 	public SimulationConfig simulation_config;
 	
 	public ApplicationConfig application_config;
+	
+	public List<ServiceConfig> service_configs;
 	
 	public TestConfig test_config;
 	
