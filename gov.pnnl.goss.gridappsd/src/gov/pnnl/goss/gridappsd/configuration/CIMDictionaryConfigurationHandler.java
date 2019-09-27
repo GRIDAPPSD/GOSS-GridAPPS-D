@@ -113,7 +113,9 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		boolean useHouses = false;
+                if(parameters.containsKey(USEHOUSES))
+                        useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
