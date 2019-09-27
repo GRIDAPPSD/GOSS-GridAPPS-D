@@ -40,7 +40,12 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -60,6 +65,7 @@ public class ServiceInfo implements Serializable {
 	List<String> output_topics;
 	List<String> static_args;
 	String execution_path;
+	HashMap<String,UserOptions> user_input;
 	ServiceType type;
 	boolean launch_on_startup;
 	List<String> service_dependencies;
@@ -123,6 +129,8 @@ public class ServiceInfo implements Serializable {
 		this.execution_path = execution_path;
 	}
 
+
+
 	public ServiceType getType() {
 		return type;
 	}
@@ -175,6 +183,12 @@ public class ServiceInfo implements Serializable {
 		if(obj.id==null)
 			throw new JsonSyntaxException("Expected attribute service_id not found");
 		return obj;
+	}
+	
+	public static void main(String[] args) throws IOException{
+		
+		File test = new File("test.config");
+		System.out.println(ServiceInfo.parse(new String(Files.readAllBytes(Paths.get(test.getAbsolutePath())))));
 	}
 	
 }

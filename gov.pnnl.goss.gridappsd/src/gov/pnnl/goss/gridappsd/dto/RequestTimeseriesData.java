@@ -54,6 +54,14 @@ public class RequestTimeseriesData implements Serializable {
 		if(obj.queryMeasurement.equals("simulation"))
 			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
 				throw new JsonSyntaxException("Expected filter simulation_id not found.");
+		if(obj.queryFilter.containsKey("startTime")){
+            		String startTime = obj.queryFilter.get("startTime");
+            		obj.queryFilter.put("startTime", startTime+"000");
+        	}	
+        	if(obj.queryFilter.containsKey("endTime")){
+            		String endTime = obj.queryFilter.get("endTime");
+            		obj.queryFilter.put("endTime", endTime+"000");
+        	}
 		return obj;
 	}
 	

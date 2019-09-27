@@ -252,9 +252,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				//Convert to UTC time until the input time is correct
 				////TODO this will be changed in the future
 				//c.add(Calendar.HOUR, 6);
-				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
+				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000000");
 				c.add(Calendar.SECOND, new Long(simulationDuration).intValue());
-				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
+				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000000");
 				weatherRequest.setQueryFilter(queryFilter);
 				DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
 				if(resp.getData()==null){
@@ -289,6 +289,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String dictFile = tempDataPath+File.separator+DICTIONARY_FILENAME;
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
+		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.USEHOUSES, Boolean.toString(useHouses));
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 

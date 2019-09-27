@@ -100,6 +100,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String MODELID = "model_id";
 	public static final String DICTIONARY_FILE = "dictionary_file";
 	public static final String SIMULATIONID = "simulation_id";
+	public static final String USEHOUSES = "use_houses";
 
 	public GLDSimulationOutputConfigurationHandler() {
 	}
@@ -132,6 +133,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		logRunning("Generating simulation output configuration file using parameters: "+parameters, processId, username, logManager);
 		File dictFile = null;
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -180,7 +182,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			StringWriter dictionaryStringOutput = new StringWriter();
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
 			
-			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput);
+			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses);
 			String dictOut = dictionaryStringOutput.toString();
 			measurementFileReader = null;
 			if(dictFile!=null && dictFile.getName().length()>0 && !dictFile.exists()){
@@ -358,7 +360,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			if(measurementType.equals("VA")) {
 				objectName = conductingEquipmentName;
 				if(phases.equals("1") || phases.equals("2")) {
-					propertyName = "measured_power_" + phases;
+					propertyName = "indiv_measured_power_" + phases;
 				} else {
 					propertyName = "measured_power_" + phases;
 				}
