@@ -289,6 +289,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String dictFile = tempDataPath+File.separator+DICTIONARY_FILENAME;
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
+		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.USEHOUSES, Boolean.toString(useHouses));
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 
