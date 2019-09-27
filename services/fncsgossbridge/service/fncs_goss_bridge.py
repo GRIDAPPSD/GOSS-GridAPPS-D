@@ -1087,7 +1087,7 @@ def _create_cim_object_map(map_file=None):
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             if phases in ["1","2"]:
-                                property_name = "measured_power_" + phases;
+                                property_name = "indiv_measured_power_" + phases;
                             else:
                                 property_name = "measured_power_" + phases;
                         elif measurement_type == "PNV":
