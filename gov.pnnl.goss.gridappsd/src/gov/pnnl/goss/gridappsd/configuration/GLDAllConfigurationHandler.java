@@ -117,6 +117,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String CIM2GLM_PREFIX = "model";
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
+	public static final String SCHEDULES_FILENAME = CIM2GLM_PREFIX+"_schedules.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
 	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
@@ -358,6 +359,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		//add an include reference to the base glm
 		String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
+		String schedulesFile = tempDataPath+File.separator+SCHEDULES_FILENAME;
+
 		String brokerLocation = simulationBrokerHost;
 		String brokerPort = String.valueOf(simulationBrokerPort);
 
@@ -455,13 +458,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("#define VSOURCE="+nominalv);
 		startupFileWriter.println("#include \""+baseGLM+"\"");
+		startupFileWriter.println("#include \""+schedulesFile+"\"");
+
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
 		logRunning("Finished generating startup file for GridLAB-D configuration.", processId, username, logManager);
 
 	}
-
-
 
 }
