@@ -5,7 +5,7 @@ ARG TIMESTAMP
 
 # Get the gridappsd-python from the proper repository
 RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b master \
   && cd gridappsd-python \
   && pip3 install . \
   && rm -rf /root/.cache/pip/wheels
