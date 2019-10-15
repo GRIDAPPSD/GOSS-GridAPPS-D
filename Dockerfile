@@ -17,7 +17,7 @@ RUN cd ${TEMP_DIR} \
   && pip3 install -r requirements.txt \
   && mkdir -p /gridappsd/services/gridappsd-sensor-simulator \
   && rm .git -rf \ 
-  && cp * /gridappsd/services/gridappsd-sensor-simulator \
+  && cp -r * /gridappsd/services/gridappsd-sensor-simulator \
   && cp /gridappsd/services/gridappsd-sensor-simulator/sensor_simulator.config /gridappsd/services/ \
   && rm -rf /root/.cache/pip/wheels
 
@@ -27,7 +27,7 @@ RUN cd ${TEMP_DIR} \
   && cd gridappsd-voltage-violation \
   && mkdir -p /gridappsd/services/gridappsd-voltage-violation \
   && rm .git -rf \ 
-  && cp * /gridappsd/services/gridappsd-voltage-violation \
+  && cp -r * /gridappsd/services/gridappsd-voltage-violation \
   && cp /gridappsd/services/gridappsd-voltage-violation/voltage-violation.config /gridappsd/services/ 
 
 
