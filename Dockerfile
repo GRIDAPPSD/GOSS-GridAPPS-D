@@ -12,7 +12,7 @@ RUN cd ${TEMP_DIR} \
 
 # Get the gridappsd-sensor-simulator from the proper repository
 RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b develop  \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b master  \
   && cd gridappsd-sensor-simulator \
   && pip3 install -r requirements.txt \
   && mkdir -p /gridappsd/services/gridappsd-sensor-simulator \
