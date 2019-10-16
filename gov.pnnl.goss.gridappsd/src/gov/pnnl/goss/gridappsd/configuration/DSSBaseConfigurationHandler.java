@@ -42,9 +42,9 @@ package gov.pnnl.goss.gridappsd.configuration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Properties;
 
-import org.apache.commons.io.output.NullWriter;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
@@ -199,15 +199,16 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
-		PrintWriter idFileWriter = new PrintWriter(idFile);
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), idFileWriter, buscoords, guids, loadScale,
+			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), new PrintWriter(new FileWriter(idFile)), buscoords, guids, loadScale,
 					bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 			//config was written to base file, so return that
 			printFileToOutput(configFile, out);
 		} else {
+			PrintWriter idFileWriter = new PrintWriter(new StringWriter());
 			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
+			idFileWriter.close();
 		}
 		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
 
