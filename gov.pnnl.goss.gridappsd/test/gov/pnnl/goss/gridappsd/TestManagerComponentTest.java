@@ -193,7 +193,7 @@ public class TestManagerComponentTest {
 //		ProvenTimeSeriesDataManagerImpl provenTimeSeriesDataManager = new ProvenTimeSeriesDataManagerImpl();
 
 		RequestTimeseriesData request = new RequestTimeseriesData();
-		HashMap<String,String> queryFilter = new HashMap <String,String>();
+		HashMap<String,Object> queryFilter = new HashMap <String,Object>();
 		queryFilter.put("hasSimulationId", "182942650");
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
