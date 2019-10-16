@@ -44,6 +44,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Properties;
 
+import org.apache.commons.io.output.NullWriter;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
@@ -131,10 +132,13 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
+		File idFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 			if(simulationContext!=null){
 				configFile = new File(simulationContext.getSimulationDir()+File.separator+DSSBASE_FILENAME);
+				idFile = new File(simulationContext.getSimulationDir()+File.separator+DSSGUID_FILENAME);
+
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
@@ -195,19 +199,15 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		queryHandler.addFeederSelection(modelId);
 		
 		CIMImporter cimImporter = new CIMImporter(); 
-		//TODO, this should go in the simiulation context directory or be a separate call or return dir or something
-		PrintWriter outID = new PrintWriter("outid");
-		
+		PrintWriter idFileWriter = new PrintWriter(idFile);
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), outID, buscoords, guids, loadScale,
+			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), idFileWriter, buscoords, guids, loadScale,
 					bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
-		} else {
-			cimImporter.generateDSSFile(queryHandler, out, outID, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
-		}
-		if(configFile!=null){
-			//config was written to file, so return that
+			//config was written to base file, so return that
 			printFileToOutput(configFile, out);
+		} else {
+			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 		}
 		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
 
