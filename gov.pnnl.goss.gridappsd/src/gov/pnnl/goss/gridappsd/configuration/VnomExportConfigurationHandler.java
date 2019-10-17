@@ -71,9 +71,9 @@ import org.slf4j.LoggerFactory;
 
 
 @Component
-public class YBusExportConfigurationHandler implements ConfigurationHandler {
+public class VnomExportConfigurationHandler implements ConfigurationHandler {
 
-	private static Logger log = LoggerFactory.getLogger(YBusExportConfigurationHandler.class);
+	private static Logger log = LoggerFactory.getLogger(VnomExportConfigurationHandler.class);
 	
 	@ServiceDependency
 	private volatile ConfigurationManager configManager;
@@ -90,13 +90,13 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 	@ServiceDependency 
 	volatile LogManager logManager;
 	
-	public static final String TYPENAME = "YBus Export";
+	public static final String TYPENAME = "Vnom Export";
 	public static final String SIMULATIONID = "simulation_id";
 	
-	public YBusExportConfigurationHandler() {
+	public VnomExportConfigurationHandler() {
 	}
 	 
-	public YBusExportConfigurationHandler(LogManager logManager) {
+	public VnomExportConfigurationHandler(LogManager logManager) {
 
 	}
 	
@@ -158,7 +158,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
 		if(!dssBaseFile.exists())
-				throw new Exception("Error: Could not create DSS base file to export YBus matrix");
+				throw new Exception("Error: Could not create DSS base file to export Vnom matrix");
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
@@ -182,19 +182,19 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		// regulators should be at tap 0; in case LDC is active, we can not use a no-load solution
 		fileWriter.println("batchedit transformer..* wdg=2 tap=1");
 		fileWriter.println("batchedit regcontrol..* enabled=false");
-		// remove source injections from the Y matrix on solve
-		fileWriter.println("batchedit vsource..* enabled=false");
+		// remove isource injections from the Y matrix
 		fileWriter.println("batchedit isource..* enabled=false");
+		// ensure that the voltage source is set to 1.0 per-unit
+		fileWriter.println("batchedit vsource..* pu=1.0");
 		// remove PC elements from the Y matrix on solve
 		fileWriter.println("batchedit load..* enabled=false");
 		fileWriter.println("batchedit generator..* enabled=false");
 		fileWriter.println("batchedit pvsystem..* enabled=false");
 		fileWriter.println("batchedit storage..* enabled=false");
+		fileWriter.println("batchedit capacitor..* enabled=false");
 		// solve the system in unloaded condition with regulator taps locked
 		fileWriter.println("solve");
-		fileWriter.println("export y triplet base_ysparse.csv");
-		fileWriter.println("export ynodelist base_nodelist.csv");
-		fileWriter.println("export summary base_summary.csv");
+		fileWriter.println("export voltages base_voltages.csv");
 		fileWriter.flush();
 		fileWriter.close();
 		
@@ -227,17 +227,13 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		
 		YBusExportResponse response = new YBusExportResponse();
 		
-		File yparsePath = new File(simulationDir.getAbsolutePath()+File.separator+"base_ysparse.csv");
-		File nodeListPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv");
-		File summaryPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_summary.csv");
+		File vnomPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_voltages.csv");
 		
-		response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
-		response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
-		response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
+		response.setVnom(Files.readAllLines(Paths.get(vnomPath.getPath())));
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
-				"Finished generating Y Bus matrix", 
+				"Finished generating Vnom export", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
