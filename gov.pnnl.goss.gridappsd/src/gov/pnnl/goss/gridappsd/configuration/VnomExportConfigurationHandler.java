@@ -158,7 +158,7 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
 		
 		if(!dssBaseFile.exists())
-				throw new Exception("Error: Could not create DSS base file to export YBus matrix");
+				throw new Exception("Error: Could not create DSS base file to export Vnom matrix");
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
@@ -233,7 +233,7 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 
-				"Finished generating Y Bus matrix", 
+				"Finished generating Vnom export", 
 				LogLevel.DEBUG, 
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
