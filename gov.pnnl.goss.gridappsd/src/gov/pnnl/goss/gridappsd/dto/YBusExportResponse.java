@@ -9,32 +9,41 @@ public class YBusExportResponse implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	List<String> yParseFilePath;
-	List<String> nodeListFilePath;
-	List<String> summaryFilePath;
-	
-	public List<String> getyParseFilePath() {
-		return yParseFilePath;
+	List<String> yParse;
+	List<String> nodeList;
+	List<String> summary;
+	List<String> vnom;
+
+	public List<String> getyParse() {
+		return yParse;
 	}
 
-	public void setyParseFilePath(List<String> yParseFilePath) {
-		this.yParseFilePath = yParseFilePath;
+	public void setyParse(List<String> yParse) {
+		this.yParse = yParse;
 	}
 
-	public List<String> getNodeListFilePath() {
-		return nodeListFilePath;
+	public List<String> getNodeList() {
+		return nodeList;
 	}
 
-	public void setNodeListFilePath(List<String> nodeListFilePath) {
-		this.nodeListFilePath = nodeListFilePath;
+	public void setNodeList(List<String> nodeList) {
+		this.nodeList = nodeList;
 	}
 
-	public List<String> getSummaryFilePath() {
-		return summaryFilePath;
+	public List<String> getSummary() {
+		return summary;
 	}
 
-	public void setSummaryFilePath(List<String> summaryFilePath) {
-		this.summaryFilePath = summaryFilePath;
+	public void setSummary(List<String> summary) {
+		this.summary = summary;
+	}
+
+	public List<String> getVnom() {
+		return vnom;
+	}
+
+	public void setVnom(List<String> vnom) {
+		this.vnom = vnom;
 	}
 
 	@Override
