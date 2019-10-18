@@ -13,7 +13,7 @@ public class RequestTimeseriesData implements Serializable {
 	private static final long serialVersionUID = -820277813503252519L;
 	
 	String queryMeasurement;
-	Map<String,String> queryFilter;
+	Map<String,Object> queryFilter;
 	//ResultFormat responseFormat = ResultFormat.JSON;
 	String responseFormat ="JSON";
 	private String queryType = "time-series";
@@ -26,11 +26,11 @@ public class RequestTimeseriesData implements Serializable {
 		this.queryMeasurement = queryMeasurement;
 	}
 
-	public Map<String, String> getQueryFilter() {
+	public Map<String, Object> getQueryFilter() {
 		return queryFilter;
 	}
 
-	public void setQueryFilter(Map<String, String> queryFilter) {
+	public void setQueryFilter(Map<String, Object> queryFilter) {
 		this.queryFilter = queryFilter;
 	}
 

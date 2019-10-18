@@ -243,7 +243,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
 				weatherRequest.setQueryMeasurement("weather");
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
-				Map<String, String> queryFilter = new HashMap<String, String>();
+				Map<String, Object> queryFilter = new HashMap<String, Object>();
 
 				Calendar c = Calendar.getInstance();
 				//For both the start and end time, set the year to the one that currently has data in the database
