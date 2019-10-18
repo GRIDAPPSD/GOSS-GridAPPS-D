@@ -152,27 +152,18 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		boolean bWantZip = false;
+		boolean bWantZip = true;
 		boolean bWantSched = false;
 
 		logRunning("Generating all GridLAB-D configuration files using parameters: "+parameters, processId, username, logManager);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
-		if(zFraction==0) {
-			zFraction = 0;
-			bWantZip = true;
-		}
 		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
-		if(iFraction==0){
-			iFraction = 1;
-			bWantZip = true;
-		}
 		double pFraction = GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0);
-		if(pFraction==0){
-			pFraction = 0;
-			bWantZip = true;
-		}
-
+		
+		if(zFraction == 0 && iFraction == 0 && pFraction == 0)
+			bWantZip = false;
+		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
 
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
