@@ -117,6 +117,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String CIM2GLM_PREFIX = "model";
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
+	public static final String SCHEDULES_FILENAME = CIM2GLM_PREFIX+"_schedules.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
 	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
@@ -252,9 +253,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				//Convert to UTC time until the input time is correct
 				////TODO this will be changed in the future
 				//c.add(Calendar.HOUR, 6);
-				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000");
+				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000000");
 				c.add(Calendar.SECOND, new Long(simulationDuration).intValue());
-				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000");
+				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000000");
 				weatherRequest.setQueryFilter(queryFilter);
 				DataResponse resp = (DataResponse)dataManager.processDataRequest(weatherRequest, ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
 				if(resp.getData()==null){
@@ -289,6 +290,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String dictFile = tempDataPath+File.separator+DICTIONARY_FILENAME;
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
+		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.USEHOUSES, Boolean.toString(useHouses));
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 
@@ -357,6 +359,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		//add an include reference to the base glm
 		String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
+		String schedulesFile = tempDataPath+File.separator+SCHEDULES_FILENAME;
+
 		String brokerLocation = simulationBrokerHost;
 		String brokerPort = String.valueOf(simulationBrokerPort);
 
@@ -454,13 +458,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("#define VSOURCE="+nominalv);
 		startupFileWriter.println("#include \""+baseGLM+"\"");
+		startupFileWriter.println("#include \""+schedulesFile+"\"");
+
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
 		logRunning("Finished generating startup file for GridLAB-D configuration.", processId, username, logManager);
 
 	}
-
-
 
 }
