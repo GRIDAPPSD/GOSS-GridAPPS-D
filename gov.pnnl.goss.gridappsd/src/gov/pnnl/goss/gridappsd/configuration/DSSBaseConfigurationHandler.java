@@ -187,11 +187,13 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		String buscoords = GridAppsDConstants.getStringProperty(parameters, BUSCOORDS, null);
 		if(buscoords==null || buscoords.trim().length()==0){
-			//TODO need to figure out the correct default
+			//TODO need to figure out the correct default, maybe this?
+			buscoords = DSSBUSXY_FILENAME;
 		}
 		String guids = GridAppsDConstants.getStringProperty(parameters, GUIDS, null);
 		if(guids==null || guids.trim().length()==0){
-			//TODO need to figure out the correct default
+			//TODO need to figure out the correct default, maybe this?
+			guids = DSSGUID_FILENAME;
 		}
 		
 		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
