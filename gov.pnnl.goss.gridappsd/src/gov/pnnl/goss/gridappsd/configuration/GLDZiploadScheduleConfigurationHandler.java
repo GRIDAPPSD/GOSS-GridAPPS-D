@@ -178,7 +178,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		RequestTimeseriesData request = new RequestTimeseriesData();
 		request.setQueryMeasurement("loadprofile");
 		request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
-		Map<String, String> queryFilter = new HashMap<String, String>();
+		Map<String, Object> queryFilter = new HashMap<String, Object>();
 
 		Calendar c = Calendar.getInstance();
 		// For both the start and end time, set the year to the one that
