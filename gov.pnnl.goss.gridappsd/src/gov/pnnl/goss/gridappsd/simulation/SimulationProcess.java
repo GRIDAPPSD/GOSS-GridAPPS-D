@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -86,10 +87,15 @@ public class SimulationProcess extends Thread {
 
             if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
                 File serviceDir = serviceManager.getServiceConfigDirectory();
-                try{
+                /*try{
                     RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
                 }catch(Exception e){
                     log.warn("Could not copy player file to working directory");
+                }*/
+                try{
+                    RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"appliance_schedules.glm "+simulationFile.getParentFile().getAbsolutePath()+File.separator+GLDAllConfigurationHandler.SCHEDULES_FILENAME);
+                }catch(Exception e){
+                    log.warn("Could not copy schedules file to working directory");
                 }
             }
 

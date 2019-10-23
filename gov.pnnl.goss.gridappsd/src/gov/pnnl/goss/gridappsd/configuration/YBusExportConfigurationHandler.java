@@ -231,9 +231,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 		File nodeListPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_nodelist.csv");
 		File summaryPath = new File(simulationDir.getAbsolutePath()+File.separator+"base_summary.csv");
 		
-		response.setyParseFilePath(Files.readAllLines(Paths.get(yparsePath.getPath())));
-		response.setNodeListFilePath(Files.readAllLines(Paths.get(nodeListPath.getPath())));
-		response.setSummaryFilePath(Files.readAllLines(Paths.get(summaryPath.getPath())));
+		response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
+		response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
+		response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
 		
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
 				simulationId, new Date().getTime(), 

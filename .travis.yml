@@ -1,6 +1,8 @@
 # make use of vm's
 sudo: 'required'
 
+dist: trusty
+
 language: java
 
 jdk:

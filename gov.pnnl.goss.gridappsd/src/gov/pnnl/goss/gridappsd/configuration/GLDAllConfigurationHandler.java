@@ -117,6 +117,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String CIM2GLM_PREFIX = "model";
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
 	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
+	public static final String SCHEDULES_FILENAME = CIM2GLM_PREFIX+"_schedules.glm";
 	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
 	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
 	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
@@ -151,27 +152,18 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		boolean bWantZip = false;
+		boolean bWantZip = true;
 		boolean bWantSched = false;
 
 		logRunning("Generating all GridLAB-D configuration files using parameters: "+parameters, processId, username, logManager);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
-		if(zFraction==0) {
-			zFraction = 0;
-			bWantZip = true;
-		}
 		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
-		if(iFraction==0){
-			iFraction = 1;
-			bWantZip = true;
-		}
 		double pFraction = GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0);
-		if(pFraction==0){
-			pFraction = 0;
-			bWantZip = true;
-		}
-
+		
+		if(zFraction == 0 && iFraction == 0 && pFraction == 0)
+			bWantZip = false;
+		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
 
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
@@ -242,7 +234,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
 				weatherRequest.setQueryMeasurement("weather");
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
-				Map<String, String> queryFilter = new HashMap<String, String>();
+				Map<String, Object> queryFilter = new HashMap<String, Object>();
 
 				Calendar c = Calendar.getInstance();
 				//For both the start and end time, set the year to the one that currently has data in the database
@@ -277,7 +269,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logRunning(e.getMessage(),
 					processId, username, logManager, LogLevel.WARN);
 		}
-
+		
+		//Generate zip load profile player file
+		GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
+		ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
 		PrintWriter startupFileWriter = new PrintWriter(startupFile);
@@ -358,6 +354,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		//add an include reference to the base glm
 		String baseGLM = tempDataPath+File.separator+BASE_FILENAME;
+		String schedulesFile = tempDataPath+File.separator+SCHEDULES_FILENAME;
+
 		String brokerLocation = simulationBrokerHost;
 		String brokerPort = String.valueOf(simulationBrokerPort);
 
@@ -455,13 +453,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("#define VSOURCE="+nominalv);
 		startupFileWriter.println("#include \""+baseGLM+"\"");
+		startupFileWriter.println("#include \""+schedulesFile+"\"");
+
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
 		logRunning("Finished generating startup file for GridLAB-D configuration.", processId, username, logManager);
 
 	}
-
-
 
 }

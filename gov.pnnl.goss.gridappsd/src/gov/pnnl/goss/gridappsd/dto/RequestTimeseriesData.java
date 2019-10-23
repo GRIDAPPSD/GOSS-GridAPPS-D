@@ -13,7 +13,7 @@ public class RequestTimeseriesData implements Serializable {
 	private static final long serialVersionUID = -820277813503252519L;
 	
 	String queryMeasurement;
-	Map<String,String> queryFilter;
+	Map<String,Object> queryFilter;
 	//ResultFormat responseFormat = ResultFormat.JSON;
 	String responseFormat ="JSON";
 	private String queryType = "time-series";
@@ -26,11 +26,11 @@ public class RequestTimeseriesData implements Serializable {
 		this.queryMeasurement = queryMeasurement;
 	}
 
-	public Map<String, String> getQueryFilter() {
+	public Map<String, Object> getQueryFilter() {
 		return queryFilter;
 	}
 
-	public void setQueryFilter(Map<String, String> queryFilter) {
+	public void setQueryFilter(Map<String, Object> queryFilter) {
 		this.queryFilter = queryFilter;
 	}
 
@@ -54,14 +54,6 @@ public class RequestTimeseriesData implements Serializable {
 		if(obj.queryMeasurement.equals("simulation"))
 			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
 				throw new JsonSyntaxException("Expected filter simulation_id not found.");
-		if(obj.queryFilter.containsKey("startTime")){
-            		String startTime = obj.queryFilter.get("startTime");
-            		obj.queryFilter.put("startTime", startTime+"000");
-        	}	
-        	if(obj.queryFilter.containsKey("endTime")){
-            		String endTime = obj.queryFilter.get("endTime");
-            		obj.queryFilter.put("endTime", endTime+"000");
-        	}
 		return obj;
 	}
 	
