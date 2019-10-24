@@ -452,9 +452,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			startupFileWriter.println("}");
 		}
 		startupFileWriter.println("#define VSOURCE="+nominalv);
-		startupFileWriter.println("#include \""+baseGLM+"\"");
 		startupFileWriter.println("#include \""+schedulesFile+"\"");
-
+		startupFileWriter.println("#include \""+baseGLM+"\"");
+		
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
