@@ -17,7 +17,7 @@ RUN cd ${TEMP_DIR} \
   && pip3 install -r requirements.txt \
   && mkdir -p /gridappsd/services/gridappsd-sensor-simulator \
   && rm .git -rf \ 
-  && cp * /gridappsd/services/gridappsd-sensor-simulator \
+  && cp -r * /gridappsd/services/gridappsd-sensor-simulator \
   && cp /gridappsd/services/gridappsd-sensor-simulator/sensor_simulator.config /gridappsd/services/ \
   && rm -rf /root/.cache/pip/wheels
 
@@ -27,7 +27,7 @@ RUN cd ${TEMP_DIR} \
   && cd gridappsd-voltage-violation \
   && mkdir -p /gridappsd/services/gridappsd-voltage-violation \
   && rm .git -rf \ 
-  && cp * /gridappsd/services/gridappsd-voltage-violation \
+  && cp -r * /gridappsd/services/gridappsd-voltage-violation \
   && cp /gridappsd/services/gridappsd-voltage-violation/voltage-violation.config /gridappsd/services/ 
 
 # Get the gridappsd-dnp3 from the proper repository
@@ -38,6 +38,15 @@ RUN cd ${TEMP_DIR} \
   && rm .git -rf \ 
   && cp -r dnp3/* /gridappsd/services/dnp3 \
   && cp /gridappsd/services/dnp3/dnp3.config /gridappsd/services/ 
+
+# Get the gridappsd-alarms from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-alarms -b develop \
+  && cd gridappsd-alarms \
+  && mkdir -p /gridappsd/services/gridappsd-alarms \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/services/gridappsd-alarms \
+  && cp /gridappsd/services/gridappsd-alarms/gridappsd-alarms.config /gridappsd/services/ 
 
 # Copy initial applications and services into the container.
 # 
