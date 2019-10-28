@@ -43,6 +43,7 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.RoleManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
@@ -55,6 +56,7 @@ import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation.SimulationRequestType;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulationResponse;
+import gov.pnnl.goss.gridappsd.dto.RoleList;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
@@ -62,6 +64,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.List;
 
 import javax.jms.Destination;
 
@@ -99,13 +102,14 @@ public class ProcessEvent implements GossResponseEvent {
 	ServiceManager serviceManager;
 	DataManager dataManager;
 	TestManager testManager;
+	RoleManager roleManager;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
 			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
-			DataManager dataManager, TestManager testManager){
+			DataManager dataManager, TestManager testManager, RoleManager roleManager){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -116,6 +120,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
 		this.testManager = testManager;
+		this.roleManager = roleManager;
 	}
 
 
@@ -271,6 +276,12 @@ public class ProcessEvent implements GossResponseEvent {
 				if(request.isServiceInstances())
 					platformStatus.setServiceInstances(serviceManager.listRunningServices());
 				client.publish(event.getReplyDestination(), platformStatus);
+				
+			} else if (event.getDestination().contains(GridAppsDConstants.topic_requestMyRoles)){
+				List<String> roles = roleManager.getRoles(username);
+				RoleList roleListResult = new RoleList();
+				roleListResult.setRoles(roles);
+				sendData(client, event.getReplyDestination(), roleListResult.toString(), processId, username);
 			}
 		}catch(Exception e ){
 			StringWriter sw = new StringWriter();
