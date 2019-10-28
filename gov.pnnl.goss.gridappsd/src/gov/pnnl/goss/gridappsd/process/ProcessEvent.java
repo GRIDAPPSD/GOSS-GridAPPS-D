@@ -249,7 +249,8 @@ public class ProcessEvent implements GossResponseEvent {
 					}
 					String result = sw.toString();
 					
-					if(configRequest.getConfigurationType().equals("YBus Export")){
+					if(configRequest.getConfigurationType().equals("YBus Export") ||
+					  	configRequest.getConfigurationType().equals("Vnom Export")){
 						Gson gson = new Gson();
 						YBusExportResponse response = gson.fromJson(result, YBusExportResponse.class);
 						sendData(client, event.getReplyDestination(), response, processId, username);

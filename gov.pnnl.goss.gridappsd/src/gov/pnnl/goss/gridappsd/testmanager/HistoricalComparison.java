@@ -58,7 +58,7 @@ public class HistoricalComparison {
 	public String timeSeriesQuery(String simulationId, String hasMrid,
 			String startTime, String endTime) {
 
-		HashMap<String, String> queryFilter = new HashMap<String, String>();
+		HashMap<String, Object> queryFilter = new HashMap<String, Object>();
 		queryFilter.put("hasSimulationId", simulationId);
 		queryFilter.put("startTime", startTime);
 		queryFilter.put("endTime", endTime);

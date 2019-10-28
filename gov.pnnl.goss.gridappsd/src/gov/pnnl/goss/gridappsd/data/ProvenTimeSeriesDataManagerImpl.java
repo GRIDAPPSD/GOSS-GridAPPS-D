@@ -133,7 +133,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		String responseFormat = requestTimeseriesData.getResponseFormat();
 		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
 		if(converter!=null){
-			StringWriter sw = new StringWriter();
+			StringWriter sw = new StringWriter();			
 			converter.convert(response.data.toString(), new PrintWriter(sw));
 			return sw.toString();
 		}
@@ -207,7 +207,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	
 	@Override
 	public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
+		//TODO: Remove this once alarms are stored in Proven
+		if(!serviceId.equals("gridappsd-alarms"))
+		    subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
 	}
 	
 	@Override

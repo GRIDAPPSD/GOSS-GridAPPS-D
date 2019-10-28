@@ -361,9 +361,6 @@ public class ProcessNewSimulationRequest {
 		ModelCreationConfig modelConfig = requestSimulation.getSimulation_config().model_creation_config;
 		double zFraction = modelConfig.z_fraction;
 		double iFraction = modelConfig.i_fraction;
-		if(iFraction==0){
-			iFraction = 1;
-		}
 		double pFraction = modelConfig.p_fraction;
 
 

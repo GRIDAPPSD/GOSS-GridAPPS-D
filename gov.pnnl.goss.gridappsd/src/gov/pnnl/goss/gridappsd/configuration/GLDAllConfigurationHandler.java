@@ -152,27 +152,18 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		boolean bWantZip = false;
+		boolean bWantZip = true;
 		boolean bWantSched = false;
 
 		logRunning("Generating all GridLAB-D configuration files using parameters: "+parameters, processId, username, logManager);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
-		if(zFraction==0) {
-			zFraction = 0;
-			bWantZip = true;
-		}
 		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
-		if(iFraction==0){
-			iFraction = 1;
-			bWantZip = true;
-		}
 		double pFraction = GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0);
-		if(pFraction==0){
-			pFraction = 0;
-			bWantZip = true;
-		}
-
+		
+		if(zFraction == 0 && iFraction == 0 && pFraction == 0)
+			bWantZip = false;
+		
 		boolean bWantRandomFractions = GridAppsDConstants.getBooleanProperty(parameters, RANDOMIZEFRACTIONS, false);
 
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
@@ -243,7 +234,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				RequestTimeseriesData weatherRequest = new RequestTimeseriesData();
 				weatherRequest.setQueryMeasurement("weather");
 				weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
-				Map<String, String> queryFilter = new HashMap<String, String>();
+				Map<String, Object> queryFilter = new HashMap<String, Object>();
 
 				Calendar c = Calendar.getInstance();
 				//For both the start and end time, set the year to the one that currently has data in the database
@@ -278,7 +269,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logRunning(e.getMessage(),
 					processId, username, logManager, LogLevel.WARN);
 		}
-
+		
+		//Generate zip load profile player file
+		GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
+		ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
 		PrintWriter startupFileWriter = new PrintWriter(startupFile);
@@ -457,9 +452,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			startupFileWriter.println("}");
 		}
 		startupFileWriter.println("#define VSOURCE="+nominalv);
-		startupFileWriter.println("#include \""+baseGLM+"\"");
 		startupFileWriter.println("#include \""+schedulesFile+"\"");
-
+		startupFileWriter.println("#include \""+baseGLM+"\"");
+		
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
