@@ -66,6 +66,7 @@ import org.apache.felix.dm.annotation.api.Start;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.security.SecurityConfig;
 
 @Component
 public class GLDZiploadScheduleConfigurationHandler extends
@@ -79,6 +80,8 @@ public class GLDZiploadScheduleConfigurationHandler extends
 	volatile LogManager logManager;
 	@ServiceDependency
 	volatile DataManager dataManager;
+	@ServiceDependency
+	volatile SecurityConfig securityConfig;
 
 	public static final String TYPENAME = "GridLAB-D Zipload Schedule";
 	public static final String DIRECTORY = "directory";
@@ -117,6 +120,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 					LogLevel.WARN, 
 					ProcessStatus.ERROR, 
 					true), 
+					securityConfig.getManagerUser(),
 					GridAppsDConstants.topic_platformLog);
 		}
 	}
