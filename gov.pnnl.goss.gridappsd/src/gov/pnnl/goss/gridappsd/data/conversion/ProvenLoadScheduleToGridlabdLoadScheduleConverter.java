@@ -5,6 +5,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesKeyValuePair;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
@@ -53,19 +54,11 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
 	private volatile DataManager dataManager;
 	@ServiceDependency 
 	private volatile LogManager logManager;
-	int simulationYear;
-	
-	
-	/*static{
-	    sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
-		sdfOut.setTimeZone(TimeZone.getTimeZone("UTC"));
-	}*/
 	
 	public ProvenLoadScheduleToGridlabdLoadScheduleConverter(){}
-	public ProvenLoadScheduleToGridlabdLoadScheduleConverter(LogManager logManager, DataManager dataManager, int simulationYear) {
+	public ProvenLoadScheduleToGridlabdLoadScheduleConverter(LogManager logManager, DataManager dataManager) {
 		this.logManager = logManager;
 		this.dataManager = dataManager;
-		this.simulationYear = simulationYear;
 	}
 	
 	@Start
@@ -74,9 +67,7 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
 			dataManager.registerConverter(INPUT_FORMAT, OUTPUT_FORMAT, this);
 		}
 		else { 
-			//TODO send log message and exception
 			if(logManager!=null){
-				//log.warn("No Data manager available for "+getClass());
 				logManager.log(
 						new LogMessage(this.getClass().getName(), new Integer(
 								0).toString(), new Date().getTime(),
@@ -89,16 +80,16 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
 	
 	
 	@Override
-	public void convert(String inputContent, PrintWriter outputContent) throws Exception {
+	public void convert(String inputContent, PrintWriter outputContent, RequestTimeseriesData request) throws Exception {
 		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(inputContent);
 		boolean isFirstRecord = true;
 		Calendar c = Calendar.getInstance();
-		
+		int year = request.getSimulationYear();
 		for(HashMap<String,Object> map : resultObj.getData()){
 			if(isFirstRecord){
 				long longTime = new Double(map.get("time").toString()).longValue(); 
 				c.setTime(new Date(longTime*1000));
-				c.set(Calendar.YEAR, 2019);
+				c.set(Calendar.YEAR, year);
 				outputContent.print(sdfOut.format(c.getTime()));
 				outputContent.print(" UTC,");
 				outputContent.println(map.get("value"));
@@ -112,18 +103,19 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
 	}
 
 	@Override
-	public void convert(InputStream inputContent, PrintWriter outputContent)  throws Exception {
+	public void convert(InputStream inputContent, PrintWriter outputContent, RequestTimeseriesData request)  throws Exception {
 		String strContent = IOUtils.toString(inputContent);
 		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
 		boolean isFirstRecord = true;
 		Calendar c = Calendar.getInstance();
-		
+		int year = request.getSimulationYear();
 		for(HashMap<String,Object> map : resultObj.getData()){
 			if(isFirstRecord){
 				long longTime = new Double(map.get("time").toString()).longValue(); 
 				c.setTime(new Date(longTime*1000));
-				c.set(Calendar.YEAR, 2013);
-				outputContent.print(sdfOut.format(c.getTime())+",");
+				c.set(Calendar.YEAR, year);
+				outputContent.print(sdfOut.format(c.getTime()));
+				outputContent.print(" UTC,");
 				outputContent.println(map.get("value"));
 				isFirstRecord = false;
 			}

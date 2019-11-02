@@ -5,6 +5,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesKeyValuePair;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
@@ -86,7 +87,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	
 	
 	@Override
-	public void convert(String inputContent, PrintWriter outputContent) throws Exception {
+	public void convert(String inputContent, PrintWriter outputContent, RequestTimeseriesData request) throws Exception {
 		boolean headerPrinted = false;
 		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(inputContent);
 		//for(TimeSeriesKeyValuePair record: resultObj.getEntryMap()){
@@ -99,7 +100,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	}
 
 	@Override
-	public void convert(InputStream inputContent, PrintWriter outputContent)  throws Exception {
+	public void convert(InputStream inputContent, PrintWriter outputContent, RequestTimeseriesData request)  throws Exception {
 		boolean headerPrinted = false;
 		
 		String strContent = IOUtils.toString(inputContent);
@@ -246,7 +247,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 					+ "\"value\":\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.86Z\"},{\"key\":\"place\","
 					+ "\"value\":\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\"}]}}]}]}";
 			
-			new ProvenWeatherToGridlabdWeatherConverter().convert(provenInput, new PrintWriter(System.out));
+			new ProvenWeatherToGridlabdWeatherConverter().convert(provenInput, new PrintWriter(System.out), null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
