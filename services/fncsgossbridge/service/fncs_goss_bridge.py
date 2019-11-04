@@ -240,8 +240,8 @@ class GOSSListener(object):
                 while not self.goss_to_fncs_message_queue.empty():
                     _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message_str = 'done with timestep '+str(current_time)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #message_str = 'done with timestep '+str(current_time)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message_str = 'incrementing to '+str(current_time + 1)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 if run_realtime == True:
@@ -704,8 +704,8 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + 'simulation_id = {0}'.format(simulation_id))
-        message_str = 'about to get fncs events'
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'about to get fncs events'
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -840,18 +840,18 @@ def _done_with_time_step(current_time):
         ValueError()
     """
     try:
-        message_str = 'Done with timestep '+str(current_time)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'Done with timestep '+str(current_time)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         if current_time == None or type(current_time) != int:
             raise ValueError(
                 'current_time must be an integer.\n'
                 + 'current_time = {0}'.format(current_time))
         time_request = current_time + 1
-        message_str = 'calling time_request '+str(time_request)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'calling time_request '+str(time_request)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         time_approved = fncs.time_request(time_request)
-        message_str = 'time approved '+str(time_approved)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'time approved '+str(time_approved)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         if time_approved != time_request:
             raise RuntimeError(
                 'The time approved from fncs_broker is not the time requested.\n'

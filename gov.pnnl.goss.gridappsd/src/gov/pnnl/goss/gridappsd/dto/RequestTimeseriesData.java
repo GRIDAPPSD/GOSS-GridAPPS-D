@@ -17,6 +17,7 @@ public class RequestTimeseriesData implements Serializable {
 	//ResultFormat responseFormat = ResultFormat.JSON;
 	String responseFormat ="JSON";
 	private String queryType = "time-series";
+	int simulationYear;
 	
 	public String getQueryMeasurement() {
 		return queryMeasurement;
@@ -40,6 +41,14 @@ public class RequestTimeseriesData implements Serializable {
 
 	public void setResponseFormat(String responseFormat) {
 		this.responseFormat = responseFormat;
+	}
+	
+	public int getSimulationYear() {
+		return simulationYear;
+	}
+
+	public void setSimulationYear(int simulationYear) {
+		this.simulationYear = simulationYear;
 	}
 
 	@Override

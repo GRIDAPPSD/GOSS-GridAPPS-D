@@ -157,16 +157,12 @@ public class GLDZiploadScheduleConfigurationHandler extends
 					processId, username, logManager);
 			throw new Exception("Missing parameter " + SIMULATIONDURATION);
 		}
-		long simulationEndTime = simulationStartTime
-				+ (1000 * simulationDuration);
-
 		File dir = new File(directory);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 		String tempDataPath = dir.getAbsolutePath();
-		String fRoot = dir.getAbsolutePath() + File.separator + CIM2GLM_PREFIX;
-
+		
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		int simId = -1;
 		if(simulationID==null || simulationID.trim().length()==0){
@@ -185,19 +181,14 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		Map<String, Object> queryFilter = new HashMap<String, Object>();
 
 		Calendar c = Calendar.getInstance();
-		// For both the start and end time, set the year to the one that
-		// currently has data in the database
-		// TODO either we need more weather data in the database, or make this
-		// more flexible where we only have to search by month/day
 		c.setTime(new Date(simulationStartTime*1000));
+		int simulationYear = c.get(Calendar.YEAR);
 		c.set(Calendar.YEAR, TIMEFILTER_YEAR);
-		// Convert to UTC time until the input time is correct
-		// //TODO this will be changed in the future
-		// c.add(Calendar.HOUR, 6);
 		queryFilter.put(STARTTIME_FILTER, "" + c.getTimeInMillis());
 		c.add(Calendar.SECOND, new Long(simulationDuration).intValue());
 		queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis());
 		request.setQueryFilter(queryFilter);
+		request.setSimulationYear(simulationYear);
 		DataResponse resp = (DataResponse) dataManager.processDataRequest(
 				request,
 				ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId,
