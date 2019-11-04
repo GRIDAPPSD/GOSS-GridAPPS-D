@@ -208,11 +208,13 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		
+		boolean bHaveEventGen = true;
+		
 		//TODO add climate
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen);
 		
 		logRunning("Finished generating all DSS configuration files.", processId, username, logManager);
 		

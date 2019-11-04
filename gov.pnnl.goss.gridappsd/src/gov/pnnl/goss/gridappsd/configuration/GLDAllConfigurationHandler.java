@@ -222,10 +222,12 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		//TODO
 		boolean useClimate = true;//GridAppsDConstants.getBooleanProperty(parameters, USECLIMATE, false);
+		
+		boolean bHaveEventGen = true;
 
 		//CIM2GLM utility uses
 		CIMImporter cimImporter = new CIMImporter();
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
@@ -387,6 +389,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.println("module connection;");
 		startupFileWriter.println("module generators;");
 		startupFileWriter.println("module tape;");
+		startupFileWriter.println("module reliability {");
+	    startupFileWriter.println("    report_event_log false;");
+	    startupFileWriter.println("};");
 		startupFileWriter.println("module powerflow {");
 		startupFileWriter.println("     line_capacitance TRUE;");
 		startupFileWriter.println("     solver_method "+solverMethod+";");
