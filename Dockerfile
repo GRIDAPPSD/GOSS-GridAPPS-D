@@ -34,10 +34,10 @@ RUN cd ${TEMP_DIR} \
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-dnp3 -b develop \
   && cd gridappsd-dnp3 \
-  && mkdir -p /gridappsd/services/dnp3 \
+  && mkdir -p /gridappsd/services/gridappsd-dnp3 \
   && rm .git -rf \ 
-  && cp -r dnp3/* /gridappsd/services/dnp3 \
-  && cp /gridappsd/services/dnp3/dnp3.config /gridappsd/services/ 
+  && cp -r dnp3/* /gridappsd/services/gridappsd-dnp3 \
+  && cp /gridappsd/services/gridappsd-dnp3/dnp3.config /gridappsd/services/ 
 
 # Get the gridappsd-alarms from the proper repository
 RUN cd ${TEMP_DIR} \
