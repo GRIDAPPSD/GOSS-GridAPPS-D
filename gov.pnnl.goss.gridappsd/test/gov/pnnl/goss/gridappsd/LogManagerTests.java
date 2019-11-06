@@ -90,7 +90,7 @@ public class LogManagerTests {
 		message.setStoreToDb(true);
 		message.setTimestamp(GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("11/11/11 11:11:11").getTime());
 		
-		logManager.log(message,GridAppsDConstants.username,GridAppsDConstants.topic_platformLog);
+		logManager.log(message,TestConstants.SYSTEM_USER_NAME,GridAppsDConstants.topic_platformLog);
 		
 		
 		
@@ -124,7 +124,7 @@ public class LogManagerTests {
 				+ "\"logMessage\":\"Testing LogManager\","
 				+ "\"timestamp\": "+GridAppsDConstants.SDF_SIMULATION_REQUEST.parse("8/14/17 2:22:22").getTime()+"}";
 		
-		logManager.log(LogMessage.parse(message), GridAppsDConstants.username,GridAppsDConstants.topic_testLog);
+		logManager.log(LogMessage.parse(message), TestConstants.SYSTEM_USER_NAME,GridAppsDConstants.topic_testLog);
 		
 		Mockito.verify(logDataManager).store(argCaptor.capture(),argCaptor.capture(),  
 				argLongCaptor.capture(), argCaptor.capture(),

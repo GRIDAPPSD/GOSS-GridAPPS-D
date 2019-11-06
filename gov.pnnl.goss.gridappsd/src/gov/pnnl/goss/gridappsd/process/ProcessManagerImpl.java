@@ -55,6 +55,7 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
+import gov.pnnl.goss.gridappsd.api.RoleManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
@@ -65,6 +66,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.security.SecurityConfig;
 
 
 
@@ -94,12 +96,18 @@ public class ProcessManagerImpl implements ProcessManager {
 
 	@ServiceDependency
 	private volatile ServiceManager serviceManager;
+	
+	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
 
 	@ServiceDependency
 	private volatile DataManager dataManager;
 
 	@ServiceDependency
 	private volatile TestManager testManager;
+	
+	@ServiceDependency
+	private volatile RoleManager roleManager;
 
 	ProcessNewSimulationRequest newSimulationProcess = null;
 
@@ -132,9 +140,13 @@ public class ProcessManagerImpl implements ProcessManager {
 		LogMessage logMessageObj = new LogMessage();
 
 		try{
+			 
+			
+				Credentials credentials = new UsernamePasswordCredentials(
+						securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 
-			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+//			Credentials credentials = new UsernamePasswordCredentials(
+//					GridAppsDConstants.username, GridAppsDConstants.password);
 			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
 
 			logMessageObj.setLogLevel(LogLevel.DEBUG);
@@ -156,14 +168,14 @@ public class ProcessManagerImpl implements ProcessManager {
 
 
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this,
-					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager));
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, roleManager));
 		}
 		catch(Exception e){
 			e.printStackTrace();
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogLevel(LogLevel.ERROR);
 			logMessageObj.setLogMessage(e.getMessage());
-			logManager.log(logMessageObj, GridAppsDConstants.username);
+			logManager.log(logMessageObj, securityConfig.getManagerUser(), GridAppsDConstants.topic_platformLog);
 		}
 
 	}

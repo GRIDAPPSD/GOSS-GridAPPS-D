@@ -12,6 +12,7 @@ import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesRowResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.security.SecurityConfig;
 
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -26,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
+
 
 @Component
 public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConverter {
@@ -54,6 +56,8 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 	private volatile DataManager dataManager;
 	@ServiceDependency 
 	private volatile LogManager logManager;
+	@ServiceDependency 
+	private volatile SecurityConfig securityConfig;
 	
 	/*static{
 	    sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -79,7 +83,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 						new LogMessage(this.getClass().getName(), new Integer(
 								0).toString(), new Date().getTime(),
 								"No Data manager available for "+getClass(), LogLevel.WARN,
-								ProcessStatus.RUNNING, false), "system",
+								ProcessStatus.RUNNING, false), securityConfig.getManagerUser(),
 						GridAppsDConstants.topic_platformLog);
 			}
 		}

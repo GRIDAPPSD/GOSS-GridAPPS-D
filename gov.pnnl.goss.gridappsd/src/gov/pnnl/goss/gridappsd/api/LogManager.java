@@ -66,7 +66,7 @@ public interface LogManager {
 	 * @param topic
 	 *            Message should be published on this topic if topic is not null. 
 	 */
-	void log(LogMessage message, String topic);
+//	void log(LogMessage message, String topic);
 
 	/**
 	 * Implementation of this method should call an implementation of

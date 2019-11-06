@@ -52,9 +52,6 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 public class GridAppsDConstants {
 	
-	//user credentials
-	public static final String username = "system";
-	public static final String password = "manager";
 	
 	//topics
 	public static final String topic_prefix = "goss.gridappsd";
@@ -73,7 +70,8 @@ public class GridAppsDConstants {
 	public static final String topic_app_register_remote = topic_requestApp+".remote.register";
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
 	public static final String topic_requestPlatformStatus = topic_process_prefix+".request.status.platform";
-	
+	public static final String topic_requestMyRoles = topic_process_prefix+".request.roles";
+
 	// Remote Application topics
 	public static final String topic_remoteapp_prefix = topic_prefix+".remoteapp";
 	public static final String topic_remoteapp_heartbeat = topic_remoteapp_prefix+".heartbeat";

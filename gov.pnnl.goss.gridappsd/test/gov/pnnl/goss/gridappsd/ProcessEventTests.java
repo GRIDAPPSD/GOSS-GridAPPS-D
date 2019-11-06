@@ -44,6 +44,7 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.RoleManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
@@ -94,6 +95,8 @@ public class ProcessEventTests {
 	Client client;
 	@Mock
 	TestManager testManager;
+	@Mock
+	RoleManager roleManager;
 	
 	@Captor
 	ArgumentCaptor<String> argCaptor;
@@ -112,7 +115,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
@@ -143,7 +146,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		
@@ -167,7 +170,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		

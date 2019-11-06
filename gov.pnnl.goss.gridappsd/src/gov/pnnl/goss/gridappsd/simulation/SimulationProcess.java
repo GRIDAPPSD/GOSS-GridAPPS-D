@@ -83,7 +83,7 @@ public class SimulationProcess extends Thread {
         SimulationTracker isFinished = new SimulationTracker();
         try{
 
-            File simulationFile = new File(simContext.getStartupFile());
+        	File simulationFile = new File(simContext.getStartupFile());
 
             if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
                 File serviceDir = serviceManager.getServiceConfigDirectory();
@@ -106,7 +106,7 @@ public class SimulationProcess extends Thread {
                     simContext.getSimulatorPath()+" "+simulationFile,
                     LogLevel.INFO,
                     ProcessStatus.RUNNING,
-                    true),GridAppsDConstants.username,
+                    true),simContext.getSimulationUser(),
                     GridAppsDConstants.topic_platformLog);
             ProcessBuilder simulatorBuilder = new ProcessBuilder(simContext.getSimulatorPath(), simulationFile.getAbsolutePath());
             simulatorBuilder.redirectErrorStream(true);
@@ -126,7 +126,7 @@ public class SimulationProcess extends Thread {
                     "GridLAB-D started",
                     LogLevel.INFO,
                     ProcessStatus.RUNNING,
-                    true),GridAppsDConstants.username,
+                    true),simContext.getSimulationUser(),
                     GridAppsDConstants.topic_platformLog);
 
             //Subscribe to fncs-goss-bridge output topic
@@ -139,7 +139,7 @@ public class SimulationProcess extends Thread {
                     "Checking fncs is initialized, currently "+isInitialized.isInited,
                     LogLevel.INFO,
                     ProcessStatus.RUNNING,
-                    true),GridAppsDConstants.username,
+                    true),simContext.getSimulationUser(),
                     GridAppsDConstants.topic_platformLog);
 
             int initAttempts = 0;
@@ -161,7 +161,7 @@ public class SimulationProcess extends Thread {
                         "FNCS Initialized",
                         LogLevel.INFO,
                         ProcessStatus.RUNNING,
-                        true),GridAppsDConstants.username,
+                        true),simContext.getSimulationUser(),
                         GridAppsDConstants.topic_platformLog);
 
 
@@ -174,7 +174,7 @@ public class SimulationProcess extends Thread {
                             "Checking if FNCS simulation is finished, currently "+isFinished.isFinished,
                             LogLevel.DEBUG,
                             ProcessStatus.RUNNING,
-                            true),GridAppsDConstants.username,
+                            true),simContext.getSimulationUser(),
                             GridAppsDConstants.topic_platformLog);
                     Thread.sleep(1000);
                 }
@@ -185,7 +185,7 @@ public class SimulationProcess extends Thread {
                         "FNCS Initialization Failed",
                         LogLevel.ERROR,
                         ProcessStatus.ERROR,
-                        true),GridAppsDConstants.username,
+                        true),simContext.getSimulationUser(),
                         GridAppsDConstants.topic_platformLog);
 
             }
@@ -198,7 +198,7 @@ public class SimulationProcess extends Thread {
                     "Simulation "+simulationId+" complete",
                     LogLevel.INFO,
                     ProcessStatus.COMPLETE,
-                    true),GridAppsDConstants.username,
+                    true),simContext.getSimulationUser(),
                     GridAppsDConstants.topic_platformLog);
         }
         catch(Exception e){
@@ -210,7 +210,7 @@ public class SimulationProcess extends Thread {
                             "Simulation error: "+e.getMessage(),
                             LogLevel.ERROR,
                             ProcessStatus.ERROR,
-                            true),GridAppsDConstants.username,
+                            true),simContext.getSimulationUser(),
                             GridAppsDConstants.topic_platformLog);
                 } catch (Exception e1) {
                     log.error("Error while reporting error status", e);
@@ -243,7 +243,7 @@ public class SimulationProcess extends Thread {
                 "Sending start simulation to bridge.",
                 LogLevel.DEBUG,
                 ProcessStatus.RUNNING,
-                true),GridAppsDConstants.username,
+                true),simContext.getSimulationUser(),
                 GridAppsDConstants.topic_platformLog);
         String message = "{\"command\": \"StartSimulation\"}";
         client.publish(GridAppsDConstants.topic_FNCS_input, message);
@@ -294,7 +294,7 @@ public class SimulationProcess extends Thread {
                          "FNCS-GOSS Bridge response:"+dataResponse.getData(),
                             LogLevel.DEBUG,
                             ProcessStatus.RUNNING,
-                        true),GridAppsDConstants.username,
+                        true),simContext.getSimulationUser(),
                         GridAppsDConstants.topic_platformLog);
 
                 Gson  gson = new Gson();
