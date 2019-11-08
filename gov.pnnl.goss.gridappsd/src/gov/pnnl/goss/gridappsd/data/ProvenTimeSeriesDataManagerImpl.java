@@ -40,7 +40,7 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.security.SecurityConfig;
 
 @Component
-public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler{
+public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler {
 
 	@ServiceDependency
 	private volatile LogManager logManager;
@@ -72,25 +72,23 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 	List<String> keywords = null;
 	String requestId = null;
-	Gson  gson = new Gson();
+	Gson gson = new Gson();
 	String provenUri = null;
 	String provenQueryUri = null;
 	String provenWriteUri = null;
 
 	ProvenProducer provenQueryProducer = new ProvenProducer();
 	ProvenProducer provenWriteProducer = new ProvenProducer();
-	//	Credentials credentials = new UsernamePasswordCredentials(
-	//			GridAppsDConstants.username, GridAppsDConstants.password);
+	// Credentials credentials = new UsernamePasswordCredentials(
+	// GridAppsDConstants.username, GridAppsDConstants.password);
 
 	@Start
-	public void start(){
+	public void start() {
 
-
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), null,
-				new Date().getTime(), "Starting "+this.getClass().getSimpleName(),
-				LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-				securityConfig.getManagerUser(),
-				GridAppsDConstants.topic_platformLog);
+		logManager.log(
+				new LogMessage(this.getClass().getSimpleName(), null, new Date().getTime(),
+						"Starting " + this.getClass().getSimpleName(), LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+				securityConfig.getManagerUser(), GridAppsDConstants.topic_platformLog);
 
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
@@ -101,18 +99,15 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 	}
 
-
 	@Override
-	public Serializable handle(Serializable requestContent, String processId,
-			String username) throws Exception {
-		if(requestContent instanceof SimulationContext){
-			storeAllData((SimulationContext)requestContent);
+	public Serializable handle(Serializable requestContent, String processId, String username) throws Exception {
+		if (requestContent instanceof SimulationContext) {
+			storeAllData((SimulationContext) requestContent);
 		}
-		if(requestContent instanceof RequestTimeseriesData){
-			return query((RequestTimeseriesData)requestContent);
-		}
-		else if(requestContent instanceof String){
-			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String)requestContent);
+		if (requestContent instanceof RequestTimeseriesData) {
+			return query((RequestTimeseriesData) requestContent);
+		} else if (requestContent instanceof String) {
+			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String) requestContent);
 			return query(timeSeriesRequest);
 		}
 
@@ -126,12 +121,12 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
-		if(result.getData().size()==0)
+		if (result.getData().size() == 0)
 			return null;
-		String origFormat = "PROVEN_"+requestTimeseriesData.getQueryMeasurement().toString();
+		String origFormat = "PROVEN_" + requestTimeseriesData.getQueryMeasurement().toString();
 		String responseFormat = requestTimeseriesData.getResponseFormat();
 		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
-		if(converter!=null){
+		if (converter != null) {
 			StringWriter sw = new StringWriter();
 			converter.convert(response.data.toString(), new PrintWriter(sw), requestTimeseriesData);
 			return sw.toString();
@@ -141,54 +136,53 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 	}
 
-
 	@Override
-	public void storeAllData(SimulationContext simulationContext) throws Exception{
+	public void storeAllData(SimulationContext simulationContext) throws Exception {
 
 		String simulationId = simulationContext.getSimulationId();
 
 		storeSimulationInput(simulationId);
 		storeSimulationOutput(simulationId);
 
-		for(String instanceId: simulationContext.getServiceInstanceIds()){
+		for (String instanceId : simulationContext.getServiceInstanceIds()) {
 			String serviceId = serviceManager.getServiceIdForInstance(instanceId);
 			storeServiceInput(simulationId, serviceId, instanceId);
 			storeServiceOutput(simulationId, serviceId, instanceId);
 
 		}
 
-		for(String instanceId: simulationContext.getAppInstanceIds()){
+		for (String instanceId : simulationContext.getAppInstanceIds()) {
 			String appId = appManager.getAppIdForInstance(instanceId);
 			storeAppInput(simulationId, appId, instanceId);
 			storeAppOutput(simulationId, appId, instanceId);
 		}
 	}
 
+	private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId)
+			throws Exception {
 
-
-	private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId) throws Exception{
-
-		Credentials credentials = new UsernamePasswordCredentials(
-				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-		Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
+		Credentials credentials = new UsernamePasswordCredentials(securityConfig.getManagerUser(),
+				securityConfig.getManagerPassword());
+		Client inputClient = clientFactory.create(PROTOCOL.STOMP, credentials);
 		inputClient.subscribe(topic, new GossResponseEvent() {
 			@Override
 			public void onMessage(Serializable message) {
-				DataResponse event = (DataResponse)message;
-				try{
+				DataResponse event = (DataResponse) message;
+				try {
 					provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId);
-				}catch(Exception e){
+				} catch (Exception e) {
 
 					StringWriter sw = new StringWriter();
 					PrintWriter pw = new PrintWriter(sw);
 					e.printStackTrace(pw);
 					String sStackTrace = sw.toString(); // stack trace as a string
 					System.out.println(sStackTrace);
-					logManager.log(new LogMessage(this.getClass().getSimpleName(), null,
-							new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace,
-							LogLevel.DEBUG, ProcessStatus.RUNNING, true),
-							event.getUsername(),
-							GridAppsDConstants.topic_platformLog);
+					logManager.log(
+							new LogMessage(this.getClass().getSimpleName(), null, new Date().getTime(),
+									"Error storing timeseries data for message at " + event.getDestination() + " : "
+											+ sStackTrace,
+											LogLevel.DEBUG, ProcessStatus.RUNNING, true),
+							event.getUsername(), GridAppsDConstants.topic_platformLog);
 				}
 			}
 		});
@@ -197,38 +191,44 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public void storeSimulationOutput(String simulationId) throws Exception {
 		// Make this a no op so we don't store simulation output
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".output."+simulationId,"simulation",null);
+		subscribeAndStoreDataFromTopic("/topic/" + GridAppsDConstants.topic_simulation + ".output." + simulationId,
+				"simulation", null);
 	}
 
 	@Override
 	public void storeSimulationInput(String simulationId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".input."+simulationId,"simulation",null);
+		subscribeAndStoreDataFromTopic("/topic/" + GridAppsDConstants.topic_simulation + ".input." + simulationId,
+				"simulation", null);
 	}
 
 	@Override
 	public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
-		//TODO: Remove this once alarms are stored in Proven
-		if(!serviceId.equals("gridappsd-alarms"))
-			subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
+		// TODO: Remove this once alarms are stored in Proven
+		if (!serviceId.equals("gridappsd-alarms"))
+			subscribeAndStoreDataFromTopic(
+					"/topic/" + GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".output",
+					serviceId, instanceId);
 	}
 
 	@Override
 	public void storeServiceInput(String simulationId, String serviceId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".input", serviceId, instanceId);
+		subscribeAndStoreDataFromTopic(
+				"/topic/" + GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".input",
+				serviceId, instanceId);
 	}
 
 	@Override
 	public void storeAppOutput(String simulationId, String appId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".output", appId, instanceId);
+		subscribeAndStoreDataFromTopic(
+				"/topic/" + GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".output", appId,
+				instanceId);
 	}
 
 	@Override
 	public void storeAppInput(String simulationId, String appId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".input", appId, instanceId);
+		subscribeAndStoreDataFromTopic(
+				"/topic/" + GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".input", appId,
+				instanceId);
 	}
 
 }
-
-
-
-
