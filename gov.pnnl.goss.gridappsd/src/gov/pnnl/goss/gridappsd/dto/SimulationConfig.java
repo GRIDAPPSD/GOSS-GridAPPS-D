@@ -44,7 +44,6 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import gov.pnnl.goss.cim2glm.ModelState;
 
 public class SimulationConfig  implements Serializable {
 	private static final long serialVersionUID = -2995486912804104569L;
@@ -68,7 +67,6 @@ public class SimulationConfig  implements Serializable {
 	//Slow simulator down to realtime if true.  If false it will run as fast as the simulator allows
 	public boolean run_realtime = true;
 	
-	public ModelState model_state;
 
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
 	public SimulationOutput simulation_output = new SimulationOutput();
@@ -173,12 +171,7 @@ public class SimulationConfig  implements Serializable {
 		return gson.toJson(this);
 	}
 	
-	public ModelState getModel_state() {
-		return model_state;
-	}
-	public void setModel_state(ModelState model_state) {
-		this.model_state = model_state;
-	}
+	
 	public static SimulationConfig parse(String jsonString){
 		Gson  gson = new Gson();
 		SimulationConfig obj = gson.fromJson(jsonString, SimulationConfig.class);

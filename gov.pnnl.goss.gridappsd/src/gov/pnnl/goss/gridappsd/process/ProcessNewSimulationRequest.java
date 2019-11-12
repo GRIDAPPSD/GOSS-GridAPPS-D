@@ -169,8 +169,7 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
 			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
-			simContext.modelState = simRequest.simulation_config.getModel_state();
-			System.out.println("SET USERNAME FOR SIMCONTEXT "+username);
+			simContext.modelState = simRequest.getSimulation_config().model_creation_config.getModel_state();
 			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
