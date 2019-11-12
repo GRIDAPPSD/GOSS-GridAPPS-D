@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.components.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -114,12 +115,15 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = false;
-                if(parameters.containsKey(USEHOUSES))
-                        useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		if(parameters.containsKey(USEHOUSES))
+			useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+        ModelState modelState = new ModelState();
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 			if(simulationContext!=null){
+				modelState = simulationContext.getModelState();
+				
 				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
@@ -133,13 +137,11 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		}
 		
 		
-		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
 			logError("No "+MODELID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
-		
 		
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 		if(bgHost==null || bgHost.trim().length()==0){
@@ -153,9 +155,9 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		CIMImporter cimImporter = new CIMImporter(); 
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)),useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)),useHouses,modelState);
 		} else {
-			cimImporter.generateDictionaryFile(queryHandler, out, useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, out, useHouses,modelState);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that

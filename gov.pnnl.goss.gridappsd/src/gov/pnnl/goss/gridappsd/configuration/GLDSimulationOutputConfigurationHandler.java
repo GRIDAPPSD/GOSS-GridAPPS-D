@@ -68,6 +68,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.components.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -135,9 +136,12 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
+		ModelState modelState = new ModelState();
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 			if(simulationContext!=null){
+				modelState = simulationContext.getModelState();
+				
 				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.MEASUREMENTOUTPUTS_FILENAME);
 				dictFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
 				//If the config file already has been created for this simulation then return it
@@ -182,7 +186,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			StringWriter dictionaryStringOutput = new StringWriter();
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
 			
-			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses, modelState);
 			String dictOut = dictionaryStringOutput.toString();
 			measurementFileReader = null;
 			if(dictFile!=null && dictFile.getName().length()>0 && !dictFile.exists()){
