@@ -44,7 +44,7 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import gov.pnnl.goss.cim2glm.components.ModelState;
+import gov.pnnl.goss.cim2glm.ModelState;
 
 public class SimulationConfig  implements Serializable {
 	private static final long serialVersionUID = -2995486912804104569L;
