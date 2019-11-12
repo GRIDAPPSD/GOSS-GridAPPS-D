@@ -68,7 +68,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.ModelState;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;

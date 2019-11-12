@@ -3,7 +3,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 import java.util.List;
 
-import gov.pnnl.goss.cim2glm.ModelState;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 
 public class SimulationContext implements Serializable {
 

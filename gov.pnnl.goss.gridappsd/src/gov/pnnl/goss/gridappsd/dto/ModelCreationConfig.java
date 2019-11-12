@@ -44,7 +44,7 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import gov.pnnl.goss.cim2glm.ModelState;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 
 public class ModelCreationConfig implements Serializable{
 
