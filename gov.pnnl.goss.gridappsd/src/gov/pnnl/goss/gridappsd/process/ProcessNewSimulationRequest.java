@@ -382,9 +382,10 @@ public class ProcessNewSimulationRequest {
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
 		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
 		
-		Gson  gson = new Gson();
-		params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
-
+		if(modelConfig.getModel_state()!=null){
+			Gson  gson = new Gson();
+			params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
+		}
 		return params;
 	}
 
