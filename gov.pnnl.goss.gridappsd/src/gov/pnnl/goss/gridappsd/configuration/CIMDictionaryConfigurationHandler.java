@@ -50,6 +50,8 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import gov.pnnl.goss.cim2glm.CIMImporter;
 import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
@@ -61,6 +63,7 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
@@ -117,13 +120,10 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		boolean useHouses = false;
 		if(parameters.containsKey(USEHOUSES))
 			useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
-        ModelState modelState = new ModelState();
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 			if(simulationContext!=null){
-				modelState = simulationContext.getModelState();
-				
 				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
@@ -136,7 +136,15 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 			}
 		}
 		
-		
+        ModelState modelState = new ModelState();
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}
+
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
 			logError("No "+MODELID+" parameter provided", processId, username, logManager);

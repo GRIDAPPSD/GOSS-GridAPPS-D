@@ -56,6 +56,7 @@ import org.apache.jena.query.ResultSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
@@ -115,6 +116,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 	public static final String STARTTIME_FILTER = "startTime";
 	public static final String ENDTIME_FILTER = "endTime";
+	public static final String MODEL_STATE = "model_state";
 	public static final int TIMEFILTER_YEAR = 2013;
 
 	public static final String CONFIGTARGET = "glm";
@@ -205,15 +207,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		ModelState modelState = new ModelState();
-		if(simulationID!=null){
-			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationID);
-			if(simulationContext!=null){
-				modelState = simulationContext.getModelState();
-			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationID, processId, username, logManager, LogLevel.WARN);
-			}
-		}
-		
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}		
 		
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){

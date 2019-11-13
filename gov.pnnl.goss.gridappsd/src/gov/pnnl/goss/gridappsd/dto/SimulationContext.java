@@ -3,7 +3,6 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 import java.util.List;
 
-import gov.pnnl.goss.cim2glm.dto.ModelState;
 
 public class SimulationContext implements Serializable {
 
@@ -19,7 +18,6 @@ public class SimulationContext implements Serializable {
 	public List<String> appInstanceIds;
 	public List<String> serviceInstanceIds;
 	public String simulationUser;
-	public ModelState modelState = new ModelState();
 
 	public String getSimulationId() {
 		return simulationId;
@@ -105,14 +103,5 @@ public class SimulationContext implements Serializable {
 		this.simulationUser = simulationUser;
 	}
 
-	public ModelState getModelState() {
-		return modelState;
-	}
-
-	public void setModelState(ModelState modelState) {
-		this.modelState = modelState;
-	}
-	
-	
 
 }

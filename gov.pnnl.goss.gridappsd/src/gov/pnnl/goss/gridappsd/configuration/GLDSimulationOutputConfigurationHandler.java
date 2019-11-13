@@ -136,12 +136,9 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
-		ModelState modelState = new ModelState();
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
 			if(simulationContext!=null){
-				modelState = simulationContext.getModelState();
-				
 				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.MEASUREMENTOUTPUTS_FILENAME);
 				dictFile = new File(simulationContext.getSimulationDir()+File.separator+GLDAllConfigurationHandler.DICTIONARY_FILENAME);
 				//If the config file already has been created for this simulation then return it
@@ -161,6 +158,14 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
+		ModelState modelState = new ModelState();
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}
 		//If passed in, use location of dictionary file, otherwise it will attempt to generate it
 		String dictFilePath = GridAppsDConstants.getStringProperty(parameters, DICTIONARY_FILE, null);
 		if(dictFilePath!=null){

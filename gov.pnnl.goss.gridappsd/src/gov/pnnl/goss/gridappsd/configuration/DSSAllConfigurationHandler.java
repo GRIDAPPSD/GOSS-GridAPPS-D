@@ -63,6 +63,8 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.Client;
 
 
@@ -189,15 +191,14 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
 		}
 		
-		ModelState modelState = new ModelState();
-		if(simulationID!=null){
-			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationID);
-			if(simulationContext!=null){
-				modelState = simulationContext.getModelState();
-			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationID, processId, username, logManager, LogLevel.WARN);
-			}
-		}
+		 ModelState modelState = new ModelState();
+		 String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		 if(modelStateStr==null || modelStateStr.trim().length()==0){
+			 logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		 } else {
+			 Gson  gson = new Gson();
+			 modelState = gson.fromJson(modelStateStr, ModelState.class);
+		 }
 		
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
