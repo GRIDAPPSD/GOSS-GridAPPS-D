@@ -68,6 +68,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -157,6 +158,14 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
+		ModelState modelState = new ModelState();
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}
 		//If passed in, use location of dictionary file, otherwise it will attempt to generate it
 		String dictFilePath = GridAppsDConstants.getStringProperty(parameters, DICTIONARY_FILE, null);
 		if(dictFilePath!=null){
@@ -182,7 +191,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			StringWriter dictionaryStringOutput = new StringWriter();
 			PrintWriter dictionaryOutput = new PrintWriter(dictionaryStringOutput);
 			
-			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, dictionaryOutput, useHouses, modelState);
 			String dictOut = dictionaryStringOutput.toString();
 			measurementFileReader = null;
 			if(dictFile!=null && dictFile.getName().length()>0 && !dictFile.exists()){

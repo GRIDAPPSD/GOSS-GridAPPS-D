@@ -44,6 +44,7 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+
 public class SimulationConfig  implements Serializable {
 	private static final long serialVersionUID = -2995486912804104569L;
 
@@ -65,6 +66,7 @@ public class SimulationConfig  implements Serializable {
 	
 	//Slow simulator down to realtime if true.  If false it will run as fast as the simulator allows
 	public boolean run_realtime = true;
+	
 
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
 	public SimulationOutput simulation_output = new SimulationOutput();
@@ -168,6 +170,7 @@ public class SimulationConfig  implements Serializable {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
 	}
+	
 	
 	public static SimulationConfig parse(String jsonString){
 		Gson  gson = new Gson();

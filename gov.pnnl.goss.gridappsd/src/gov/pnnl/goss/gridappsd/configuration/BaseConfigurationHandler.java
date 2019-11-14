@@ -64,7 +64,8 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	
 //	private volatile LogManager logManager;
 	
-	
+	public static final String MODELSTATE = "model_state";
+
 	public BaseConfigurationHandler() {
 	}
 	 

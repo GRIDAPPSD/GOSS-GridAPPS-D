@@ -74,6 +74,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.google.gson.Gson;
+
 import pnnl.goss.core.DataResponse;
 
 public class ProcessNewSimulationRequest {
@@ -169,7 +171,6 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
 			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
-			System.out.println("SET USERNAME FOR SIMCONTEXT "+username);
 			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
@@ -189,7 +190,6 @@ public class ProcessNewSimulationRequest {
 				}
 				e.printStackTrace();
 			}
-
 
 
 
@@ -381,7 +381,11 @@ public class ProcessNewSimulationRequest {
 
 		params.put(GLDAllConfigurationHandler.SIMULATIONSTARTTIME, requestSimulation.getSimulation_config().start_time);
 		params.put(GLDAllConfigurationHandler.SIMULATIONDURATION, new Integer(requestSimulation.getSimulation_config().duration).toString());
-
+		
+		if(modelConfig.getModel_state()!=null){
+			Gson  gson = new Gson();
+			params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
+		}
 		return params;
 	}
 
