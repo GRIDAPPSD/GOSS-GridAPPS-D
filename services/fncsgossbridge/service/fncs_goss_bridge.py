@@ -221,6 +221,8 @@ def create_schema(conn):
         FOREIGN KEY (measurement_id)
             REFERENCES measurement_props (measurement_id)         
     );
+    
+    CREATE INDEX timestamp_indx ON measurements(timestamp);
     """
     cursor = db_connection.cursor()
     for d in sql.split(';'):
