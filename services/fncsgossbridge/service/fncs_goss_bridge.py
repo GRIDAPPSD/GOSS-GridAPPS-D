@@ -292,6 +292,10 @@ class GOSSListener(object):
         self.simulation_start = sim_start
         self.simulation_time = 0
         self.measurement_filter = []
+        filter_file = "/tmp/filter.json"
+        if os.path.exists(filter_file):
+            with open(filter_file) as fp:
+                self.measurement_filter = json.loads(fp.read())
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
