@@ -156,7 +156,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			startServiceDependencies(simulationConfig, simContext, simulationContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
