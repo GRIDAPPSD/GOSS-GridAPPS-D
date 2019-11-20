@@ -90,7 +90,7 @@ public interface ServiceManager {
 	 * Start service instance
 	 * @param service_id  Registered ID of the desired service
 	 * @param runtimeOptions Runtime options for the service instance, in most cases these will be passed in on the command-line 
-	 * @return String containing service instance ID
+	 * @return String containing service instance ID or null if service is already started for that simulation
 	 */
 	String startService(String service_id, HashMap<String, Object> runtimeOptions);  //may also need input/output topics or simulation id
 	
@@ -111,9 +111,10 @@ public interface ServiceManager {
 	/**
 	 * Lists currently running service instances for the requested service ID
 	 * @param serviceId  Registered ID of the service to list
+	 * @param simulationId Id of the simulation
 	 * @return List of ServiceInstance objects
 	 */
-	List<ServiceInstance> listRunningServices(String serviceId);
+	List<ServiceInstance> listRunningServices(String serviceId, String simulationId);
 
 	/**
 	 * Stops service instance

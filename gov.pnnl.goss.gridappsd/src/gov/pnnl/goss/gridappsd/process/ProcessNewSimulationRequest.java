@@ -256,8 +256,10 @@ public class ProcessNewSimulationRequest {
 			else{
 				for(ServiceConfig serviceConfig : simRequest.service_configs){
 					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), null, simulationContext);
-					connectServiceInstanceIds.add(serviceInstanceId);
-					connectServiceIds.add(serviceConfig.getId());
+					if(serviceInstanceId!=null){
+						connectServiceInstanceIds.add(serviceInstanceId);
+						connectServiceIds.add(serviceConfig.getId());
+					}
 				}
 			}
 			
