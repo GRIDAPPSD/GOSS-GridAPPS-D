@@ -83,7 +83,7 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	}
 	void logRunning(String message, String simulationID, String username, LogManager logManager, LogLevel logLevel){
 		logManager.log(
-				new LogMessage(this.getClass().getName(), new Integer(
+				new LogMessage(this.getClass().getSimpleName(), new Integer(
 						simulationID).toString(), new Date().getTime(),
 						message, logLevel,
 						ProcessStatus.RUNNING, false), username,
