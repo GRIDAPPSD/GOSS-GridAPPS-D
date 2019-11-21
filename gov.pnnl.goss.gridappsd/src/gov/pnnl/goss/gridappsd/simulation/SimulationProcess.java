@@ -268,7 +268,7 @@ public class SimulationProcess extends Thread {
                     			level = LogLevel.ERROR;
                     		else if(line.contains("WARN"))
                     			level = LogLevel.WARN;
-	                        logManager.log(new LogMessage(this.getClass().getName(),
+	                        logManager.log(new LogMessage(this.getClass().getSimpleName(),
 	                        		processName, 
 	                        		new Date().getTime(), 
 	                        		line, 
