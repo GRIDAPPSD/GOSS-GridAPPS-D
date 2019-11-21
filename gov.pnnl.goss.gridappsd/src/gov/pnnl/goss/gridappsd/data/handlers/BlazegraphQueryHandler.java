@@ -91,7 +91,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		this.logManager = logManager;
 	}
 	@Override
-	public ResultSetCloseable query(String szQuery) { 
+	public ResultSetCloseable query(String szQuery, String szTag) { 
 		Query query = QueryFactory.create (Q_PREFIX + szQuery);
 		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
 

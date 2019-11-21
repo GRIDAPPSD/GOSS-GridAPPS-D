@@ -244,7 +244,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 		//CIM2GLM utility uses
 		CIMImporter cimImporter = new CIMImporter();
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
