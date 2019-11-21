@@ -264,7 +264,7 @@ public class SimulationProcess extends Thread {
                     		LogLevel level = LogLevel.INFO;
                     		if(line.contains("DEBUG"))
                     			level = LogLevel.DEBUG;
-                    		else if(line.contains("ERROR"))
+                    		else if(line.contains("ERROR") || line.contains("FATAL"))
                     			level = LogLevel.ERROR;
                     		else if(line.contains("WARN"))
                     			level = LogLevel.WARN;
