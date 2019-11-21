@@ -284,8 +284,8 @@ public class SimulationProcess extends Thread {
 	                    		processName, 
 	                    		new Date().getTime(), 
 	                    		"Error reading input stream of simulator process: "+e.getMessage(), 
-	                    		LogLevel.DEBUG, 
-	                    		ProcessStatus.RUNNING, 
+	                    		LogLevel.ERROR, 
+	                    		ProcessStatus.ERROR, 
 	                    		true), 
 	                    		securityConfig.getManagerUser(), GridAppsDConstants.topic_simulationLog+simulationId);
                 }
