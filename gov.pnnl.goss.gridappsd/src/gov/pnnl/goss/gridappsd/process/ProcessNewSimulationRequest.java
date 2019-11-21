@@ -256,8 +256,10 @@ public class ProcessNewSimulationRequest {
 			else{
 				for(ServiceConfig serviceConfig : simRequest.service_configs){
 					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), null, simulationContext);
-					connectServiceInstanceIds.add(serviceInstanceId);
-					connectServiceIds.add(serviceConfig.getId());
+					if(serviceInstanceId!=null){
+						connectServiceInstanceIds.add(serviceInstanceId);
+						connectServiceIds.add(serviceConfig.getId());
+					}
 				}
 			}
 			
@@ -292,13 +294,15 @@ public class ProcessNewSimulationRequest {
 
 						if(!connectServiceIds.contains(prereqs)){
 							String serviceInstanceId = serviceManager.startServiceForSimultion(prereqs, null,simulationContext);
-							connectServiceInstanceIds.add(serviceInstanceId);
-							logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
+							if(serviceInstanceId!=null){
+								connectServiceInstanceIds.add(serviceInstanceId);
+								logManager.log(new LogMessage(source, simId, new Date().getTime(),"Started "
 									+ prereqs + " with instance id "
 									+ serviceInstanceId,LogLevel.DEBUG, ProcessStatus.RUNNING, true),
 									username,
 									GridAppsDConstants.topic_simulationLog
 											+ simulationId);
+							}
 						}
 					}
 
