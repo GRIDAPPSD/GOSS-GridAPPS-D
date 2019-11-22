@@ -260,12 +260,14 @@ public class SimulationProcess extends Thread {
                 String line = null;
                 try {
                     while ((line = input.readLine()) != null) {
-                    	if(!line.isEmpty()){
+                    	if(!line.trim().isEmpty()){
                     		LogLevel level = LogLevel.INFO;
                     		if(line.contains("DEBUG"))
                     			level = LogLevel.DEBUG;
-                    		else if(line.contains("ERROR") || line.contains("FATAL"))
+                    		else if(line.contains("ERROR"))
                     			level = LogLevel.ERROR;
+                    		else if(line.contains("FATAL"))
+                    			level = LogLevel.FATAL;
                     		else if(line.contains("WARN"))
                     			level = LogLevel.WARN;
 	                        logManager.log(new LogMessage(this.getClass().getSimpleName(),
