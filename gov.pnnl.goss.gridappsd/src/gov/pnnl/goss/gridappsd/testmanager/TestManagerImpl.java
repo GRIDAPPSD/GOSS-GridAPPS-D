@@ -163,7 +163,7 @@ public class TestManagerImpl implements TestManager {
 
 			// Log - "Starting "+this.getClass().getName());
 			Credentials credentials = new UsernamePasswordCredentials(
-					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
+					"testmanager1", "testmanager");
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 			
 			client.subscribe(GridAppsDConstants.topic_simulationTestInput+">", new GossResponseEvent() {
