@@ -152,10 +152,13 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 				ProcessStatus.RUNNING, 
 				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
 		
-		//Create DSS base file
-		PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
-		DSSAllConfigurationHandler baseConfigurationHandler = new DSSAllConfigurationHandler(logManager,simulationManager,configManager);
-		baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
+		if(!dssBaseFile.exists()) {
+			//Create DSS base file if it doesn't already exist
+			PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
+			DSSAllConfigurationHandler baseConfigurationHandler = new DSSAllConfigurationHandler(logManager,simulationManager,configManager);
+			baseConfigurationHandler.generateConfig(parameters, basePrintWriter, simulationId, username);
+		}
+		
 		
 		if(!dssBaseFile.exists())
 				throw new Exception("Error: Could not create DSS base file to export YBus matrix");

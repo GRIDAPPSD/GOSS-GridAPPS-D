@@ -44,12 +44,14 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
+import org.apache.jena.sparql.function.library.leviathan.e;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +100,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	private HashMap<String, ConfigurationHandler> configHandlers = new HashMap<String, ConfigurationHandler>();
 	
+	
+	LinkedList<Configuration> configQueue = new LinkedList<Configuration>();
 	
 	public ConfigurationManagerImpl() {
 	}
@@ -167,17 +171,51 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 
 	@Override
 	public void generateConfiguration(String type, Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		if(configHandlers.containsKey(type) && configHandlers.get(type)!=null){
-			configHandlers.get(type).generateConfig(parameters, out, processId, username);
+		//Should process the configuration requests as a queue, if there are already configs in a queue, add it
+		if(configQueue.size()>0){
+			configQueue.add(new Configuration(type, parameters, out, processId, username));
+		} else {
+			//otherwise add the one and begin processing it
+			configQueue.add(new Configuration(type, parameters, out, processId, username));
+			while(configQueue.size()>0){
+				processConfiguration(configQueue.pop());
+			}
+		}
+		
+		
+		
+	}
+	
+	
+	private void processConfiguration(Configuration config) throws Exception{
+		if(configHandlers.containsKey(config.type) && configHandlers.get(config.type)!=null){
+			configHandlers.get(config.type).generateConfig(config.parameters, config.out, config.processId, config.username);
 		} else {
 			logManager.log(
 					new LogMessage(this.getClass().getName(), new Integer(
-							processId).toString(), new Date().getTime(),
-							"No configuration handler registered for '"+type+"'", LogLevel.ERROR,
+							config.processId).toString(), new Date().getTime(),
+							"No configuration handler registered for '"+config.type+"'", LogLevel.ERROR,
 							ProcessStatus.ERROR, false), "",
 					GridAppsDConstants.topic_platformLog);			
-			throw new Exception("No configuration handler registered for '"+type+"'");
+			throw new Exception("No configuration handler registered for '"+config.type+"'");
 		}
+	}
+	
+	private class Configuration{
+		private String type;
+		private Properties parameters;
+		private PrintWriter out;
+		private String processId;
+		private String username;
+		
+		public Configuration(String type, Properties parameters, PrintWriter out, String processId, String username){
+			this.type = type;
+			this.parameters = parameters;
+			this.out = out;
+			this.processId = processId;
+			this.username = username;
+		}
+		
 	}
 	
 }

@@ -119,7 +119,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String MODEL_STATE = "model_state";
 	public static final int TIMEFILTER_YEAR = 2013;
 
-	public static final String CONFIGTARGET = "glm";
+//	public static final String CONFIGTARGET = "glm";
+	public static final String CONFIGTARGET = "both"; //will build files for both glm and dss
 
 	public static final String CIM2GLM_PREFIX = "model";
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
