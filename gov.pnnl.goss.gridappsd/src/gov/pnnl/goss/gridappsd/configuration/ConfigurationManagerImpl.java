@@ -51,6 +51,7 @@ import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ConfigurationDependency;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
+import org.apache.felix.dm.annotation.api.Stop;
 import org.apache.jena.sparql.function.library.leviathan.e;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,6 +102,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	private HashMap<String, ConfigurationHandler> configHandlers = new HashMap<String, ConfigurationHandler>();
 	
 	
+	boolean isRunning = true;
+	
 	LinkedList<Configuration> configQueue = new LinkedList<Configuration>();
 	
 	public ConfigurationManagerImpl() {
@@ -113,9 +116,31 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	
 	@Start
-	public void start(){
-		//TODO send log "Starting configuration manager
+	public void start() throws InterruptedException{
+		while(isRunning){
+			System.out.println("CONFIG QUEUE SIZE "+configQueue.size());
+			if(configQueue.size()>0){
+				try {
+					Configuration nextConfig = configQueue.pop();
+					System.out.println("ABOUT TO PROCESS "+nextConfig.type+" "+configQueue.size());
+					processConfiguration(nextConfig);
+					System.out.println("DONE PROCESSING, QUEUE IS "+configQueue.size());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			Thread.sleep(5000);
+			
+		}
 		
+		
+		
+		
+	}
+	@Stop
+	public void stop() {
+		this.isRunning = false;
 	}
 	
 	
@@ -172,15 +197,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	@Override
 	public void generateConfiguration(String type, Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		//Should process the configuration requests as a queue, if there are already configs in a queue, add it
-		if(configQueue.size()>0){
+//		if(configQueue.size()>0){
 			configQueue.add(new Configuration(type, parameters, out, processId, username));
-		} else {
-			//otherwise add the one and begin processing it
-			configQueue.add(new Configuration(type, parameters, out, processId, username));
-			while(configQueue.size()>0){
-				processConfiguration(configQueue.pop());
-			}
-		}
+//		} else {
+//			//otherwise add the one and begin processing it
+//			configQueue.add(new Configuration(type, parameters, out, processId, username));
+//			while(configQueue.size()>0){
+//				processConfiguration(configQueue.pop());
+//			}
+//		}
 		
 		
 		
