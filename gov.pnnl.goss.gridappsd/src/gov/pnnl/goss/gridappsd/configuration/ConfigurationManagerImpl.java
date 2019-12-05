@@ -117,26 +117,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	@Start
 	public void start() throws InterruptedException{
-		while(isRunning){
-			System.out.println("CONFIG QUEUE SIZE "+configQueue.size());
-			if(configQueue.size()>0){
-				try {
-					Configuration nextConfig = configQueue.pop();
-					System.out.println("ABOUT TO PROCESS "+nextConfig.type+" "+configQueue.size());
-					processConfiguration(nextConfig);
-					System.out.println("DONE PROCESSING, QUEUE IS "+configQueue.size());
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+		Thread thread = new Thread(){
+		    public void run(){
+		    	while(isRunning){
+					System.out.println("CONFIG QUEUE SIZE "+configQueue.size());
+					if(configQueue.size()>0){
+						try {
+							Configuration nextConfig = configQueue.pop();
+							System.out.println("ABOUT TO PROCESS "+nextConfig.type+" "+configQueue.size());
+							processConfiguration(nextConfig);
+							System.out.println("DONE PROCESSING, QUEUE IS "+configQueue.size());
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					try {
+						sleep(5000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
 				}
-			}
-			Thread.sleep(5000);
-			
-		}
-		
-		
-		
-		
+		    }
+		  };
+		  thread.start();
 	}
 	@Stop
 	public void stop() {
