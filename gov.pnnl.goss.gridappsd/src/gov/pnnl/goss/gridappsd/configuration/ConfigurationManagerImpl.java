@@ -213,12 +213,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		Configuration nextConfig = configQueue.peek();
 		System.out.println("CHECKING "+nextConfig+" = "+config);
 		while(nextConfig!=null && !config.equals(nextConfig)){
-			Thread.sleep(5000);
+			Thread.sleep(1000);
 			nextConfig = configQueue.peek();
 			System.out.println("CHECKING "+nextConfig+" = "+config);
 		}
 		System.out.println("PROCESSING "+config.type);
 		processConfiguration(config);
+		configQueue.pop();
 //		if(configQueue.size()>0){
 			
 //		} else {
