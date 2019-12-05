@@ -188,6 +188,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	
 	
 	private void processConfiguration(Configuration config) throws Exception{
+		
+		System.out.println("PROCESSING CONFIGURATION "+config.type);
 		if(configHandlers.containsKey(config.type) && configHandlers.get(config.type)!=null){
 			configHandlers.get(config.type).generateConfig(config.parameters, config.out, config.processId, config.username);
 		} else {
