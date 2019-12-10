@@ -47,7 +47,6 @@ Created on Jan 6, 2017
 @author: craig8
 """
 import argparse
-from collections import defaultdict
 import cmath
 from datetime import datetime
 import gzip
@@ -293,20 +292,9 @@ class GOSSListener(object):
         self.simulation_start = sim_start
         self.simulation_time = 0
         self.measurement_filter = []
-        filter_file = "/tmp/filter.json"
-        if os.path.exists(filter_file):
-            with open(filter_file) as fp:
-                self.measurement_filter = json.loads(fp.read())
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
-
-        # Aggregation Parameters
-        self.do_aggregation = True
-        self.aggregation_interval = 900 # 900 == 15 minutes
-        self.start_time = 0
-        self.aggregation_count = 0
-        self.simulation_aggregates = defaultdict()
 
     def run_simulation(self,run_realtime, archive_db_file, archive_file, only_archive):
         targz_file = None
@@ -317,11 +305,7 @@ class GOSSListener(object):
                 create_db_connection(archive_db_file)
             message = {}
             message['command'] = 'nextTimeStep'
-            if self.do_aggregation and self.aggregation_interval < self.simulation_length:
-                _log.warning("The aggregation interval is > than the length of simulation, "
-                             "therefore no results will be written!")
             for current_time in range(self.simulation_length):
-                _log.debug("current time is: {}".format(current_time))
                 while self.pause_simulation == True:
                     time.sleep(1)
                 if self.stop_simulation == True:
@@ -337,41 +321,11 @@ class GOSSListener(object):
                 response_msg = json.dumps(message['output'])
 
                 if message['output']!={}:
-                    _log.debug("There is a message!")
                     if not only_archive:
-                        if not self.do_aggregation:
-                            goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
-
-                    ts = message['output']['message']['timestamp']
-                    meas = message['output']['message']['measurements']
-                    if self.do_aggregation:
-                        self.aggregation_count += 1
-                        _log.info("Aggregation count: {}".format(self.aggregation_count))
-                        for id, measurements in meas.items():
-                            if id not in self.simulation_aggregates:
-                                self.simulation_aggregates[id] = {}
-                            for prop, value in measurements.items():
-                                if prop == "measurement_mrid":
-                                    self.simulation_aggregates[id][prop] = value
-                                    continue
-                                if prop not in self.simulation_aggregates[id]:
-                                    self.simulation_aggregates[id][prop] = 0
-                                self.simulation_aggregates[id][prop] += value
-                        if ts >= self.simulation_start + self.aggregation_interval:
-                            _log.info("Sending aggregated output on timestamp {}".format(ts))
-                            for id, item in self.simulation_aggregates.items():
-                                for prop, value in item.items():
-                                    if prop == 'measurement_mrid':
-                                        continue
-                                    self.simulation_aggregates[id][prop] = value/self.aggregation_count
-                            message['output']['message']['measurements'] = self.simulation_aggregates
-                            response_msg = json.dumps(message['output'])
-                            goss_connection.send(output_to_goss_topic + "{}".format(simulation_id), response_msg)
-                            self.aggregation_count = 0
-                            self.simulation_start = ts
-                            self.simulation_aggregates = defaultdict()
-
+                        goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
                     if archive_db_file:
+                        ts = message['output']['message']['timestamp']
+                        meas = message['output']['message']['measurements']
                         _log.debug("Passing timestamp {ts} to write_db_archive".format(ts=ts))
                         write_db_archive(ts, meas)
                     if targz_file:
@@ -392,7 +346,6 @@ class GOSSListener(object):
             del message['output']
             goss_connection.send(output_to_simulation_manager, json.dumps(message))
             _send_simulation_status('COMPLETE', 'Simulation {} has finished.'.format(simulation_id), 'INFO')
-            _log.debug("Simulation {simulation_id} has finished".format(simulation_id=simulation_id))
         except Exception as e:
             message_str = 'Error in run simulation '+str(e)
             _log.exception(message_str)
@@ -401,8 +354,6 @@ class GOSSListener(object):
             if fncs.is_initialized():
                 fncs.die()
         finally:
-            self.start_time = 0
-            self.aggregation_count = 0
             if targz_file:
                 targz_file.close()
 
@@ -1427,12 +1378,11 @@ if __name__ == "__main__":
     simulation_id = opts.simulation_id
     # logging within the context of the container.
     logfile = "/tmp/gridappsd_tmp/{simulation_id}/fncs_goss_bridge.log".format(simulation_id=simulation_id)
-    logging.basicConfig(level=logging.INFO, filename=logfile, format="%(asctime)s;%(levelname)s;%(message)s")
+    logging.basicConfig(level=logging.INFO, filename=logfile)
 
     sim_broker_location = opts.broker_location
     sim_dir = opts.simulation_directory
     sim_request = json.loads(opts.simulation_request.replace("\'",""))
-    _log.info("REQUESTS:\n{request}".format(request=json.dumps(sim_request, indent=2)))
     run_realtime = sim_request["simulation_config"]["run_realtime"]
     sim_duration = sim_request["simulation_config"]["duration"]
     sim_start_str = int(sim_request["simulation_config"]["start_time"])
