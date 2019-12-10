@@ -1,5 +1,18 @@
 package gov.pnnl.goss.gridappsd.simulation;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -12,23 +25,12 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.security.SecurityConfig;
+
+import com.google.gson.Gson;
 
 public class SimulationProcess extends Thread {
     private static Logger log = LoggerFactory.getLogger(SimulationProcess.class);
@@ -60,10 +62,11 @@ public class SimulationProcess extends Thread {
     LogManager logManager;
     AppManager appManager;
     Client client;
+    SecurityConfig securityConfig;
 
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
             SimulationConfig simulationConfig, int simulationId, LogManager logManager,
-            AppManager appManager, Client client){
+            AppManager appManager, Client client, SecurityConfig securityConfig){
         this.simContext = simContext;
         this.serviceManager = serviceManager;
         this.simulationConfig = simulationConfig;
@@ -71,6 +74,7 @@ public class SimulationProcess extends Thread {
         this.logManager = logManager;
         this.appManager = appManager;
         this.client = client;
+        this.securityConfig = securityConfig;
     }
 
 
@@ -115,7 +119,7 @@ public class SimulationProcess extends Thread {
             simulatorBuilder.directory(simulationFile.getParentFile());
             simulatorProcess = simulatorBuilder.start();
             // Watch the process
-            watch(simulatorProcess, "Simulator");
+            watch(simulatorProcess, "Simulator-"+simulationId);
 
 
             //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
@@ -256,11 +260,36 @@ public class SimulationProcess extends Thread {
                 String line = null;
                 try {
                     while ((line = input.readLine()) != null) {
-                        log.info(processName+": "+line.substring(0,Math.min(200, line.length())));
+                    	if(!line.trim().isEmpty()){
+                    		LogLevel level = LogLevel.INFO;
+                    		if(line.contains("DEBUG"))
+                    			level = LogLevel.DEBUG;
+                    		else if(line.contains("ERROR"))
+                    			level = LogLevel.ERROR;
+                    		else if(line.contains("FATAL") && !line.contains("INFO"))
+                    			level = LogLevel.FATAL;
+                    		else if(line.contains("WARN"))
+                    			level = LogLevel.WARN;
+	                        logManager.log(new LogMessage(this.getClass().getSimpleName(),
+	                        		processName, 
+	                        		new Date().getTime(), 
+	                        		line, 
+	                        		level, 
+	                        		ProcessStatus.RUNNING, 
+	                        		true), 
+	                        		securityConfig.getManagerUser(), GridAppsDConstants.topic_simulationLog+simulationId);
+                    	}
                     }
                 } catch (IOException e) {
                 	if(!(e.getMessage().contains("Stream closed")))
-                		log.error("Error on process "+processName, e);
+                		logManager.log(new LogMessage(this.getClass().getName(),
+	                    		processName, 
+	                    		new Date().getTime(), 
+	                    		"Error reading input stream of simulator process: "+e.getMessage(), 
+	                    		LogLevel.ERROR, 
+	                    		ProcessStatus.ERROR, 
+	                    		true), 
+	                    		securityConfig.getManagerUser(), GridAppsDConstants.topic_simulationLog+simulationId);
                 }
             }
         }.start();

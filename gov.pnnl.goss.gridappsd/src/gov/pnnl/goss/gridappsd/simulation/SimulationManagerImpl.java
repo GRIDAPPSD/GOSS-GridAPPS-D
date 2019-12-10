@@ -156,7 +156,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			startServiceDependencies(simulationConfig, simContext, simulationContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
@@ -208,7 +208,8 @@ public class SimulationManagerImpl implements SimulationManager{
 		List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
 		for(String service : serviceDependencies) {
 			String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
-			simContext.addServiceInstanceIds(serviceInstanceId);
+			if(serviceInstanceId!=null)
+				simContext.addServiceInstanceIds(serviceInstanceId);
 		}
 		
 	}
