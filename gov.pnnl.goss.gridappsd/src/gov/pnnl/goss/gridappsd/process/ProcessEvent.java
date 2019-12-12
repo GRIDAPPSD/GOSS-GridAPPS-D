@@ -296,6 +296,10 @@ public class ProcessEvent implements GossResponseEvent {
 
 	private void sendData(Client client, Destination replyDestination, Serializable data, int processId, String username){
 		try {
+			//Make sure it is sending back something in the data field for valid json  (or if it is null maybe it should send error response instead???)
+			 if(data==null || data.toString().length()==0){
+                 data = "{}";
+             }
 			String r = "{\"data\":"+data+",\"responseComplete\":true,\"id\":\""+processId+"\"}";
 			/*DataResponse r = new DataResponse();
 			r.setData(data);
