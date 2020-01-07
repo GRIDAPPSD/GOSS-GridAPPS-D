@@ -2,6 +2,7 @@ Bundle-Version: 0.0.1.${tstamp}
 
 Private-Package: \
 	gov.pnnl.goss.gridappsd.configuration,\
+	gov.pnnl.goss.gridappsd.role,\
 	gov.pnnl.goss.gridappsd.data.conversion,\
 	gov.pnnl.goss.gridappsd.data.handlers,\
 	gov.pnnl.goss.gridappsd.data,\

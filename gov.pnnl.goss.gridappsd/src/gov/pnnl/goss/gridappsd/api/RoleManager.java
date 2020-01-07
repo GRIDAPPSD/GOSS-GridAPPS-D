@@ -36,61 +36,19 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.simulation;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.api;
 
-import java.io.Serializable;
+import java.util.List;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.SecurityConfig;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.GossResponseEvent;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
-/**
- * FNCSOutputEvent processes all messages coming from fncs-goss-bridge.py
- * @author shar064
- *
- */
-@Component
-public class FNCSOutputEvent implements GossResponseEvent {
+public interface RoleManager {
 	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	@ServiceDependency
-    private volatile SecurityConfig securityConfig;
-	/**
-	 * message is in the JSON string format
-	 * {}
-	 */
-	@Override
-	public void onMessage(Serializable message) {
-		
-		try {
-			Credentials credentials = new UsernamePasswordCredentials(
-					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
-			
-			
-			
-			
-			//TODO: Parse message and update simulation status or communicate with bridge accordingly
-			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
-					
-		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
+	List<String> getRoles(String userName) throws Exception;
 	
-
+	boolean hasRole(String userName, String roleName) throws Exception;
+	
+	//TODO
+	//addRole(user, role)
+	//removeRole(user, role)
 }

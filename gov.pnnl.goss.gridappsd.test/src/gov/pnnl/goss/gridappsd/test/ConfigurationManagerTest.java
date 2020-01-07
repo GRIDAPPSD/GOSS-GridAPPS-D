@@ -383,7 +383,7 @@ public class ConfigurationManagerTest {
 			
 			//Step1: Create GOSS Client
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					TestConstants.username, TestConstants.password);
 	//		client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 		}

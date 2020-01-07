@@ -40,6 +40,7 @@
 package gov.pnnl.goss.gridappsd.configuration;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -49,6 +50,7 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
@@ -60,6 +62,8 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
 
 import pnnl.goss.core.Client;
 
@@ -186,6 +190,16 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}catch (Exception e) {
 			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
 		}
+		
+		 ModelState modelState = new ModelState();
+		 String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		 if(modelStateStr==null || modelStateStr.trim().length()==0){
+			 logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		 } else {
+			 Gson  gson = new Gson();
+			 modelState = gson.fromJson(modelStateStr, ModelState.class);
+		 }
+		
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
 			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
@@ -208,11 +222,13 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		
+		boolean bHaveEventGen = true;
+		
 		//TODO add climate
 		
 		//CIM2GLM utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		
 		logRunning("Finished generating all DSS configuration files.", processId, username, logManager);
 		

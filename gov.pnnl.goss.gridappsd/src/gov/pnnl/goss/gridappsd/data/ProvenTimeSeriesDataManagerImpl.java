@@ -36,6 +36,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.security.SecurityConfig;
 
 import com.google.gson.Gson;
 
@@ -63,6 +64,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@ServiceDependency
 	private volatile AppManager appManager;
 	
+	@ServiceDependency
+	private volatile SecurityConfig securityConfig;
+	
 	public static final String DATA_MANAGER_TYPE = "timeseries";
 	
 	public static int count = 0;
@@ -76,8 +80,8 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
 	ProvenProducer provenQueryProducer = new ProvenProducer();
 	ProvenProducer provenWriteProducer = new ProvenProducer();
-	Credentials credentials = new UsernamePasswordCredentials(
-			GridAppsDConstants.username, GridAppsDConstants.password);
+//	Credentials credentials = new UsernamePasswordCredentials(
+//			GridAppsDConstants.username, GridAppsDConstants.password);
 	
 	@Start
 	public void start(){
@@ -86,6 +90,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
 				new Date().getTime(), "Starting "+this.getClass().getSimpleName(), 
 				LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+				securityConfig.getManagerUser(),
 				GridAppsDConstants.topic_platformLog);
 		
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
@@ -129,7 +134,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
 		if(converter!=null){
 			StringWriter sw = new StringWriter();			
-			converter.convert(response.data.toString(), new PrintWriter(sw));
+			converter.convert(response.data.toString(), new PrintWriter(sw), requestTimeseriesData);
 			return sw.toString();
 		}
 				
@@ -163,6 +168,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     
     
     private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId) throws Exception{
+    	
+    	Credentials credentials = new UsernamePasswordCredentials(
+				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
         Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override
@@ -180,6 +188,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
                             new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace, 
                             LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
+                    		event.getUsername(),
                             GridAppsDConstants.topic_platformLog);
                 }
             }

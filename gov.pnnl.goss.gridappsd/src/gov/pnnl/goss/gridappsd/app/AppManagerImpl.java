@@ -74,6 +74,7 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+
 import com.google.gson.JsonSyntaxException;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
@@ -96,6 +97,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.security.SecurityConfig;
 
 /**
  * This class implements subset of functionalities for Internal Functions 405
@@ -119,6 +121,9 @@ public class AppManagerImpl implements AppManager {
 
 	@ServiceDependency
 	private volatile LogManager logManager;
+	
+    @ServiceDependency
+    private volatile SecurityConfig securityConfig;
 
 	private Dictionary<String, ?> configurationProperties;
 
@@ -146,12 +151,14 @@ public class AppManagerImpl implements AppManager {
 	public void process(int processId, DataResponse event, Serializable message)
 			throws Exception {
 
-		// TODO:Get username from message's metadata e.g. event.getUserName()
-		username = GridAppsDConstants.username;
+		// Get username from message's metadata e.g. event.getUserName()
+		username = event.getUsername();
 
-		if (client == null) {
+		
+		
+		if (client == null) { 
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 		}
 		Destination replyDestination = event.getReplyDestination();
@@ -258,7 +265,7 @@ public class AppManagerImpl implements AppManager {
 				"Starting "+this.getClass().getName(),
 				LogLevel.INFO,
 				ProcessStatus.RUNNING,
-				true),GridAppsDConstants.username,
+				true),securityConfig.getManagerUser(),
 				GridAppsDConstants.topic_platformLog);
 
 		scanForApps();
@@ -269,7 +276,7 @@ public class AppManagerImpl implements AppManager {
 				String.format("Found %s applications", apps.size()),
 				LogLevel.INFO,
 				ProcessStatus.RUNNING,
-				true),GridAppsDConstants.username);
+				true),securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -548,6 +555,7 @@ public class AppManagerImpl implements AppManager {
 					simulationId, new Date().getTime(),
 					"Starting app with command "+ String.join(" ",commands),
 					LogLevel.INFO, ProcessStatus.RUNNING, true),
+					securityConfig.getManagerUser(),
 					GridAppsDConstants.topic_simulationLog+simulationId);
 			try {
 				process = processAppBuilder.start();

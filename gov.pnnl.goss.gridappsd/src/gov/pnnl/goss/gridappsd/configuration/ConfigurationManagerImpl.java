@@ -99,6 +99,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	private HashMap<String, ConfigurationHandler> configHandlers = new HashMap<String, ConfigurationHandler>();
 	
 	
+	
 	public ConfigurationManagerImpl() {
 	}
 	 
@@ -178,6 +179,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 					GridAppsDConstants.topic_platformLog);			
 			throw new Exception("No configuration handler registered for '"+type+"'");
 		}
+		
+		
+		
 	}
+	
+	
+	
 	
 }

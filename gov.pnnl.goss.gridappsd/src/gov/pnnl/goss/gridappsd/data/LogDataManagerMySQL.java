@@ -44,7 +44,6 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -72,6 +71,7 @@ import com.google.gson.Gson;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.security.SecurityConfig;
 
 
 @Component
@@ -83,8 +83,13 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 	@ServiceDependency
 	ClientFactory clientFactory;
 	
+	@ServiceDependency
+	SecurityConfig securityConfig;
+	
 	private Connection connection;
 	Client client;
+	
+	
 	
 	public static final String DATA_MANAGER_TYPE = "log";
 	
@@ -99,7 +104,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 		
 		try {
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			client = clientFactory.create(PROTOCOL.STOMP,credentials);
 			connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
 			
@@ -143,6 +148,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.executeUpdate();
 				
 			} catch (Exception e) {
+				e.printStackTrace();
 				log.error("Error while storing log:");
 				log.error("error = " + e.getMessage());
 				log.error("source = " + source);
@@ -177,6 +183,8 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 				preparedStatement.executeUpdate();
 				
 			} catch (DataTruncation e) {
+				e.printStackTrace();
+
 				log.error("Error while storing log:");
 				log.error("error = " + e.getMessage());
 			} catch (SQLException e) {

@@ -85,6 +85,7 @@ import org.apache.http.protocol.HTTP;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
@@ -115,6 +116,9 @@ public class TestManagerImpl implements TestManager {
 	
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
+	
+	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
 	
 	private Hashtable<String, AtomicInteger> rulePorts = new Hashtable<String, AtomicInteger>();
 	
@@ -159,7 +163,7 @@ public class TestManagerImpl implements TestManager {
 
 			// Log - "Starting "+this.getClass().getName());
 			Credentials credentials = new UsernamePasswordCredentials(
-					GridAppsDConstants.username, GridAppsDConstants.password);
+					"testmanager1", "testmanager");
 			client = clientFactory.create(PROTOCOL.STOMP, credentials);
 			
 			client.subscribe(GridAppsDConstants.topic_simulationTestInput+">", new GossResponseEvent() {
@@ -251,7 +255,7 @@ public class TestManagerImpl implements TestManager {
 	private ProcessEvents getProcessEvents(Client client, String simulationId) {
 		ProcessEvents pe;
 		if(! processEventsMap.containsKey(simulationId) ){
-			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId, simulationManager));
+			pe = processEventsMap.getOrDefault(simulationId, new ProcessEvents(logManager, client, simulationId, simulationManager, securityConfig.getManagerUser()));
 			processEventsMap.putIfAbsent(simulationId, pe);
 	    }
 		pe = processEventsMap.get(simulationId);
@@ -269,9 +273,9 @@ public class TestManagerImpl implements TestManager {
 	public void sendEventStatus(String simulationId, Destination replyDestination){
 //		{
 //		    "data": [
-//		        {“faultMRID" : String,
+//		        {"faultMRID" : String,
 //		        "simulation_id": int,
-//		        “faultType:”: String,
+//		        "faultType": String,
 //		        "fault": <Fault Object>,
 //		        "timeInitiated":long,
 //		        "timeCleared":long,
@@ -302,7 +306,7 @@ public class TestManagerImpl implements TestManager {
 	@Override
 	public void compareSimulations(String simulationIdOne, String simulationIdTwo){
 		
-		HistoricalComparison hc = new HistoricalComparison(dataManger);
+		HistoricalComparison hc = new HistoricalComparison(dataManger, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = null; //hc.test_proven(simulationIdTwo, expectedResultObject);
 		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);

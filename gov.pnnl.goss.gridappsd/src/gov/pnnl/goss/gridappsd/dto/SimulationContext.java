@@ -3,6 +3,7 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 import java.util.List;
 
+
 public class SimulationContext implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -16,7 +17,7 @@ public class SimulationContext implements Serializable {
 	public String simulatorPath;
 	public List<String> appInstanceIds;
 	public List<String> serviceInstanceIds;
-	
+	public String simulationUser;
 
 	public String getSimulationId() {
 		return simulationId;
@@ -93,7 +94,14 @@ public class SimulationContext implements Serializable {
 	public void addServiceInstanceIds(String serviceInstanceId) {
 		this.serviceInstanceIds.add(serviceInstanceId);
 	}
-	
-	
+
+	public String getSimulationUser() {
+		return simulationUser;
+	}
+
+	public void setSimulationUser(String simulationUser) {
+		this.simulationUser = simulationUser;
+	}
+
 
 }

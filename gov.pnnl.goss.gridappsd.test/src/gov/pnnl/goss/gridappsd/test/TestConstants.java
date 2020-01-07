@@ -65,5 +65,7 @@ public class TestConstants {
 	
 	public static final String FNCS_BRIDGE_RESPONSE = "{\"command\":\"isInitialized\",\"response\":\"true\",\"output\":\"Any messages from simulator regarding initialization\"}";
 	
+	public static final String username = "system";
+	public static final String password = "password";
 
 }

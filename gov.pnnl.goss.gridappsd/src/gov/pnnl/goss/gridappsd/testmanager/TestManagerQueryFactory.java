@@ -24,7 +24,7 @@ public class TestManagerQueryFactory {
 		QueryHandler queryHandler = getQueryHandler();
 		String lineQuery = "SELECT ?name WHERE { " + "?s r:type c:Feeder. " + "?s c:IdentifiedObject.name ?name} "
 				+ "ORDER by ?name";
-		ResultSet results = queryHandler.query(lineQuery);
+		ResultSet results = queryHandler.query(lineQuery, null);
 		String feederName = getResultName(results);
 		return feederName;
 	}
@@ -34,7 +34,7 @@ public class TestManagerQueryFactory {
 
 		String geoRegionQuery = "SELECT ?name WHERE { " + "?s r:type c:GeographicalRegion. " + "?s c:IdentifiedObject.name ?name} "
 				+ "ORDER by ?name";
-		ResultSet results = queryHandler.query(geoRegionQuery);
+		ResultSet results = queryHandler.query(geoRegionQuery, null);
 		String geoName = getResultName(results);
 		return geoName;
 	}
@@ -43,7 +43,7 @@ public class TestManagerQueryFactory {
 		QueryHandler queryHandler = getQueryHandler();
 		String subGeoRegionQuery = "SELECT ?name WHERE { " + "?s r:type c:SubGeographicalRegion. " + "?s c:IdentifiedObject.name ?name} "
 				+ "ORDER by ?name";
-		ResultSet results = queryHandler.query(subGeoRegionQuery);
+		ResultSet results = queryHandler.query(subGeoRegionQuery, null);
 		String subGeoName = getResultName(results);	
 		return subGeoName;
 	}
@@ -108,7 +108,7 @@ public class TestManagerQueryFactory {
      "?s c:Measurement.phases ?phsraw ."+
     "  {bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phases)}"+
     "} ORDER BY ?class ?type ?name";
-		ResultSet results = queryHandler.query(query);
+		ResultSet results = queryHandler.query(query, null);
 		String subGeoName = getResultName(results);	
 		System.out.println(subGeoName);
 	}

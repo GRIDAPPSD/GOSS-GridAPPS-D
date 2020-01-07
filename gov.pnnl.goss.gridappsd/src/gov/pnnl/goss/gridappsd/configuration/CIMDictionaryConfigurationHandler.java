@@ -50,7 +50,10 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -60,6 +63,7 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
@@ -114,8 +118,8 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = false;
-                if(parameters.containsKey(USEHOUSES))
-                        useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		if(parameters.containsKey(USEHOUSES))
+			useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -132,14 +136,20 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 			}
 		}
 		
-		
-		
+        ModelState modelState = new ModelState();
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}
+
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
 			logError("No "+MODELID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+MODELID);
 		}
-		
 		
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
 		if(bgHost==null || bgHost.trim().length()==0){
@@ -153,9 +163,9 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 		CIMImporter cimImporter = new CIMImporter(); 
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)),useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, new PrintWriter(new FileWriter(configFile)),useHouses,modelState);
 		} else {
-			cimImporter.generateDictionaryFile(queryHandler, out, useHouses);
+			cimImporter.generateDictionaryFile(queryHandler, out, useHouses,modelState);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that

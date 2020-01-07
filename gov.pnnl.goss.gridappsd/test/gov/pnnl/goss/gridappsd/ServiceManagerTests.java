@@ -43,6 +43,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -90,7 +91,11 @@ public class ServiceManagerTests {
 	
 	@Test
 	public void testPythonServiceStart_WithDependencyAndSimulation(){
-		serviceManager.startService("fncsgossbridge", "simulation_1");
+		
+		HashMap<String, Object> props = new HashMap<String, Object>();
+		props.put("simulationId", "simulation_1");
+
+		serviceManager.startService("fncsgossbridge", props);
 	}
 	
 	@Test

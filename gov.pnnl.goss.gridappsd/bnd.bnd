@@ -4,12 +4,12 @@
 	org.apache.felix.dependencymanager.runtime,\
 	biz.aQute.bnd.annotation,\
 	pnnl.goss.core.core-api;version=latest,\
-	pnnl.goss.core.goss-core-security,\
-	pnnl.goss.core.goss-core-server-api,\
+	pnnl.goss.core.goss-core-security;version=latest,\
+	pnnl.goss.core.goss-core-server-api;version=latest,\
 	pnnl.goss.core.goss-client;version=latest,\
-	pnnl.goss.core.goss-core-server,\
-	pnnl.goss.core.goss-core-server-web,\
-	pnnl.goss.core.goss-core-server-registry,\
+	pnnl.goss.core.goss-core-server;version=latest,\
+	pnnl.goss.core.goss-core-server-web;version=latest,\
+	pnnl.goss.core.goss-core-server-registry;version=latest,\
 	com.springsource.javax.jms,\
 	slf4j.api,\
 	org.apache.activemq.activemq-osgi,\
@@ -29,7 +29,7 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	blazegraph.cim2glm;version=12.0.0,\
+	blazegraph.cim2glm;version=18.0.0,\
 	httpclient,\
 	com.bigdata.rdf,\
     proven-client;version=0.2.3,\

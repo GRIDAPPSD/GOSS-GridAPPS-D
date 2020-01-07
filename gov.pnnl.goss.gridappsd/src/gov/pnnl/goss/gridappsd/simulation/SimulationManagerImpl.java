@@ -65,6 +65,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.server.ServerControl;
 
@@ -96,6 +97,9 @@ public class SimulationManagerImpl implements SimulationManager{
 	private volatile AppManager appManager;
 	
 	@ServiceDependency
+    private volatile SecurityConfig securityConfig;
+	
+	@ServiceDependency
 	LogManager logManager;
 	
 	private Map<String, SimulationContext> simContexts  = new HashMap<String, SimulationContext>();
@@ -114,7 +118,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	public void start() throws Exception{
 		
 		Credentials credentials = new UsernamePasswordCredentials(
-				GridAppsDConstants.username, GridAppsDConstants.password);
+				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 		client = clientFactory.create(PROTOCOL.STOMP,credentials);
 		client.publish("goss.gridappsd.log.platform", new LogMessage(this.getClass().getSimpleName(),
 				null,
@@ -141,7 +145,7 @@ public class SimulationManagerImpl implements SimulationManager{
 						"Starting simulation "+simulationId, 
 						LogLevel.INFO, 
 						ProcessStatus.STARTING, 
-						true),GridAppsDConstants.username,
+						true),simContext.getSimulationUser(),
 						GridAppsDConstants.topic_platformLog);
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
@@ -152,7 +156,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			startServiceDependencies(simulationConfig, simContext, simulationContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
@@ -204,7 +208,8 @@ public class SimulationManagerImpl implements SimulationManager{
 		List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
 		for(String service : serviceDependencies) {
 			String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
-			simContext.addServiceInstanceIds(serviceInstanceId);
+			if(serviceInstanceId!=null)
+				simContext.addServiceInstanceIds(serviceInstanceId);
 		}
 		
 	}

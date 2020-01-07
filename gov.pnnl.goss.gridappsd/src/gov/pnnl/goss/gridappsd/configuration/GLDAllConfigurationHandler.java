@@ -56,20 +56,24 @@ import org.apache.jena.query.ResultSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import gov.pnnl.goss.cim2glm.CIMImporter;
+import gov.pnnl.goss.cim2glm.dto.ModelState;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -85,6 +89,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	private volatile ConfigurationManager configManager;
 	@ServiceDependency
 	private volatile PowergridModelDataManager powergridModelManager;
+	@ServiceDependency
+	private volatile SimulationManager simulationManager;
 	@ServiceDependency
 	volatile LogManager logManager;
 	@ServiceDependency
@@ -110,9 +116,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 	public static final String STARTTIME_FILTER = "startTime";
 	public static final String ENDTIME_FILTER = "endTime";
+	public static final String MODEL_STATE = "model_state";
 	public static final int TIMEFILTER_YEAR = 2013;
 
-	public static final String CONFIGTARGET = "glm";
+//	public static final String CONFIGTARGET = "glm";
+	public static final String CONFIGTARGET = "both"; //will build files for both glm and dss
 
 	public static final String CIM2GLM_PREFIX = "model";
 	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
@@ -198,6 +206,16 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}catch (Exception e) {
 			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
 		}
+		
+		ModelState modelState = new ModelState();
+		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
+		if(modelStateStr==null || modelStateStr.trim().length()==0){
+			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+		} else {
+			Gson  gson = new Gson();
+			modelState = gson.fromJson(modelStateStr, ModelState.class);
+		}		
+		
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
 			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
@@ -222,10 +240,12 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		//TODO
 		boolean useClimate = true;//GridAppsDConstants.getBooleanProperty(parameters, USECLIMATE, false);
+		
+		boolean bHaveEventGen = true;
 
 		//CIM2GLM utility uses
 		CIMImporter cimImporter = new CIMImporter();
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction);
+		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
@@ -387,6 +407,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.println("module connection;");
 		startupFileWriter.println("module generators;");
 		startupFileWriter.println("module tape;");
+		startupFileWriter.println("module reliability {");
+	    startupFileWriter.println("    report_event_log false;");
+	    startupFileWriter.println("};");
 		startupFileWriter.println("module powerflow {");
 		startupFileWriter.println("     line_capacitance TRUE;");
 		startupFileWriter.println("     solver_method "+solverMethod+";");

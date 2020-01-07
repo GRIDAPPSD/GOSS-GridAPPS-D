@@ -49,13 +49,16 @@ Created on Jan 6, 2017
 import argparse
 import cmath
 from datetime import datetime
+import gzip
 import json
+import logging
 import math
 import os
 try:
     from Queue import Queue
 except:
     from queue import Queue
+import sqlite3
 import sys
 import time
 
@@ -79,6 +82,7 @@ input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match Gr
 output_to_simulation_manager = 'goss.gridappsd.fncs.output'
 output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
 simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
+_log = logging.getLogger(__name__)
 
 goss_connection= None
 is_initialized = False
@@ -199,6 +203,83 @@ difference_attribute_map = {
     }
 }
 
+db_connection = None
+measurement_cache = {}
+
+
+def create_schema(conn):
+    sql = """
+    CREATE TABLE IF NOT EXISTS measurement_props (
+        measurement_id text primary key
+    );
+
+    CREATE TABLE IF NOT EXISTS measurements (
+        measurement_id text,
+        timestamp int,
+        property_key text,
+        property_value value,
+        FOREIGN KEY (measurement_id)
+            REFERENCES measurement_props (measurement_id)         
+    );
+    
+    CREATE INDEX timestamp_indx ON measurements(timestamp);
+    """
+    cursor = db_connection.cursor()
+    for d in sql.split(';'):
+        _log.debug("Executing {d}".format(d=d))
+        cursor.execute(d)
+    cursor.close()
+    db_connection.commit()
+
+
+def write_db_archive(timestamp, measurements):
+    global db_connection
+    global measurement_cache
+    _log.debug("Inserting measurements for timestamp: {timestamp}".format(timestamp=timestamp))
+
+    if db_connection is None:
+        raise ValueError("Invalid process, must create connection first.")
+
+    sql_insert_measurement_props = """
+    INSERT INTO measurement_props (measurement_id) VALUES(?);
+    """
+    sql_insert_measurement = """
+    INSERT INTO measurements(measurement_id, timestamp, property_key, property_value)
+        VALUES (?,?,?,?);"""
+
+    needs_insert_measurement = []
+    bulk_insert_measurements = []
+    for k, v in measurements.items():
+        if k not in measurement_cache:
+            needs_insert_measurement.append((k,))
+            measurement_cache[k] = True
+        measurement_mrid = k
+        for prop, value in v.items():
+            # the measurement_mrid is already handled by each of the properties. as long
+            # as there is at least one measurement for that mrid.
+            if prop == "measurement_mrid":
+                continue
+            bulk_insert_measurements.append((measurement_mrid, timestamp, prop, value))
+
+    if needs_insert_measurement:
+        cur = db_connection.cursor()
+        cur.executemany(sql_insert_measurement_props, needs_insert_measurement)
+        db_connection.commit()
+        cur.close()
+
+    cur = db_connection.cursor()
+    cur.executemany(sql_insert_measurement, bulk_insert_measurements)
+    db_connection.commit()
+    cur.close()
+
+
+def create_db_connection(filename):
+    global db_connection
+    _log.debug("Creating sqlite filename: {filename}".format(filename=filename))
+    db_connection = sqlite3.connect(filename)
+    create_schema(db_connection)
+
+
 class GOSSListener(object):
 
     def __init__(self, sim_length, sim_start):
@@ -216,10 +297,14 @@ class GOSSListener(object):
         self.filter_all_measurements = False
         self.message_id_list = []
 
-    def run_simulation(self,run_realtime):
+    def run_simulation(self,run_realtime, archive_db_file, archive_file, only_archive):
+        targz_file = None
         try:
+            if archive_file:
+                targz_file = gzip.open(archive_file, "wb")
+            if archive_db_file:
+                create_db_connection(archive_db_file)
             message = {}
-            current_time = 0;
             message['command'] = 'nextTimeStep'
             for current_time in range(self.simulation_length):
                 while self.pause_simulation == True:
@@ -235,14 +320,24 @@ class GOSSListener(object):
                 else:
                     message['output'] = {}
                 response_msg = json.dumps(message['output'])
+
                 if message['output']!={}:
-                    goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                    if not only_archive:
+                        goss_connection.send(output_to_goss_topic + "{}".format(simulation_id) , response_msg)
+                    if archive_db_file:
+                        ts = message['output']['message']['timestamp']
+                        meas = message['output']['message']['measurements']
+                        _log.debug("Passing timestamp {ts} to write_db_archive".format(ts=ts))
+                        write_db_archive(ts, meas)
+                    if targz_file:
+                        targz_file.write((response_msg+"\n").encode('utf-8'))
+
                 #forward messages from GOSS to FNCS
                 while not self.goss_to_fncs_message_queue.empty():
                     _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
                 _done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message_str = 'done with timestep '+str(current_time)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                #message_str = 'done with timestep '+str(current_time)
+                #_send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message_str = 'incrementing to '+str(current_time + 1)
                 _send_simulation_status('RUNNING', message_str, 'DEBUG')
                 if run_realtime == True:
@@ -251,13 +346,17 @@ class GOSSListener(object):
             message['command'] = 'simulationFinished'
             del message['output']
             goss_connection.send(output_to_simulation_manager, json.dumps(message))
-            _send_simulation_status('COMPLETE', 'Simulation {} has finsihed.'.format(simulation_id), 'INFO')
+            _send_simulation_status('COMPLETE', 'Simulation {} has finished.'.format(simulation_id), 'INFO')
         except Exception as e:
             message_str = 'Error in run simulation '+str(e)
+            _log.exception(message_str)
             _send_simulation_status('ERROR', message_str, 'ERROR')
             self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
+        finally:
+            if targz_file:
+                targz_file.close()
 
 
     def on_message(self, headers, msg):
@@ -713,8 +812,8 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + 'simulation_id = {0}'.format(simulation_id))
-        message_str = 'about to get fncs events'
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'about to get fncs events'
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         message_events = fncs.get_events()
         message_str = 'fncs events '+str(message_events)
         _send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -849,18 +948,18 @@ def _done_with_time_step(current_time):
         ValueError()
     """
     try:
-        message_str = 'Done with timestep '+str(current_time)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'Done with timestep '+str(current_time)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         if current_time == None or type(current_time) != int:
             raise ValueError(
                 'current_time must be an integer.\n'
                 + 'current_time = {0}'.format(current_time))
         time_request = current_time + 1
-        message_str = 'calling time_request '+str(time_request)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'calling time_request '+str(time_request)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         time_approved = fncs.time_request(time_request)
-        message_str = 'time approved '+str(time_approved)
-        _send_simulation_status('RUNNING', message_str, 'DEBUG')
+        #message_str = 'time approved '+str(time_approved)
+        #_send_simulation_status('RUNNING', message_str, 'DEBUG')
         if time_approved != time_request:
             raise RuntimeError(
                 'The time approved from fncs_broker is not the time requested.\n'
@@ -1254,22 +1353,23 @@ def _byteify(data, ignore_dicts = False):
     return data
 
 
-def _keep_alive(is_realtime):
+def _keep_alive(is_realtime, archive_db_file, archive_file, only_archive):
     simulation_ran = False
     while goss_listener_instance.stop_simulation == False:
         time.sleep(0.1)
         if goss_listener_instance.start_simulation == True and simulation_ran == False:
-            goss_listener_instance.run_simulation(is_realtime)
+            goss_listener_instance.run_simulation(is_realtime, archive_db_file, archive_file, only_archive)
             simulation_ran = True
 
 
-def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True, sim_duration=86400, sim_start=0):
+def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True,
+          sim_duration=86400, sim_start=0, archive_db_file=None, archive_file=None, only_archive=False):
 
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration, sim_start)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
-    _keep_alive(is_realtime)
+    _keep_alive(is_realtime, archive_db_file, archive_file, only_archive)
 
 def _get_opts():
     parser = argparse.ArgumentParser()
@@ -1285,10 +1385,31 @@ if __name__ == "__main__":
     #stomp_port, username and password as commmand line arguments
     opts = _get_opts()
     simulation_id = opts.simulation_id
+    # logging within the context of the container.
+    logfile = "/tmp/gridappsd_tmp/{simulation_id}/fncs_goss_bridge.log".format(simulation_id=simulation_id)
+    logging.basicConfig(level=logging.INFO, filename=logfile)
+
     sim_broker_location = opts.broker_location
     sim_dir = opts.simulation_directory
     sim_request = json.loads(opts.simulation_request.replace("\'",""))
     run_realtime = sim_request["simulation_config"]["run_realtime"]
     sim_duration = sim_request["simulation_config"]["duration"]
     sim_start_str = int(sim_request["simulation_config"]["start_time"])
-    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration, sim_start_str)
+    # New archiving variables set here
+    # Once the simulation_config is sent directly from the ui, then we can use these,
+    # Until then you can change the archive to have a default value for either the
+    # archive or the db_archive.  These will be off by default as is the current
+    # setup.
+    make_db_archive = sim_request['simulation_config'].get("make_db_archive", False)
+    make_archive = sim_request["simulation_config"].get("make_archive", False)
+    only_archive = sim_request["simulation_config"].get("only_archive", False)
+    archive_db_file = None
+    if make_db_archive:
+        archive_db_file = "/tmp/gridappsd_tmp/{simulation_id}/archive.sqlite".format(simulation_id=simulation_id)
+    archive_file = None
+    if make_archive:
+        archive_file = "/tmp/gridappsd_tmp/{simulation_id}/archive.tar.gz".format(simulation_id=simulation_id)
+    _log.debug("Archive settings:\n\tarchive_db_file: {}\n\tarchive_file: {}\n\tonly_archive: {}".format(
+        archive_db_file, archive_file, only_archive))
+    _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration, sim_start_str,
+          archive_db_file, archive_file, only_archive)

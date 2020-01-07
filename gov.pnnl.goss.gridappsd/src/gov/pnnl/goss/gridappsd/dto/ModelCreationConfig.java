@@ -44,6 +44,8 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import gov.pnnl.goss.cim2glm.dto.ModelState;
+
 public class ModelCreationConfig implements Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -61,7 +63,8 @@ public class ModelCreationConfig implements Serializable{
 	public double p_fraction = 0;  // allowed values {0....1}  constant P portion (defaults to 0 for CIM-defined,  maps to -p
 	public boolean randomize_zipload_fractions = false; // should randomize the zipload fraction values (eg. z, i, p_fractions)
 	public boolean use_houses = false;  
-	
+	public ModelState model_state;
+
 	
 	
 	
@@ -150,6 +153,13 @@ public class ModelCreationConfig implements Serializable{
 		return gson.toJson(this);
 	}
 	
+	public ModelState getModel_state() {
+		return model_state;
+	}
+	public void setModel_state(ModelState model_state) {
+		this.model_state = model_state;
+	}
+	
 	public static ModelCreationConfig parse(String jsonString){
 		Gson  gson = new Gson();
 		ModelCreationConfig obj = gson.fromJson(jsonString, ModelCreationConfig.class);
@@ -157,6 +167,5 @@ public class ModelCreationConfig implements Serializable{
 			throw new JsonSyntaxException("Expected attribute schedule_name not found");
 		return obj;
 	}
-	
 	
 }
