@@ -1,4 +1,4 @@
-ARG GRIDAPPSD_BASE_VERSION=:master
+ARG GRIDAPPSD_BASE_VERSION=:sim
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
@@ -47,6 +47,19 @@ RUN cd ${TEMP_DIR} \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-alarms \
   && cp /gridappsd/services/gridappsd-alarms/gridappsd-alarms.config /gridappsd/services/ 
+
+# Get the gridappsd-estimator from the proper repository
+RUN cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-state-estimator \
+  && cd gridappsd-state-estimator \
+  && git clone https://github.com/GRIDAPPSD/SuiteSparse \
+  && git clone https://github.com/GRIDAPPSD/json \
+  && make -C SuiteSparse LAPACK=-llapack BLAS=-lblas \
+  && make -C state-estimator \
+  && mkdir -p /gridappsd/services/gridappsd-state-estimator \
+  && rm -rf .git SuiteSparse/.git json.git \ 
+  && cp -r * /gridappsd/services/gridappsd-state-estimator \
+  && cp /gridappsd/services/gridappsd-state-estimator/state-estimator.config /gridappsd/services/ 
 
 # Copy initial applications and services into the container.
 # 
