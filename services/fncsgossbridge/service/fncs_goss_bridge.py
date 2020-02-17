@@ -37,8 +37,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
-import traceback
-from readline import get_begidx
 """
 Created on Jan 6, 2017
 
@@ -54,6 +52,7 @@ import json
 import logging
 import math
 import os
+import traceback
 try:
     from Queue import Queue
 except:
@@ -304,6 +303,8 @@ class GOSSListener(object):
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
+        self.pause_simulation_at = -1
+        
 
     def run_simulation(self,run_realtime, archive_db_file, archive_file, only_archive):
         targz_file = None
@@ -315,8 +316,7 @@ class GOSSListener(object):
             message = {}
             message['command'] = 'nextTimeStep'
             for current_time in range(self.simulation_length):
-                while self.pause_simulation == True:
-                    time.sleep(1)
+                self.simulation_time = current_time
                 if self.stop_simulation == True:
                     if fncs.is_initialized():
                         fncs.die()
@@ -339,7 +339,11 @@ class GOSSListener(object):
                         write_db_archive(ts, meas)
                     if targz_file:
                         targz_file.write((response_msg+"\n").encode('utf-8'))
-
+                if self.simulation_time == self.pause_simulation_at:
+                    self.pause_simulation = True
+                    _send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
+                while self.pause_simulation == True:
+                    time.sleep(1)
                 #forward messages from GOSS to FNCS
                 while not self.goss_to_fncs_message_queue.empty():
                     _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
@@ -468,15 +472,22 @@ class GOSSListener(object):
                 else:
                     self.pause_simulation = False
                     _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
+            elif json_msg.get('command', '') == 'resumePauseAt':
+                if self.pause_simulation == False:
+                    _send_simulation_status('RUNNING', 'The simulation is already running.', 'WARN')
+                else:
+                    self.pause_simulation = False
+                    _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
+                    self.pause_simulation_at = self.simulation_time + json_msg.get('input', {}).get('pauseIn',-1)                       
             elif json_msg.get('command', '') == '':
                 _send_simulation_status('WARNING', 'The message recieved did not have a command key. Ignoring malformed message.', 'WARN')
-
         except Exception as e:
             message_str = 'Error '+str(e)+' in command '+str(msg)
             _send_simulation_status('ERROR', message_str, 'ERROR')
             self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
+     
         
     def on_error(self, headers, message):
         message_str = 'Error in goss listener '+str(message)
