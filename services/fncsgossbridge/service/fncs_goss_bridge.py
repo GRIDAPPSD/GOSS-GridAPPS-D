@@ -205,6 +205,9 @@ difference_attribute_map = {
         "triplex_load" : {
             "property" : ["base_power_{}"],
             "prefix" : "ld_"
+        },
+        "load" : {
+            "property" : ["base_power_{}"]
         }
     }
 }
@@ -733,8 +736,17 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                         for y in object_phases:
                             fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
                     elif cim_attribute == "EnergyConsumer.p":
-                        for y in ["1","2"]:
-                            fncs_input_messag["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/2.0
+                        phase_count = len(object_phases)
+                        if "s1" in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/phase_count
+                        if "s2" in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/phase_count
+                        if "A" in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
+                        if "B" in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
+                        if "C" in object_phases:
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
                     else:
                         _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
     
@@ -1321,9 +1333,12 @@ def _create_cim_object_map(map_file=None):
                         "name" : y.get("name"),
                         "phases" : y.get("phases"),
                         "total_phases" : y.get("phases"),
-                        "type" : "triplex_load",
                         "prefix" : "ld_"
                     }
+                    if "s1" in object_mrid_to_name[y.get("mRID")]["phases"] or "s2" in object_mrid_to_name[y.get("mRID")]["phases"]:
+                        object_mrid_to_name[y.get("mRID")]["type"] = "triplex_load"
+                    else:
+                        object_mrid_to_name[y.get("mRID")]["type"] = "load"
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
