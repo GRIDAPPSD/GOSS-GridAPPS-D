@@ -305,7 +305,6 @@ class GOSSListener(object):
         self.filter_all_measurements = False
         self.pause_simulation_at = -1
         
-
     def run_simulation(self,run_realtime, archive_db_file, archive_file, only_archive):
         targz_file = None
         try:
@@ -374,6 +373,14 @@ class GOSSListener(object):
     def on_message(self, headers, msg):
         message = {}
         try:
+            headers_dict = yaml.safe_load(str(headers))
+            destination = headers_dict['destination']
+            message_id = headers_dict['message-id']
+            if str(destination).startswith('/temp-queue'):
+                return
+            if str(message_id) in self.message_id_list:
+                return
+            self.message_id_list.append(str(message_id))
             message_str = 'received message '+str(headers)+'________________'+str(msg)
 
             if fncs.is_initialized():
@@ -1209,7 +1216,7 @@ def _create_cim_object_map(map_file=None):
                             property_name = "voltage_" + phases;
                         elif measurement_type == "Pos":
                             object_name = conducting_equipment_name
-                            property_name = "status"
+                            property_name = "phase_" + phases + "_state"
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
