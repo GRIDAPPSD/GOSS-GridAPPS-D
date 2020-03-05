@@ -37,6 +37,8 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
+import traceback
+from readline import get_begidx
 """
 Created on Jan 6, 2017
 
@@ -52,7 +54,6 @@ import json
 import logging
 import math
 import os
-import traceback
 try:
     from Queue import Queue
 except:
@@ -199,15 +200,6 @@ difference_attribute_map = {
             "property" : ["compensator_x_setting_{}"],
             "prefix" : "rcon_"
         }
-    },
-    "EnergyConsumer.p" : {
-        "triplex_load" : {
-            "property" : ["base_power_{}"],
-            "prefix" : "ld_"
-        },
-        "load" : {
-            "property" : ["base_power_{}"]
-        }
     }
 }
 
@@ -303,8 +295,8 @@ class GOSSListener(object):
         self.command_filter = []
         self.filter_all_commands = False
         self.filter_all_measurements = False
-        self.pause_simulation_at = -1
-        
+        self.message_id_list = []
+
     def run_simulation(self,run_realtime, archive_db_file, archive_file, only_archive):
         targz_file = None
         try:
@@ -315,7 +307,8 @@ class GOSSListener(object):
             message = {}
             message['command'] = 'nextTimeStep'
             for current_time in range(self.simulation_length):
-                self.simulation_time = current_time
+                while self.pause_simulation == True:
+                    time.sleep(1)
                 if self.stop_simulation == True:
                     if fncs.is_initialized():
                         fncs.die()
@@ -338,11 +331,7 @@ class GOSSListener(object):
                         write_db_archive(ts, meas)
                     if targz_file:
                         targz_file.write((response_msg+"\n").encode('utf-8'))
-                if self.simulation_time == self.pause_simulation_at:
-                    self.pause_simulation = True
-                    _send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
-                while self.pause_simulation == True:
-                    time.sleep(1)
+
                 #forward messages from GOSS to FNCS
                 while not self.goss_to_fncs_message_queue.empty():
                     _publish_to_fncs_bus(simulation_id, self.goss_to_fncs_message_queue.get(), self.command_filter)
@@ -479,22 +468,15 @@ class GOSSListener(object):
                 else:
                     self.pause_simulation = False
                     _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
-            elif json_msg.get('command', '') == 'resumePauseAt':
-                if self.pause_simulation == False:
-                    _send_simulation_status('RUNNING', 'The simulation is already running.', 'WARN')
-                else:
-                    self.pause_simulation = False
-                    _send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
-                    self.pause_simulation_at = self.simulation_time + json_msg.get('input', {}).get('pauseIn',-1)                       
             elif json_msg.get('command', '') == '':
                 _send_simulation_status('WARNING', 'The message recieved did not have a command key. Ignoring malformed message.', 'WARN')
+
         except Exception as e:
             message_str = 'Error '+str(e)+' in command '+str(msg)
             _send_simulation_status('ERROR', message_str, 'ERROR')
             self.stop_simulation = True
             if fncs.is_initialized():
                 fncs.die()
-     
         
     def on_error(self, headers, message):
         message_str = 'Error in goss listener '+str(message)
@@ -753,18 +735,6 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                     elif cim_attribute == "PowerElectronicsConnection.q":
                         for y in object_phases:
                             fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
-                    elif cim_attribute == "EnergyConsumer.p":
-                        phase_count = len(object_phases)
-                        if "s1" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/phase_count
-                        if "s2" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/phase_count
-                        if "A" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
-                        if "B" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
-                        if "C" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
                     else:
                         _send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
     
@@ -1133,7 +1103,6 @@ def _create_cim_object_map(map_file=None):
                 synchronousMachines = x.get("synchronousmachines", [])
                 breakers = x.get("breakers", [])
                 reclosers = x.get("reclosers", [])
-                energy_consumers = x.get("energyconsumers", [])
                 #TODO: add more object types to handle
                 for y in measurements:
                     measurement_type = y.get("measurementType")
@@ -1346,17 +1315,6 @@ def _create_cim_object_map(map_file=None):
                         "type" : "recloser",
                         "prefix" : "sw_"
                     }
-                for y in energy_consumers:
-                    object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "prefix" : "ld_"
-                    }
-                    if "s1" in object_mrid_to_name[y.get("mRID")]["phases"] or "s2" in object_mrid_to_name[y.get("mRID")]["phases"]:
-                        object_mrid_to_name[y.get("mRID")]["type"] = "triplex_load"
-                    else:
-                        object_mrid_to_name[y.get("mRID")]["type"] = "load"
         except Exception as e:
             _send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
             pass
