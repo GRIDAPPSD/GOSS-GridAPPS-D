@@ -376,7 +376,11 @@ public class ProcessNewSimulationRequest {
 		params.put(GLDAllConfigurationHandler.RANDOMIZEFRACTIONS, modelConfig.randomize_zipload_fractions);
 		params.put(GLDAllConfigurationHandler.USEHOUSES, modelConfig.use_houses);
 
-		params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
+		if(modelConfig.schedule_name!=null){
+			params.put(GLDAllConfigurationHandler.SCHEDULENAME, modelConfig.schedule_name);
+		} else {
+			 params.put(GLDAllConfigurationHandler.SCHEDULENAME, "");
+		}
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
 		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
 

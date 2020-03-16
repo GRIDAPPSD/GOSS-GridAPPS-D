@@ -169,7 +169,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 0);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
-		if(scheduleName!=null){
+		if(scheduleName!=null && scheduleName.trim().length()>0){
 			bWantSched = true;
 		}
 		

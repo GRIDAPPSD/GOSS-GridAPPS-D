@@ -89,7 +89,7 @@ public class SimulationProcess extends Thread {
 
         	File simulationFile = new File(simContext.getStartupFile());
 
-            if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
+            //if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
                 File serviceDir = serviceManager.getServiceConfigDirectory();
                 /*try{
                     RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
@@ -101,7 +101,7 @@ public class SimulationProcess extends Thread {
                 }catch(Exception e){
                     log.warn("Could not copy schedules file to working directory");
                 }
-            }
+            //}
 
             //Start GridLAB-D
             logManager.log(new LogMessage(this.getClass().getSimpleName(),
