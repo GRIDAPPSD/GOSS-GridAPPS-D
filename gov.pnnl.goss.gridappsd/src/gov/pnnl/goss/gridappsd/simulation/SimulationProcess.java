@@ -87,20 +87,20 @@ public class SimulationProcess extends Thread {
         SimulationTracker isFinished = new SimulationTracker();
         try{
 
-        	File simulationFile = new File(simContext.getStartupFile());
+            File simulationFile = new File(simContext.getStartupFile());
 
             //if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
-                File serviceDir = serviceManager.getServiceConfigDirectory();
-                /*try{
-                    RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
-                }catch(Exception e){
-                    log.warn("Could not copy player file to working directory");
-                }*/
-                try{
-                    RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"appliance_schedules.glm "+simulationFile.getParentFile().getAbsolutePath()+File.separator+GLDAllConfigurationHandler.SCHEDULES_FILENAME);
-                }catch(Exception e){
-                    log.warn("Could not copy schedules file to working directory");
-                }
+            File serviceDir = serviceManager.getServiceConfigDirectory();
+            /*try{
+                RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
+            }catch(Exception e){
+               log.warn("Could not copy player file to working directory");
+            }*/
+            try{
+                RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"appliance_schedules.glm "+simulationFile.getParentFile().getAbsolutePath()+File.separator+GLDAllConfigurationHandler.SCHEDULES_FILENAME);
+            }catch(Exception e){
+                log.warn("Could not copy schedules file to working directory");
+            }
             //}
 
             //Start GridLAB-D
