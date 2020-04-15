@@ -425,6 +425,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			startupFileWriter.println("      name "+simulationID+";");
 			startupFileWriter.println("      message_type JSON;");
 			startupFileWriter.println("      configure model_outputs.json;");
+			startupFileWriter.println("}");
+
 		} else {
 			startupFileWriter.println("object fncs_msg {");
 			startupFileWriter.println("     name "+simulationID+";");
