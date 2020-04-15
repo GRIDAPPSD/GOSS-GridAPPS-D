@@ -102,6 +102,15 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String DICTIONARY_FILE = "dictionary_file";
 	public static final String SIMULATIONID = "simulation_id";
 	public static final String USEHOUSES = "use_houses";
+	
+	
+	public static final String HELIX_PREFIX = "{\"name\": \"SIMULATION_ID,\"log_level\": 3,"
+			+ "\"period\": 1.0,	\"endpoints\": [{\"name\": \"helics_input\","
+			+ "\"global\": false,\"type\": \"string\",	"
+			+ "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\"},"
+			+ "{\"name\": \"helics_output\",\"global\": false,\"type\": \"string\",	"
+			+ "\"destination\": \"HELICS_GOSS_Bridge_SIMULATION_ID/helics_output\",	\"info\": \"";
+	public static final String HELIX_SUFFIX = "\"}]}";
 
 	public GLDSimulationOutputConfigurationHandler() {
 	}
@@ -135,6 +144,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		File dictFile = null;
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
+		String gldInterface = configManager.getConfigurationProperty(GridAppsDConstants.GRIDLABD_INTERFACE);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -203,6 +213,14 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		}
 		
 		String result = CreateGldPubs(measurementFileReader, processId, username);
+		
+		//if it is for helics wrap it in the helix endpoint definition
+		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
+			//Escape the json and embed it in the helics config file
+			result = HELIX_PREFIX.replaceAll("SIMULATION_ID", simulationId)
+					+result.replaceAll("\"", "\\\"")+
+					HELIX_SUFFIX;
+		}
 
 		if(configFile!=null){
 			FileWriter fw = new FileWriter(configFile);
