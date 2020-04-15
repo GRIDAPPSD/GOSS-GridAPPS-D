@@ -218,7 +218,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			//Escape the json and embed it in the helics config file
 			result = HELIX_PREFIX.replaceAll("PROCESS_ID", processId)
-					+result.replaceAll("\"", "\\\\\"")+
+					+result.replaceAll("\"", "\\\\\"").replaceAll("\n","")+
 					HELIX_SUFFIX;
 		}
 
