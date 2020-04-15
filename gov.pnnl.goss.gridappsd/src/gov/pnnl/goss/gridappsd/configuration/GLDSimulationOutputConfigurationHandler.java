@@ -104,7 +104,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String USEHOUSES = "use_houses";
 	
 	
-	public static final String HELIX_PREFIX = "{\"name\": \"PROCESS_ID,\"log_level\": 3,"
+	public static final String HELIX_PREFIX = "{\"name\": \"PROCESS_ID\",\"log_level\": 3,"
 			+ "\"period\": 1.0,	\"endpoints\": [{\"name\": \"helics_input\","
 			+ "\"global\": false,\"type\": \"string\",	"
 			+ "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\"},"
@@ -218,7 +218,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			//Escape the json and embed it in the helics config file
 			result = HELIX_PREFIX.replaceAll("PROCESS_ID", processId)
-					+result.replaceAll("\"", "\\\"")+
+					+result.replaceAll("\"", "\\\\\"")+
 					HELIX_SUFFIX;
 		}
 
