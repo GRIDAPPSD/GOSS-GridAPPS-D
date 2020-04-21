@@ -88,7 +88,7 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 	public static final String MODELID = "model_id";
 	public static final String SIMULATIONID = "simulation_id";
 	public static final String CIM2GLM_PREFIX = "model";
-	public static final String LIMITS_FILENAME = CIM2GLM_PREFIX+"_limits.glm";
+	public static final String LIMITS_FILENAME = CIM2GLM_PREFIX+"_limits.json";
 
 	public GLDLimitsConfigurationHandler() {
 	}
