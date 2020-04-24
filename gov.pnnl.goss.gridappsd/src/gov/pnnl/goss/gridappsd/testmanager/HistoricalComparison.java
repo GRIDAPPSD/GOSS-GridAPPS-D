@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class HistoricalComparison {
 	
@@ -58,12 +59,20 @@ public class HistoricalComparison {
 	public String timeSeriesQuery(String simulationId, String hasMrid,
 			String startTime, String endTime) {
 
+		// {"queryMeasurement":"simulation","queryFilter":{"simulation_id":"145774843"},"responseFormat":"JSON","queryType":"time-series","simulationYear":0}
 		HashMap<String, Object> queryFilter = new HashMap<String, Object>();
 		queryFilter.put("hasSimulationId", simulationId);
 		queryFilter.put("startTime", startTime);
 		queryFilter.put("endTime", endTime);
+		
+		 queryFilter = new HashMap<String, Object>();
+		 queryFilter.put("simulation_id", simulationId);
+			
+//		RequestTimeseriesData requestTimeseriesData
+		
 
 		RequestTimeseriesData request = new RequestTimeseriesData();
+		request.setSimulationYear(0);
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 
@@ -76,6 +85,7 @@ public class HistoricalComparison {
 		} catch (Exception e) {
 			// TODO: Log error - excpetion
 		}
+//		System.out.println(response.toString());
 		return response.toString();
 	}
 	
@@ -140,7 +150,7 @@ public class HistoricalComparison {
 
 	public JsonObject buildOutputObject(String simulationId, JsonObject simOutputObject, String time,
 			JsonArray measurements) {
-		simOutputObject.addProperty("timestame", time);
+		simOutputObject.addProperty("timestamp", time);
 		simOutputObject.add("measurements", measurements);
 		JsonObject msgObject = new JsonObject();
 		msgObject.addProperty("simulation_id", simulationId);
@@ -154,47 +164,58 @@ public class HistoricalComparison {
 	public TestResultSeries processWithAllTimes(JsonObject expected_output_series, String simulationId, String response) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
+		System.out.println("processWithAllTimes");
+		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
+//		System.out.println(response);
 		JsonObject jsonObject = CompareResults.getSimulationJson(response);
-		JsonObject simOutputObject = new JsonObject();
+		String data = jsonObject.get("data").getAsString();
+		System.out.println(data.substring(0, 100));
+		JsonParser parser = new JsonParser();
+		JsonArray measurements = (JsonArray) parser.parse(data);
+		
+//		String simulationId = "123";
 		JsonArray meas_array = new JsonArray();
-		JsonObject temp_times = new JsonObject();
+		JsonObject expectedObject = new JsonObject();
+		JsonObject simOutputObject = new JsonObject();
 
-		
-		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
-		for (JsonElement meas : ma) {
-			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
-			for (JsonElement point : points_array) {
-//				System.out.println(point.toString());
-				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry").getAsJsonArray();
-				System.out.println(" ");
-				JsonObject innerObject = new JsonObject();
-				meas_array.add(innerObject);
-				for (JsonElement entry : entry_array) {
-					JsonObject kv_pair = entry.getAsJsonObject();
-					System.out.println(kv_pair.toString());
-
-					buildMeasurementObject(innerObject, entry);
-				}
-				String time = innerObject.get("timestamp").getAsString();
-				innerObject.remove("timestamp");
-				if(! temp_times.has(time) ){
-					temp_times.add(time,new JsonArray());
-				}
-				temp_times.get(time).getAsJsonArray().add(innerObject);
+		for (JsonElement measurement : measurements) {
+			String time = measurement.getAsJsonObject().get("time").getAsString();
+			
+			if (measurement.getAsJsonObject().get("hasSimulationMessageType").getAsString().equals("OUTPUT") ){
+				if (! simOutputObject.has(time)){
+					JsonObject measurementsObject = new JsonObject();
+					JsonObject messageObject = new JsonObject();
+					measurementsObject.add("measurements", new JsonArray());
+					messageObject.add("message", measurementsObject);
+//					JsonObject measurementsObject = hc.buildOutputObject("123", simOutputObject, time,  new JsonArray());
+					simOutputObject.add(time, messageObject);
+				} 
+				simOutputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
 			}
+			
+			System.out.println(measurement.getAsJsonObject().get("time"));
+			// Remove unneeded proven metadata
+			measurement.getAsJsonObject().remove("hasSimulationMessageType");
+			measurement.getAsJsonObject().remove("simulation_id");
+			measurement.getAsJsonObject().remove("time");
+			meas_array.add(measurement);
 		}
-		
+//		JsonObject outputObject = hc.buildOutputObject("123", simOutputObject, time, measurements);
+		expectedObject.add("output", simOutputObject);
+		System.out.println(expectedObject.toString());
 		int index = 0;
-		for (Entry<String, JsonElement> time_entry : temp_times.entrySet()) {
-			JsonObject outputObject = buildOutputObject(simulationId, simOutputObject, time_entry.getKey(), time_entry.getValue().getAsJsonArray());
+		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
+			System.out.println(time_entry.getValue());
+			System.out.println(time_entry.getKey());
+//			String time = time_entry.get("time").getAsString()
+//			JsonObject outputObject = hc.buildOutputObject(simulationId, simOutputObject, time_entry.getKey(), time_entry.getValue().getAsJsonArray());
 //			System.out.println(simOutputObject.toString());
-			TestResults tr = compareResults.compareExpectedWithSimulationOutput(index+"", outputObject, expected_output_series);
+			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
 				testResultSeries.add(index+"", tr);
 			}
 			index++;
 		}
-		
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		return testResultSeries;
 	}

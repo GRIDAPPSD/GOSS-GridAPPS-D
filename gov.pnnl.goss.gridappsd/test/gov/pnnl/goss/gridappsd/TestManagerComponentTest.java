@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -25,6 +27,8 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
+import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
+import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -33,10 +37,14 @@ import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 //import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 //import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
+import gov.pnnl.goss.gridappsd.testmanager.HistoricalComparison;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
+import gov.pnnl.goss.gridappsd.testmanager.TestResultSeries;
 import gov.pnnl.goss.gridappsd.testmanager.TestResults;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.Response;
 import gov.pnnl.proven.api.producer.ProvenProducer;
+import gov.pnnl.proven.api.producer.ProvenResponse;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 
@@ -58,10 +66,10 @@ public class TestManagerComponentTest {
 	ConfigurationManager configurationManager;
 
 	@Mock
-	private DataManager dataManager;
+	DataManager dataManager;
 
-	@Mock
-	DataManager DataManager;
+//	@Mock
+//	DataManager DataManager;
 
 	@Mock
 	SimulationManager simulationManager;
@@ -174,44 +182,135 @@ public class TestManagerComponentTest {
 		System.out.println(o1.equals(o3));
 //		Assert.assertEquals(o1, o2);
 	}
-
+	
+	@Test
 	public void proven(){
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+//		{"queryMeasurement": "simulation",
+//			"queryFilter": {"simulation_id": "582881157"},
+//			"responseFormat": "JSON"}
+		
 //		GldNode gg = new GldNode("7");
 //		gg.bSolarInverters = true;
 
 //		ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
+//		dataManager.start();
+		DataManagerImpl dataM = new DataManagerImpl();
 		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
 		configManager.start();
+		Response r = null;
+		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"145774843\"}, \"responseFormat\": \"JSON\"}";
+		try {
+			r = dataM.processDataRequest(request1, "timeseries", 1598820656, "/tmp/gridappsd_tmp", TestConstants.SYSTEM_USER_NAME);
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		System.out.println(r);
+//		requestTimeSEriesData = {"queryMeasurement":"simulation","queryFilter":{"simulation_id":"145774843"},"responseFormat":"JSON","queryType":"time-series","simulationYear":0}
 
-		System.out.println(configManager.getConfigurationProperty(GridAppsDConstants.FNCS_PATH));
+//		System.out.println(configManager.getConfigurationProperty(GridAppsDConstants.FNCS_PATH));
 
-//		ProvenTimeSeriesDataManagerImpl provenTimeSeriesDataManager = new ProvenTimeSeriesDataManagerImpl();
+		ProvenTimeSeriesDataManagerImpl provenTimeSeriesDataManager = new ProvenTimeSeriesDataManagerImpl();
 
-		RequestTimeseriesData request = new RequestTimeseriesData();
+		RequestTimeseriesData request = new RequestTimeseriesData(); 
 		HashMap<String,Object> queryFilter = new HashMap <String,Object>();
-		queryFilter.put("hasSimulationId", "182942650");
+		queryFilter.put("hasSimulationId", "145774843");
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 //		request.setSimulationId("1278337149");
 		String responseStr = null;
 		try {
 			ProvenProducer provenProducer = new ProvenProducer();
+			// http://proven:8080/hybrid/rest/v1/repository/provenMessage
+//			String provenUri = "http://proven:8080/hybrid/rest/v1/repository/provenMessage";
 			String provenUri = "http://localhost:18080/hybrid/rest/v1/repository/provenMessage";
 			provenProducer.restProducer(provenUri, null, null);
 			provenProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), null);
 //			gov.pnnl.proven.message.ProvenMessage pm;
-//			ProvenResponse response = provenProducer.sendMessage("{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"hasSimulationId\": \"182942650\"},\"responseFormat\": \"JSON\"}", 22);
-//			responseStr = provenTimeSeriesDataManager.query(request).toString();
+//			ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+			ProvenResponse response = provenProducer.sendMessage("{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"hasSimulationId\": \"182942650\"},\"responseFormat\": \"JSON\"}", "22");
+			responseStr = provenTimeSeriesDataManager.query(request).toString();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.out.println(responseStr);
-//		assertNotNull(responseStr);
+		assertNotNull(responseStr);
+	}
+	
+	@Test
+	public void testResponse(){
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		TestResultSeries testResultSeries = new TestResultSeries();
+		CompareResults compareResults = new CompareResults();
+		String expected = "{\"output\":{\"1248156002\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574871,\"measurements\":[{\"angle\":-122.66883087158203,\"magnitude\":2438.561767578125,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":1}]}},\"1248156005\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574872,\"measurements\":[{\"angle\":-38.381605233862224,\"magnitude\":52769.16136465681,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":0}]}}}}";
+		JsonObject expectedJson = CompareResults.getSimulationJson(expected);
+		
+		String res = "[{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\",\"angle\":-122.80107769837849,\"magnitude\":2520.2169329056983,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0058123f-da11-4f7c-a429-e47e5949465f\",\"angle\":-122.70461031091335,\"magnitude\":2522.818525429715,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1587670650,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]";
+		res = "{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0055de94-7d7e-4931-a884-cab596cc191b\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002}";
+		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\":\\\"OUTPUT\\\"}]\" }" ; 
+		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}]\"}";
+		JsonObject jsonObject = CompareResults.getSimulationJson(res);
+		String data = jsonObject.get("data").getAsString();
+		System.out.println(data.substring(0, 100));
+//		JsonObject meas = CompareResults.getSimulationJson(data);
+		JsonParser parser = new JsonParser();
+		JsonArray measurements = (JsonArray) parser.parse(data);
+
+		
+		hc.processWithAllTimes(expectedJson, "123", res);
+		
+		JsonArray meas_array = new JsonArray();
+		JsonObject expectedObject = new JsonObject();
+		JsonObject simOutputObject = new JsonObject();
+
+		for (JsonElement measurement : measurements) {
+			String time = measurement.getAsJsonObject().get("time").getAsString();
+			
+			if (measurement.getAsJsonObject().get("hasSimulationMessageType").getAsString().equals("OUTPUT") ){
+				if (! simOutputObject.has(time)){
+					JsonObject measurementsObject = new JsonObject();
+					JsonObject messageObject = new JsonObject();
+					measurementsObject.add("measurements", new JsonArray());
+					messageObject.add("message", measurementsObject);
+//					JsonObject measurementsObject = hc.buildOutputObject("123", simOutputObject, time,  new JsonArray());
+					simOutputObject.add(time, messageObject);
+				} 
+				simOutputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
+			}
+			
+			System.out.println(measurement.getAsJsonObject().get("time"));
+			// Remove unneeded proven metadata
+			measurement.getAsJsonObject().remove("hasSimulationMessageType");
+			measurement.getAsJsonObject().remove("simulation_id");
+			measurement.getAsJsonObject().remove("time");
+			meas_array.add(measurement);
+		}
+//		JsonObject outputObject = hc.buildOutputObject("123", simOutputObject, time, measurements);
+		expectedObject.add("output", simOutputObject);
+		System.out.println(expectedObject.toString());
+		int index = 0;
+		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
+			System.out.println(time_entry.getValue());
+			System.out.println(time_entry.getKey());
+//			String time = time_entry.get("time").getAsString()
+//			JsonObject outputObject = hc.buildOutputObject(simulationId, simOutputObject, time_entry.getKey(), time_entry.getValue().getAsJsonArray());
+//			System.out.println(simOutputObject.toString());
+			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expectedJson);
+			if (tr != null) {
+				testResultSeries.add(index+"", tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		
+//		{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1587670650,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]"
+
+
 	}
 
 }
