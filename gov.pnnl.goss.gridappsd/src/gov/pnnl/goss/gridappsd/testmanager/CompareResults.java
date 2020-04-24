@@ -1,75 +1,72 @@
-	/*******************************************************************************
-	 * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
-	 * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
-	 * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
-	 * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
-	 * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
-	 * the Software, and may permit others to do so, subject to the following conditions:
-	 * Redistributions of source code must retain the above copyright notice, this list of conditions and the 
-	 * following disclaimers.
-	 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
-	 * the following disclaimer in the documentation and/or other materials provided with the distribution.
-	 * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
-	 * form whatsoever without the express written consent of Battelle.
-	 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-	 * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
-	 * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
-	 * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
-	 * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
-	 * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
-	 * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-	 * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
-	 * OF THE POSSIBILITY OF SUCH DAMAGE.
-	 * General disclaimer for use with OSS licenses
-	 * 
-	 * This material was prepared as an account of work sponsored by an agency of the United States Government. 
-	 * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
-	 * of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
-	 * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
-	 * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
-	 * disclosed, or represents that its use would not infringe privately owned rights.
-	 * 
-	 * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
-	 * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
-	 * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
-	 * herein do not necessarily state or reflect those of the United States Government or any agency thereof.
-	 * 
-	 * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
-	 * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
-	 ******************************************************************************/
-	package gov.pnnl.goss.gridappsd.testmanager;
+/*******************************************************************************
+ * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
+ * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
+ * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
+ * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+ * the Software, and may permit others to do so, subject to the following conditions:
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+ * following disclaimers.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+ * the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+ * form whatsoever without the express written consent of Battelle.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
+ * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * General disclaimer for use with OSS licenses
+ * 
+ * This material was prepared as an account of work sponsored by an agency of the United States Government. 
+ * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
+ * of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
+ * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
+ * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+ * disclosed, or represents that its use would not infringe privately owned rights.
+ * 
+ * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
+ * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
+ * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+ * herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+ * 
+ * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+ * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
+ ******************************************************************************/
+package gov.pnnl.goss.gridappsd.testmanager;
 	
-	import java.io.BufferedReader;
-	import java.io.FileNotFoundException;
-	import java.io.FileReader;
-	import java.util.ArrayList;
-	import java.util.HashMap;
-	import java.util.HashSet;
-	import java.util.List;
-	import java.util.Map;
-	import java.util.Map.Entry;
-	import java.util.Set;
-	import java.util.stream.Collectors;
-	
-	import org.apache.commons.math3.complex.Complex;
-	import org.apache.commons.math3.complex.ComplexFormat;
-	import org.apache.felix.dm.annotation.api.Component;
-	import org.apache.felix.dm.annotation.api.ServiceDependency;
-	
-	import com.google.gson.Gson;
-	import com.google.gson.GsonBuilder;
-	import com.google.gson.JsonArray;
-	import com.google.gson.JsonElement;
-	import com.google.gson.JsonObject;
-	import com.google.gson.JsonParser;
-	import com.google.gson.JsonPrimitive;
-	import com.google.gson.stream.JsonReader;
-	
-	import gov.pnnl.goss.gridappsd.api.LogManager;
-	import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
-	import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
-	import gov.pnnl.goss.gridappsd.dto.TestConfig;
-	import pnnl.goss.core.ClientFactory;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.complex.ComplexFormat;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.stream.JsonReader;
+
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
+import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
 	
 	/**
 	*
@@ -258,6 +255,26 @@
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 		
 			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+		}
+		
+		public TestResults compareExpectedWithSimulationInput(String timestamp, JsonObject jsonObject, JsonObject expectedInput) {
+			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp, expectedInput);
+			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp, expectedInput);
+			if (expectedForwardMap == null) return new TestResults();
+	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+			Map<String, JsonElement> forwardMap= getForwardDifferenceMap(jsonObject);
+			Map<String, JsonElement> reverseMap= getReverseDifferenceMap(jsonObject);
+			TestResults testResults = new TestResults();
+	//		JsonObject output = jsonObject;
+	//		String firstKey = getFirstKey(output);
+			
+//			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(jsonObject);
+			compareExpectedAndSim(expectedForwardMap, testResults, forwardMap);
+			compareExpectedAndSim(expectedReverseMap, testResults, reverseMap);
+			
+			return testResults;
+//			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 		}
 		
 	//	/**
@@ -534,6 +551,45 @@
 		}
 		
 		/**
+		 * Get the map of the expected inputs
+		 * @return
+		 */
+		public Map<String, JsonElement> getExpectedForwardInputMap(String timestamp, JsonObject expectedOutputObj) {
+			Map<String, JsonElement> expectedOutputMap = null;
+			if (expectedOutputObj.isJsonObject()) {
+				JsonObject output = expectedOutputObj.getAsJsonObject();	
+				if (output.has("input") ) output = output.getAsJsonObject("input");
+				if(output.has(timestamp)){
+					expectedOutputMap = getForwardDifferenceMap(output.get(timestamp).getAsJsonObject());
+				}else{
+					System.out.println("CompareResults no index for" + timestamp);
+					return null;
+				}
+			}
+			return expectedOutputMap;
+		}
+		
+		/**
+		 * Get the map of the expected inputs
+		 * @return
+		 */
+		public Map<String, JsonElement> getExpectedReverseInputMap(String timestamp, JsonObject expectedOutputObj) {
+			Map<String, JsonElement> expectedOutputMap = null;
+			if (expectedOutputObj.isJsonObject()) {
+				JsonObject output = expectedOutputObj.getAsJsonObject();				
+				
+				if (output.has("input") ) output = output.getAsJsonObject("input");
+				if(output.has(timestamp)){
+					expectedOutputMap = getReverseDifferenceMap(output.get(timestamp).getAsJsonObject());
+				}else{
+					System.out.println("CompareResults no index for" + timestamp);
+					return null;
+				}
+			}
+			return expectedOutputMap;
+		}
+		
+		/**
 		 * Get the map of the expected outputs
 		 * @param expectedOutputPath
 		 * @return
@@ -580,11 +636,92 @@
 			return expectedOutputMap;
 		}
 		
+		public Map<String, JsonElement> getForwardDifferenceMap(JsonObject output) {
+			if ( output.has("input") ) output = output.getAsJsonObject("input");
+			JsonObject tempObj = output.getAsJsonObject("message");
+
+			JsonArray temp = tempObj.getAsJsonArray("measurements");
+			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+			for (JsonElement jsonElement : temp) {
+				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+				} 
+			}
+			return forwardDifferenceMap;
+		}
+		
+		public Map<String, JsonElement> getReverseDifferenceMap(JsonObject output) {
+			if ( output.has("input") ) output = output.getAsJsonObject("input");
+			JsonObject tempObj = output.getAsJsonObject("message");
+			JsonArray temp = tempObj.getAsJsonArray("measurements");
+
+			Map<String, JsonElement> reverseDifferenceMap = new HashMap<String,JsonElement>();
+			for (JsonElement jsonElement : temp) {
+				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("REVERSE")){
+					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+				}
+			}
+			return reverseDifferenceMap;
+		}
+		
+		public JsonObject getDifferenceMap(JsonObject output) {
+//			System.out.println(output.toString());
+			Map<String, JsonElement> expectedOutputMap;
+//			ObjectMapper mapper = new ObjectMapper();
+			if ( output.has("input") ) output = output.getAsJsonObject("input");
+			JsonObject tempObj = output.getAsJsonObject("message");
+//			System.out.println(output.getAsJsonObject("message").getAsString());
+			if (! tempObj.get("measurements").isJsonArray() ){
+	
+				expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
+						.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
+//				return expectedOutputMap;
+			}
+			JsonArray temp = tempObj.getAsJsonArray("measurements");
+//			expectedOutputMap = new HashMap<String, JsonElement>();
+			JsonObject inputObj = new JsonObject();
+			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+			Map<String, JsonElement> reverseDifferenceMap = new HashMap<String,JsonElement>();
+			for (JsonElement jsonElement : temp) {
+	//				System.out.println(jsonElement);
+				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+				} else{
+					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+				}
+			}
+			return inputObj;
+		}
+		
 		
 		public Map<String, JsonElement> getMeasurmentsMap(JsonObject output) {
+//			System.out.println(output.toString());
 			Map<String, JsonElement> expectedOutputMap;
+//			ObjectMapper mapper = new ObjectMapper();
 			if ( output.has("output") ) output = output.getAsJsonObject("output");
 			JsonObject tempObj = output.getAsJsonObject("message");
+//			System.out.println(output.getAsJsonObject("message").getAsString());
+			if (! tempObj.get("measurements").isJsonArray() ){
+	
+				expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
+						.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
+				return expectedOutputMap;
+				
+//				String jsonMap = tempObj.get("measurements").toString();
+//				try {
+//					expectedOutputMap = mapper.readValue(jsonMap, new TypeReference<Map<String, Object>>(){});
+//					return expectedOutputMap;
+//				} catch (JsonParseException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (JsonMappingException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+			}
 			JsonArray temp = tempObj.getAsJsonArray("measurements");
 			expectedOutputMap = new HashMap<String, JsonElement>();
 			for (JsonElement jsonElement : temp) {
@@ -632,6 +769,7 @@
 				comparison = equals(c1,c2);
 				return comparison;
 			}
+			System.out.println(prop);
 			JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
 			JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
 			if (obj1.isNumber() && obj2.isNumber()){

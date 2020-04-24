@@ -161,22 +161,54 @@ public class HistoricalComparison {
 		return outputObject;
 	}
 
-	public TestResultSeries processWithAllTimes(JsonObject expected_output_series, String simulationId, String response) {
+	public TestResultSeries processWithAllTimes(JsonObject expected_series, String simulationId, String response) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
-		System.out.println("processWithAllTimes");
-		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
-//		System.out.println(response);
+//		System.out.println("processWithAllTimes");
+//		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
+
 		JsonObject jsonObject = CompareResults.getSimulationJson(response);
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		JsonParser parser = new JsonParser();
 		JsonArray measurements = (JsonArray) parser.parse(data);
 		
-//		String simulationId = "123";
-		JsonArray meas_array = new JsonArray();
-		JsonObject expectedObject = new JsonObject();
+		JsonObject expectedObject = buildExpectedFromTimeseries(measurements);
+		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
+		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
+		
+		int index = 0;
+		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
+//			System.out.println(time_entry);
+			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
+			if (tr != null) {
+				testResultSeries.add(index+"", tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		
+		
+		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+		JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
+		index = 0;
+		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+			System.out.println(time_entry);
+			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
+			if (tr != null) {
+				testResultSeries.add(index+"", tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		return testResultSeries;
+	}
+
+	public JsonObject buildExpectedFromTimeseries(JsonArray measurements) {
+//		JsonArray meas_array = new JsonArray();
+		JsonObject simExpected = new JsonObject();
 		JsonObject simOutputObject = new JsonObject();
+		JsonObject simInputObject = new JsonObject();
 
 		for (JsonElement measurement : measurements) {
 			String time = measurement.getAsJsonObject().get("time").getAsString();
@@ -187,37 +219,36 @@ public class HistoricalComparison {
 					JsonObject messageObject = new JsonObject();
 					measurementsObject.add("measurements", new JsonArray());
 					messageObject.add("message", measurementsObject);
-//					JsonObject measurementsObject = hc.buildOutputObject("123", simOutputObject, time,  new JsonArray());
 					simOutputObject.add(time, messageObject);
 				} 
+				measurement.getAsJsonObject().remove("hasSimulationMessageType");
+				measurement.getAsJsonObject().remove("simulation_id");
+				measurement.getAsJsonObject().remove("time");
 				simOutputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
+			} else { // INPUT
+				if (! simInputObject.has(time)){
+					JsonObject measurementsObject = new JsonObject();
+					JsonObject messageObject = new JsonObject();
+					measurementsObject.add("measurements", new JsonArray());
+					messageObject.add("message", measurementsObject);
+					simInputObject.add(time, messageObject);
+				} 
+				measurement.getAsJsonObject().remove("hasSimulationMessageType");
+				measurement.getAsJsonObject().remove("simulation_id");
+				measurement.getAsJsonObject().remove("time");
+				simInputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
 			}
 			
-			System.out.println(measurement.getAsJsonObject().get("time"));
+//			System.out.println(measurement.getAsJsonObject().get("time"));
 			// Remove unneeded proven metadata
-			measurement.getAsJsonObject().remove("hasSimulationMessageType");
-			measurement.getAsJsonObject().remove("simulation_id");
-			measurement.getAsJsonObject().remove("time");
-			meas_array.add(measurement);
+//			measurement.getAsJsonObject().remove("hasSimulationMessageType");
+//			measurement.getAsJsonObject().remove("simulation_id");
+//			measurement.getAsJsonObject().remove("time");
+//			meas_array.add(measurement);
 		}
-//		JsonObject outputObject = hc.buildOutputObject("123", simOutputObject, time, measurements);
-		expectedObject.add("output", simOutputObject);
-		System.out.println(expectedObject.toString());
-		int index = 0;
-		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
-			System.out.println(time_entry.getValue());
-			System.out.println(time_entry.getKey());
-//			String time = time_entry.get("time").getAsString()
-//			JsonObject outputObject = hc.buildOutputObject(simulationId, simOutputObject, time_entry.getKey(), time_entry.getValue().getAsJsonArray());
-//			System.out.println(simOutputObject.toString());
-			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
-			if (tr != null) {
-				testResultSeries.add(index+"", tr);
-			}
-			index++;
-		}
-		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-		return testResultSeries;
+		simExpected.add("output", simOutputObject);
+		simExpected.add("input", simInputObject);
+		return simExpected;
 	}
 	
 	public String getListOfTime(String  simulationId, JsonObject expected_output_series){

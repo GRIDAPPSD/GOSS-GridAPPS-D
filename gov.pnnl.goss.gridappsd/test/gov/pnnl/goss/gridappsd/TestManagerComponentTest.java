@@ -248,65 +248,50 @@ public class TestManagerComponentTest {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
 		String expected = "{\"output\":{\"1248156002\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574871,\"measurements\":[{\"angle\":-122.66883087158203,\"magnitude\":2438.561767578125,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":1}]}},\"1248156005\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574872,\"measurements\":[{\"angle\":-38.381605233862224,\"magnitude\":52769.16136465681,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":0}]}}}}";
-		JsonObject expectedJson = CompareResults.getSimulationJson(expected);
+		       expected = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"angle\": -122.66883087158203, \"magnitude\": 2438.561767578125, \"measurement_mrid\": \"_84541f26-084d-4ea7-a254-ea43678d51f9\"}, {\"angle\": 21.723935891052907, \"magnitude\": 45368.78524042436, \"measurement_mrid\": \"_c48d8d88-12be-4b15-8b44-eedc752250c6\"}, {\"measurement_mrid\": \"_6e033599-c62a-4821-8ddf-68ba11be60a2\", \"value\": 1}]}}, \"1248156005\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574872, \"measurements\": [{\"angle\": -38.381605233862224, \"magnitude\": 52769.16136465681, \"measurement_mrid\": \"_84541f26-084d-4ea7-a254-ea43678d51f9\"}, {\"angle\": 21.723935891052907, \"magnitude\": 45368.78524042436, \"measurement_mrid\": \"_c48d8d88-12be-4b15-8b44-eedc752250c6\"}, {\"measurement_mrid\": \"_6e033599-c62a-4821-8ddf-68ba11be60a2\", \"value\": 0}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156002, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156002, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";		
+		JsonObject expected_series = CompareResults.getSimulationJson(expected).get("expectedResults").getAsJsonObject();
 		
-		String res = "[{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\",\"angle\":-122.80107769837849,\"magnitude\":2520.2169329056983,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0058123f-da11-4f7c-a429-e47e5949465f\",\"angle\":-122.70461031091335,\"magnitude\":2522.818525429715,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1587670650,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]";
+		String res = "[{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\",\"angle\":-122.80107769837849,\"magnitude\":2520.2169329056983,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0058123f-da11-4f7c-a429-e47e5949465f\",\"angle\":-122.70461031091335,\"magnitude\":2522.818525429715,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1248156002,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]";
 		res = "{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0055de94-7d7e-4931-a884-cab596cc191b\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002}";
 		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\":\\\"OUTPUT\\\"}]\" }" ; 
 		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}]\"}";
+		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+
 		JsonObject jsonObject = CompareResults.getSimulationJson(res);
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
-//		JsonObject meas = CompareResults.getSimulationJson(data);
 		JsonParser parser = new JsonParser();
 		JsonArray measurements = (JsonArray) parser.parse(data);
-
 		
-		hc.processWithAllTimes(expectedJson, "123", res);
-		
-		JsonArray meas_array = new JsonArray();
-		JsonObject expectedObject = new JsonObject();
-		JsonObject simOutputObject = new JsonObject();
+		JsonObject expectedObject = hc.buildExpectedFromTimeseries(measurements);
+		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 
-		for (JsonElement measurement : measurements) {
-			String time = measurement.getAsJsonObject().get("time").getAsString();
-			
-			if (measurement.getAsJsonObject().get("hasSimulationMessageType").getAsString().equals("OUTPUT") ){
-				if (! simOutputObject.has(time)){
-					JsonObject measurementsObject = new JsonObject();
-					JsonObject messageObject = new JsonObject();
-					measurementsObject.add("measurements", new JsonArray());
-					messageObject.add("message", measurementsObject);
-//					JsonObject measurementsObject = hc.buildOutputObject("123", simOutputObject, time,  new JsonArray());
-					simOutputObject.add(time, messageObject);
-				} 
-				simOutputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
-			}
-			
-			System.out.println(measurement.getAsJsonObject().get("time"));
-			// Remove unneeded proven metadata
-			measurement.getAsJsonObject().remove("hasSimulationMessageType");
-			measurement.getAsJsonObject().remove("simulation_id");
-			measurement.getAsJsonObject().remove("time");
-			meas_array.add(measurement);
-		}
-//		JsonObject outputObject = hc.buildOutputObject("123", simOutputObject, time, measurements);
-		expectedObject.add("output", simOutputObject);
-		System.out.println(expectedObject.toString());
+		hc.processWithAllTimes(expected_series, "123", res);
+		
+		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
 		int index = 0;
 		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
-			System.out.println(time_entry.getValue());
-			System.out.println(time_entry.getKey());
-//			String time = time_entry.get("time").getAsString()
-//			JsonObject outputObject = hc.buildOutputObject(simulationId, simOutputObject, time_entry.getKey(), time_entry.getValue().getAsJsonArray());
-//			System.out.println(simOutputObject.toString());
-			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expectedJson);
+			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
 				testResultSeries.add(index+"", tr);
 			}
 			index++;
 		}
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		
+		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+		JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
+		index = 0;
+		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+			System.out.println(time_entry);
+			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
+			if (tr != null) {
+				testResultSeries.add(index+"", tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+	
 		
 //		{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1587670650,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]"
 

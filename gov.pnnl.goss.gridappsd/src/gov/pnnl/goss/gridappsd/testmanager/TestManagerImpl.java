@@ -112,7 +112,7 @@ public class TestManagerImpl implements TestManager {
 	private volatile LogManager logManager;
 
 	@ServiceDependency
-	private volatile DataManager dataManger;
+	private volatile DataManager dataManager;
 	
 	@ServiceDependency
 	private volatile SimulationManager simulationManager;
@@ -145,7 +145,7 @@ public class TestManagerImpl implements TestManager {
 			SimulationManager simulationManager){
 		this.clientFactory = clientFactory;
 		this.logManager = logManager;
-		this.dataManger = dataManager;
+		this.dataManager = dataManager;
 		this.simulationManager = simulationManager;
 	}
 
@@ -223,6 +223,7 @@ public class TestManagerImpl implements TestManager {
 		}
 
 		if (testConfig.getCompareWithSimId() != null) {
+			compareSimulationExpected(testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
 			compareSimulations(simulationId, testConfig.getCompareWithSimId());
 		}
 		
@@ -306,7 +307,7 @@ public class TestManagerImpl implements TestManager {
 	@Override
 	public void compareSimulations(String simulationIdOne, String simulationIdTwo){
 		
-		HistoricalComparison hc = new HistoricalComparison(dataManger, securityConfig.getManagerUser());
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = null; //hc.test_proven(simulationIdTwo, expectedResultObject);
 		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
@@ -316,9 +317,21 @@ public class TestManagerImpl implements TestManager {
 		}
 	}
 	
+	public void compareSimulationExpected(String simulationIdOne, JsonObject expectedResultObject){
+		
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
+		//TODO: Remove expected results from this method
+		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
+		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
+		for (String key : testResultsSeries.results.keySet()) {
+			client.publish(testOutputTopic+simulationIdOne, "Index: " + key + " TestManager number of conflicts: "
+					+ " total " + testResultsSeries.getTotal());
+		}
+	}
+	
 	@Override
 	public void compareWithExpectedSimOutput(String simulationId, JsonObject expectedResults) {
-		client.subscribe("/topic/" + GridAppsDConstants.topic_simulationOutput + "." + simulationId,
+		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationId,
 
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
