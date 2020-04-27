@@ -757,9 +757,9 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                     elif cim_attribute == "EnergyConsumer.p":
                         phase_count = len(object_phases)
                         if "s1" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/phase_count
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
                         if "s2" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/phase_count
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
                         if "A" in object_phases:
                             fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
                         if "B" in object_phases:
