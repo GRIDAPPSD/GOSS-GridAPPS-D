@@ -1,11 +1,20 @@
 package gov.pnnl.goss.gridappsd.dto;
 
+import java.io.IOException;
+
 //import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 public class RequestTimeseriesData implements Serializable {
@@ -55,11 +64,29 @@ public class RequestTimeseriesData implements Serializable {
 	public String toString() {
 		Gson  gson = new Gson();
 		return gson.toJson(this);
+		/*ObjectMapper mapper = new ObjectMapper();
+		try {
+			return mapper.writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}*/
+		
 	}
 	
 	public static RequestTimeseriesData parse(String jsonString){
-		Gson  gson = new Gson();
-		RequestTimeseriesData obj = gson.fromJson(jsonString, RequestTimeseriesData.class);
+		ObjectMapper objectMapper = new ObjectMapper();
+		RequestTimeseriesData obj = null;
+		try {
+			obj = objectMapper.readValue(jsonString, RequestTimeseriesData.class);
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		if(obj.queryMeasurement.equals("simulation"))
 			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
 				throw new JsonSyntaxException("Expected filter simulation_id not found.");
