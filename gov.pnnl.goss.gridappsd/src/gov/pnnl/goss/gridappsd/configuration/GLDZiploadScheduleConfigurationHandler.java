@@ -164,6 +164,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		String tempDataPath = dir.getAbsolutePath();
 		
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "loadprofile");
 		int simId = -1;
 		if(simulationID==null || simulationID.trim().length()==0){
 			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
@@ -176,7 +177,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		}
 				
 		RequestTimeseriesData request = new RequestTimeseriesData();
-		request.setQueryMeasurement("loadprofile");
+		request.setQueryMeasurement(loadprofile);
 		request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
 		Map<String, Object> queryFilter = new HashMap<String, Object>();
 
@@ -189,6 +190,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis());
 		request.setQueryFilter(queryFilter);
 		request.setSimulationYear(simulationYear);
+		request.setOriginalFormat("loadprofile");
 		DataResponse resp = (DataResponse) dataManager.processDataRequest(
 				request,
 				ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId,
