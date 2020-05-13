@@ -70,7 +70,13 @@ public class TestResults implements Serializable{
 	
 	public void add(String obj, String prop, String expected, String actual){
 		HashMap<String, String[]> prop1 = add(obj,prop);
-		String [] x = {expected, actual};
+		String [] x = {expected, actual, "NA", "NA"};
+		prop1.put(prop, x);
+	}
+	
+	public void add(String obj, String prop, String expected, String actual, String diff_mrid, String diff_type ){
+		HashMap<String, String[]> prop1 = add(obj,prop);
+		String [] x = {expected, actual, diff_mrid, diff_type};
 		prop1.put(prop, x);
 	}
 	
@@ -93,6 +99,23 @@ public class TestResults implements Serializable{
 			}
 		}
 		System.out.println("Total conflicts "+ getNumberOfConflicts());
+	}
+	
+	@Override
+	public String toString() {
+		String temp = "";
+		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, String[]> propMap = entry.getValue();
+			for (Entry<String, String[]> prop: propMap.entrySet()){
+//				temp+="\t"+entry.getKey() + "    " + prop.getKey()+ "    " + prop.getValue()[0] +"    " + prop.getValue()[1];
+				temp += String.format("\t %37s %10s %.3f %.3f ", entry.getKey(), prop.getKey(), Double.parseDouble(prop.getValue()[0]), Double.parseDouble(prop.getValue()[1]));
+				if(prop.getValue().length > 3)
+//					temp+="    " +prop.getValue()[2] +"    " + prop.getValue()[3];
+					temp += String.format("%10s %37s", prop.getValue()[2], prop.getValue()[3]);
+				temp+="\n";
+			}
+		}
+		return temp;
 	}
 	
 	public static void main(String[] args) {

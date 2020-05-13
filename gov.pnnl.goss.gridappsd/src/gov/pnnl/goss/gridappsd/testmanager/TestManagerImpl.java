@@ -40,9 +40,11 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
 import gov.pnnl.goss.gridappsd.dto.RuleSettings;
@@ -67,6 +69,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
@@ -93,6 +96,7 @@ import pnnl.goss.core.GossResponseEvent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 
 
@@ -111,6 +115,9 @@ public class TestManagerImpl implements TestManager {
 	@ServiceDependency
 	private volatile LogManager logManager;
 
+	@ServiceDependency
+	private volatile LogDataManager logDataManager;
+	
 	@ServiceDependency
 	private volatile DataManager dataManager;
 	
@@ -141,10 +148,12 @@ public class TestManagerImpl implements TestManager {
 	public TestManagerImpl(){}
 	public TestManagerImpl(ClientFactory clientFactory, 
 			LogManager logManager,
+			LogDataManager logDataManager,
 			DataManager dataManager,
 			SimulationManager simulationManager){
 		this.clientFactory = clientFactory;
 		this.logManager = logManager;
+		this.logDataManager = logDataManager;
 		this.dataManager = dataManager;
 		this.simulationManager = simulationManager;
 	}
@@ -177,6 +186,27 @@ public class TestManagerImpl implements TestManager {
 						String requestDestination = request.getDestination();
 						String simulationId = requestDestination.substring(requestDestination.lastIndexOf(".")+1, requestDestination.length());
 						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
+						TestConfig testConfig = TestConfig.parse(request.getData().toString());; 
+//						try{
+//							requestTest = RequestTestUpdate.parse(request.getData().toString());
+//						}catch(JsonSyntaxException e){
+//							e.printStackTrace();
+//						}
+//						try{
+//							testConfig = TestConfig.parse(request.getData().toString());
+//						}catch(JsonSyntaxException e){
+//							e.printStackTrace();
+//						}
+						
+						if(testConfig != null){	
+							if (testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
+								compareTimeseriesSimulationWithExpected(testConfig.getAppId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
+							}
+							
+							if (testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
+								compareSimulations(testConfig.getAppId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
+							}
+						}
 						
 						
 						if(requestTest != null){
@@ -222,13 +252,21 @@ public class TestManagerImpl implements TestManager {
 			sendEventsToSimulation(testConfig.getEvents(), simulationId);
 		}
 
-		if (testConfig.getCompareWithSimId() != null) {
-			compareSimulationExpected(testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
-			compareSimulations(simulationId, testConfig.getCompareWithSimId());
-		}
+//		if (testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
+//			compareTimeseriesSimulationWithExpected(testConfig.getAppId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
+//		}
+		
+//		if (testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
+//			compareSimulations(testConfig.getAppId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
+//		}
 		
 		if(testConfig.getExpectedResultObject() != null){
-			compareWithExpectedSimOutput(simulationId, testConfig.getExpectedResultObject());
+			compareRunningSimulationOutputWithExpected(testConfig.getAppId(), simulationId, testConfig.getExpectedResultObject());
+			compareRunningSimulationInputWithExpected(testConfig.getAppId(), simulationId, testConfig.getExpectedResultObject());
+		}
+		
+		if(testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() == null){
+			compareRunningWithTimeseriesSimulation(testConfig.getAppId(), simulationId,testConfig.getCompareWithSimId());
 		}
 
 		if (testConfig.getRules() != null && testConfig.getRules().size() > 0) {
@@ -304,38 +342,138 @@ public class TestManagerImpl implements TestManager {
 	}
 	}
 	
+	public void storeResults(String test_id, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
+//		(String test_id, String processId, long simulation_time,
+//	            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) 
+		for (String simulationTime : testResultSeries.results.keySet()){
+			TestResults tr = testResultSeries.results.get(simulationTime);
+			for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()) {
+				HashMap<String, String[]> propMap = entry.getValue();
+				for (Entry<String, String[]> prop: propMap.entrySet()){
+					System.out.println(String.format("%10s, %10s, %10s, %10s, %10s %10s %10s %10s %10s %10s ",
+							test_id,
+							simulationIdOne,
+							simulationIdTwo,
+							simulationTime, 
+							entry.getKey(),
+							prop.getKey(),
+							prop.getValue()[0],
+							prop.getValue()[1],
+							prop.getValue()[2],
+							prop.getValue()[3]
+							));
+					logDataManager.storeExpectedResults(test_id,
+							simulationIdOne,
+							simulationIdOne,
+							Long.parseLong(simulationTime), 
+							entry.getKey(),
+							prop.getKey(),
+							prop.getValue()[0],
+							prop.getValue()[1],
+							prop.getValue()[2],
+							prop.getValue()[3]);
+				}
+			}
+		}
+	}
+	
 	@Override
-	public void compareSimulations(String simulationIdOne, String simulationIdTwo){
+	public void compareSimulations(String appId, String simulationIdOne, String simulationIdTwo){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
-		TestResultSeries testResultsSeries = null; //hc.test_proven(simulationIdTwo, expectedResultObject);
+		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);
 		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
 		for (String key : testResultsSeries.results.keySet()) {
 			client.publish(testOutputTopic+simulationIdOne, "Index: " + key + " TestManager number of conflicts: "
 					+ " total " + testResultsSeries.getTotal());
 		}
+		storeResults(appId, simulationIdOne, simulationIdTwo, testResultsSeries);
 	}
 	
-	public void compareSimulationExpected(String simulationIdOne, JsonObject expectedResultObject){
+	public void compareRunningWithTimeseriesSimulation(String appId, String currentSimulationId, String simulationIdOne){
+		
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
+		//TODO: Remove expected results from this method
+//		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
+		
+		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
+		JsonObject expectedObject = hc.getExpectedFrom(response);
+		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
+		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+		
+		compareRunningSimulationOutputWithExpected(appId, currentSimulationId, expectedObject);
+		compareRunningSimulationInputWithExpected(appId, currentSimulationId, expectedObject);
+		
+//		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
+//		for (String key : testResultsSeries.results.keySet()) {
+//			client.publish(testOutputTopic+currentSimulationId, "Index: " + key + " TestManager number of conflicts: "
+//					+ " total " + testResultsSeries.getTotal());
+//		}
+//		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
+	}
+	
+	public void compareTimeseriesSimulationWithExpected(String appId, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
-		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
+		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
 		for (String key : testResultsSeries.results.keySet()) {
-			client.publish(testOutputTopic+simulationIdOne, "Index: " + key + " TestManager number of conflicts: "
+			client.publish(testOutputTopic+currentSimulationId, "Index: " + key + " TestManager number of conflicts: "
 					+ " total " + testResultsSeries.getTotal());
 		}
+		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
 	@Override
-	public void compareWithExpectedSimOutput(String simulationId, JsonObject expectedResults) {
+	public void compareRunningSimulationInputWithExpected(String appId, String simulationId, JsonObject expectedResults) {
+		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
+
+		new GossResponseEvent() {
+			int inputCount=0;
+			public void onMessage(Serializable message) {
+				TestResultSeries testResultSeries = new TestResultSeries();
+				DataResponse event = (DataResponse) message;
+				String simOutputStr = event.getData().toString();
+				System.out.println(simOutputStr);
+//				if (simOutputStr.length() >= 200)
+//					simOutputStr = simOutputStr.substring(0, 200);
+				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
+//				 {"command": "update", "input": {"simulation_id": "797789794", "message": {"timestamp": 1588968302
+				CompareResults compareResults = new CompareResults();
+				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
+				simOutputJsonObj = simOutputJsonObj.get("input").getAsJsonObject();
+
+				if ( ! simOutputJsonObj.has("message")) {
+					//TODO: Log error - "TestManager received empty message key in simulation output"
+					return;
+				}
+				String originalTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputCount);
+				
+				String simulationTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp,
+						simOutputJsonObj, expectedResults);
+				testResultSeries.add(originalTimestamp, testResults);
+				if (testResults != null) {
+					client.publish(testOutputTopic+simulationId, testResults);
+					//TODO: Store results in timeseries store.
+				}
+				storeResults("test_id", simulationId, "expected_json", testResultSeries);
+				inputCount++;
+			}
+
+		});
+	}
+	
+	@Override
+	public void compareRunningSimulationOutputWithExpected(String appId, String simulationId, JsonObject expectedResults) {
 		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationId,
 
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
-				
+				TestResultSeries testResultSeries = new TestResultSeries();
 				DataResponse event = (DataResponse) message;
 				String simOutputStr = event.getData().toString();
 //				if (simOutputStr.length() >= 200)
@@ -353,11 +491,12 @@ public class TestManagerImpl implements TestManager {
 				String simulationTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				TestResults testResults = compareResults.compareExpectedWithSimulationOutput(simulationTimestamp,
 						simOutputJsonObj, expectedResults);
+				testResultSeries.add(simulationTimestamp, testResults);
 				if (testResults != null) {
 					client.publish(testOutputTopic+simulationId, testResults);
 					//TODO: Store results in timeseries store.
 				}
-								
+				storeResults("test_id", simulationId, "expected_json", testResultSeries);
 			}
 
 		});

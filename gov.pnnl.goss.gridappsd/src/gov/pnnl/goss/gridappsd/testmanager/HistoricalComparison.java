@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -24,6 +28,7 @@ public class HistoricalComparison {
 	
 	DataManager dataManager;
 	String username;
+	private Logger log = LoggerFactory.getLogger(getClass());
 	
 	public HistoricalComparison(DataManager dataManager, String username) {
 		this.dataManager = dataManager;
@@ -32,9 +37,29 @@ public class HistoricalComparison {
 
 	public TestResultSeries test_proven(String simulationId, JsonObject expected_output_series){
 
-		String responseStr = null;
-		responseStr = timeSeriesQuery(simulationId, "1532971828475", null, null);
+		String responseStr = timeSeriesQuery(simulationId, "1532971828475", null, null);
+		if(! responseStr.contains("data")){
+			System.out.println("No data for " + simulationId);
+			log.warn("No timeseries data for simulation " + simulationId);
+			return new TestResultSeries();
+		}
 		TestResultSeries testResultSeries = processWithAllTimes(expected_output_series, simulationId, responseStr);
+		return testResultSeries;
+	}
+	
+	public TestResultSeries test_proven(String simulationIdOne, String simulationIdTwo){
+
+		String responseStrOne = timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
+		String responseStrTwo = timeSeriesQuery(simulationIdTwo, "1532971828475", null, null);
+		if(! responseStrOne.contains("data")){
+			System.out.println("No data for " + simulationIdOne);
+			return new TestResultSeries();
+		}
+		if(! responseStrTwo.contains("data")){
+			System.out.println("No data for " + responseStrTwo);
+			return new TestResultSeries();
+		}
+		TestResultSeries testResultSeries = processWithAllTimes("123", responseStrOne, responseStrTwo);
 		return testResultSeries;
 	}
 	
@@ -68,9 +93,6 @@ public class HistoricalComparison {
 		 queryFilter = new HashMap<String, Object>();
 		 queryFilter.put("simulation_id", simulationId);
 			
-//		RequestTimeseriesData requestTimeseriesData
-		
-
 		RequestTimeseriesData request = new RequestTimeseriesData();
 		request.setSimulationYear(0);
 		request.setQueryMeasurement("simulation");
@@ -161,19 +183,62 @@ public class HistoricalComparison {
 		return outputObject;
 	}
 
-	public TestResultSeries processWithAllTimes(JsonObject expected_series, String simulationId, String response) {
+	public TestResultSeries processWithAllTimes(String simulationId, String responseOne, String responseTwo) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
-//		System.out.println("processWithAllTimes");
-//		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
 
-		JsonObject jsonObject = CompareResults.getSimulationJson(response);
+		JsonObject expectedObjectOne = getExpectedFrom(responseOne);
+		JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
+		
+		JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
+		JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
+
+		int index = 0;
+		for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
+//			System.out.println(time_entry);
+			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
+			tr.pprint();
+			if (tr != null) {
+				testResultSeries.add(time_entry.getKey(), tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		
+		
+		JsonObject simInputObjectOne = expectedObjectOne.get("input").getAsJsonObject();
+		JsonObject simInputObjectTwo = expectedObjectTwo.get("input").getAsJsonObject();
+		index = 0;
+		for (Entry<String, JsonElement> time_entry : simInputObjectOne.entrySet()) {
+			System.out.println(time_entry);
+			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simInputObjectTwo);
+			if (tr != null) {
+				testResultSeries.add(time_entry.getKey(), tr);
+			}
+			index++;
+		}
+		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		return testResultSeries;
+	}
+
+	public JsonObject getExpectedFrom(String responseOne) {
+		JsonObject jsonObject = CompareResults.getSimulationJson(responseOne);
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		JsonParser parser = new JsonParser();
 		JsonArray measurements = (JsonArray) parser.parse(data);
 		
 		JsonObject expectedObject = buildExpectedFromTimeseries(measurements);
+		return expectedObject;
+	}
+	
+	public TestResultSeries processWithAllTimes(JsonObject expected_series, String simulationId, String response) {
+		TestResultSeries testResultSeries = new TestResultSeries();
+		CompareResults compareResults = new CompareResults();
+//		System.out.println("processWithAllTimes");
+//		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
+
+		JsonObject expectedObject = getExpectedFrom(response);
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
 		
@@ -182,7 +247,7 @@ public class HistoricalComparison {
 //			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
-				testResultSeries.add(index+"", tr);
+				testResultSeries.add(time_entry.getKey(), tr);
 			}
 			index++;
 		}
@@ -196,7 +261,7 @@ public class HistoricalComparison {
 			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
 			if (tr != null) {
-				testResultSeries.add(index+"", tr);
+				testResultSeries.add(time_entry.getKey(), tr);
 			}
 			index++;
 		}

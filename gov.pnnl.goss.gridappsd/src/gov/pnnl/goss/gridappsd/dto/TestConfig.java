@@ -57,8 +57,14 @@ public class TestConfig implements Serializable {
 	
 	private JsonObject expectedResults;
 	
+	private Boolean testInput = true;
+
+	private Boolean testOutput = true;
+	
 	private String compareWithSimId;
 	
+	private String compareWithSimIdTwo;
+
 	private String appId;
 	
 	public JsonObject getExpectedResultObject() {
@@ -85,12 +91,36 @@ public class TestConfig implements Serializable {
 		this.rules = rules;
 	}
 	
+	public Boolean getTestInput() {
+		return testInput;
+	}
+
+	public void setTestInput(Boolean testInput) {
+		this.testInput = testInput;
+	}
+
+	public Boolean getTestOutput() {
+		return testOutput;
+	}
+
+	public void setTestOutput(Boolean testOutput) {
+		this.testOutput = testOutput;
+	}
+	
 	public String getCompareWithSimId() {
 		return compareWithSimId;
 	}
 
 	public void setCompareWithSimId(String compareWithSimId) {
 		this.compareWithSimId = compareWithSimId;
+	}
+	
+	public String getCompareWithSimIdTwo() {
+		return compareWithSimIdTwo;
+	}
+
+	public void setCompareWithSimIdTwo(String compareWithSimIdTwo) {
+		this.compareWithSimIdTwo = compareWithSimIdTwo;
 	}
 	
 	public String getAppId() {
@@ -110,8 +140,8 @@ public class TestConfig implements Serializable {
 	public static TestConfig parse(String jsonString){
 		Gson  gson = new Gson();
 		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
-		if(obj.events==null || obj.events.size()==0)
-			throw new RuntimeException("Expected attribute events not found or is empty");
+//		if(obj.events==null || obj.events.size()==0 || obj.compareWithSimId ==null)
+//			throw new RuntimeException("Expected attribute events not found or is empty");
 		if(obj.appId==null)
 			throw new RuntimeException("Expected attribute appId not found");
 		return obj;

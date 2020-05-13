@@ -50,7 +50,22 @@ public class TestResultSeries implements Serializable{
 	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
 	
 	public void add(String index, TestResults testResults){
-		results.put(index, testResults);
+		if(results.containsKey(index)){
+			TestResults tr = results.get(index);
+			for (Entry<String, HashMap<String, String[]>> entry : testResults.objectPropComparison.entrySet()) {
+				tr.objectPropComparison.put(entry.getKey(), entry.getValue());
+//				System.out.println(entry.getKey());
+//				System.out.println(entry.getValue());
+//				for (Entry<String, String[]> entry2 : entry.getValue().entrySet()) {
+//					System.out.println(entry2.getKey());
+//					System.out.println(entry2.getValue()[0]);
+//					System.out.println(entry2.getValue()[1]);
+//					tr.add(entry.getKey() , entry2.getKey(),entry2.getValue()[0], entry2.getValue()[1]);
+//				}
+			}
+			
+		}else
+			results.put(index, testResults);
 	}
 	
 	public int getTotal(){
@@ -59,6 +74,13 @@ public class TestResultSeries implements Serializable{
 			total+=iterable_element.getValue().getNumberOfConflicts();
 		}
 		return total;
+	}
+	
+	public void ppprint(){
+		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
+			System.out.println(iterable_element.getKey());
+			System.out.println(iterable_element.getValue().toString());
+		}
 	}
 
 }

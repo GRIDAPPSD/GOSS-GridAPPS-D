@@ -86,17 +86,23 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		
 		String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
 	
-		private final static double EPSILON = 0.01;
+		
+		private final static double EPSILON_e3 = 0.001001;
+		
+		private final static double EPSILON_e1 = 0.100001;
 		
 		private final static ComplexFormat cf = new ComplexFormat("j");
 		
-	
-		public static boolean equals(float a, float b){
-		    return a == b ? true : Math.abs(a - b) < EPSILON;
+		public static boolean equals_e3(double a, double b){
+		    return a == b ? true : Math.abs(a - b) <= EPSILON_e3;
+		}
+		
+		public static boolean equals_e1(double a, double b){
+		    return a == b ? true : Math.abs(a - b) < EPSILON_e1;
 		}
 		
 		public static boolean equals(Complex a, Complex b){
-		    return a.equals(b) ? true : (a.subtract(b)).abs() < EPSILON;
+		    return a.equals(b) ? true : (a.subtract(b)).abs() <= EPSILON_e3;
 		}
 		
 		public void compare(){
@@ -109,37 +115,37 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 	//		Assert.assertEquals(o1, o2);
 		}
 	
-		public SimulationOutput getOutputProperties(String path) {
-			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-			JsonReader jsonReader;
-			SimulationOutput testScript = null;
-			try {
-				jsonReader = new JsonReader(new FileReader(path));
-				jsonReader.setLenient(true);
-				testScript = gson.fromJson(new FileReader(path),SimulationOutput.class);
-				jsonReader.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			return testScript;	
-		}
-		
-		public SimulationOutput getOutputObjects(String path) {
-			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-			JsonReader jsonReader;
-			SimulationOutput testScript = null;
-			try {
-				jsonReader = new JsonReader(new FileReader(path));
-				jsonReader.setLenient(true);
-				testScript = gson.fromJson(new FileReader(path),SimulationOutput.class);
-				jsonReader.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			return testScript;	
-		}
+//		public SimulationOutput getOutputProperties(String path) {
+//			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+//			JsonReader jsonReader;
+//			SimulationOutput testScript = null;
+//			try {
+//				jsonReader = new JsonReader(new FileReader(path));
+//				jsonReader.setLenient(true);
+//				testScript = gson.fromJson(new FileReader(path),SimulationOutput.class);
+//				jsonReader.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			
+//			return testScript;	
+//		}
+//		
+//		public SimulationOutput getOutputObjects(String path) {
+//			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+//			JsonReader jsonReader;
+//			SimulationOutput testScript = null;
+//			try {
+//				jsonReader = new JsonReader(new FileReader(path));
+//				jsonReader.setLenient(true);
+//				testScript = gson.fromJson(new FileReader(path),SimulationOutput.class);
+//				jsonReader.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			
+//			return testScript;	
+//		}
 	
 		
 	//	private Map<Object, Object> mapConfig(Map<String, Integer> input, String prefix) {
@@ -147,69 +153,69 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 	//	            .collect(Collectors.toMap(entry -> entry.getKey().substring(subLength), entry -> AttributeType.GetByName(entry.getValue())));
 	//	}
 		
-		public void loadSimResultTestCode(String path, SimulationOutput simOut) {
-			JsonParser parser = new JsonParser();
-			try {
-				BufferedReader br = new BufferedReader(new FileReader(path));
-				JsonElement elm = parser.parse(br);
-				if(elm.isJsonObject()){
-				    JsonObject jsonObject = elm.getAsJsonObject();
-				    JsonObject output = jsonObject.get("output").getAsJsonObject();
-				    JsonObject f2 = output.get(getFeeder()).getAsJsonObject();
-		    
-				    // Turn to a Map 
-				    Map<String, JsonElement> ouputsMap = f2.entrySet().stream()
-				                                    .collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue()));
-	
-					for (SimulationOutputObject out :simOut.output_objects){
-						JsonElement outputTmp = ouputsMap.get(out.name);
-						System.out.println(out.name + " " +ouputsMap.get(out.name));
-						if( output != null){
-							for (String prop : out.getProperties()) {
-								System.out.println("     "  +prop);
-								System.out.println("     "  + outputTmp.getAsJsonObject().get(prop));
-								
-							}
-						}
-						break;
-					}
-				    
-	//			    Set<Entry<String, JsonElement>> entrySet = f2.entrySet();		    
-	//			    for(Map.Entry<String,JsonElement> entry : entrySet){
-	//			    	if(entry.getValue().isJsonObject()){
-	//			    		JsonObject obj = entry.getValue().getAsJsonObject();
-	//			    		for (String prop : propsArray) {
-	//				    		if (obj.has(prop)) System.out.println(prop +  " : " + obj.get(prop));	
-	//						} 
-	//
-	//			    	}
-	//			        System.out.println("key >>> "+entry.getKey());
-	//			        System.out.println("val >>> "+entry.getValue());
-	//			    }
-	
-				}		
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
+//		public void loadSimResultTestCode(String path, SimulationOutput simOut) {
+//			JsonParser parser = new JsonParser();
+//			try {
+//				BufferedReader br = new BufferedReader(new FileReader(path));
+//				JsonElement elm = parser.parse(br);
+//				if(elm.isJsonObject()){
+//				    JsonObject jsonObject = elm.getAsJsonObject();
+//				    JsonObject output = jsonObject.get("output").getAsJsonObject();
+//				    JsonObject f2 = output.get(getFeeder()).getAsJsonObject();
+//		    
+//				    // Turn to a Map 
+//				    Map<String, JsonElement> ouputsMap = f2.entrySet().stream()
+//				                                    .collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue()));
+//	
+//					for (SimulationOutputObject out :simOut.output_objects){
+//						JsonElement outputTmp = ouputsMap.get(out.name);
+//						System.out.println(out.name + " " +ouputsMap.get(out.name));
+//						if( output != null){
+//							for (String prop : out.getProperties()) {
+//								System.out.println("     "  +prop);
+//								System.out.println("     "  + outputTmp.getAsJsonObject().get(prop));
+//								
+//							}
+//						}
+//						break;
+//					}
+//				    
+//	//			    Set<Entry<String, JsonElement>> entrySet = f2.entrySet();		    
+//	//			    for(Map.Entry<String,JsonElement> entry : entrySet){
+//	//			    	if(entry.getValue().isJsonObject()){
+//	//			    		JsonObject obj = entry.getValue().getAsJsonObject();
+//	//			    		for (String prop : propsArray) {
+//	//				    		if (obj.has(prop)) System.out.println(prop +  " : " + obj.get(prop));	
+//	//						} 
+//	//
+//	//			    	}
+//	//			        System.out.println("key >>> "+entry.getKey());
+//	//			        System.out.println("val >>> "+entry.getValue());
+//	//			    }
+//	
+//				}		
+//			} catch (FileNotFoundException e) {
+//				e.printStackTrace();
+//			}
+//		}
 	
 		
-		/**
-		 * compareExpectedWithSimulation
-		 * @param simOutputPath
-		 * @param expectedOutputPath
-		 * @param simOutProperties
-		 */
-		public TestResults compareExpectedWithSimulation(String simOutputPath, String expectedOutputPath, SimulationOutput simOutProperties) {
-			Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
-	
-	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
-	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-			JsonObject jsonObject = getSimulationOutputFile(simOutputPath);
-			
-			return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
-		}
-		
+//		/**
+//		 * compareExpectedWithSimulation
+//		 * @param simOutputPath
+//		 * @param expectedOutputPath
+//		 * @param simOutProperties
+//		 */
+//		public TestResults compareExpectedWithSimulation(String simOutputPath, String expectedOutputPath, SimulationOutput simOutProperties) {
+//			Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(expectedOutputPath);
+//	
+//	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
+//	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
+//			JsonObject jsonObject = getSimulationOutputFile(simOutputPath);
+//			
+//			return compareExpectedWithSimulation(expectedOutputMap, jsonObject);
+//		}
+//		
 		/**
 		 * compareExpectedWithSimulation
 		 * @param simOutputPath
@@ -392,21 +398,33 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
 	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
-							if (comparison)
+							if (comparison){
+//								testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
 								countTrue++;
+							}
 							else{
 	//							System.out.println("\nFor "+entry.getKey() +":"+prop);
 	//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
 	//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
-								testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+//								"hasMeasurementDifference":"FORWARD","difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4","simulation_id":"1961648576","time":1587670650
+								if (simOutputObj.has("hasMeasurementDifference")){
+									testResults.add(entry.getKey(),
+											prop, 
+											expectedOutputObj.get(prop).toString(),
+											simOutputObj.get(prop).toString(),
+											simOutputObj.get("hasMeasurementDifference").toString(),
+											simOutputObj.get("difference_mrid").toString());
+								}else{
+									testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
+								}
 								countFalse++;
 							}
 						}
-						} else{
-							System.out.println("No property for "+ entry.getKey());
-						}
-					}else
-						System.out.println("     Not object" + entry);
+					} else{
+						System.out.println("No property for "+ entry.getKey());
+					}
+				}else
+					System.out.println("     Not object" + entry);
 			}
 			System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
 		}
@@ -448,26 +466,26 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		}
 		
 	
-		/**
-		 * 
-		 * @param simOutputPath
-		 * @return
-		 */
-		private JsonObject getSimulationOutputFile(String simOutputPath) {
-			JsonObject jsonObject = null;
-			try {
-				JsonParser parser = new JsonParser();
-				JsonElement simOutputObject = parser.parse(new BufferedReader(new FileReader(simOutputPath)));
-	
-				if (simOutputObject.isJsonObject()) {
-					jsonObject = simOutputObject.getAsJsonObject();
-				}
-	
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-			return jsonObject;
-		}
+//		/**
+//		 * 
+//		 * @param simOutputPath
+//		 * @return
+//		 */
+//		private JsonObject getSimulationOutputFile(String simOutputPath) {
+//			JsonObject jsonObject = null;
+//			try {
+//				JsonParser parser = new JsonParser();
+//				JsonElement simOutputObject = parser.parse(new BufferedReader(new FileReader(simOutputPath)));
+//	
+//				if (simOutputObject.isJsonObject()) {
+//					jsonObject = simOutputObject.getAsJsonObject();
+//				}
+//	
+//			} catch (FileNotFoundException e) {
+//				e.printStackTrace();
+//			}
+//			return jsonObject;
+//		}
 		
 		/**
 		 * 
@@ -543,7 +561,7 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 				if(output.has(timestamp)){
 					expectedOutputMap = getOutputMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					System.out.println("CompareResults no index for" + timestamp);
+					System.out.println("CompareResults no index for " + timestamp);
 					return null;
 				}
 			}
@@ -639,13 +657,22 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		public Map<String, JsonElement> getForwardDifferenceMap(JsonObject output) {
 			if ( output.has("input") ) output = output.getAsJsonObject("input");
 			JsonObject tempObj = output.getAsJsonObject("message");
-
-			JsonArray temp = tempObj.getAsJsonArray("measurements");
 			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
-			for (JsonElement jsonElement : temp) {
-				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
-					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
-				} 
+			if(tempObj.has("measurements")){
+				JsonArray temp = tempObj.getAsJsonArray("measurements");
+				for (JsonElement jsonElement : temp) {
+					if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+						forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+					} 
+				}
+			} else if (tempObj.has("forward_differences")) {
+				JsonParser parser = new JsonParser();
+				JsonArray temp = tempObj.getAsJsonArray("forward_differences");
+				for (JsonElement jsonElement : temp) {
+					jsonElement.getAsJsonObject().add("difference_mrid",tempObj.get("difference_mrid"));
+					jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
+					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+				}
 			}
 			return forwardDifferenceMap;
 		}
@@ -653,12 +680,22 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		public Map<String, JsonElement> getReverseDifferenceMap(JsonObject output) {
 			if ( output.has("input") ) output = output.getAsJsonObject("input");
 			JsonObject tempObj = output.getAsJsonObject("message");
-			JsonArray temp = tempObj.getAsJsonArray("measurements");
-
 			Map<String, JsonElement> reverseDifferenceMap = new HashMap<String,JsonElement>();
-			for (JsonElement jsonElement : temp) {
-				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("REVERSE")){
-					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+			
+			if(tempObj.has("measurements")){
+				JsonArray temp = tempObj.getAsJsonArray("measurements");
+				for (JsonElement jsonElement : temp) {
+					if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("REVERSE")){
+						reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+					}
+				}
+			}else if (tempObj.has("reverse_differences")) {
+				JsonArray temp = tempObj.getAsJsonArray("reverse_differences");
+				JsonParser parser = new JsonParser();
+				for (JsonElement jsonElement : temp) {
+					jsonElement.getAsJsonObject().add("difference_mrid",tempObj.get("difference_mrid"));
+					jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("REVERSE"));
+					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 				}
 			}
 			return reverseDifferenceMap;
@@ -685,9 +722,9 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 			for (JsonElement jsonElement : temp) {
 	//				System.out.println(jsonElement);
 				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
-					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 				} else{
-					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("difference_mrid").getAsString(), jsonElement);
+					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 				}
 			}
 			return inputObj;
@@ -762,60 +799,65 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 			Boolean comparison = simOutputObj.get(prop).equals(expectedOutputObj.get(prop));
 	//		System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
 			// Test voltage, i.e. complex number
-			if(prop.startsWith("voltage_") || prop.startsWith("power_in_") ){
-				Complex c1 = cf.parse(simOutputObj.get(prop).getAsString());
-				Complex c2 = cf.parse(expectedOutputObj.get(prop).getAsString());
-	//			System.out.println("              Complex" + c1 + c2 + equals(c1,c2));
-				comparison = equals(c1,c2);
-				return comparison;
-			}
+//			if(prop.startsWith("voltage_") || prop.startsWith("power_in_") ){
+//				Complex c1 = cf.parse(simOutputObj.get(prop).getAsString());
+//				Complex c2 = cf.parse(expectedOutputObj.get(prop).getAsString());
+//	//			System.out.println("              Complex" + c1 + c2 + equals(c1,c2));
+//				comparison = equals(c1,c2);
+//				return comparison;
+//			}
 			System.out.println(prop);
 			JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
 			JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
 			if (obj1.isNumber() && obj2.isNumber()){
-				float f1 = simOutputObj.get(prop).getAsFloat();
-				float f2 = expectedOutputObj.get(prop).getAsFloat(); 
-				comparison = equals(f1,f2);
+				double f1 = simOutputObj.get(prop).getAsDouble();
+				double f2 = expectedOutputObj.get(prop).getAsDouble();
+				if(prop.equals("value"))
+					comparison = f1 == f2;
+				else if(prop.equals("angle"))
+					comparison = equals_e1(f1,f2);
+				else
+					comparison = equals_e3(f1,f2);
 			}
 			return comparison;
 		}
-		
-		public void loadSimResult_old(String sim_output, SimulationOutput simOutProperties, String expected_output) {
-			JsonParser parser = new JsonParser();
-			try {
-				BufferedReader br = new BufferedReader(new FileReader(sim_output));
-				JsonElement elm = parser.parse(br);
-				if(elm.isJsonObject()){
-				    JsonObject jsonObject = elm.getAsJsonObject();
-	
-				    JsonObject output = jsonObject.get("output").getAsJsonObject();
-	
-				    JsonObject f2 = output.get("ieee8500").getAsJsonObject();
-	
-				    Set<Entry<String, JsonElement>> entrySet = f2.entrySet();
-				    for(Map.Entry<String,JsonElement> simOutputEle : entrySet){
-				    	if(simOutputEle.getValue().isJsonObject()){
-				    		JsonObject simOutputObj = simOutputEle.getValue().getAsJsonObject();
-				    		for (String prop : propsArray) {
-					    		if (simOutputObj.has(prop)) System.out.println(prop +  " : " + simOutputObj.get(prop));	
-							} 
-	
-				    	}
-				        System.out.println("key >>> "+simOutputEle.getKey());
-				        System.out.println("val >>> "+simOutputEle.getValue());
-				    }
-	
-	//			    if(f2.isJsonObject()){
-	//			        JsonObject f2Obj = f2.getAsJsonObject();
-	//			        JsonElement f3 = f2Obj.get("f3");
-	//			    }
-	
-				}
-				
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}	
-		}
+//		
+//		public void loadSimResult_old(String sim_output, SimulationOutput simOutProperties, String expected_output) {
+//			JsonParser parser = new JsonParser();
+//			try {
+//				BufferedReader br = new BufferedReader(new FileReader(sim_output));
+//				JsonElement elm = parser.parse(br);
+//				if(elm.isJsonObject()){
+//				    JsonObject jsonObject = elm.getAsJsonObject();
+//	
+//				    JsonObject output = jsonObject.get("output").getAsJsonObject();
+//	
+//				    JsonObject f2 = output.get("ieee8500").getAsJsonObject();
+//	
+//				    Set<Entry<String, JsonElement>> entrySet = f2.entrySet();
+//				    for(Map.Entry<String,JsonElement> simOutputEle : entrySet){
+//				    	if(simOutputEle.getValue().isJsonObject()){
+//				    		JsonObject simOutputObj = simOutputEle.getValue().getAsJsonObject();
+//				    		for (String prop : propsArray) {
+//					    		if (simOutputObj.has(prop)) System.out.println(prop +  " : " + simOutputObj.get(prop));	
+//							} 
+//	
+//				    	}
+//				        System.out.println("key >>> "+simOutputEle.getKey());
+//				        System.out.println("val >>> "+simOutputEle.getValue());
+//				    }
+//	
+//	//			    if(f2.isJsonObject()){
+//	//			        JsonObject f2Obj = f2.getAsJsonObject();
+//	//			        JsonElement f3 = f2Obj.get("f3");
+//	//			    }
+//	
+//				}
+//				
+//			} catch (FileNotFoundException e) {
+//				e.printStackTrace();
+//			}	
+//		}
 		
 		public void test(){
 	
@@ -859,12 +901,12 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 				System.out.println("Using defaults: " + path + " " + sim_output + " " + expected_output);
 			}
 			
-			CompareResults compareResults = new CompareResults();
-			SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
-			compareResults.getProp(simOutProperties);
-			compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
-			
-			compareResults.test();
+//			CompareResults compareResults = new CompareResults();
+//			SimulationOutput simOutProperties = compareResults.getOutputProperties(path);
+//			compareResults.getProp(simOutProperties);
+//			compareResults.compareExpectedWithSimulation(sim_output, expected_output, simOutProperties);
+//			
+//			compareResults.test();
 			
 			
 	//		String testScriptPath = "./applications/python/exampleTestScript.json";

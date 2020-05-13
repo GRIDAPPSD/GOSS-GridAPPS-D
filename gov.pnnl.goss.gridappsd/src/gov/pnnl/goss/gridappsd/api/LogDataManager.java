@@ -53,7 +53,7 @@ public interface LogDataManager {
 	
 	Serializable query(String queryString);
 
-	void storeExpectedResults(String test_id, String processId, long simulation_time, String mrid, String property,
-			String expected, String actual);
+	void storeExpectedResults(String test_id, String processIdOne, String processIdTwo, long simulation_time, String mrid, String property,
+			String expected, String actual, String difference_direction, String difference_mrid);
 	
 }

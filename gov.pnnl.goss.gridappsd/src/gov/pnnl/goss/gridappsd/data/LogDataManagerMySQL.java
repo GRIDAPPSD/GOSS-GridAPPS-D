@@ -165,22 +165,25 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 	}
 	
 	@Override
-	public void storeExpectedResults(String test_id, String processId, long simulation_time,
-			String mrid, String property, String expected, String actual) {
-		
-		if(connection!=null){
-			try {
+    public void storeExpectedResults(String test_id, String processIdOne, String processIdTwo, long simulation_time,
+            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) {
+
+          if(connection!=null){
+            try {
+
+              PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+              preparedStatement.setString(1, test_id);
+              preparedStatement.setString(2, processIdOne);
+              preparedStatement.setString(3, processIdTwo);
+              preparedStatement.setString(4, mrid);
+              preparedStatement.setString(5, property);
+              preparedStatement.setString(6, expected);
+              preparedStatement.setString(7, actual);
+              preparedStatement.setString(8, difference_direction);
+              preparedStatement.setString(9, difference_mrid);
+              preparedStatement.setTimestamp(10, new Timestamp(simulation_time));
 				
-				PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?,?)");
-				preparedStatement.setString(1, test_id);
-				preparedStatement.setString(2, processId);
-				preparedStatement.setString(3, mrid);
-				preparedStatement.setString(4, property);
-				preparedStatement.setString(5, expected);
-				preparedStatement.setString(6, actual);
-				preparedStatement.setTimestamp(7, new Timestamp(simulation_time));
-				
-				preparedStatement.executeUpdate();
+			  preparedStatement.executeUpdate();
 				
 			} catch (DataTruncation e) {
 				e.printStackTrace();
