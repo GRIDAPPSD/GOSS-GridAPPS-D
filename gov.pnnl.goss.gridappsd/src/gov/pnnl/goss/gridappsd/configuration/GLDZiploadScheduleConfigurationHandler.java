@@ -164,7 +164,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		String tempDataPath = dir.getAbsolutePath();
 		
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "loadprofile");
+		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "ieeezipload");
 		int simId = -1;
 		if(simulationID==null || simulationID.trim().length()==0){
 			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
