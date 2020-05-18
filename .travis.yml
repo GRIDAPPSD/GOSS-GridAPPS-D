@@ -5,6 +5,15 @@ dist: trusty
 
 language: java
 
+#sources:
+  #- google-chrome
+
+packages:
+  - realpath 
+  - python 
+  - python-pip
+  - docker-ce
+
 jdk:
   - oraclejdk8
   
