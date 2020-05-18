@@ -291,8 +291,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		//Generate zip load profile player file
-		GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
-		ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		if(scheduleName!=null && scheduleName.trim().length()>0) {
+			GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
+			ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		}
 		
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);
