@@ -30,10 +30,6 @@ setup_dependencies() {
   Setting up dependencies.
   "
 
-  #sudo apt update -y
-  #sudo apt install realpath python python-pip -y
-  #sudo apt install --only-upgrade docker-ce -y
-
   docker info
 
   sudo rm /usr/local/bin/docker-compose
