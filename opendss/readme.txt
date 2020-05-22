@@ -1,10 +1,10 @@
-The Open Distribution System Simulator, OpenDSS
+﻿The Open Distribution System Simulator, OpenDSS
 
-Copyright (c) 2008-2019, Electric Power Research Institute, Inc.
-Copyright (c) 2017-2019, Battelle Memorial Institute
+Copyright (c) 2008-2020, Electric Power Research Institute, Inc.
+Copyright (c) 2017-2020, Battelle Memorial Institute
 All rights reserved.
 
-opendsscmd version 1.2.3
+opendsscmd version 1.2.9
 ========================
 
 This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 7.6.5 of the Windows-only version, and source code revision r2181. The major differences between opendsscmd and Windows-only OpenDSS are:
@@ -20,21 +20,46 @@ Change Log
 
 1.0.1 - CIM export of Relay, Fuse, Breaker based on controls attached to Lines having switch=yes
 
+
 1.1.0 - CIM100 support, time-stepping under control of FNCS
 
+
 1.2.0 - FNCS output publications
+
       - operational limits included in CIM100 export
+
       - ExpControl and VCCS enhancements from IEEE PVSC 46 papers
 
-1.2.1 - removed FNCS debug output
-      - added test.json sample FNCS messaging config file
 
+1.2.1 - removed FNCS debug output
+
+      - added test.json sample FNCS messaging config file
 1.2.2 - changed CIM100 mRID from GUID to UUID v4; see RFC 4122
 
 1.2.3 - added "-v" flag and "about" command for version number
 
+
+1.2.4 - fixed FNCS time synchronization for power rationing example
+      
+      - implemented FNCS log levels (opendsscmd --help for details)
+
+
+1.2.5 - include Buses in "export UUIDS" and "UUID" commands
+
+
+1.2.6 - persist all CIM mRID values in the "uuid" and "export uuid" commands
+
+
+1.2.7 - bugfix for persistent mRID values on CIM-created XfmrCodes
+
+1.2.8 - performance tuning in the FNCS interface
+1.2.9 - added the option to export CIM100 in six separate sub-profiles
+
 Quick Start
+
 ===========
+
+
 
 If you're unfamiliar with OpenDSS, see install_dir/doc/OpenDSSPrimer.pdf and install_dir/doc/OpenDSSManual.pdf to learn about its modeling and analysis features.  However, none of the COM automation or plotting features are supported in opendsscmd. To run any of the non-graphical commands:
 
@@ -55,14 +80,19 @@ To verify proper installation:
    a. To list processes using port 5570, use "list5570.bat" on Windows or "lsof -i tcp:5570" on Linux/Mac
    b. To kill all processes using port 5570, use "kill5570.bat" on Windows or "kill5570.sh" on Linux/Mac
 
+
 Open Issues
+
 ===========
+
 
 1. The regular expressions for the batchedit command, which are implemented in ExecHelper.pas, have become case-sensitive.  They need to be made case-insensitive.
 2. On Windows, the command history editor is "sluggish". You have to type slowly.
 
 Installation
 ============
+
+
 
 On all platforms, the documentation and sample files will be copied to a user-specified installation directory, called install_dir. An uninstall script is also provided.
 
