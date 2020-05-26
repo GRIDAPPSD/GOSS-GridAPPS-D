@@ -130,6 +130,9 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		if(result.getData().size()==0)
 			return null;
 		String origFormat = "PROVEN_"+requestTimeseriesData.getQueryMeasurement().toString();
+		if(requestTimeseriesData.getOriginalFormat()!=null) {
+			origFormat = "PROVEN_"+requestTimeseriesData.getOriginalFormat();
+		}
 		String responseFormat = requestTimeseriesData.getResponseFormat();
 		DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
 		if(converter!=null){
