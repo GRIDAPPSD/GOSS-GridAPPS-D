@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -17,7 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -206,19 +210,46 @@ public class HistoricalComparison {
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
 		
-		JsonObject simInputObjectOne = expectedObjectOne.get("input").getAsJsonObject();
-		JsonObject simInputObjectTwo = expectedObjectTwo.get("input").getAsJsonObject();
+		JsonObject simInputObject = expectedObjectOne.get("input").getAsJsonObject();
+		JsonObject expected_input_series = expectedObjectTwo.get("input").getAsJsonObject();
+		// TODO rebase
+		// if rebase the
+		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+		
+//		index = 0;
+//		for (Entry<String, JsonElement> time_entry : simInputObjectOne.entrySet()) {
+//			System.out.println(time_entry);
+//			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simInputObjectTwo);
+//			if (tr != null) {
+//				testResultSeries.add(time_entry.getKey(), tr);
+//			}
+//			index++;
+//		}
+
+		return testResultSeries;
+	}
+
+	public void rebaseAndCompare(TestResultSeries testResultSeries, CompareResults compareResults,
+			JsonObject simInputObject, JsonObject expected_input_series) {
+		int index;
+		HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
+		System.out.println(newKeys1.toString());
 		index = 0;
-		for (Entry<String, JsonElement> time_entry : simInputObjectOne.entrySet()) {
+		// Rebase or set to match output ...
+		for (Entry<Integer,Integer> time_entry : newKeys1.entrySet()) {
 			System.out.println(time_entry);
-			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simInputObjectTwo);
-			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), tr);
+			String timeOne = time_entry.getKey().toString();
+			if(simInputObject.has(timeOne)){
+				JsonObject sim_input_series = simInputObject.get(time_entry.getKey().toString()).getAsJsonObject();
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getValue().toString(), sim_input_series, expected_input_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey().toString(), tr);
+				}
 			}
 			index++;
 		}
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-		return testResultSeries;
+//		return index;
 	}
 
 	public JsonObject getExpectedFrom(String responseOne) {
@@ -253,20 +284,79 @@ public class HistoricalComparison {
 		}
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
-		
 		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 		JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
-		index = 0;
-		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
-			System.out.println(time_entry);
-			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
-			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), tr);
-			}
-			index++;
-		}
-		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		System.out.println(simInputObject.toString());
+
+		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+
+//		index = 0;
+//		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+//			System.out.println(time_entry);
+//			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
+//			if (tr != null) {
+//				testResultSeries.add(time_entry.getKey(), tr);
+//			}
+//			index++;
+//		}
+//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		return testResultSeries;
+	}
+
+	public HashMap<Integer, Integer> rebase_keys(JsonObject simInputObject, JsonObject expected_input_series) {
+		SortedSet<Integer> inputKeys1 = new TreeSet<>();
+		SortedSet<Integer> inputKeys2 = new TreeSet<>();
+
+//		keys.addAll(simInputObject.keySet()));
+
+		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+			inputKeys1.add(Integer.valueOf(time_entry.getKey()));
+		}
+
+		for (Entry<String, JsonElement> time_entry : expected_input_series.entrySet()) {
+			inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+		}
+//		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
+//		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
+		
+		System.out.println("input keys");
+		System.out.println(inputKeys1.toString());
+		System.out.println(inputKeys2.toString());
+		return getTimeMap(inputKeys1, inputKeys2);
+	}
+	
+	public HashMap<Integer, Integer> getTimeMap(SortedSet<Integer> inputKeys1, SortedSet<Integer> inputKeys2) {
+		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
+		HashMap<Integer,Integer> newKeys2 = new HashMap<Integer,Integer>();
+		Integer first1 = inputKeys1.first();
+		Integer first2 = inputKeys2.first();
+		
+		int diff = 0;
+		Integer baseTime = first2;
+
+		Iterator<Integer> it1 = inputKeys1.iterator();
+		Iterator<Integer> it2 = inputKeys2.iterator();
+
+//		newKeys1.put(first1, first2);
+		while (it1.hasNext() && it2.hasNext()) {
+			Integer key1 = it1.next();
+			Integer key2 = it2.next();
+			diff = key2-first2;
+			first1+=diff;
+			newKeys1.put(first1, key2);
+			first2 = key2;
+		}
+//		for (Integer key : inputKeys1) {
+////			diff=key-diff;
+//			newKeys1.put(key, baseTime);
+//		}
+		diff=0;
+		baseTime = first1;
+		for (Integer key : inputKeys2) {
+			diff=key-diff;
+			newKeys2.put(key, diff+baseTime);
+		}
+		return newKeys1;
 	}
 
 	public JsonObject buildExpectedFromTimeseries(JsonArray measurements) {
