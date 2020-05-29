@@ -79,13 +79,21 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		
 		LogManager logManager;
 		
-		public CompareResults(){}
+		Set<String> propSet = new HashSet<String>(); 
+		
+		public CompareResults(){
+			propSet.add("value");
+			propSet.add("angle");
+			propSet.add("magnitude");
+		}
 		public CompareResults(LogManager logManager){
 			this.logManager = logManager;
+			propSet.add("value");
+			propSet.add("angle");
+			propSet.add("magnitude");
 		}
 		
 		String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
-	
 		
 		private final static double EPSILON_e3 = 0.001001;
 		
@@ -263,9 +271,9 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 		}
 		
-		public TestResults compareExpectedWithSimulationInput(String timestamp, JsonObject jsonObject, JsonObject expectedInput) {
-			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp, expectedInput);
-			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp, expectedInput);
+		public TestResults compareExpectedWithSimulationInput(String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
+			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
+			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
 			if (expectedForwardMap == null) return new TestResults();
 	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
@@ -397,6 +405,9 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 							String prop = simentry.getKey();
 	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
 	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+							if( ! propSet.contains(prop))
+								continue;
+							
 							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
 							if (comparison){
 //								testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
@@ -408,12 +419,12 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 	//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
 //								"hasMeasurementDifference":"FORWARD","difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4","simulation_id":"1961648576","time":1587670650
 								if (simOutputObj.has("hasMeasurementDifference")){
-									testResults.add(entry.getKey(),
-											prop, 
+									testResults.add(simOutputObj.get("object").getAsString(),
+											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
-											simOutputObj.get("hasMeasurementDifference").toString(),
-											simOutputObj.get("difference_mrid").toString());
+											simOutputObj.get("hasMeasurementDifference").getAsString(),
+											simOutputObj.get("difference_mrid").getAsString());
 								}else{
 									testResults.add(entry.getKey() , prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString());
 								}
@@ -574,13 +585,16 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		 */
 		public Map<String, JsonElement> getExpectedForwardInputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
+			System.out.println("input map");
+			System.out.println(expectedOutputObj.toString());
 			if (expectedOutputObj.isJsonObject()) {
 				JsonObject output = expectedOutputObj.getAsJsonObject();	
 				if (output.has("input") ) output = output.getAsJsonObject("input");
+
 				if(output.has(timestamp)){
 					expectedOutputMap = getForwardDifferenceMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					System.out.println("CompareResults no index for" + timestamp);
+					System.out.println("CompareResults no index for " + timestamp);
 					return null;
 				}
 			}
@@ -600,7 +614,7 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 				if(output.has(timestamp)){
 					expectedOutputMap = getReverseDifferenceMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					System.out.println("CompareResults no index for" + timestamp);
+					System.out.println("CompareResults no index for " + timestamp);
 					return null;
 				}
 			}
@@ -806,7 +820,7 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 //				comparison = equals(c1,c2);
 //				return comparison;
 //			}
-			System.out.println(prop);
+//			System.out.println(prop);
 			JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
 			JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
 			if (obj1.isNumber() && obj2.isNumber()){
