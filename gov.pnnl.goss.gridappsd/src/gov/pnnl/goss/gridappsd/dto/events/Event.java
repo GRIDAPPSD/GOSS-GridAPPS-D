@@ -100,7 +100,7 @@ public class Event implements Serializable{
 	public static Event parse(String jsonString){
 		GsonBuilder gsonBuilder = new GsonBuilder();
         RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
-        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+        .registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
         gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
         gsonBuilder.setPrettyPrinting();
         Gson gson = gsonBuilder.create();

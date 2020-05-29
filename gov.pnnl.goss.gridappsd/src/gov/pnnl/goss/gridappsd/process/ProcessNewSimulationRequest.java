@@ -324,7 +324,7 @@ public class ProcessNewSimulationRequest {
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
 			
-			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username);
+			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username); 
 			
 			// start test if requested 
 			testManager.handleTestRequest(simRequest.getTest_config(), simContext);

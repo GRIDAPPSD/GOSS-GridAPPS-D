@@ -54,6 +54,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
@@ -144,7 +145,7 @@ public class ProcessEvent implements GossResponseEvent {
 		try{ 
 			GsonBuilder gsonBuilder = new GsonBuilder();
 			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
-			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault");
+			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
 			gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
 			gsonBuilder.setPrettyPrinting();
 			Gson gsonSpecial = gsonBuilder.create();		

@@ -84,7 +84,7 @@ public interface TestManager {
 	 * @param simulationIdOne simulation id of currently running simulation
 	 * @param simulationIdTwo Simulation id of older simulation
 	 */
-	public void compareSimulations(String appId, String simulationIdOne, String simulationIdTwo);
+	public void compareSimulations(String appId, String testId, String simulationIdOne, String simulationIdTwo);
 	
 	/**
 	 * This method compares simulation output with provided expected simulation
@@ -92,7 +92,7 @@ public interface TestManager {
 	 * @param simulationId Id of the surrently running simulation
 	 * @param expectedResults Expected simulation output 
 	 */
-	public void compareRunningSimulationOutputWithExpected(String appId, String simulationId, JsonObject expectedResults);
+	public void compareRunningSimulationOutputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo);
 	
 	/**
 	 * This method compares simulation output with provided expected simulation
@@ -100,7 +100,7 @@ public interface TestManager {
 	 * @param simulationId Id of the surrently running simulation
 	 * @param expectedResults Expected simulation output 
 	 */
-	public void compareRunningSimulationInputWithExpected(String appId, String simulationId, JsonObject expectedResults);
+	public void compareRunningSimulationInputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo);
 	
 	/**
 	 * This method update property of existing events for the simulation if the events 

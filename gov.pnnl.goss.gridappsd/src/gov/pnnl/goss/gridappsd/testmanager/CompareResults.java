@@ -270,15 +270,18 @@ import gov.pnnl.goss.gridappsd.dto.TestConfig;
 		
 			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
 		}
-		
-		public TestResults compareExpectedWithSimulationInput(String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
+		 
+		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
 			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
 			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
 			if (expectedForwardMap == null) return new TestResults();
+			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, jsonObject);
+			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, jsonObject);
+			
 	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
-			Map<String, JsonElement> forwardMap= getForwardDifferenceMap(jsonObject);
-			Map<String, JsonElement> reverseMap= getReverseDifferenceMap(jsonObject);
+//			Map<String, JsonElement> forwardMap= getForwardDifferenceMap(jsonObject);
+//			Map<String, JsonElement> reverseMap= getReverseDifferenceMap(jsonObject);
 			TestResults testResults = new TestResults();
 	//		JsonObject output = jsonObject;
 	//		String firstKey = getFirstKey(output);

@@ -43,6 +43,7 @@ import gov.pnnl.goss.gridappsd.dto.events.Event;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -50,6 +51,10 @@ import com.google.gson.JsonObject;
 public class TestConfig implements Serializable {
 
 	private static final long serialVersionUID = 1L;
+	
+	public enum TestType {
+		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries
+	}
 
 	private List<Event> events;
 	
@@ -65,7 +70,17 @@ public class TestConfig implements Serializable {
 	
 	private String compareWithSimIdTwo;
 
+	public String getTestId() {
+		return testId;
+	}
+
 	private String appId;
+	
+	private String testId = "_"+UUID.randomUUID();
+	
+	private TestType testType = TestType.simulation_vs_expected;
+	
+	private Boolean matchInputTimes = true;
 	
 	public JsonObject getExpectedResultObject() {
 		return expectedResults;
@@ -129,6 +144,14 @@ public class TestConfig implements Serializable {
 
 	public void setAppId(String appId) {
 		this.appId = appId;
+	}
+
+	public TestType getTestType() {
+		return testType;
+	}
+
+	public void setTestType(TestType testType) {
+		this.testType = testType;
 	}
 
 	@Override

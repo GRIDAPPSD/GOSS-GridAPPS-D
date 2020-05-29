@@ -4,6 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Map.Entry;
 
 import org.junit.Test;
@@ -22,17 +26,16 @@ import com.google.gson.JsonParser;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 //import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 //import gov.pnnl.goss.gridappsd.dto.TestScript;
@@ -41,12 +44,11 @@ import gov.pnnl.goss.gridappsd.testmanager.HistoricalComparison;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
 import gov.pnnl.goss.gridappsd.testmanager.TestResultSeries;
 import gov.pnnl.goss.gridappsd.testmanager.TestResults;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.core.Response;
 import gov.pnnl.proven.api.producer.ProvenProducer;
 import gov.pnnl.proven.api.producer.ProvenResponse;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.Response;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestManagerComponentTest {
@@ -76,6 +78,10 @@ public class TestManagerComponentTest {
 
 	@Mock
 	LogManager logManager;
+	
+
+	@Mock
+	LogDataManager logDataManager;
 
 	@Captor
 	ArgumentCaptor<String> argCaptor;
@@ -95,7 +101,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
 		testManager.start();
 
 
@@ -118,7 +124,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
+		TestManagerImpl testManager =  new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/SampleTestConfig.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/SampleTestConfig.json";
@@ -136,7 +142,7 @@ public class TestManagerComponentTest {
 			e.printStackTrace();
 		}
 
-		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, dataManager, simulationManager);
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
 		testManager.start();
 //		String path = "./applications/python/exampleTestScript.json";
 		String path = "./test/gov/pnnl/goss/gridappsd/exampleTestScript.json";
@@ -205,7 +211,7 @@ public class TestManagerComponentTest {
 		Response r = null;
 		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"145774843\"}, \"responseFormat\": \"JSON\"}";
 		try {
-			r = dataM.processDataRequest(request1, "timeseries", 1598820656, "/tmp/gridappsd_tmp", TestConstants.SYSTEM_USER_NAME);
+			r = dataM.processDataRequest(request1, "timeseries", 1598820656, "/tmp/gridappsd_tmp", "system");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -243,21 +249,23 @@ public class TestManagerComponentTest {
 	}
 	
 	@Test
-	public void testResponse(){
+	public void testExpectedVersusResponse(){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
 		String expected = "{\"output\":{\"1248156002\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574871,\"measurements\":[{\"angle\":-122.66883087158203,\"magnitude\":2438.561767578125,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":1}]}},\"1248156005\":{\"simulation_id\":\"559402036\",\"message\":{\"timestamp\":1535574872,\"measurements\":[{\"angle\":-38.381605233862224,\"magnitude\":52769.16136465681,\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\"},{\"angle\":21.723935891052907,\"magnitude\":45368.78524042436,\"measurement_mrid\":\"_c48d8d88-12be-4b15-8b44-eedc752250c6\"},{\"measurement_mrid\":\"_6e033599-c62a-4821-8ddf-68ba11be60a2\",\"value\":0}]}}}}";
 		       expected = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"angle\": -122.66883087158203, \"magnitude\": 2438.561767578125, \"measurement_mrid\": \"_84541f26-084d-4ea7-a254-ea43678d51f9\"}, {\"angle\": 21.723935891052907, \"magnitude\": 45368.78524042436, \"measurement_mrid\": \"_c48d8d88-12be-4b15-8b44-eedc752250c6\"}, {\"measurement_mrid\": \"_6e033599-c62a-4821-8ddf-68ba11be60a2\", \"value\": 1}]}}, \"1248156005\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574872, \"measurements\": [{\"angle\": -38.381605233862224, \"magnitude\": 52769.16136465681, \"measurement_mrid\": \"_84541f26-084d-4ea7-a254-ea43678d51f9\"}, {\"angle\": 21.723935891052907, \"magnitude\": 45368.78524042436, \"measurement_mrid\": \"_c48d8d88-12be-4b15-8b44-eedc752250c6\"}, {\"measurement_mrid\": \"_6e033599-c62a-4821-8ddf-68ba11be60a2\", \"value\": 0}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156002, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156002, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";		
-		JsonObject expected_series = CompareResults.getSimulationJson(expected).get("expectedResults").getAsJsonObject();
+		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
+		JsonObject expected_series = CompareResults.getSimulationJson(expected_proven).get("expectedResults").getAsJsonObject();
 		
 		String res = "[{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_84541f26-084d-4ea7-a254-ea43678d51f9\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\",\"angle\":-122.80107769837849,\"magnitude\":2520.2169329056983,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0058123f-da11-4f7c-a429-e47e5949465f\",\"angle\":-122.70461031091335,\"magnitude\":2522.818525429715,\"simulation_id\":\"1961648576\",\"time\":1248156002},{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1248156002,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]";
 		res = "{\"hasSimulationMessageType\":\"OUTPUT\",\"measurement_mrid\":\"_0055de94-7d7e-4931-a884-cab596cc191b\",\"angle\":-4.066423674487563,\"magnitude\":2361.0733024639117,\"simulation_id\":\"1961648576\",\"time\":1248156002}";
 		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\":\\\"OUTPUT\\\"}]\" }" ; 
 		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}]\"}";
-		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+		res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
 
-		JsonObject jsonObject = CompareResults.getSimulationJson(res);
+		JsonObject jsonObject = CompareResults.getSimulationJson(res); 
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		JsonParser parser = new JsonParser();
@@ -273,10 +281,12 @@ public class TestManagerComponentTest {
 		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
-				testResultSeries.add(index+"", tr);
+				testResultSeries.add(time_entry.getKey(),time_entry.getKey(), tr);
 			}
 			index++;
 		}
+		System.out.println("testExpectedVersusResponse");
+		testResultSeries.ppprint();
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
 		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
@@ -284,18 +294,141 @@ public class TestManagerComponentTest {
 		index = 0;
 		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
 			System.out.println(time_entry);
-			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
+			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
 			if (tr != null) {
-				testResultSeries.add(index+"", tr);
+				tr.pprint();
+				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
 			index++;
 		}
+		testResultSeries.ppprint();
 		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-	
 		
 //		{\"hasMeasurementDifference\":\"FORWARD\",\"hasSimulationMessageType\":\"INPUT\",\"difference_mrid\":\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\",\"simulation_id\":\"1961648576\",\"time\":1587670650,\"attribute\":\"ShuntCompensator.sections\",\"value\":0.0,\"object\":\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]"
+	}
+	
+	@Test
+	public void testExpectedVersusResponse2(){
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		TestResultSeries testResultSeries = new TestResultSeries();
+		CompareResults compareResults = new CompareResults();
+		String expected = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -5.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"0\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670650, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}, \"15\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670665, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}}}}";		
+		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
+		expected_proven = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -5.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"0\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670650, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}, \"15\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670665, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}}}}";
+		JsonObject expected_series = CompareResults.getSimulationJson(expected_proven).get("expectedResults").getAsJsonObject();
+		
+		String res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}]\"}";
 
+		JsonObject jsonObject = CompareResults.getSimulationJson(res); 
+		String data = jsonObject.get("data").getAsString();
+		System.out.println(data.substring(0, 100));
+		JsonParser parser = new JsonParser(); 
+		JsonArray measurements = (JsonArray) parser.parse(data);
 
+		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, "123", res);
+		testResultSeries1.ppprint();
+		assertEquals(testResultSeries1.getTotal(), 5);
+
+	}	
+	
+	@Test
+	public void testKeys(){
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		SortedSet<Integer> inputKeys1 = new TreeSet<>();
+		SortedSet<Integer> inputKeys2 = new TreeSet<>();
+		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
+		HashMap<Integer,Integer> newKeys2 = new HashMap<Integer,Integer>();
+//		[1590527327, 1590527342, 1590527357]
+//				[0, 15, 27, 30]
+//		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
+//		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
+		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357);
+		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
+		
+		System.out.println("input keys");
+		System.out.println(inputKeys1.toString());
+		System.out.println(inputKeys2.toString());
+		HashMap<Integer,Integer> x = hc.getTimeMap(inputKeys1, inputKeys2);
+		System.out.println(x);
+		
+		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357); inputKeys1.add(1590527360);
+		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30); inputKeys2.add(33);
+	
+		System.out.println("input keys");
+		System.out.println(inputKeys1.toString());
+		System.out.println(inputKeys2.toString());
+		x = hc.getTimeMap(inputKeys1, inputKeys2);
+		System.out.println(x);
+		
+		 
+		Integer first1 = inputKeys1.first();
+		Integer first2 = inputKeys2.first();
+		
+		int diff = 0;
+		Integer baseTime = first2;
+
+		Iterator<Integer> it1 = inputKeys1.iterator();
+		Iterator<Integer> it2 = inputKeys2.iterator();
+
+//						newKeys1.put(first1, first2);
+		while (it2.hasNext()) {
+//			Integer key1 = it1.next();
+//			if it2.
+			Integer key2 = it2.next();
+			diff = key2-first2;
+			first1+=diff;
+			newKeys1.put(first1, key2);
+			first2 = key2;
+		}
+		System.out.println(newKeys1);
+	}
+	
+	@Test
+	public void testInputCount(){
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
+		
+		SortedSet<Integer> inputKeys2 = new TreeSet<>();
+		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
+		int first1 = 1590773528;
+		int simulationTimestamp = 1590773558;
+		int inputCount=0; 
+		
+		inputCount = testManager.getNextCount(inputKeys2, simulationTimestamp, first1, inputCount);
+		System.out.println(inputCount);
+		
 	}
 
+	@Test
+	public void testResponse2(){
+		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
+		
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		String res1 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+		String res2 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -5.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+
+		TestResultSeries testResultSeries1 = hc.processWithAllTimes("123", res1,res1);
+		assertEquals(testResultSeries1.getTotal(), 0);
+		
+		TestResultSeries testResultSeries2 = hc.processWithAllTimes("123", res1, res2);
+		assertEquals(testResultSeries2.getTotal(), 3);
+		testResultSeries2.ppprint();
+		testManager.storeResults("appID","testID", "currentSimulationIdOne", "currentSimulationIdTwo", testResultSeries2);
+	}
+	
+	@Test
+	public void inputMapTest(){
+		String data = "{\"simulation_id\": \"1432157818\", \"message\": {\"timestamp\": 0, \"difference_mrid\": \"d5f5516a-87a9-43d3-9dba-931b4388eabc\", \"reverse_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}], \"forward_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}]}}";
+		JsonParser parser = new JsonParser();
+		JsonObject measurements = (JsonObject) parser.parse(data);
+		Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+		JsonObject tempObj = measurements.getAsJsonObject("message");
+
+		JsonArray temp = tempObj.getAsJsonArray("forward_differences");
+		for (JsonElement jsonElement : temp) {
+			jsonElement.getAsJsonObject().add("difference_mrid",tempObj.get("difference_mrid"));
+			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
+			forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+		}
+	}
+	
 }

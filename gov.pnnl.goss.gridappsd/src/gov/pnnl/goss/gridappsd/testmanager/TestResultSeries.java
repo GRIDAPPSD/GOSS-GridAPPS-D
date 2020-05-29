@@ -41,15 +41,18 @@ package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 public class TestResultSeries implements Serializable{
 	
 	private static final long serialVersionUID = -5368089783896803654L;
 	
-	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
+	public HashMap<Map<String,String>, TestResults> results = new HashMap<Map<String,String>, TestResults>();
 	
-	public void add(String index, TestResults testResults){
+	public void add(String index1, String index2, TestResults testResults){
+		HashMap <String,String> index = new HashMap<String,String>();
+		index.put(index1, index2);
 		if(results.containsKey(index)){
 			TestResults tr = results.get(index);
 			for (Entry<String, HashMap<String, String[]>> entry : testResults.objectPropComparison.entrySet()) {
@@ -70,14 +73,14 @@ public class TestResultSeries implements Serializable{
 	
 	public int getTotal(){
 		int total=0;
-		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
+		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
 			total+=iterable_element.getValue().getNumberOfConflicts();
 		}
 		return total;
 	}
 	
 	public void ppprint(){
-		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
+		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
 			System.out.println(iterable_element.getKey());
 			System.out.println(iterable_element.getValue().toString());
 		}

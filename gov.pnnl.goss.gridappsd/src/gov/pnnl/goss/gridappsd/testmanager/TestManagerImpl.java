@@ -39,24 +39,6 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.testmanager;
 
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogDataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
-import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
-import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
-import gov.pnnl.goss.gridappsd.dto.RuleSettings;
-import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.TestConfig;
-import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
-import gov.pnnl.goss.gridappsd.dto.events.Event;
-import gov.pnnl.goss.gridappsd.dto.events.Fault;
-import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -68,8 +50,11 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
@@ -86,17 +71,34 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HTTP;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogDataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
+import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
+import gov.pnnl.goss.gridappsd.dto.RuleSettings;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
+import gov.pnnl.goss.gridappsd.dto.TestConfig.TestType;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import pnnl.goss.core.security.SecurityConfig;
 
 
 
@@ -199,12 +201,12 @@ public class TestManagerImpl implements TestManager {
 //						}
 						
 						if(testConfig != null){	
-							if (testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
-								compareTimeseriesSimulationWithExpected(testConfig.getAppId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
+							if (testConfig.getTestType() == TestType.expected_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
+								compareTimeseriesSimulationWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
 							}
 							
-							if (testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
-								compareSimulations(testConfig.getAppId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
+							if (testConfig.getTestType() == TestType.timeseries_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
+								compareSimulations(testConfig.getAppId(), testConfig.getTestId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
 							}
 						}
 						
@@ -260,13 +262,13 @@ public class TestManagerImpl implements TestManager {
 //			compareSimulations(testConfig.getAppId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
 //		}
 		
-		if(testConfig.getExpectedResultObject() != null){
-			compareRunningSimulationOutputWithExpected(testConfig.getAppId(), simulationId, testConfig.getExpectedResultObject());
-			compareRunningSimulationInputWithExpected(testConfig.getAppId(), simulationId, testConfig.getExpectedResultObject());
+		if(testConfig.getTestType() == TestType.simulation_vs_expected && testConfig.getExpectedResultObject() != null){
+			compareRunningSimulationOutputWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getExpectedResultObject(),"expected");
+			compareRunningSimulationInputWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getExpectedResultObject(),"expected");
 		}
 		
-		if(testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() == null){
-			compareRunningWithTimeseriesSimulation(testConfig.getAppId(), simulationId,testConfig.getCompareWithSimId());
+		if(testConfig.getTestType() == TestType.simulation_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() == null){
+			compareRunningWithTimeseriesSimulation(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getCompareWithSimId());
 		}
 
 		if (testConfig.getRules() != null && testConfig.getRules().size() > 0) {
@@ -342,15 +344,16 @@ public class TestManagerImpl implements TestManager {
 	}
 	}
 	
-	public void storeResults(String test_id, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
+	public void storeResults(String app_id, String test_id, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
 //		(String test_id, String processId, long simulation_time,
 //	            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) 
-		for (String simulationTime : testResultSeries.results.keySet()){
+		for (Map<String, String> simulationTime : testResultSeries.results.keySet()){
 			TestResults tr = testResultSeries.results.get(simulationTime);
 			for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()) {
 				HashMap<String, String[]> propMap = entry.getValue();
 				for (Entry<String, String[]> prop: propMap.entrySet()){
 					System.out.println(String.format("%10s, %10s, %10s, %10s, %10s %10s %10s %10s %10s %10s ",
+							app_id,
 							test_id,
 							simulationIdOne,
 							simulationIdTwo,
@@ -362,10 +365,12 @@ public class TestManagerImpl implements TestManager {
 							prop.getValue()[2],
 							prop.getValue()[3]
 							));
-					logDataManager.storeExpectedResults(test_id,
+					logDataManager.storeExpectedResults(
+							app_id,
+							test_id,
 							simulationIdOne,
-							simulationIdOne,
-							Long.parseLong(simulationTime), 
+							simulationIdTwo,
+							Long.parseLong(simulationTime.entrySet().iterator().next().getKey()) * 1000, 
 							entry.getKey(),
 							prop.getKey(),
 							prop.getValue()[0],
@@ -378,20 +383,20 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	@Override
-	public void compareSimulations(String appId, String simulationIdOne, String simulationIdTwo){
+	public void compareSimulations(String appId, String testId,String simulationIdOne, String simulationIdTwo){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);
 		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
-		for (String key : testResultsSeries.results.keySet()) {
+		for (Map<String, String> key : testResultsSeries.results.keySet()) {
 			client.publish(testOutputTopic+simulationIdOne, "Index: " + key + " TestManager number of conflicts: "
 					+ " total " + testResultsSeries.getTotal());
 		}
-		storeResults(appId, simulationIdOne, simulationIdTwo, testResultsSeries);
+		storeResults(appId, testId, simulationIdOne, simulationIdTwo, testResultsSeries);
 	}
 	
-	public void compareRunningWithTimeseriesSimulation(String appId, String currentSimulationId, String simulationIdOne){
+	public void compareRunningWithTimeseriesSimulation(String appId, String testId, String currentSimulationId, String simulationIdOne){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
@@ -402,8 +407,8 @@ public class TestManagerImpl implements TestManager {
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 		
-		compareRunningSimulationOutputWithExpected(appId, currentSimulationId, expectedObject);
-		compareRunningSimulationInputWithExpected(appId, currentSimulationId, expectedObject);
+		compareRunningSimulationOutputWithExpected(appId, testId, currentSimulationId, expectedObject, simulationIdOne);
+		compareRunningSimulationInputWithExpected(appId, testId, currentSimulationId, expectedObject, simulationIdOne);
 		
 //		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
 //		for (String key : testResultsSeries.results.keySet()) {
@@ -413,25 +418,36 @@ public class TestManagerImpl implements TestManager {
 //		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
-	public void compareTimeseriesSimulationWithExpected(String appId, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject){
+	public void compareTimeseriesSimulationWithExpected(String appId, String testId, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
 		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
-		for (String key : testResultsSeries.results.keySet()) {
+		for (Map<String, String> key : testResultsSeries.results.keySet()) {
 			client.publish(testOutputTopic+currentSimulationId, "Index: " + key + " TestManager number of conflicts: "
 					+ " total " + testResultsSeries.getTotal());
 		}
-		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
+		storeResults(appId, testId, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
 	@Override
-	public void compareRunningSimulationInputWithExpected(String appId, String simulationId, JsonObject expectedResults) {
+	public void compareRunningSimulationInputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
 		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
 
 		new GossResponseEvent() {
 			int inputCount=0;
+			int expecetedLast=0;
+//			int diff=0;
+			int first1=0;
+//			int first2=0;
+			Boolean firstSet = false;
+//			SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
+//			for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+//				inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+//			}
+
+//			System.out.println(inputKeys2.toString());
 			public void onMessage(Serializable message) {
 				TestResultSeries testResultSeries = new TestResultSeries();
 				DataResponse event = (DataResponse) message;
@@ -442,33 +458,86 @@ public class TestManagerImpl implements TestManager {
 				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
 //				 {"command": "update", "input": {"simulation_id": "797789794", "message": {"timestamp": 1588968302
 				CompareResults compareResults = new CompareResults();
-				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
-				simOutputJsonObj = simOutputJsonObj.get("input").getAsJsonObject();
+				JsonObject simJsonObj = CompareResults.getSimulationJson(simOutputStr);
+				simJsonObj = simJsonObj.get("input").getAsJsonObject();
 
-				if ( ! simOutputJsonObj.has("message")) {
+				if ( ! simJsonObj.has("message")) {
 					//TODO: Log error - "TestManager received empty message key in simulation output"
 					return;
 				}
-				String originalTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputCount);
 				
-				String simulationTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp,
-						simOutputJsonObj, expectedResults);
-				testResultSeries.add(originalTimestamp, testResults);
+				// TODO rebase
+				// if rebase then
+				// rebase versus expected
+				
+//				JsonObject simInputObject = simJsonObj;
+//				JsonObject expected_input_series = expectedResults.get("input").getAsJsonObject();
+//				HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
+				SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
+				for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+					inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+				}
+				System.out.println("Input Keys");
+				System.out.println(inputKeys2.toString());
+				System.out.println(inputCount);
+				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				if( ! firstSet){
+					first1 = Integer.valueOf(simulationTimestamp);
+					firstSet=true;
+				}
+				
+				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
+				System.out.println("size and inputCount");
+				System.out.println(inputKeys2.size());
+				System.out.println(inputCount);
+				if(inputKeys2.size() <= inputCount){
+					return;
+				}
+
+				String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
+				
+				// Is this neccissary ?
+//				simJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputKeys2.toArray()[inputCount].toString());
+//				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				JsonObject simJsonObjAtTime = new JsonObject();
+				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
+				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, inputKeys2.toArray()[inputCount].toString(),
+						simJsonObjAtTime, expectedResults);
+				testResultSeries.add(originalTimestamp,inputKeys2.toArray()[inputCount].toString(), testResults);
 				if (testResults != null) {
 					client.publish(testOutputTopic+simulationId, testResults);
 					//TODO: Store results in timeseries store.
 				}
-				storeResults("test_id", simulationId, "expected_json", testResultSeries);
+				storeResults(appId, testId,  simulationId, expectedOrSimulationIdTwo, testResultSeries);
 				inputCount++;
 			}
+
+
 
 		});
 	}
 	
+	public int getNextCount(SortedSet<Integer> inputKeys2, int simulationTimestamp, int first1, int inputCount) {
+		int first2 = (int) inputKeys2.toArray()[0];
+		while (inputKeys2.size() > inputCount){
+			int key2 = (int) inputKeys2.toArray()[inputCount];
+			int diff = key2-first2;
+			System.out.println(diff);
+			System.out.println(simulationTimestamp);
+			System.out.println(first1 + diff);
+			
+			if(Integer.valueOf(simulationTimestamp) != first1+ diff){
+				inputCount++;
+			}else{
+				break;
+			}
+		}
+		return inputCount;
+	}
+	
 	@Override
-	public void compareRunningSimulationOutputWithExpected(String appId, String simulationId, JsonObject expectedResults) {
+	public void compareRunningSimulationOutputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
 		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationId,
 
 		new GossResponseEvent() {
@@ -491,12 +560,12 @@ public class TestManagerImpl implements TestManager {
 				String simulationTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				TestResults testResults = compareResults.compareExpectedWithSimulationOutput(simulationTimestamp,
 						simOutputJsonObj, expectedResults);
-				testResultSeries.add(simulationTimestamp, testResults);
+				testResultSeries.add(simulationTimestamp, simulationTimestamp, testResults);
 				if (testResults != null) {
 					client.publish(testOutputTopic+simulationId, testResults);
 					//TODO: Store results in timeseries store.
 				}
-				storeResults("test_id", simulationId, "expected_json", testResultSeries);
+				storeResults(appId, testId, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 			}
 
 		});

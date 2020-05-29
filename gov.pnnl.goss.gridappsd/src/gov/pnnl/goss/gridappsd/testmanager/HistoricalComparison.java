@@ -67,22 +67,22 @@ public class HistoricalComparison {
 		return testResultSeries;
 	}
 	
-	public TestResultSeries test_proven_one_at_a_time(String simulationId, JsonObject expected_output_series){
-		String responses = getListOfTime(simulationId, expected_output_series);
-//		Set<String> times = getTimes(responses);
-		Set<String> times = getTimesEpoch(responses);
-		TestResultSeries testResultSeries = new TestResultSeries();
-		int index = 0;
-		for (String time : times) {
-			String responseStr = timeSeriesQuery(simulationId, null, time, time);	
-//			responseStr = query(simulationId, null, time, time,  keywords).result.toString();
-			processATime(expected_output_series, simulationId, responseStr, testResultSeries, index+"");
-			index++;
-		}
-		
-		System.out.println("TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-		return testResultSeries;
-	}
+//	public TestResultSeries test_proven_one_at_a_time(String simulationId, JsonObject expected_output_series){
+//		String responses = getListOfTime(simulationId, expected_output_series);
+////		Set<String> times = getTimes(responses);
+//		Set<String> times = getTimesEpoch(responses);
+//		TestResultSeries testResultSeries = new TestResultSeries();
+//		int index = 0;
+//		for (String time : times) {
+//			String responseStr = timeSeriesQuery(simulationId, null, time, time);	
+////			responseStr = query(simulationId, null, time, time,  keywords).result.toString();
+//			processATime(expected_output_series, simulationId, responseStr, testResultSeries, index+"");
+//			index++;
+//		}
+//		
+//		System.out.println("TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+//		return testResultSeries;
+//	}
 
 	
 	public String timeSeriesQuery(String simulationId, String hasMrid,
@@ -115,62 +115,62 @@ public class HistoricalComparison {
 		return response.toString();
 	}
 	
-	public void buildMeasurementObject(JsonObject innerObject, JsonElement entry) {
-		String key = entry.getAsJsonObject().get("key").getAsString();
-		if(key.equals("hasValue")){
-			float value = entry.getAsJsonObject().get("value").getAsFloat();
-			innerObject.addProperty("value", value);
-		}
-		if(key.equals("hasAngle")){
-			float value = entry.getAsJsonObject().get("value").getAsFloat();
-			innerObject.addProperty("angle", value);
-		}
-		if(key.equals("hasMagnitude")){
-			float value = entry.getAsJsonObject().get("value").getAsFloat();
-			innerObject.addProperty("magnitude", value);
-		}
-		if(key.equals("hasMrid")){
-			String value = entry.getAsJsonObject().get("value").getAsString();
-			innerObject.addProperty("measurement_mrid", value);
-		}
-		if(key.equals("time")){
-			String value = entry.getAsJsonObject().get("value").getAsString();
-			innerObject.addProperty("timestamp", value);
-		}
-	}
+//	public void buildMeasurementObject(JsonObject innerObject, JsonElement entry) {
+//		String key = entry.getAsJsonObject().get("key").getAsString();
+//		if(key.equals("hasValue")){
+//			float value = entry.getAsJsonObject().get("value").getAsFloat();
+//			innerObject.addProperty("value", value);
+//		}
+//		if(key.equals("hasAngle")){
+//			float value = entry.getAsJsonObject().get("value").getAsFloat();
+//			innerObject.addProperty("angle", value);
+//		}
+//		if(key.equals("hasMagnitude")){
+//			float value = entry.getAsJsonObject().get("value").getAsFloat();
+//			innerObject.addProperty("magnitude", value);
+//		}
+//		if(key.equals("hasMrid")){
+//			String value = entry.getAsJsonObject().get("value").getAsString();
+//			innerObject.addProperty("measurement_mrid", value);
+//		}
+//		if(key.equals("time")){
+//			String value = entry.getAsJsonObject().get("value").getAsString();
+//			innerObject.addProperty("timestamp", value);
+//		}
+//	}
 	
-	public void processATime(JsonObject expected_output_series, String simulationId, String responseStr, TestResultSeries testResultSeries, String index) {
-		CompareResults compareResults = new CompareResults();
-		JsonObject jsonObject = CompareResults.getSimulationJson(responseStr);
-		JsonObject simOutputObject = new JsonObject();
-		JsonArray meas_array = new JsonArray();
-		String time = null;
-		JsonArray measurements = new JsonArray();
-		
-		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
-		for (JsonElement meas : ma) {
-			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
-			for (JsonElement point : points_array) {
-				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry").getAsJsonArray();
-//				System.out.println(" ");
-				JsonObject innerObject = new JsonObject();
-				meas_array.add(innerObject);
-				for (JsonElement entry : entry_array) {
-					buildMeasurementObject(innerObject, entry);
-				}
-				time = innerObject.get("timestamp").getAsString();
-				innerObject.remove("timestamp");
-				measurements.add(innerObject);
-			}
-		}
-
-		JsonObject outputObject = buildOutputObject(simulationId, simOutputObject, time, measurements);
-		System.out.println(simOutputObject.toString());
-		TestResults tr = compareResults.compareExpectedWithSimulationOutput(index+"", outputObject, expected_output_series);
-		if (tr != null) {
-			testResultSeries.add(index+"", tr);
-		}
-	}
+//	public void processATime(JsonObject expected_output_series, String simulationId, String responseStr, TestResultSeries testResultSeries, String index) {
+//		CompareResults compareResults = new CompareResults();
+//		JsonObject jsonObject = CompareResults.getSimulationJson(responseStr);
+//		JsonObject simOutputObject = new JsonObject();
+//		JsonArray meas_array = new JsonArray();
+//		String time = null;
+//		JsonArray measurements = new JsonArray();
+//		
+//		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
+//		for (JsonElement meas : ma) {
+//			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
+//			for (JsonElement point : points_array) {
+//				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry").getAsJsonArray();
+////				System.out.println(" ");
+//				JsonObject innerObject = new JsonObject();
+//				meas_array.add(innerObject);
+//				for (JsonElement entry : entry_array) {
+//					buildMeasurementObject(innerObject, entry);
+//				}
+//				time = innerObject.get("timestamp").getAsString();
+//				innerObject.remove("timestamp");
+//				measurements.add(innerObject);
+//			}
+//		}
+//
+//		JsonObject outputObject = buildOutputObject(simulationId, simOutputObject, time, measurements);
+//		System.out.println(simOutputObject.toString());
+//		TestResults tr = compareResults.compareExpectedWithSimulationOutput(index+"", outputObject, expected_output_series);
+//		if (tr != null) {
+//			testResultSeries.add(index+"", tr);
+//		}
+//	}
 
 
 
@@ -203,7 +203,7 @@ public class HistoricalComparison {
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
 			tr.pprint();
 			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), tr);
+				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
 			index++;
 		}
@@ -233,17 +233,18 @@ public class HistoricalComparison {
 			JsonObject simInputObject, JsonObject expected_input_series) {
 		int index;
 		HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
-		System.out.println(newKeys1.toString());
+		System.out.println(newKeys1);
 		index = 0;
 		// Rebase or set to match output ...
 		for (Entry<Integer,Integer> time_entry : newKeys1.entrySet()) {
 			System.out.println(time_entry);
 			String timeOne = time_entry.getKey().toString();
+			String timeTwo = time_entry.getValue().toString();
 			if(simInputObject.has(timeOne)){
-				JsonObject sim_input_series = simInputObject.get(time_entry.getKey().toString()).getAsJsonObject();
-				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getValue().toString(), sim_input_series, expected_input_series);
+//				JsonObject sim_input_series = simInputObject.get(time_entry.getKey().toString()).getAsJsonObject();
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(timeOne, timeTwo, simInputObject, expected_input_series);
 				if (tr != null) {
-					testResultSeries.add(time_entry.getKey().toString(), tr);
+					testResultSeries.add(timeOne, timeTwo, tr);
 				}
 			}
 			index++;
@@ -278,7 +279,7 @@ public class HistoricalComparison {
 //			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), tr);
+				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
 			index++;
 		}
@@ -322,7 +323,9 @@ public class HistoricalComparison {
 		System.out.println("input keys");
 		System.out.println(inputKeys1.toString());
 		System.out.println(inputKeys2.toString());
-		return getTimeMap(inputKeys1, inputKeys2);
+		HashMap<Integer, Integer> x = getTimeMap(inputKeys1, inputKeys2);
+		System.out.println(x);
+		return x;
 	}
 	
 	public HashMap<Integer, Integer> getTimeMap(SortedSet<Integer> inputKeys1, SortedSet<Integer> inputKeys2) {
@@ -338,24 +341,25 @@ public class HistoricalComparison {
 		Iterator<Integer> it2 = inputKeys2.iterator();
 
 //		newKeys1.put(first1, first2);
-		while (it1.hasNext() && it2.hasNext()) {
-			Integer key1 = it1.next();
+		while (it2.hasNext()) {
+//			Integer key1 = it1.next();
+//			if it2.
 			Integer key2 = it2.next();
 			diff = key2-first2;
-			first1+=diff;
-			newKeys1.put(first1, key2);
-			first2 = key2;
+//			first1+=diff;
+			newKeys1.put(first1+ diff, key2);
+//			first2 = key2;
 		}
 //		for (Integer key : inputKeys1) {
 ////			diff=key-diff;
 //			newKeys1.put(key, baseTime);
 //		}
-		diff=0;
-		baseTime = first1;
-		for (Integer key : inputKeys2) {
-			diff=key-diff;
-			newKeys2.put(key, diff+baseTime);
-		}
+//		diff=0;
+//		baseTime = first1;
+//		for (Integer key : inputKeys2) {
+//			diff=key-diff;
+//			newKeys2.put(key, diff+baseTime);
+//		}
 		return newKeys1;
 	}
 
