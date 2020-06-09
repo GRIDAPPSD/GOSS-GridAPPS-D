@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -37,6 +38,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
 //import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 //import gov.pnnl.goss.gridappsd.dto.TestScript;
 import gov.pnnl.goss.gridappsd.testmanager.CompareResults;
@@ -189,7 +191,7 @@ public class TestManagerComponentTest {
 //		Assert.assertEquals(o1, o2);
 	}
 	
-	@Test
+
 	public void proven(){
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -412,7 +414,11 @@ public class TestManagerComponentTest {
 		TestResultSeries testResultSeries2 = hc.processWithAllTimes("123", res1, res2);
 		assertEquals(testResultSeries2.getTotal(), 3);
 		testResultSeries2.ppprint();
-		testManager.storeResults("appID","testID", "currentSimulationIdOne", "currentSimulationIdTwo", testResultSeries2);
+				
+		Gson gson = new Gson();
+		System.out.println(testResultSeries2.toJson(false));
+
+//		testManager.storeResults("appID","testID", "currentSimulationIdOne", "currentSimulationIdTwo", testResultSeries2);
 	}
 	
 	@Test
@@ -429,6 +435,15 @@ public class TestManagerComponentTest {
 			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
 			forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 		}
+	}
+	
+	@Test
+	public void testConfig(){
+		String config=  "{\"testId\": \"123\",\"appId\": \"sample app\" }";
+		TestConfig tc = TestConfig.parse(config);
+		System.out.println(tc.toString());
+		
+		
 	}
 	
 }
