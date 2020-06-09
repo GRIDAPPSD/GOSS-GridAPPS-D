@@ -1,9 +1,5 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,20 +9,21 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.TreeSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 
 public class HistoricalComparison {
 	
@@ -172,8 +169,6 @@ public class HistoricalComparison {
 //		}
 //	}
 
-
-
 	public JsonObject buildOutputObject(String simulationId, JsonObject simOutputObject, String time,
 			JsonArray measurements) {
 		simOutputObject.addProperty("timestamp", time);
@@ -201,47 +196,33 @@ public class HistoricalComparison {
 		for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
 //			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
-			tr.pprint();
+//			tr.pprint();
 			if (tr != null) {
 				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
 			index++;
 		}
-		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
 		
 		JsonObject simInputObject = expectedObjectOne.get("input").getAsJsonObject();
 		JsonObject expected_input_series = expectedObjectTwo.get("input").getAsJsonObject();
-		// TODO rebase
-		// if rebase the
-		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		
-//		index = 0;
-//		for (Entry<String, JsonElement> time_entry : simInputObjectOne.entrySet()) {
-//			System.out.println(time_entry);
-//			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simInputObjectTwo);
-//			if (tr != null) {
-//				testResultSeries.add(time_entry.getKey(), tr);
-//			}
-//			index++;
-//		}
-
+		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		return testResultSeries;
 	}
 
 	public void rebaseAndCompare(TestResultSeries testResultSeries, CompareResults compareResults,
 			JsonObject simInputObject, JsonObject expected_input_series) {
-		int index;
+		int index = 0;
 		HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
-		System.out.println(newKeys1);
-		index = 0;
+//		System.out.println(newKeys1);
 		// Rebase or set to match output ...
 		for (Entry<Integer,Integer> time_entry : newKeys1.entrySet()) {
 			System.out.println(time_entry);
 			String timeOne = time_entry.getKey().toString();
 			String timeTwo = time_entry.getValue().toString();
 			if(simInputObject.has(timeOne)){
-//				JsonObject sim_input_series = simInputObject.get(time_entry.getKey().toString()).getAsJsonObject();
 				TestResults tr = compareResults.compareExpectedWithSimulationInput(timeOne, timeTwo, simInputObject, expected_input_series);
 				if (tr != null) {
 					testResultSeries.add(timeOne, timeTwo, tr);
@@ -249,8 +230,7 @@ public class HistoricalComparison {
 			}
 			index++;
 		}
-		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-//		return index;
+//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 	}
 
 	public JsonObject getExpectedFrom(String responseOne) {
@@ -283,24 +263,15 @@ public class HistoricalComparison {
 			}
 			index++;
 		}
-		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
 		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 		JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
-		System.out.println(simInputObject.toString());
+//		System.out.println("processWithAllTimes expectedJson");
+//		System.out.println(simInputObject.toString());
+//		System.out.println(expected_input_series.toString());
 
 		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
-
-//		index = 0;
-//		for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
-//			System.out.println(time_entry);
-//			TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_input_series);
-//			if (tr != null) {
-//				testResultSeries.add(time_entry.getKey(), tr);
-//			}
-//			index++;
-//		}
-//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		return testResultSeries;
 	}
 
@@ -328,9 +299,17 @@ public class HistoricalComparison {
 		return x;
 	}
 	
+	/**
+	 * Create a map to match the match the indexes of the input keys.
+	 * The mapping is created by using the differences between the values of the set of inputKeys2 and the 
+	 * first value of the inputKeys1 to keys a map that is based on the difference between the times instead of using exact matches. 
+	 * @param inputKeys1
+	 * @param inputKeys2
+	 * @return
+	 */
 	public HashMap<Integer, Integer> getTimeMap(SortedSet<Integer> inputKeys1, SortedSet<Integer> inputKeys2) {
 		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
-		HashMap<Integer,Integer> newKeys2 = new HashMap<Integer,Integer>();
+//		HashMap<Integer,Integer> newKeys2 = new HashMap<Integer,Integer>();
 		Integer first1 = inputKeys1.first();
 		Integer first2 = inputKeys2.first();
 		
@@ -385,6 +364,8 @@ public class HistoricalComparison {
 				measurement.getAsJsonObject().remove("time");
 				simOutputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
 			} else { // INPUT
+//				System.out.println("input measurement");
+//				System.out.println(measurement.toString());
 				if (! simInputObject.has(time)){
 					JsonObject measurementsObject = new JsonObject();
 					JsonObject messageObject = new JsonObject();
@@ -395,7 +376,7 @@ public class HistoricalComparison {
 				measurement.getAsJsonObject().remove("hasSimulationMessageType");
 				measurement.getAsJsonObject().remove("simulation_id");
 				measurement.getAsJsonObject().remove("time");
-				simInputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
+			    simInputObject.get(time).getAsJsonObject().get("message").getAsJsonObject().get("measurements").getAsJsonArray().add(measurement);
 			}
 			
 //			System.out.println(measurement.getAsJsonObject().get("time"));

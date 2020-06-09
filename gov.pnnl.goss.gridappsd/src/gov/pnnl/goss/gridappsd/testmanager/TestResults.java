@@ -53,49 +53,69 @@ public class TestResults implements Serializable{
 	
 	private static final long serialVersionUID = -6171952609185593742L;
 	
+	long indexOne;
+	long indexTwo;
 	long simulationTimestamp;
 	
-	public Map<String, HashMap<String, String[]>> objectPropComparison = new HashMap<String, HashMap<String, String[]>>();
+	public Map<String, HashMap<String, TestResultDetails>> objectPropComparison = new HashMap<String, HashMap<String, TestResultDetails>>();
 	
-	public HashMap<String, String[]> add(String obj, String prop){
-		HashMap<String, String[]> prop1 ;
+	public HashMap<String, TestResultDetails> add(String obj, String prop){
+		HashMap<String, TestResultDetails> prop1 ;
 		if (objectPropComparison.containsKey(obj)){
 			prop1  = objectPropComparison.get(obj);
 		} else {
-			prop1 = new HashMap<String, String[]>();
+			prop1 = new HashMap<String, TestResultDetails>();
 			objectPropComparison.put(obj, prop1 );
 		}
 		return prop1;
 	}
 	
 	public void add(String obj, String prop, String expected, String actual){
-		HashMap<String, String[]> prop1 = add(obj,prop);
-		String [] x = {expected, actual, "NA", "NA"};
-		prop1.put(prop, x);
+		HashMap<String, TestResultDetails> prop1 = add(obj,prop);
+//		String [] x = {expected, actual, "NA", "NA"};
+		TestResultDetails trd = new TestResultDetails(expected, actual, "NA", "NA", false);
+		prop1.put(prop, trd);
+	}
+	
+	public void add(String obj, String prop, String expected, String actual, Boolean match){
+		HashMap<String, TestResultDetails> prop1 = add(obj,prop);
+//		String [] x = {expected, actual, "NA", "NA"};
+		TestResultDetails trd = new TestResultDetails(expected, actual, "NA", "NA", match);
+		prop1.put(prop, trd);
 	}
 	
 	public void add(String obj, String prop, String expected, String actual, String diff_mrid, String diff_type ){
-		HashMap<String, String[]> prop1 = add(obj,prop);
-		String [] x = {expected, actual, diff_mrid, diff_type};
-		prop1.put(prop, x);
+		HashMap<String, TestResultDetails> prop1 = add(obj,prop);
+		TestResultDetails trd = new TestResultDetails(expected, actual, diff_mrid, diff_type, false);
+		prop1.put(prop, trd);
+	}
+	
+	public void add(String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match){
+		HashMap<String, TestResultDetails> prop1 = add(obj,prop);
+		TestResultDetails trd = new TestResultDetails(expected, actual, diff_mrid, diff_type, match);
+		prop1.put(prop, trd);
 	}
 	
 	public int getNumberOfConflicts(){
 		int count = 0;
-		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
-			HashMap<String, String[]> propMap = entry.getValue();
-			count+=propMap.size();
+		for (Entry<String, HashMap<String, TestResultDetails>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, TestResultDetails> propMap = entry.getValue();
+			for (Entry<String, TestResultDetails> iterable_element : propMap.entrySet()) {
+				if(! iterable_element.getValue().getMatch()){
+					count++;
+				}
+			}
 		}
 		return count;	
 	}	
 	
 	public void pprint() {
-		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
-			HashMap<String, String[]> propMap = entry.getValue();
-			for (Entry<String, String[]> prop: propMap.entrySet()){
+		for (Entry<String, HashMap<String, TestResultDetails>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, TestResultDetails> propMap = entry.getValue();
+			for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
 				System.out.println(entry.getKey() + "." + prop.getKey());
-				System.out.println("    Expected:" + prop.getValue()[0] );
-				System.out.println("    Actual  :" + prop.getValue()[1] );
+				System.out.println("    Expected:" + prop.getValue().getExpected() );
+				System.out.println("    Actual  :" + prop.getValue().getActual() );
 			}
 		}
 		System.out.println("Total conflicts "+ getNumberOfConflicts());
@@ -104,14 +124,16 @@ public class TestResults implements Serializable{
 	@Override
 	public String toString() {
 		String temp = "";
-		for (Entry<String, HashMap<String, String[]>> entry : objectPropComparison.entrySet()) {
-			HashMap<String, String[]> propMap = entry.getValue();
-			for (Entry<String, String[]> prop: propMap.entrySet()){
+		for (Entry<String, HashMap<String, TestResultDetails>> entry : objectPropComparison.entrySet()) {
+			HashMap<String, TestResultDetails> propMap = entry.getValue();
+			for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
 //				temp+="\t"+entry.getKey() + "    " + prop.getKey()+ "    " + prop.getValue()[0] +"    " + prop.getValue()[1];
-				temp += String.format("\t %37s %10s %.3f %.3f ", entry.getKey(), prop.getKey(), Double.parseDouble(prop.getValue()[0]), Double.parseDouble(prop.getValue()[1]));
-				if(prop.getValue().length > 3)
+//				temp += String.format("\t %37s %10s %.3f %.3f ", entry.getKey(), prop.getKey(), Double.parseDouble(prop.getValue().getExpected() ), Double.parseDouble(prop.getValue().getActual()));
+				temp += String.format("\t %37s %10s %10s %10s ", entry.getKey(), prop.getKey(), prop.getValue().getExpected(), prop.getValue().getActual());
+
+//				if(prop.getValue().length > 3)
 //					temp+="    " +prop.getValue()[2] +"    " + prop.getValue()[3];
-					temp += String.format("%10s %37s", prop.getValue()[2], prop.getValue()[3]);
+					temp += String.format("%10s %37s", prop.getValue().getDiff_mrid(), prop.getValue().getDiff_type());
 				temp+="\n";
 			}
 		}
@@ -121,9 +143,9 @@ public class TestResults implements Serializable{
 	public static void main(String[] args) {
 		TestResults tr = new TestResults();
 		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
-		String [] x = {"3","10"};
-		prop1.put("tap_A", x );
-		tr.objectPropComparison.put("reg_VREG2",prop1);	
+//		TestResultDetails x =  new TestResultDetails(expected, actual, diff_mrid, diff_type, false);
+//		prop1.put("tap_A", x );
+//		tr.objectPropComparison.put("reg_VREG2",x);	
 		
 		tr.add("reg_VREG1", "tap_A", "3", "10");
 		tr.add("reg_VREG1", "tap_B", "3", "10");

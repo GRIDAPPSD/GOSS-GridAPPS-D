@@ -69,11 +69,7 @@ public class TestConfig implements Serializable {
 	private String compareWithSimId;
 	
 	private String compareWithSimIdTwo;
-
-	public String getTestId() {
-		return testId;
-	}
-
+	
 	private String appId;
 	
 	private String testId = "_"+UUID.randomUUID();
@@ -81,6 +77,8 @@ public class TestConfig implements Serializable {
 	private TestType testType = TestType.simulation_vs_expected;
 	
 	private Boolean matchInputTimes = true;
+	
+	private Boolean storeMatches = false;
 	
 	public JsonObject getExpectedResultObject() {
 		return expectedResults;
@@ -145,6 +143,15 @@ public class TestConfig implements Serializable {
 	public void setAppId(String appId) {
 		this.appId = appId;
 	}
+	
+
+	public String getTestId() {
+		return testId;
+	}
+
+	public void setTestId(String testId) {
+		this.testId = testId;
+	}
 
 	public TestType getTestType() {
 		return testType;
@@ -152,6 +159,14 @@ public class TestConfig implements Serializable {
 
 	public void setTestType(TestType testType) {
 		this.testType = testType;
+	}
+
+	public Boolean getStoreMatches() {
+		return storeMatches;
+	}
+
+	public void setStoreMatches(Boolean storeMatches) {
+		this.storeMatches = storeMatches;
 	}
 
 	@Override

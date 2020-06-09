@@ -188,29 +188,16 @@ public class TestManagerImpl implements TestManager {
 						String requestDestination = request.getDestination();
 						String simulationId = requestDestination.substring(requestDestination.lastIndexOf(".")+1, requestDestination.length());
 						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
-						TestConfig testConfig = TestConfig.parse(request.getData().toString());; 
-//						try{
-//							requestTest = RequestTestUpdate.parse(request.getData().toString());
-//						}catch(JsonSyntaxException e){
-//							e.printStackTrace();
-//						}
-//						try{
-//							testConfig = TestConfig.parse(request.getData().toString());
-//						}catch(JsonSyntaxException e){
-//							e.printStackTrace();
-//						}
-						
+						TestConfig testConfig = TestConfig.parse(request.getData().toString());
 						if(testConfig != null){	
 							if (testConfig.getTestType() == TestType.expected_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
-								compareTimeseriesSimulationWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
-							}
-							
-							if (testConfig.getTestType() == TestType.timeseries_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
-								compareSimulations(testConfig.getAppId(), testConfig.getTestId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
-							}
+								compareTimeseriesSimulationWithExpected(testConfig, simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject(),request);
+							}else if (testConfig.getTestType() == TestType.timeseries_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
+								compareSimulations(testConfig, testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo(),request);
+							}else{
+								publishResponse(request, "Missing parameter for testConfig simId");
+							}	
 						}
-						
-						
 						if(requestTest != null){
 							
 //							RequestTestUpdate requestTestUpdate = RequestTestUpdate.parse(request.getData().toString());
@@ -218,15 +205,11 @@ public class TestManagerImpl implements TestManager {
 							
 							if(requestTestUpdate.getCommand() == RequestType.new_events){
 								sendEventsToSimulation(requestTestUpdate.getEvents(), simulationId);
-								String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
-								System.out.println("TestManager topic dest" + request.getReplyDestination());
-								client.publish(request.getReplyDestination(), r);
+
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.update_events){
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
-								String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
-								System.out.println("TestManager topic dest" + request.getReplyDestination());
-								client.publish(request.getReplyDestination(), r);
+								publishResponse(request);
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.query_events){
 								sendEventStatus(simulationId, request.getReplyDestination());
@@ -234,11 +217,24 @@ public class TestManagerImpl implements TestManager {
 						}
 					}
 				}
+
 			});
 
 		} catch (Exception e) {
 			//TODO-log.error("Error in test manager", e);
 		}
+	}
+	
+	public void publishResponse(DataResponse request) {
+		String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
+		System.out.println("TestManager topic dest" + request.getReplyDestination());
+		client.publish(request.getReplyDestination(), r);
+	}
+	
+	public void publishResponse(DataResponse request, String message) {
+		String r = "{\"data\":[\""+message+"\"],\"responseComplete\":true,\"id\":\"null\"}";
+		System.out.println("TestManager topic dest" + request.getReplyDestination());
+		client.publish(request.getReplyDestination(), r);
 	}
 	
 	public void handleTestRequest(TestConfig testConfig, SimulationContext simulationContext) {
@@ -253,22 +249,14 @@ public class TestManagerImpl implements TestManager {
 		if (testConfig.getEvents() != null && testConfig.getEvents().size() > 0) {
 			sendEventsToSimulation(testConfig.getEvents(), simulationId);
 		}
-
-//		if (testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
-//			compareTimeseriesSimulationWithExpected(testConfig.getAppId(), simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject());
-//		}
-		
-//		if (testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
-//			compareSimulations(testConfig.getAppId(), testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo());
-//		}
 		
 		if(testConfig.getTestType() == TestType.simulation_vs_expected && testConfig.getExpectedResultObject() != null){
-			compareRunningSimulationOutputWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getExpectedResultObject(),"expected");
-			compareRunningSimulationInputWithExpected(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getExpectedResultObject(),"expected");
+			compareRunningSimulationOutputWithExpected(testConfig, simulationId, testConfig.getExpectedResultObject(),"expected");
+			compareRunningSimulationInputWithExpected(testConfig, simulationId, testConfig.getExpectedResultObject(),"expected");
 		}
 		
 		if(testConfig.getTestType() == TestType.simulation_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() == null){
-			compareRunningWithTimeseriesSimulation(testConfig.getAppId(), testConfig.getTestId(), simulationId, testConfig.getCompareWithSimId());
+			compareRunningWithTimeseriesSimulation(testConfig, simulationId, testConfig.getCompareWithSimId());
 		}
 
 		if (testConfig.getRules() != null && testConfig.getRules().size() > 0) {
@@ -330,7 +318,6 @@ public class TestManagerImpl implements TestManager {
 			client.publish(replyDestination, statusJson.toString());
 		} else {
 			String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
-//			r = "";
 			System.out.println("TestManager topic dest" + replyDestination);
 			client.publish(replyDestination, r);
 		}
@@ -344,59 +331,74 @@ public class TestManagerImpl implements TestManager {
 	}
 	}
 	
-	public void storeResults(String app_id, String test_id, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
+	public void storeResults(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
 //		(String test_id, String processId, long simulation_time,
 //	            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) 
 		for (Map<String, String> simulationTime : testResultSeries.results.keySet()){
 			TestResults tr = testResultSeries.results.get(simulationTime);
-			for (Entry<String, HashMap<String, String[]>> entry : tr.objectPropComparison.entrySet()) {
-				HashMap<String, String[]> propMap = entry.getValue();
-				for (Entry<String, String[]> prop: propMap.entrySet()){
-					System.out.println(String.format("%10s, %10s, %10s, %10s, %10s %10s %10s %10s %10s %10s ",
-							app_id,
-							test_id,
-							simulationIdOne,
-							simulationIdTwo,
-							simulationTime, 
-							entry.getKey(),
-							prop.getKey(),
-							prop.getValue()[0],
-							prop.getValue()[1],
-							prop.getValue()[2],
-							prop.getValue()[3]
-							));
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.objectPropComparison.entrySet()) {
+				HashMap<String, TestResultDetails> propMap = entry.getValue();
+				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
+//					System.out.println(String.format("%10s, %10s, %10s, %10s, %10s %10s %10s %10s %10s %10s ",
+//							app_id,
+//							test_id,
+//							simulationIdOne,
+//							simulationIdTwo,
+//							simulationTime, 
+//							entry.getKey(),
+//							prop.getKey(),
+//							prop.getValue().getExpected(),
+//							prop.getValue().getActual(),
+//							prop.getValue().getDiff_mrid(),
+//							prop.getValue().getDiff_type()
+//							));
+					if (! testConfig.getStoreMatches() && prop.getValue().getMatch() ) 
+						continue;
 					logDataManager.storeExpectedResults(
-							app_id,
-							test_id,
+							testConfig.getAppId(),
+							testConfig.getTestId(),
 							simulationIdOne,
 							simulationIdTwo,
-							Long.parseLong(simulationTime.entrySet().iterator().next().getKey()) * 1000, 
+							Long.parseLong(simulationTime.entrySet().iterator().next().getKey()), 
+							Long.parseLong(simulationTime.entrySet().iterator().next().getValue()), 
 							entry.getKey(),
 							prop.getKey(),
-							prop.getValue()[0],
-							prop.getValue()[1],
-							prop.getValue()[2],
-							prop.getValue()[3]);
+							prop.getValue().getExpected(),
+							prop.getValue().getActual(),
+							prop.getValue().getDiff_mrid(),
+							prop.getValue().getDiff_type(),
+							prop.getValue().getMatch());
 				}
 			}
 		}
 	}
 	
 	@Override
-	public void compareSimulations(String appId, String testId,String simulationIdOne, String simulationIdTwo){
+	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
-		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);
-		client.publish(testOutputTopic+simulationIdOne, testResultsSeries);
-		for (Map<String, String> key : testResultsSeries.results.keySet()) {
-			client.publish(testOutputTopic+simulationIdOne, "Index: " + key + " TestManager number of conflicts: "
-					+ " total " + testResultsSeries.getTotal());
-		}
-		storeResults(appId, testId, simulationIdOne, simulationIdTwo, testResultsSeries);
+		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);		
+		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
+		publishResponse(request);
+		storeResults(testConfig, simulationIdOne, simulationIdTwo, testResultsSeries);
 	}
 	
-	public void compareRunningWithTimeseriesSimulation(String appId, String testId, String currentSimulationId, String simulationIdOne){
+	
+	public void publishTestResults(String id, TestResultSeries testResultsSeries, Boolean storeMatches) {
+//		client.publish(testOutputTopic+id, testResultsSeries);
+//		for (Map<String, String> key : testResultsSeries.results.keySet()) {
+		
+//		for (Entry<Map<String, String>, TestResults> entry : testResultsSeries.results.entrySet()) {
+//			client.publish(testOutputTopic+id, "Index: " + entry.getKey() + " TestManager number of conflicts: " + testResultsSeries.getTotal());
+//			System.out.println("Index: " + entry.getKey() + " TestManager number of conflicts: " + entry.getValue().getNumberOfConflicts());
+//		}
+//		System.out.println(testOutputTopic+id);
+		client.publish(testOutputTopic+id,testResultsSeries.toJson(storeMatches));
+	}
+	
+	@Override
+	public void compareRunningWithTimeseriesSimulation(TestConfig testConfig, String currentSimulationId, String simulationIdOne){
 		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
 		//TODO: Remove expected results from this method
@@ -404,11 +406,11 @@ public class TestManagerImpl implements TestManager {
 		
 		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		JsonObject expectedObject = hc.getExpectedFrom(response);
-		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
-		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
-		
-		compareRunningSimulationOutputWithExpected(appId, testId, currentSimulationId, expectedObject, simulationIdOne);
-		compareRunningSimulationInputWithExpected(appId, testId, currentSimulationId, expectedObject, simulationIdOne);
+//		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
+//		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+//		
+		compareRunningSimulationOutputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
+		compareRunningSimulationInputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
 		
 //		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
 //		for (String key : testResultsSeries.results.keySet()) {
@@ -418,27 +420,22 @@ public class TestManagerImpl implements TestManager {
 //		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
-	public void compareTimeseriesSimulationWithExpected(String appId, String testId, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject){
-		
+	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
-		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
-		for (Map<String, String> key : testResultsSeries.results.keySet()) {
-			client.publish(testOutputTopic+currentSimulationId, "Index: " + key + " TestManager number of conflicts: "
-					+ " total " + testResultsSeries.getTotal());
-		}
-		storeResults(appId, testId, simulationIdOne, "expectedJson", testResultsSeries);
+		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
+		publishResponse(request);
+		storeResults(testConfig, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
 	@Override
-	public void compareRunningSimulationInputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
+	public void compareRunningSimulationInputWithExpected(TestConfig testConfig, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
 		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
 
 		new GossResponseEvent() {
 			int inputCount=0;
 			int expecetedLast=0;
-//			int diff=0;
+
 			int first1=0;
 //			int first2=0;
 			Boolean firstSet = false;
@@ -509,7 +506,7 @@ public class TestManagerImpl implements TestManager {
 					client.publish(testOutputTopic+simulationId, testResults);
 					//TODO: Store results in timeseries store.
 				}
-				storeResults(appId, testId,  simulationId, expectedOrSimulationIdTwo, testResultSeries);
+				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 				inputCount++;
 			}
 
@@ -518,10 +515,18 @@ public class TestManagerImpl implements TestManager {
 		});
 	}
 	
-	public int getNextCount(SortedSet<Integer> inputKeys2, int simulationTimestamp, int first1, int inputCount) {
-		int first2 = (int) inputKeys2.toArray()[0];
-		while (inputKeys2.size() > inputCount){
-			int key2 = (int) inputKeys2.toArray()[inputCount];
+	/**
+	 * Determine if the input count should be incremented. 
+	 * @param inputKeys
+	 * @param simulationTimestamp
+	 * @param first1
+	 * @param inputCount
+	 * @return
+	 */
+	public int getNextCount(SortedSet<Integer> inputKeys, int simulationTimestamp, int first1, int inputCount) {
+		int first2 = (int) inputKeys.toArray()[0];
+		while (inputKeys.size() > inputCount){
+			int key2 = (int) inputKeys.toArray()[inputCount];
 			int diff = key2-first2;
 			System.out.println(diff);
 			System.out.println(simulationTimestamp);
@@ -537,7 +542,7 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	@Override
-	public void compareRunningSimulationOutputWithExpected(String appId, String testId, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
+	public void compareRunningSimulationOutputWithExpected(TestConfig testConfig, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
 		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationId,
 
 		new GossResponseEvent() {
@@ -565,7 +570,7 @@ public class TestManagerImpl implements TestManager {
 					client.publish(testOutputTopic+simulationId, testResults);
 					//TODO: Store results in timeseries store.
 				}
-				storeResults(appId, testId, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 			}
 
 		});
