@@ -394,8 +394,6 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 		
 		public void compareExpectedAndSim(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
 				Map<String, JsonElement> simOutputMap) {
-			int countTrue = 0;
-			int countFalse = 0;
 			for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
 	//			System.out.println(entry);
 				if (entry.getValue().isJsonObject()) {
@@ -422,7 +420,6 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 								}
-								countTrue++;
 							}
 							else{
 	//							System.out.println("\nFor "+entry.getKey() +":"+prop);
@@ -439,7 +436,6 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
 								}
-								countFalse++;
 							}
 						}
 					} else{
@@ -577,8 +573,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 			Map<String, JsonElement> expectedOutputMap = null;
 			if (expectedOutputObj.isJsonObject()) {
 				JsonObject output = expectedOutputObj.getAsJsonObject();				
-//				JsonObject output = jsonObject.get("expedtedResults").getAsJsonObject();  //TODO fix spelling
-				
+			
 				if (output.has("output") ) output = output.getAsJsonObject("output");
 				if(output.has(timestamp)){
 					expectedOutputMap = getOutputMap(output.get(timestamp).getAsJsonObject());
@@ -727,34 +722,33 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 			return reverseDifferenceMap;
 		}
 		
-		public JsonObject getDifferenceMap(JsonObject output) {
-//			System.out.println(output.toString());
-			Map<String, JsonElement> expectedOutputMap;
-//			ObjectMapper mapper = new ObjectMapper();
-			if ( output.has("input") ) output = output.getAsJsonObject("input");
-			JsonObject tempObj = output.getAsJsonObject("message");
-//			System.out.println(output.getAsJsonObject("message").getAsString());
-			if (! tempObj.get("measurements").isJsonArray() ){
-	
-				expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
-						.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
-//				return expectedOutputMap;
-			}
-			JsonArray temp = tempObj.getAsJsonArray("measurements");
-//			expectedOutputMap = new HashMap<String, JsonElement>();
-			JsonObject inputObj = new JsonObject();
-			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
-			Map<String, JsonElement> reverseDifferenceMap = new HashMap<String,JsonElement>();
-			for (JsonElement jsonElement : temp) {
-	//				System.out.println(jsonElement);
-				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
-					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
-				} else{
-					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
-				}
-			}
-			return inputObj;
-		}
+//		public JsonObject getDifferenceMap(JsonObject output) {
+////			System.out.println(output.toString());
+////			ObjectMapper mapper = new ObjectMapper();
+//			if ( output.has("input") ) output = output.getAsJsonObject("input");
+//			JsonObject tempObj = output.getAsJsonObject("message");
+////			System.out.println(output.getAsJsonObject("message").getAsString());
+//			if (! tempObj.get("measurements").isJsonArray() ){
+//	
+//				Map<String, JsonElement> expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
+//						.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
+////				return expectedOutputMap;
+//			}
+//			JsonArray temp = tempObj.getAsJsonArray("measurements");
+////			expectedOutputMap = new HashMap<String, JsonElement>();
+//			JsonObject inputObj = new JsonObject();
+//			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+//			Map<String, JsonElement> reverseDifferenceMap = new HashMap<String,JsonElement>();
+//			for (JsonElement jsonElement : temp) {
+//	//				System.out.println(jsonElement);
+//				if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+//					forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+//				} else{
+//					reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
+//				}
+//			}
+//			return inputObj;
+//		}
 		
 		
 		public Map<String, JsonElement> getMeasurmentsMap(JsonObject output) {

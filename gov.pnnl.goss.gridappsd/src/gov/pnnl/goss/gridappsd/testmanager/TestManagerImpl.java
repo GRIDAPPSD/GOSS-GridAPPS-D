@@ -375,9 +375,7 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
-		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		//TODO: Remove expected results from this method
 		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);		
 		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
 		publishResponse(request);
@@ -399,10 +397,7 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void compareRunningWithTimeseriesSimulation(TestConfig testConfig, String currentSimulationId, String simulationIdOne){
-		
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		//TODO: Remove expected results from this method
-//		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
 		
 		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		JsonObject expectedObject = hc.getExpectedFrom(response);
@@ -411,13 +406,6 @@ public class TestManagerImpl implements TestManager {
 //		
 		compareRunningSimulationOutputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
 		compareRunningSimulationInputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
-		
-//		client.publish(testOutputTopic+currentSimulationId, testResultsSeries);
-//		for (String key : testResultsSeries.results.keySet()) {
-//			client.publish(testOutputTopic+currentSimulationId, "Index: " + key + " TestManager number of conflicts: "
-//					+ " total " + testResultsSeries.getTotal());
-//		}
-//		storeResults(appId, simulationIdOne, "expectedJson", testResultsSeries);
 	}
 	
 	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
@@ -477,6 +465,10 @@ public class TestManagerImpl implements TestManager {
 				System.out.println("Input Keys");
 				System.out.println(inputKeys2.toString());
 				System.out.println(inputCount);
+				if( inputKeys2.isEmpty() ){
+					System.out.println("No input for expected results");
+					return;
+				}
 				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				if( ! firstSet){
 					first1 = Integer.valueOf(simulationTimestamp);
@@ -494,7 +486,7 @@ public class TestManagerImpl implements TestManager {
 				String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
 				
-				// Is this neccissary ?
+				// Is this needed ?
 //				simJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputKeys2.toArray()[inputCount].toString());
 //				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				JsonObject simJsonObjAtTime = new JsonObject();
@@ -503,15 +495,12 @@ public class TestManagerImpl implements TestManager {
 						simJsonObjAtTime, expectedResults);
 				testResultSeries.add(originalTimestamp,inputKeys2.toArray()[inputCount].toString(), testResults);
 				if (testResults != null) {
-					client.publish(testOutputTopic+simulationId, testResults);
+					client.publish(testOutputTopic+simulationId, testResultSeries.toJson(testConfig.getStoreMatches()));
 					//TODO: Store results in timeseries store.
 				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 				inputCount++;
 			}
-
-
-
 		});
 	}
 	
@@ -567,7 +556,7 @@ public class TestManagerImpl implements TestManager {
 						simOutputJsonObj, expectedResults);
 				testResultSeries.add(simulationTimestamp, simulationTimestamp, testResults);
 				if (testResults != null) {
-					client.publish(testOutputTopic+simulationId, testResults);
+					client.publish(testOutputTopic+simulationId, testResultSeries.toJson(testConfig.getStoreMatches()));
 					//TODO: Store results in timeseries store.
 				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);

@@ -1,17 +1,10 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.TimeZone;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
@@ -192,7 +185,7 @@ public class HistoricalComparison {
 		JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
 		JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
 
-		int index = 0;
+//		int index = 0;
 		for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
 //			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
@@ -200,13 +193,17 @@ public class HistoricalComparison {
 			if (tr != null) {
 				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
-			index++;
+//			index++;
 		}
 //		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
 		
 		JsonObject simInputObject = expectedObjectOne.get("input").getAsJsonObject();
 		JsonObject expected_input_series = expectedObjectTwo.get("input").getAsJsonObject();
+		if(simInputObject.entrySet().isEmpty() || expected_input_series.entrySet().isEmpty()){
+			System.out.println("Empty inputs");
+			return testResultSeries;
+		}
 		
 		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		return testResultSeries;
@@ -214,7 +211,7 @@ public class HistoricalComparison {
 
 	public void rebaseAndCompare(TestResultSeries testResultSeries, CompareResults compareResults,
 			JsonObject simInputObject, JsonObject expected_input_series) {
-		int index = 0;
+//		int index = 0;
 		HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
 //		System.out.println(newKeys1);
 		// Rebase or set to match output ...
@@ -228,7 +225,7 @@ public class HistoricalComparison {
 					testResultSeries.add(timeOne, timeTwo, tr);
 				}
 			}
-			index++;
+//			index++;
 		}
 //		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 	}
@@ -247,21 +244,20 @@ public class HistoricalComparison {
 	public TestResultSeries processWithAllTimes(JsonObject expected_series, String simulationId, String response) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults();
-//		System.out.println("processWithAllTimes");
-//		System.out.println(expected_output_series.toString().replace("\"", "\\\""));
+//		System.out.println(response);
 
 		JsonObject expectedObject = getExpectedFrom(response);
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
 		
-		int index = 0;
+//		int index = 0;
 		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
 //			System.out.println(time_entry);
 			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
 			if (tr != null) {
 				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
 			}
-			index++;
+//			index++;
 		}
 //		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		
@@ -291,9 +287,9 @@ public class HistoricalComparison {
 //		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
 //		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
 		
-		System.out.println("input keys");
-		System.out.println(inputKeys1.toString());
-		System.out.println(inputKeys2.toString());
+//		System.out.println("input keys");
+//		System.out.println(inputKeys1.toString());
+//		System.out.println(inputKeys2.toString());
 		HashMap<Integer, Integer> x = getTimeMap(inputKeys1, inputKeys2);
 		System.out.println(x);
 		return x;
@@ -391,19 +387,19 @@ public class HistoricalComparison {
 		return simExpected;
 	}
 	
-	public String getListOfTime(String  simulationId, JsonObject expected_output_series){
-		CompareResults compareResults = new CompareResults();
-		Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap("0", expected_output_series);
-		Set<String> keySet = expectedOutputMap.keySet();
-//		return timeSeriesQuery(simulationId,"_e10b535c-79f3-498b-a38f-11d1cc50f3a0", null,null);
-		for (String mrid : keySet) {
-//			String response = query(simulationId, mrid, null,null,null).result.toString();
-			String response = timeSeriesQuery(simulationId, mrid, null,null);
-			if (response.contains("simulation"))
-				return response;
-		}
-		return null;
-	}
+//	public String getListOfTime(String  simulationId, JsonObject expected_output_series){
+//		CompareResults compareResults = new CompareResults();
+//		Map<String, JsonElement> expectedOutputMap = compareResults.getExpectedOutputMap("0", expected_output_series);
+//		Set<String> keySet = expectedOutputMap.keySet();
+////		return timeSeriesQuery(simulationId,"_e10b535c-79f3-498b-a38f-11d1cc50f3a0", null,null);
+//		for (String mrid : keySet) {
+////			String response = query(simulationId, mrid, null,null,null).result.toString();
+//			String response = timeSeriesQuery(simulationId, mrid, null,null);
+//			if (response.contains("simulation"))
+//				return response;
+//		}
+//		return null;
+//	}
 	
 //	public String getListOfTime(String  simulationId, String expected_output_series){
 //		CompareResults compareResults = new CompareResults();
@@ -419,68 +415,68 @@ public class HistoricalComparison {
 //		return null;
 //	}
 	
-	public Set<String> getTimesEpoch(String responses) {
+//	public Set<String> getTimesEpoch(String responses) {
+////		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+////		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+//
+//		Set<String> times = new HashSet<String>();
+//		JsonObject jsonObject = CompareResults.getSimulationJson(responses);
+//		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
+//		for (JsonElement meas : ma) {
+//			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
+//			for (JsonElement point : points_array) {
+//				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry")
+//						.getAsJsonArray();
+//				for (JsonElement entry : entry_array) {
+//					String key = entry.getAsJsonObject().get("key").getAsString();
+//					if (key.equals("time")) {
+//						Long value = entry.getAsJsonObject().get("value").getAsLong();
+////						Date startTime = null;
+////						try {
+////							startTime = sdf.parse(value);
+////						} catch (ParseException e) {
+////							e.printStackTrace();
+////						}
+//						long startTime2 = value;
+//						// System.out.println(startTime2);
+//						times.add(startTime2 + "");
+//					}
+//				}
+//			}
+//		}
+//		return times;
+//	}
+	
+//	public Set<String> getTimes(String responses) {
 //		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 //		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-		Set<String> times = new HashSet<String>();
-		JsonObject jsonObject = CompareResults.getSimulationJson(responses);
-		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
-		for (JsonElement meas : ma) {
-			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
-			for (JsonElement point : points_array) {
-				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry")
-						.getAsJsonArray();
-				for (JsonElement entry : entry_array) {
-					String key = entry.getAsJsonObject().get("key").getAsString();
-					if (key.equals("time")) {
-						Long value = entry.getAsJsonObject().get("value").getAsLong();
+//
+//		Set<String> times = new HashSet<String>();
+//		JsonObject jsonObject = CompareResults.getSimulationJson(responses);
+//		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
+//		for (JsonElement meas : ma) {
+//			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
+//			for (JsonElement point : points_array) {
+//				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry")
+//						.getAsJsonArray();
+//				for (JsonElement entry : entry_array) {
+//					String key = entry.getAsJsonObject().get("key").getAsString();
+//					if (key.equals("time")) {
+//						String value = entry.getAsJsonObject().get("value").getAsString();
 //						Date startTime = null;
 //						try {
 //							startTime = sdf.parse(value);
 //						} catch (ParseException e) {
 //							e.printStackTrace();
 //						}
-						long startTime2 = value;
-						// System.out.println(startTime2);
-						times.add(startTime2 + "");
-					}
-				}
-			}
-		}
-		return times;
-	}
-	
-	public Set<String> getTimes(String responses) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-		Set<String> times = new HashSet<String>();
-		JsonObject jsonObject = CompareResults.getSimulationJson(responses);
-		JsonArray ma = jsonObject.get("measurements").getAsJsonArray();
-		for (JsonElement meas : ma) {
-			JsonArray points_array = meas.getAsJsonObject().get("points").getAsJsonArray();
-			for (JsonElement point : points_array) {
-				JsonArray entry_array = point.getAsJsonObject().get("row").getAsJsonObject().get("entry")
-						.getAsJsonArray();
-				for (JsonElement entry : entry_array) {
-					String key = entry.getAsJsonObject().get("key").getAsString();
-					if (key.equals("time")) {
-						String value = entry.getAsJsonObject().get("value").getAsString();
-						Date startTime = null;
-						try {
-							startTime = sdf.parse(value);
-						} catch (ParseException e) {
-							e.printStackTrace();
-						}
-						long startTime2 = startTime.getTime();
-						// System.out.println(startTime2);
-						times.add(startTime2 + "");
-					}
-				}
-			}
-		}
-		return times;
-	}
+//						long startTime2 = startTime.getTime();
+//						// System.out.println(startTime2);
+//						times.add(startTime2 + "");
+//					}
+//				}
+//			}
+//		}
+//		return times;
+//	}
 	
 }
