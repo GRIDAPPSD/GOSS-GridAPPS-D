@@ -417,6 +417,19 @@ public class TestManagerComponentTest {
 	}
 	
 	@Test
+	public void testTwoSimulationResponseNoInput(){	
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		String res1 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+		String res2 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -5.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}]\"}";
+		
+		TestResultSeries testResultSeries2 = hc.processWithAllTimes("123", res1, res2);
+		assertEquals(testResultSeries2.getTotal(), 1);
+		System.out.println(testResultSeries2.toJson(false));
+
+//		testManager.storeResults("appID","testID", "currentSimulationIdOne", "currentSimulationIdTwo", testResultSeries2);
+	}
+	
+	@Test
 	public void inputMapTest(){
 		String data = "{\"simulation_id\": \"1432157818\", \"message\": {\"timestamp\": 0, \"difference_mrid\": \"d5f5516a-87a9-43d3-9dba-931b4388eabc\", \"reverse_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}], \"forward_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}]}}";
 		JsonParser parser = new JsonParser();
@@ -435,6 +448,7 @@ public class TestManagerComponentTest {
 	@Test
 	public void testConfig(){
 		String config=  "{\"testId\": \"12333\",\"appId\": \"sample_app\" }";
+//		config=  "{\"appId\": \"sample_app\" }";
 		TestConfig tc = TestConfig.parse(config);
 		System.out.println(tc.toString());
 		assertEquals(tc.getAppId(), "sample_app");
