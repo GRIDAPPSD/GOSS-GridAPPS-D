@@ -232,6 +232,9 @@ public class HistoricalComparison {
 
 	public JsonObject getExpectedFrom(String responseOne) {
 		JsonObject jsonObject = CompareResults.getSimulationJson(responseOne);
+		if (! jsonObject.has("data")){
+			return null;
+		}
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		JsonParser parser = new JsonParser();
@@ -247,27 +250,30 @@ public class HistoricalComparison {
 //		System.out.println(response);
 
 		JsonObject expectedObject = getExpectedFrom(response);
-		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
-		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
-		
-//		int index = 0;
-		for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
-//			System.out.println(time_entry);
-			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
-			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+		if (expectedObject.has("output") && expected_series.has("output") ){
+			JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
+			JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
+			
+	//		int index = 0;
+			for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
+	//			System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+	//			index++;
 			}
-//			index++;
+	//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		} 
+		if (expectedObject.has("input") && expected_series.has("input") ){
+			JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+			JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
+	//		System.out.println("processWithAllTimes expectedJson");
+	//		System.out.println(simInputObject.toString());
+	//		System.out.println(expected_input_series.toString());
+	
+			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		}
-//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-		
-		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
-		JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
-//		System.out.println("processWithAllTimes expectedJson");
-//		System.out.println(simInputObject.toString());
-//		System.out.println(expected_input_series.toString());
-
-		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		return testResultSeries;
 	}
 

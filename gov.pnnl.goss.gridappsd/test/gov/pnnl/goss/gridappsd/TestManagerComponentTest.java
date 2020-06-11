@@ -333,6 +333,28 @@ public class TestManagerComponentTest {
 	}	
 	
 	@Test
+	public void testExpectedVersusResponse3(){
+		// Check for empty values
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
+		TestResultSeries testResultSeries = new TestResultSeries();
+		CompareResults compareResults = new CompareResults();
+		String expected = "{\"expectedResults\": {}}";
+		JsonObject expected_series = CompareResults.getSimulationJson(expected).get("expectedResults").getAsJsonObject();
+		
+		String res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670650, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}]\"}";
+
+		JsonObject jsonObject = CompareResults.getSimulationJson(res); 
+		String data = jsonObject.get("data").getAsString();
+		System.out.println(data.substring(0, 100));
+		JsonParser parser = new JsonParser(); 
+		JsonArray measurements = (JsonArray) parser.parse(data);
+
+		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, "123", res);
+		testResultSeries1.ppprint();
+		assertEquals(testResultSeries1.getTotal(), 0);
+	}	
+	
+	@Test
 	public void testTimeMap(){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, "system");
 		

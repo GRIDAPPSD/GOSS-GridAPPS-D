@@ -314,12 +314,12 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 //			return testResults;
 //		}
 		
-		public String getFeeder() {
-	//		TestManagerQueryFactory qf = new TestManagerQueryFactory();
-	//		return qf.getFeeder();
-			return "ieee8500";
-		}
-		
+//		public String getFeeder() {
+//	//		TestManagerQueryFactory qf = new TestManagerQueryFactory();
+//	//		return qf.getFeeder();
+//			return "ieee8500";
+//		}
+//		
 //		/**
 //		 * Get the set of properties that matches the expected results
 //		 * @param testScript

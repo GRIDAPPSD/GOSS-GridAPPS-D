@@ -47,6 +47,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -81,12 +82,15 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
 import gov.pnnl.goss.gridappsd.dto.RuleSettings;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.TestConfig.TestType;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
@@ -196,16 +200,13 @@ public class TestManagerImpl implements TestManager {
 								compareSimulations(testConfig, testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo(),request);
 							}else{
 								publishResponse(request, "Missing parameter for testConfig simId");
+								logMessage("Missing parameter for testConfig "+ testConfig.toString());
 							}	
 						}
 						if(requestTest != null){
-							
-//							RequestTestUpdate requestTestUpdate = RequestTestUpdate.parse(request.getData().toString());
-							RequestTestUpdate requestTestUpdate = gson.fromJson(request.getData().toString(),RequestTestUpdate.class);
-							
+							RequestTestUpdate requestTestUpdate = gson.fromJson(request.getData().toString(),RequestTestUpdate.class);							
 							if(requestTestUpdate.getCommand() == RequestType.new_events){
 								sendEventsToSimulation(requestTestUpdate.getEvents(), simulationId);
-
 							}
 							else if(requestTestUpdate.getCommand() == RequestType.update_events){
 								updateEventForSimulation(requestTestUpdate.getEvents(), simulationId);
@@ -222,6 +223,7 @@ public class TestManagerImpl implements TestManager {
 
 		} catch (Exception e) {
 			//TODO-log.error("Error in test manager", e);
+			logMessage("Error in test manager ");
 		}
 	}
 	
@@ -238,13 +240,13 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	public void handleTestRequest(TestConfig testConfig, SimulationContext simulationContext) {
-		
-		//Not testing this simulation
-		if(testConfig == null){
-			return;
-		}
 		String simulationId = simulationContext.getSimulationId();
 		String simulationDir = simulationContext.getSimulationDir();
+
+		if(testConfig == null){
+			logMessage("testConfig is null ",simulationId);
+			return;
+		}
 
 		if (testConfig.getEvents() != null && testConfig.getEvents().size() > 0) {
 			sendEventsToSimulation(testConfig.getEvents(), simulationId);
@@ -262,7 +264,6 @@ public class TestManagerImpl implements TestManager {
 		if (testConfig.getRules() != null && testConfig.getRules().size() > 0) {
 			comapareSimOutputWithAppRules(simulationId, simulationDir, testConfig.getAppId(), testConfig.getRules());
 		}
-
 	}
 	
 	@Override
@@ -329,6 +330,29 @@ public class TestManagerImpl implements TestManager {
 //		this.error(null,sw.toString());
 		//TODO log error and send error response
 	}
+	}
+	
+	public void logMessage(String msgStr) {
+		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setLogLevel(LogLevel.DEBUG);
+		logMessageObj.setSource(this.getClass().getSimpleName());
+		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
+		logMessageObj.setStoreToDb(true);
+		logMessageObj.setTimestamp(new Date().getTime());
+		logMessageObj.setLogMessage(msgStr);
+		logManager.log(logMessageObj,securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
+	}
+	
+	public void logMessage(String msgStr, String simulationId) {
+		LogMessage logMessageObj = new LogMessage();
+		logMessageObj.setProcessId(simulationId);
+		logMessageObj.setLogLevel(LogLevel.DEBUG);
+		logMessageObj.setSource(this.getClass().getSimpleName());
+		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
+		logMessageObj.setStoreToDb(true);
+		logMessageObj.setTimestamp(new Date().getTime());
+		logMessageObj.setLogMessage(msgStr);
+		logManager.log(logMessageObj,securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
 	}
 	
 	public void storeResults(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
@@ -401,6 +425,10 @@ public class TestManagerImpl implements TestManager {
 		
 		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		JsonObject expectedObject = hc.getExpectedFrom(response);
+		if(expectedObject == null){
+			logMessage("Response from time sereis db is empty for simulation "+ simulationIdOne,currentSimulationId);
+			return;
+		}
 //		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 //		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 //		
@@ -447,7 +475,7 @@ public class TestManagerImpl implements TestManager {
 				simJsonObj = simJsonObj.get("input").getAsJsonObject();
 
 				if ( ! simJsonObj.has("message")) {
-					//TODO: Log error - "TestManager received empty message key in simulation output"
+					logMessage( "TestManager received empty message key in simulation input", simulationId);
 					return;
 				}
 				
@@ -547,7 +575,7 @@ public class TestManagerImpl implements TestManager {
 				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
 
 				if ( ! simOutputJsonObj.has("message")) {
-					//TODO: Log error - "TestManager received empty message key in simulation output"
+					logMessage( "TestManager received empty message key in simulation output", simulationId);
 					return;
 				}
 				
