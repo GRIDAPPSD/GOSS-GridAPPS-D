@@ -58,8 +58,8 @@ public class TestResultSeries implements Serializable{
 		index.put(index1, index2);
 		if(results.containsKey(index)){
 			TestResults tr = results.get(index);
-			for (Entry<String, HashMap<String, TestResultDetails>> entry : testResults.objectPropComparison.entrySet()) {
-				tr.objectPropComparison.put(entry.getKey(), entry.getValue());
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : testResults.getObjectPropComparison().entrySet()) {
+				tr.getObjectPropComparison().put(entry.getKey(), entry.getValue());
 //				System.out.println(entry.getKey());
 //				System.out.println(entry.getValue());
 //				for (Entry<String, String[]> entry2 : entry.getValue().entrySet()) {
@@ -102,14 +102,14 @@ public class TestResultSeries implements Serializable{
 			Long indexOne = Long.parseLong(map.entrySet().iterator().next().getKey()); 
 			Long indexTwo =Long.parseLong(map.entrySet().iterator().next().getValue());
 			TestResults tr = iterable_element.getValue();
-			tr.indexOne = indexOne;
-			tr.indexTwo = indexTwo;
+			tr.setIndexOne(indexOne);
+			tr.setIndexTwo(indexTwo);
 //			if(! storeMatches && tr.)
 //			list.add(tr);
 		}
 		for (Map<String, String> simulationTime : this.results.keySet()){
 			TestResults tr = this.results.get(simulationTime);
-			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.objectPropComparison.entrySet()) {
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.getObjectPropComparison().entrySet()) {
 				HashMap<String, TestResultDetails> propMap = entry.getValue();
 				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
 					TestResultFullDetails trfd = new TestResultFullDetails(prop.getValue());

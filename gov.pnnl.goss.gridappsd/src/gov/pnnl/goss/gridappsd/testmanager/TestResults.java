@@ -52,13 +52,44 @@ import java.util.Map.Entry;
 public class TestResults implements Serializable{
 	
 	private static final long serialVersionUID = -6171952609185593742L;
+	private long indexOne;
+	private long indexTwo;
+	private long simulationTimestamp;
+
+	private Map<String, HashMap<String, TestResultDetails>> objectPropComparison = new HashMap<String, HashMap<String, TestResultDetails>>();
 	
-	long indexOne;
-	long indexTwo;
-	long simulationTimestamp;
+	public long getIndexOne() {
+		return indexOne;
+	}
+
+	public void setIndexOne(long indexOne) {
+		this.indexOne = indexOne;
+	}
+
+	public long getIndexTwo() {
+		return indexTwo;
+	}
+
+	public void setIndexTwo(long indexTwo) {
+		this.indexTwo = indexTwo;
+	}
+
+	public long getSimulationTimestamp() {
+		return simulationTimestamp;
+	}
+
+	public void setSimulationTimestamp(long simulationTimestamp) {
+		this.simulationTimestamp = simulationTimestamp;
+	}
 	
-	public Map<String, HashMap<String, TestResultDetails>> objectPropComparison = new HashMap<String, HashMap<String, TestResultDetails>>();
-	
+	public Map<String, HashMap<String, TestResultDetails>> getObjectPropComparison() {
+		return objectPropComparison;
+	}
+
+	public void setObjectPropComparison(Map<String, HashMap<String, TestResultDetails>> objectPropComparison) {
+		this.objectPropComparison = objectPropComparison;
+	}
+
 	public HashMap<String, TestResultDetails> add(String obj, String prop){
 		HashMap<String, TestResultDetails> prop1 ;
 		if (objectPropComparison.containsKey(obj)){

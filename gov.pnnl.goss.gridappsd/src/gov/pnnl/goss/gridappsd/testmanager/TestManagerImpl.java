@@ -360,7 +360,7 @@ public class TestManagerImpl implements TestManager {
 //	            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) 
 		for (Map<String, String> simulationTime : testResultSeries.results.keySet()){
 			TestResults tr = testResultSeries.results.get(simulationTime);
-			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.objectPropComparison.entrySet()) {
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.getObjectPropComparison().entrySet()) {
 				HashMap<String, TestResultDetails> propMap = entry.getValue();
 				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
 //					System.out.println(String.format("%10s, %10s, %10s, %10s, %10s %10s %10s %10s %10s %10s ",

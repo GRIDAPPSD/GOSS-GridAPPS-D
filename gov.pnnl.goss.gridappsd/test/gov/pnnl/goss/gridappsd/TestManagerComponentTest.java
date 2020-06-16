@@ -254,7 +254,8 @@ public class TestManagerComponentTest {
 		JsonObject expectedObject = hc.buildExpectedFromTimeseries(measurements);
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 
-		hc.processWithAllTimes(expected_series, "123", res);
+		TestResultSeries testResultSeries1 =hc.processWithAllTimes(expected_series, "123", res);
+		assertEquals(testResultSeries1.getTotal(), 1);
 		
 		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
 		int index = 0;
@@ -371,6 +372,9 @@ public class TestManagerComponentTest {
 			first2 = key2;
 		}
 		System.out.println(newKeys1);
+//		java.lang.AssertionError: expected:<{1590527357=30, 1590527327=0, 1590527342=15, 1590527354=27, 1590527360=33}> 
+
+		assertEquals(newKeys1.get(1590527354).intValue(), 27);
 	}
 	
 	@Test
@@ -385,6 +389,7 @@ public class TestManagerComponentTest {
 		
 		inputCount = testManager.getNextCount(inputKeys2, simulationTimestamp, first1, inputCount);
 		System.out.println(inputCount);	
+		assertEquals(inputCount, 3);
 	}
 
 	@Test
@@ -430,6 +435,9 @@ public class TestManagerComponentTest {
 			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
 			forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 		}
+		assertEquals(forwardDifferenceMap.get("_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB").getAsJsonObject().get("value").getAsInt(),0);
+//		java.lang.AssertionError: expected:<{_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB={"object":"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB","attribute":"ShuntCompensator.sections","value":0,"difference_mrid":"d5f5516a-87a9-43d3-9dba-931b4388eabc","hasMeasurementDifference":"FORWARD"}, _9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3={"object":"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3","attribute":"ShuntCompensator.sections","value":0,"difference_mrid":"d5f5516a-87a9-43d3-9dba-931b4388eabc","hasMeasurementDifference":"FORWARD"}, _232DD3A8-9A3C-4053-B972-8A5EB49FD980={"object":"_232DD3A8-9A3C-4053-B972-8A5EB49FD980","attribute":"ShuntCompensator.sections","value":0,"difference_mrid":"d5f5516a-87a9-43d3-9dba-931b4388eabc","hasMeasurementDifference":"FORWARD"}, _307E4291-5FEA-4388-B2E0-2B3D22FE8183={"object":"_307E4291-5FEA-4388-B2E0-2B3D22FE8183","attribute":"ShuntCompensator.sections","value":0,"difference_mrid":"d5f5516a-87a9-43d3-9dba-931b4388eabc","hasMeasurementDifference":"FORWARD"}}> but was:<0>
+		
 	}
 	
 	@Test
