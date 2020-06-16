@@ -29,7 +29,7 @@ public class HistoricalComparison {
 		this.username = username;
 	}
 
-	public TestResultSeries test_proven(String simulationId, JsonObject expected_output_series){
+	public TestResultSeries testProven(String simulationId, JsonObject expected_output_series){
 
 		String responseStr = timeSeriesQuery(simulationId, "1532971828475", null, null);
 		if(! responseStr.contains("data")){
@@ -41,7 +41,7 @@ public class HistoricalComparison {
 		return testResultSeries;
 	}
 	
-	public TestResultSeries test_proven(String simulationIdOne, String simulationIdTwo){
+	public TestResultSeries testProven(String simulationIdOne, String simulationIdTwo){
 
 		String responseStrOne = timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		String responseStrTwo = timeSeriesQuery(simulationIdTwo, "1532971828475", null, null);
@@ -212,7 +212,7 @@ public class HistoricalComparison {
 	public void rebaseAndCompare(TestResultSeries testResultSeries, CompareResults compareResults,
 			JsonObject simInputObject, JsonObject expected_input_series) {
 //		int index = 0;
-		HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
+		HashMap<Integer, Integer> newKeys1 = rebaseKeys(simInputObject, expected_input_series);
 //		System.out.println(newKeys1);
 		// Rebase or set to match output ...
 		for (Entry<Integer,Integer> time_entry : newKeys1.entrySet()) {
@@ -277,7 +277,7 @@ public class HistoricalComparison {
 		return testResultSeries;
 	}
 
-	public HashMap<Integer, Integer> rebase_keys(JsonObject simInputObject, JsonObject expected_input_series) {
+	public HashMap<Integer, Integer> rebaseKeys(JsonObject simInputObject, JsonObject expected_input_series) {
 		SortedSet<Integer> inputKeys1 = new TreeSet<>();
 		SortedSet<Integer> inputKeys2 = new TreeSet<>();
 
@@ -311,36 +311,19 @@ public class HistoricalComparison {
 	 */
 	public HashMap<Integer, Integer> getTimeMap(SortedSet<Integer> inputKeys1, SortedSet<Integer> inputKeys2) {
 		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
-//		HashMap<Integer,Integer> newKeys2 = new HashMap<Integer,Integer>();
 		Integer first1 = inputKeys1.first();
 		Integer first2 = inputKeys2.first();
 		
 		int diff = 0;
-		Integer baseTime = first2;
 
-		Iterator<Integer> it1 = inputKeys1.iterator();
 		Iterator<Integer> it2 = inputKeys2.iterator();
 
-//		newKeys1.put(first1, first2);
 		while (it2.hasNext()) {
-//			Integer key1 = it1.next();
-//			if it2.
 			Integer key2 = it2.next();
 			diff = key2-first2;
-//			first1+=diff;
 			newKeys1.put(first1+ diff, key2);
-//			first2 = key2;
 		}
-//		for (Integer key : inputKeys1) {
-////			diff=key-diff;
-//			newKeys1.put(key, baseTime);
-//		}
-//		diff=0;
-//		baseTime = first1;
-//		for (Integer key : inputKeys2) {
-//			diff=key-diff;
-//			newKeys2.put(key, diff+baseTime);
-//		}
+
 		return newKeys1;
 	}
 

@@ -52,7 +52,7 @@ public class TestConfig implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 	
-	Random randomeNum =  new Random();
+	private Random randomNum =  new Random();
 	
 	public enum TestType {
 		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries
@@ -74,11 +74,9 @@ public class TestConfig implements Serializable {
 	
 	private String appId;
 	
-	private String testId = ""+Math.abs(randomeNum.nextInt());
+	private String testId = ""+Math.abs(randomNum.nextInt());
 	
 	private TestType testType = TestType.simulation_vs_expected;
-	
-	private Boolean matchInputTimes = true;
 	
 	private Boolean storeMatches = false;
 	

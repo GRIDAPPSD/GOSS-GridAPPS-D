@@ -113,13 +113,13 @@ public class TestResultSeries implements Serializable{
 				HashMap<String, TestResultDetails> propMap = entry.getValue();
 				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
 					TestResultFullDetails trfd = new TestResultFullDetails(prop.getValue());
-					trfd.object=entry.getKey();
-					trfd.attribute=prop.getKey();
+					trfd.setObject(entry.getKey());
+					trfd.setAttribute(prop.getKey());
 					Long indexOne = Long.parseLong(simulationTime.entrySet().iterator().next().getKey()); 
 					Long indexTwo =Long.parseLong(simulationTime.entrySet().iterator().next().getValue());
-					trfd.indexOne = indexOne;
-					trfd.indexTwo = indexTwo;
-					if(! storeMatches && trfd.match)
+					trfd.setIndexOne(indexOne);
+					trfd.setIndexTwo(indexTwo);
+					if(! storeMatches && trfd.getMatch())
 						list.add(trfd);
 				}
 			}

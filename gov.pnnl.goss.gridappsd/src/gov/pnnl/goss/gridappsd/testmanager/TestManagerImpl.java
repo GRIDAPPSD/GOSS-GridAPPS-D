@@ -389,8 +389,8 @@ public class TestManagerImpl implements TestManager {
 							prop.getKey(),
 							prop.getValue().getExpected(),
 							prop.getValue().getActual(),
-							prop.getValue().getDiff_mrid(),
-							prop.getValue().getDiff_type(),
+							prop.getValue().getDiffMrid(),
+							prop.getValue().getDiffType(),
 							prop.getValue().getMatch());
 				}
 			}
@@ -400,7 +400,7 @@ public class TestManagerImpl implements TestManager {
 	@Override
 	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, simulationIdTwo);		
+		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, simulationIdTwo);		
 		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
 		publishResponse(request);
 		storeResults(testConfig, simulationIdOne, simulationIdTwo, testResultsSeries);
@@ -438,7 +438,7 @@ public class TestManagerImpl implements TestManager {
 	
 	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		TestResultSeries testResultsSeries = hc.test_proven(simulationIdOne, expectedResultObject);
+		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, expectedResultObject);
 		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
 		publishResponse(request);
 		storeResults(testConfig, simulationIdOne, "expectedJson", testResultsSeries);

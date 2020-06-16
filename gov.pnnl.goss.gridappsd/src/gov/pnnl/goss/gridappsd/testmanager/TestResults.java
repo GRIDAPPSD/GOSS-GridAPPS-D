@@ -133,7 +133,7 @@ public class TestResults implements Serializable{
 
 //				if(prop.getValue().length > 3)
 //					temp+="    " +prop.getValue()[2] +"    " + prop.getValue()[3];
-					temp += String.format("%10s %37s", prop.getValue().getDiff_mrid(), prop.getValue().getDiff_type());
+					temp += String.format("%10s %37s", prop.getValue().getDiffMrid(), prop.getValue().getDiffType());
 				temp+="\n";
 			}
 		}

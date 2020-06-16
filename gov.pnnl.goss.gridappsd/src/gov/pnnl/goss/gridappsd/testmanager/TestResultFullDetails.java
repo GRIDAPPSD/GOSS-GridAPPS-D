@@ -2,12 +2,66 @@ package gov.pnnl.goss.gridappsd.testmanager;
 
 public class TestResultFullDetails extends TestResultDetails {
 	
-	String object;
-	String attribute;
-	long indexOne;
-	long indexTwo;
-	long simulationTimestamp;
+	private String object;
 	
+	private String attribute;
+	
+	private long indexOne;
+	
+	private long indexTwo;
+	
+	private long simulationTimestamp;
+	
+
+	public String getObject() {
+		return object;
+	}
+
+
+	public void setObject(String object) {
+		this.object = object;
+	}
+
+
+	public String getAttribute() {
+		return attribute;
+	}
+
+
+	public void setAttribute(String attribute) {
+		this.attribute = attribute;
+	}
+
+
+	public long getIndexOne() {
+		return indexOne;
+	}
+
+
+	public void setIndexOne(long indexOne) {
+		this.indexOne = indexOne;
+	}
+
+
+	public long getIndexTwo() {
+		return indexTwo;
+	}
+
+
+	public void setIndexTwo(long indexTwo) {
+		this.indexTwo = indexTwo;
+	}
+
+
+	public long getSimulationTimestamp() {
+		return simulationTimestamp;
+	}
+
+
+	public void setSimulationTimestamp(long simulationTimestamp) {
+		this.simulationTimestamp = simulationTimestamp;
+	}
+
 
 	public TestResultFullDetails(String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
 		super(expected, actual, diff_mrid, diff_type, match);
@@ -16,7 +70,7 @@ public class TestResultFullDetails extends TestResultDetails {
 
 
 	public TestResultFullDetails(TestResultDetails value) {
-		super(value.expected, value.actual, value.diff_mrid, value.diff_type, value.match);
+		super(value.getExpected(), value.getActual(), value.getDiffMrid(), value.getDiffType(), value.getMatch());
 	}
 
 }
