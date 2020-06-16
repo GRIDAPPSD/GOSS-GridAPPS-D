@@ -540,7 +540,8 @@ public class TestManagerImpl implements TestManager {
 	 * @param inputCount
 	 * @return
 	 */
-	public int getNextCount(SortedSet<Integer> inputKeys, int simulationTimestamp, int first1, int inputCount) {
+	public int getNextCount(SortedSet<Integer> inputKeys, int simulationTimestamp, int first1, int origInputCount) {
+		int inputCount = origInputCount;
 		int first2 = (int) inputKeys.toArray()[0];
 		while (inputKeys.size() > inputCount){
 			int key2 = (int) inputKeys.toArray()[inputCount];

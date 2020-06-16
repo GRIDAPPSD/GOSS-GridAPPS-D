@@ -173,7 +173,7 @@ public class TestResults implements Serializable{
 	
 	public static void main(String[] args) {
 		TestResults tr = new TestResults();
-		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
+//		HashMap<String, String[]> prop1 = new HashMap<String, String[]>();
 //		TestResultDetails x =  new TestResultDetails(expected, actual, diff_mrid, diff_type, false);
 //		prop1.put("tap_A", x );
 //		tr.objectPropComparison.put("reg_VREG2",x);	
