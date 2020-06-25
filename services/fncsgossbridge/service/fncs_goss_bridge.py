@@ -1064,7 +1064,7 @@ def _send_simulation_status(status, message, log_level):
     """
     simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
 
-    valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE', 'PAUSED']
+    valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
     if status in valid_status:
         if log_level not in valid_level:
