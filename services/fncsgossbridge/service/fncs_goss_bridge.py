@@ -749,9 +749,9 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
                     elif cim_attribute == "EnergyConsumer.p":
                         phase_count = len(object_phases)
                         if "s1" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/phase_count
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
                         if "s2" in object_phases:
-                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/phase_count
+                            fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
                         if "A" in object_phases:
                             fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
                         if "B" in object_phases:
@@ -1064,7 +1064,7 @@ def _send_simulation_status(status, message, log_level):
     """
     simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
 
-    valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE']
+    valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE', 'PAUSED']
     valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
     if status in valid_status:
         if log_level not in valid_level:

@@ -177,7 +177,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
-		if(scheduleName!=null){
+		if(scheduleName!=null && scheduleName.trim().length()>0){
 			bWantSched = true;
 		}
 		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
@@ -291,8 +291,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		//Generate zip load profile player file
-		GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
-		ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		if(scheduleName!=null && scheduleName.trim().length()>0) {
+			GLDZiploadScheduleConfigurationHandler ziploadScheduleConfigurationHandler = new GLDZiploadScheduleConfigurationHandler(logManager, dataManager);
+			ziploadScheduleConfigurationHandler.generateConfig(parameters, null, processId, username);
+		}
 		
 		//Generate startup file
 		File startupFile = new File(tempDataPath+File.separator+STARTUP_FILENAME);

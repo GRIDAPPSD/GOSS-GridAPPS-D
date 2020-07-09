@@ -161,7 +161,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		double loadScale = GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1);
 		
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
-		if(scheduleName!=null){
+		if(scheduleName!=null && scheduleName.trim().length()>0){
 			bWantSched = true;
 		}
 		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
@@ -179,7 +179,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(bgHost==null || bgHost.trim().length()==0){
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
 		}
-		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+		/*String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		int simId = -1;
 		if(simulationID==null || simulationID.trim().length()==0){
 			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
@@ -189,7 +189,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 			simId = new Integer(simulationID);
 		}catch (Exception e) {
 			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
-		}
+		}*/
 		
 		 ModelState modelState = new ModelState();
 		 String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
@@ -200,7 +200,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 			 modelState = gson.fromJson(modelStateStr, ModelState.class);
 		 }
 		
-		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
+		/*long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
 			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
@@ -209,7 +209,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(simulationDuration==0){
 			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
-		}
+		}*/
 		
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
