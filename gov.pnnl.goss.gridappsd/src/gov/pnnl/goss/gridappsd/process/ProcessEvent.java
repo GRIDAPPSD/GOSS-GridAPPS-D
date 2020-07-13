@@ -51,6 +51,11 @@ import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -75,6 +80,8 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -121,6 +128,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.dataManager = dataManager;
 		this.testManager = testManager;
 		this.roleManager = roleManager;
+		
 	}
 
 
@@ -135,6 +143,13 @@ public class ProcessEvent implements GossResponseEvent {
 
 
 		try{ 
+			GsonBuilder gsonBuilder = new GsonBuilder();
+			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
+			gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+			gsonBuilder.setPrettyPrinting();
+			Gson gsonSpecial = gsonBuilder.create();		
+//			simRequest = gson.fromJson(request.toString(), RequestSimulation.class);
 
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				//Parse simluation request
@@ -152,7 +167,8 @@ public class ProcessEvent implements GossResponseEvent {
 					if(request!=null){
 						//make sure it doesn't fail if request is null, although it should never be null
 						try{
-							simRequest = RequestSimulation.parse(request.toString());
+//							simRequest = RequestSimulation.parse(request.toString());
+							simRequest = gsonSpecial.fromJson(request.toString(), RequestSimulation.class);
 						}catch(JsonSyntaxException e){
 							e.printStackTrace();
 							//TODO log error
