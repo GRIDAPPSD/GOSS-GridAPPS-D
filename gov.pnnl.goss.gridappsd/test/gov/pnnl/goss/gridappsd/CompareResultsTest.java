@@ -120,7 +120,7 @@ public class CompareResultsTest {
 	 */
 	public void testGetFeeder(){
 		try {
-			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(new File("test"));
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(),  Mockito.any())).thenReturn(new File("test"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

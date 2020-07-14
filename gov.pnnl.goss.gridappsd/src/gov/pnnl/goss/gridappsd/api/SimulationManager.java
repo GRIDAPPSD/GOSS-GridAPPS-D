@@ -58,7 +58,7 @@ public interface SimulationManager {
 	 * @param simulationFile
 	 * @param simulationConfig	Map<String, Object> simulationContext
 	 */
-	void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
+	void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
 	
 	SimulationContext getSimulationContextForId(String simulationId);
 
@@ -67,6 +67,5 @@ public interface SimulationManager {
 	void pauseSimulation(String simulationId);
 
 	void resumeSimulation(String simulationId);
-	
-	void startServiceDependencies(SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
+
 }

@@ -124,7 +124,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 * @return
 	 */
 	@Override
-	public synchronized File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception{
+	public synchronized File getSimulationFile(String simulationId, RequestSimulation powerSystemConfig) throws Exception{
 		logManager.log(
 				new LogMessage(this.getClass().getName(), new Integer(
 						simulationId).toString(), new Date().getTime(),

@@ -211,7 +211,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
 		//TODO: Remove this once alarms are stored in Proven
-		if(!serviceId.equals("gridappsd-alarms"))
+		if(serviceId.equals("gridappsd-alarms"))
 		    subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
 	}
 	
