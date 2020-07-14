@@ -325,7 +325,6 @@ public class ProcessNewSimulationRequest {
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
 			
-			
 			ServiceInfo simulationServiceInfo = serviceManager.getService(simRequest.getSimulation_config().simulator);
 			List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
 			for(String service : serviceDependencies) {
@@ -335,6 +334,9 @@ public class ProcessNewSimulationRequest {
 			}
 			
 			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username);
+		
+			// start test if requested 
+			testManager.handleTestRequest(simRequest.getTest_config(), simContext);
 			
 			// start simulation
 			logManager.log(new LogMessage(source, simId,new Date().getTime(),

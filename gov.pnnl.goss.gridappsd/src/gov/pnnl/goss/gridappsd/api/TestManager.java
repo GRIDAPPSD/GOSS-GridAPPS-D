@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.api;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
+import pnnl.goss.core.DataResponse;
 
 import java.util.List;
 
@@ -84,15 +85,39 @@ public interface TestManager {
 	 * @param simulationIdOne simulation id of currently running simulation
 	 * @param simulationIdTwo Simulation id of older simulation
 	 */
-	public void compareSimulations(String simulationIdOne, String simulationIdTwo);
+	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request);
+	
+	/**
+	 * @param testConfig
+	 * @param currentSimulationId
+	 * @param simulationIdOne
+	 * @param expectedResultObject
+	 * @param request
+	 */
+	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request);
+	
+	/**
+	 * @param testConfig
+	 * @param currentSimulationId
+	 * @param simulationIdOne
+	 */
+	public void compareRunningWithTimeseriesSimulation(TestConfig testConfig, String currentSimulationId, String simulationIdOne);
 	
 	/**
 	 * This method compares simulation output with provided expected simulation
 	 * output.
-	 * @param simulationId Id of the surrently running simulation
+	 * @param simulationId Id of the currently running simulation
 	 * @param expectedResults Expected simulation output 
 	 */
-	public void compareWithExpectedSimOutput(String simulationId, JsonObject expectedResults);
+	public void compareRunningSimulationOutputWithExpected(TestConfig testConfig,  String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo);
+	
+	/**
+	 * This method compares simulation output with provided expected simulation
+	 * output.
+	 * @param simulationId Id of the currently running simulation
+	 * @param expectedResults Expected simulation output 
+	 */
+	public void compareRunningSimulationInputWithExpected(TestConfig testConfig, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo);
 	
 	/**
 	 * This method update property of existing events for the simulation if the events 
