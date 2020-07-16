@@ -36,7 +36,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
-from __builtin__ import False
 """
 Created on Mar 9, 2020
 
@@ -68,7 +67,7 @@ from gridappsd import GridAPPSD, utils, topics
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-def HelicsGossBridge(object):
+class HelicsGossBridge(object):
     '''
     ClassDocs
     '''
@@ -228,7 +227,99 @@ def HelicsGossBridge(object):
         self._register_with_helics()
         # build GLD property names to CIM mrid map
         self._create_cim_object_map()
+    
+    
+    def get_simulation_id(self):
+        return self._simulation_id
+    
+    
+    def get_broker_port(self):
+        return self._broker_port
+    
+    
+    def get_simulation_request(self):
+        return self._simulation_request
+    
+    
+    def get_gad_connection(self):
+        return self._gad_connection
+    
+    
+    def get_helics_configuration(self):
+        return self._helics_configuration
+    
+    
+    def get_helics_federate(self):
+        return self._helics_federate
+    
+    
+    def get_is_initialized(self):
+        return self._is_initialized
+    
+    
+    def get_simulation_manager_input_topic(self):
+        return self._simulation_manager_input_topic
+    
+    
+    def get_simulation_command_queue(self):
+        return self._simulation_command_queue
+    
         
+    def get_start_simulation(self):
+        return self._start_simulation
+    
+    
+    def get_filter_all_commands(self):
+        return self._filter_all_commands
+    
+    
+    def get_filter_all_measurements(self):
+        return self._filter_all_measurements
+    
+    
+    def get_command_filter(self):
+        return self._command_filter
+    
+    
+    def get_measurement_filter(self):
+        return self._measurement_filter
+    
+    
+    def get_stop_simulation(self):
+        return self._stop_simulation
+    
+    
+    def get_simulation_finished(self):
+        return self._stop_simulation
+    
+    
+    def get_pause_simulation(self):
+        return self._pause_simulation
+    
+    
+    def get_simulation_time(self):
+        return self._simulation_time
+    
+    
+    def get_pause_simulation_at(self):
+        return self._pause_simulation_at
+    
+    
+    def get_object_property_to_measurement_id(self):
+        return self._object_property_to_measurement_id
+    
+    
+    def get_object_mrid_to_name(self):
+        return self._object_mrid_to_name
+    
+    
+    def get_model_mrid(self):
+        return self._model_mrid
+    
+    
+    def get_difference_attribute_map(self):
+        return self._difference_attribute_map
+    
         
     def on_message(self, headers, msg):
         message = {}
@@ -248,14 +339,15 @@ def HelicsGossBridge(object):
             else:
                 self._is_initialized = False
                 self._gad_connection.send_simulation_status(self, "STARTED", message_str, "DEBUG")
+            json_msg = yaml.safe_load(str(msg))
             if json_msg.get('command', '') == 'isInitialized':
-                message_str = 'isInitialized check: '+str(is_initialized)
+                message_str = 'isInitialized check: '+str(self._is_initialized)
                 if self._is_initialized:
                     self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     self._gad_connection.send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['command'] = 'isInitialized'
-                message['response'] = str(is_initialized)
+                message['response'] = str(self._is_initialized)
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 self._gad_connection.send(self._simulation_manager_input_topic , json.dumps(message))
@@ -473,6 +565,7 @@ def HelicsGossBridge(object):
                 "name": "HELICS_GOSS_Bridge_{}".format(self._simulation_id),
                 "period": 1.0,
                 "log_level": 7,
+                "broker": "127.0.0.1:{}".format(self._broker_port),
                 "endpoints": [
                     {
                         "name": "helics_input",
@@ -1045,7 +1138,7 @@ def HelicsGossBridge(object):
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     else:
-                        raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\conducting_equipment_type = {}.".format(conducting_equipment_type))
+                        raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\nconducting_equipment_type = {}.".format(conducting_equipment_type))
 
                     property_dict = {
                         "property" : property_name,
@@ -1143,6 +1236,22 @@ def HelicsGossBridge(object):
             
 def _main(simulation_id, broker_port, simulation_request):
     bridge = HelicsGossBridge(simulation_id, broker_port, simulation_request)
+    simulation_started = False
+    simulation_stopped = False
+    timout = 0
+    while not simulation_stopped:
+        sim_is_initialized = bridge.get_is_initialized()
+        start_sim = bridge.get_start_simulation()
+        stop_sim = bridge.get_stop_simulation()
+        sim_finished = bridge.get_simulation_finished()
+        if stop_sim or sim_finished:
+            simulation_stopped = True
+        elif sim_is_initialized and start_sim and not simulation_started:
+            simulation_started = True
+            bridge.run_simulation()
+            simulation_stopped = True
+        else:
+            time.sleep(0.1)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
