@@ -81,7 +81,9 @@ public class ProcessEvents {
     }
 	
 	public void addEvents(List<Event> events) {
-		events.forEach(event -> {addEvent(event);});
+		if(events!=null){
+			events.forEach(event -> {addEvent(event);});
+		}
 	}
 
 	public void addEvent(Event event) {

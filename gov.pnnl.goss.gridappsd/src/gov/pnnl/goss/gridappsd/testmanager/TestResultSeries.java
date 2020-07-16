@@ -40,25 +40,94 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.gson.Gson;
 
 public class TestResultSeries implements Serializable{
 	
 	private static final long serialVersionUID = -5368089783896803654L;
 	
-	public HashMap<String, TestResults> results = new HashMap<String, TestResults>();
+	public HashMap<Map<String,String>, TestResults> results = new HashMap<Map<String,String>, TestResults>();
 	
-	public void add(String index, TestResults testResults){
-		results.put(index, testResults);
+	public void add(String index1, String index2, TestResults testResults){
+		HashMap <String,String> index = new HashMap<String,String>();
+		index.put(index1, index2);
+		if(results.containsKey(index)){
+			TestResults tr = results.get(index);
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : testResults.getObjectPropComparison().entrySet()) {
+				tr.getObjectPropComparison().put(entry.getKey(), entry.getValue());
+//				System.out.println(entry.getKey());
+//				System.out.println(entry.getValue());
+//				for (Entry<String, String[]> entry2 : entry.getValue().entrySet()) {
+//					System.out.println(entry2.getKey());
+//					System.out.println(entry2.getValue()[0]);
+//					System.out.println(entry2.getValue()[1]);
+//					tr.add(entry.getKey() , entry2.getKey(),entry2.getValue()[0], entry2.getValue()[1]);
+//				}
+			}
+			
+		}else
+			results.put(index, testResults);
 	}
 	
 	public int getTotal(){
 		int total=0;
-		for (Entry<String, TestResults> iterable_element : results.entrySet()) {
+		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
 			total+=iterable_element.getValue().getNumberOfConflicts();
 		}
 		return total;
+	}
+	
+	public void ppprint(){
+		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
+			System.out.println(iterable_element.getKey());
+			System.out.println(iterable_element.getValue().toString());
+		}
+	}
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+	
+	public String toJson(Boolean storeMatches){
+		ArrayList<TestResultFullDetails> list = new ArrayList<TestResultFullDetails>();
+		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
+			Map<String, String> map = iterable_element.getKey();
+			Long indexOne = Long.parseLong(map.entrySet().iterator().next().getKey()); 
+			Long indexTwo =Long.parseLong(map.entrySet().iterator().next().getValue());
+			TestResults tr = iterable_element.getValue();
+			tr.setIndexOne(indexOne);
+			tr.setIndexTwo(indexTwo);
+//			if(! storeMatches && tr.)
+//			list.add(tr);
+		}
+		for (Map<String, String> simulationTime : this.results.keySet()){
+			TestResults tr = this.results.get(simulationTime);
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : tr.getObjectPropComparison().entrySet()) {
+				HashMap<String, TestResultDetails> propMap = entry.getValue();
+				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
+					TestResultFullDetails trfd = new TestResultFullDetails(prop.getValue());
+					trfd.setObject(entry.getKey());
+					trfd.setAttribute(prop.getKey());
+					Long indexOne = Long.parseLong(simulationTime.entrySet().iterator().next().getKey()); 
+					Long indexTwo =Long.parseLong(simulationTime.entrySet().iterator().next().getValue());
+					trfd.setIndexOne(indexOne);
+					trfd.setIndexTwo(indexTwo);
+					if(! storeMatches && trfd.getMatch())
+						list.add(trfd);
+				}
+			}
+		}
+			
+		
+		Gson  gson = new Gson();
+		return gson.toJson(list);
 	}
 
 }
