@@ -92,7 +92,7 @@ public class SimulationEvent implements GossResponseEvent {
 			
 			//Extract simulation id and simulation files from message
 			//TODO: Parse message to get simulationId and simulationFile
-			int simulationId = 1;
+			String simulationId = "1";
 			String simulationFile = "filename";
 			
 			//Start FNCS
