@@ -290,7 +290,7 @@ class HelicsGossBridge(object):
     
     
     def get_simulation_finished(self):
-        return self._stop_simulation
+        return self._simulation_finished
     
     
     def get_pause_simulation(self):
@@ -335,10 +335,10 @@ class HelicsGossBridge(object):
             message_str = json.dumps(message_dict, indent=4, sort_keys=True)
             if federate_state == 2:
                 self._is_initialized = True
-                self._gad_connection.send_simulation_status(self, "RUNNING", message_str, "DEBUG")
+                self._gad_connection.send_simulation_status("RUNNING", message_str, "DEBUG")
             else:
                 self._is_initialized = False
-                self._gad_connection.send_simulation_status(self, "STARTED", message_str, "DEBUG")
+                self._gad_connection.send_simulation_status("STARTED", message_str, "DEBUG")
             json_msg = yaml.safe_load(str(msg))
             if json_msg.get('command', '') == 'isInitialized':
                 message_str = 'isInitialized check: '+str(self._is_initialized)
@@ -353,7 +353,7 @@ class HelicsGossBridge(object):
                 self._gad_connection.send(self._simulation_manager_input_topic , json.dumps(message))
             elif json_msg.get('command', '') == 'update':
                 message['command'] = 'update'
-                if self.filter_all_commands == False:
+                if self._filter_all_commands == False:
                     self._simulation_command_queue.put(json.dumps(json_msg['input']))
             elif json_msg.get('command', '') == 'StartSimulation':
                 if self._start_simulation == False:
@@ -422,11 +422,13 @@ class HelicsGossBridge(object):
                 self._gad_connection.send_simulation_status('WARNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
         except Exception as e:
             message_str = 'Error '+str(e)+' in command '+str(msg)
+            print(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             self._stop_simulation = True
             if federate_state == 2:
                 helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
             self._close_helics_connection()
+            
     
     
     def on_error(self, headers, message):
@@ -439,7 +441,7 @@ class HelicsGossBridge(object):
         
     def on_disconnected(self):
         self._stop_simulation = True
-        helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
+        helics.helicsFederateGlobalError(self._helics_federate, 1, "HelicsGossBridge instance lost connection to GOSS bus.")
         self._close_helics_connection()
             
     def run_simulation(self):
@@ -806,7 +808,7 @@ class HelicsGossBridge(object):
             self._gad_connection.send_simulation_status("ERROR",str(ex),"ERROR")
         
     
-    def _get_fncs_bus_messages(self, measurement_filter):
+    def _get_helics_bus_messages(self, measurement_filter):
         """ retrieve the measurment dictionary from the HELICS message bus
     
         Function arguments:
