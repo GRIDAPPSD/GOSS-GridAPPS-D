@@ -106,8 +106,8 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile TestManager testManager;
 	
-	@ServiceDependency
-	private volatile RoleManager roleManager;
+//	@ServiceDependency
+//	private volatile RoleManager roleManager;
 
 	ProcessNewSimulationRequest newSimulationProcess = null;
 
@@ -168,7 +168,7 @@ public class ProcessManagerImpl implements ProcessManager {
 
 
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this,
-					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, roleManager));
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager));
 		}
 		catch(Exception e){
 			e.printStackTrace();

@@ -63,6 +63,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -102,14 +103,13 @@ public class ProcessEvent implements GossResponseEvent {
 	ServiceManager serviceManager;
 	DataManager dataManager;
 	TestManager testManager;
-	RoleManager roleManager;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
 			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
-			DataManager dataManager, TestManager testManager, RoleManager roleManager){
+			DataManager dataManager, TestManager testManager){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -120,7 +120,6 @@ public class ProcessEvent implements GossResponseEvent {
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
 		this.testManager = testManager;
-		this.roleManager = roleManager;
 	}
 
 
@@ -279,7 +278,8 @@ public class ProcessEvent implements GossResponseEvent {
 				client.publish(event.getReplyDestination(), platformStatus);
 				
 			} else if (event.getDestination().contains(GridAppsDConstants.topic_requestMyRoles)){
-				List<String> roles = roleManager.getRoles(username);
+				List<String> roles = new ArrayList<String>();//.getRoles(username);
+				//TODO get from user token
 				RoleList roleListResult = new RoleList();
 				roleListResult.setRoles(roles);
 				sendData(client, event.getReplyDestination(), roleListResult.toString(), processId, username);
