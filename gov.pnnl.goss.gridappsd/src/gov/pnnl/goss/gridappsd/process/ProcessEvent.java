@@ -55,6 +55,7 @@ import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+import gov.pnnl.goss.gridappsd.dto.UserToken;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -67,6 +68,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -83,6 +85,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.google.gson.JsonSyntaxException;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jwt.SignedJWT;
 
 /**
  * ProcessEvent class processes requests received by the Process Manager.
@@ -133,9 +137,29 @@ public class ProcessEvent implements GossResponseEvent {
 	public void onMessage(Serializable message) {
 
 		DataResponse event = (DataResponse)message;
-		String username  = event.getUsername();
+		String token  = event.getUsername();
 		
 		String processId = ProcessManagerImpl.generateProcessId();
+
+		String username = token;
+		if(token!=null && token.length()>250){
+			//Parse json token
+			SignedJWT signed;
+			try {
+				signed = SignedJWT.parse(username);
+				Payload payload = signed.getPayload();
+				String jsonToken = payload.toJSONObject().toJSONString();
+				UserToken tokenObj = UserToken.parse(jsonToken);
+				username = tokenObj.getSub();
+				//TODO use the roles from the token object to determine permissions
+//				System.out.println("JSON TOKEN "+jsonToken);
+//				System.out.println("SETTING USERNAME TO "+tokenObj.getSub());
+			} catch (ParseException e) {
+				this.error(processId, "Failure to parse authentication token:"+e.getMessage(), username);
+				e.printStackTrace();
+			}
+		} 
+		
 		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination(), username);
 
 

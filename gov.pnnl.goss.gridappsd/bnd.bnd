@@ -33,7 +33,8 @@
 	httpclient,\
 	com.bigdata.rdf,\
 	proven-client;version=0.2.3,\
-	proven-message;version=0.4
+	proven-message;version=0.4,\
+	com.nimbusds.nimbus-jose-jwt-dependencies
 		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
