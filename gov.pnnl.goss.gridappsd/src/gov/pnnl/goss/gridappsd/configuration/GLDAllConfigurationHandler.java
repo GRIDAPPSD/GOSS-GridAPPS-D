@@ -196,15 +196,15 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
 		}
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		int simId = -1;
+		String simId = "1";
 		if(simulationID==null || simulationID.trim().length()==0){
 			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		try{
-			simId = new Integer(simulationID);
+			simId = simulationID;
 		}catch (Exception e) {
-			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+			logError("Simulation ID not a valid "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
 		}
 		
 		ModelState modelState = new ModelState();

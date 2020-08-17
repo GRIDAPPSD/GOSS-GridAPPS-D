@@ -58,7 +58,7 @@ public interface AppManager {
 	 * @param message
 	 * @throws Exception
 	 */
-	void process(int processId, DataResponse event, Serializable message) throws Exception;
+	void process(String processId, DataResponse event, Serializable message) throws Exception;
 
 	/**
 	 * Register a new app with GridAPPS-D app manager, registered apps will be persisted

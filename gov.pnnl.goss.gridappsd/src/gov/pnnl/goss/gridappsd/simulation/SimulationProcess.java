@@ -58,14 +58,14 @@ public class SimulationProcess extends Thread {
     SimulationContext simContext;
     ServiceManager serviceManager;
     SimulationConfig simulationConfig;
-    int simulationId;
+    String simulationId;
     LogManager logManager;
     AppManager appManager;
     Client client;
     SecurityConfig securityConfig;
 
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
-            SimulationConfig simulationConfig, int simulationId, LogManager logManager,
+            SimulationConfig simulationConfig, String simulationId, LogManager logManager,
             AppManager appManager, Client client, SecurityConfig securityConfig){
         this.simContext = simContext;
         this.serviceManager = serviceManager;
@@ -105,7 +105,7 @@ public class SimulationProcess extends Thread {
 
             //Start GridLAB-D
             logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                    Integer.toString(simulationId),
+                    simulationId,
                     new Date().getTime(),
                     simContext.getSimulatorPath()+" "+simulationFile,
                     LogLevel.INFO,
@@ -125,7 +125,7 @@ public class SimulationProcess extends Thread {
             //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 
             logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                    Integer.toString(simulationId),
+                    simulationId,
                     new Date().getTime(),
                     "GridLAB-D started",
                     LogLevel.INFO,
@@ -138,7 +138,7 @@ public class SimulationProcess extends Thread {
             client.subscribe(GridAppsDConstants.topic_FNCS_output, gossFncsResponseEvent);
             
             logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                    Integer.toString(simulationId),
+                    simulationId,
                     new Date().getTime(),
                     "Checking fncs is initialized, currently "+isInitialized.isInited,
                     LogLevel.INFO,
@@ -160,7 +160,7 @@ public class SimulationProcess extends Thread {
 
             if(initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
                 logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                        Integer.toString(simulationId),
+                        simulationId,
                         new Date().getTime(),
                         "FNCS Initialized",
                         LogLevel.INFO,
@@ -173,7 +173,7 @@ public class SimulationProcess extends Thread {
                 startSimulation(gossFncsResponseEvent, simulationConfig, simulationId);
                 while(!isFinished.isFinished){
                     logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                            Integer.toString(simulationId),
+                            simulationId,
                             new Date().getTime(),
                             "Checking if FNCS simulation is finished, currently "+isFinished.isFinished,
                             LogLevel.DEBUG,
@@ -184,7 +184,7 @@ public class SimulationProcess extends Thread {
                 }
             } else {
                 logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                        Integer.toString(simulationId),
+                        simulationId,
                         new Date().getTime(),
                         "FNCS Initialization Failed",
                         LogLevel.ERROR,
@@ -197,7 +197,7 @@ public class SimulationProcess extends Thread {
             //call to stop the fncs broker
             client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
             logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                    Integer.toString(simulationId),
+                    simulationId,
                     new Date().getTime(),
                     "Simulation "+simulationId+" complete",
                     LogLevel.INFO,
@@ -209,7 +209,7 @@ public class SimulationProcess extends Thread {
                 log.error("Error during simulation",e);
                 try {
                     logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                            Integer.toString(simulationId),
+                            simulationId,
                             new Date().getTime(),
                             "Simulation error: "+e.getMessage(),
                             LogLevel.ERROR,
@@ -239,10 +239,10 @@ public class SimulationProcess extends Thread {
     }
 
 
-    private void startSimulation(GossFncsResponseEvent gossEvent, SimulationConfig simulationConfig, int simulationId) throws Exception{
+    private void startSimulation(GossFncsResponseEvent gossEvent, SimulationConfig simulationConfig, String simulationId) throws Exception{
         // Send the start simulation command to the fncsgossbridge so that it runs it's time loop to move the fncs simulation forward
         logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                Integer.toString(simulationId),
+                simulationId,
                 new Date().getTime(),
                 "Sending start simulation to bridge.",
                 LogLevel.DEBUG,
@@ -300,8 +300,8 @@ public class SimulationProcess extends Thread {
         InitializedTracker initializedTracker;
         SimulationTracker simulationTracker;
         LogManager logManager;
-        int simulationId;
-        public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized, SimulationTracker simFinished, int id) {
+        String simulationId;
+        public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized, SimulationTracker simFinished, String id) {
             this.logManager = logManager;
             initializedTracker = initialized;
             simulationTracker = simFinished;
@@ -318,7 +318,7 @@ public class SimulationProcess extends Thread {
                 DataResponse dataResponse = (DataResponse)response;
 
                 logManager.log(new LogMessage(this.getClass().getSimpleName(),
-                        Integer.toString(simulationId),
+                        simulationId,
                         new Date().getTime(),
                          "FNCS-GOSS Bridge response:"+dataResponse.getData(),
                             LogLevel.DEBUG,

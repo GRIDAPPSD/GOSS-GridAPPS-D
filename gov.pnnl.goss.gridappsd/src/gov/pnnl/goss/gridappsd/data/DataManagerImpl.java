@@ -139,7 +139,7 @@ public class DataManagerImpl implements DataManager {
 	}
 
 	@Override
-	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception {
+	public Response processDataRequest(Serializable request, String type, String simulationId, String tempDataPath, String username) throws Exception {
 				
 		
 		if(request!=null && type!=null){

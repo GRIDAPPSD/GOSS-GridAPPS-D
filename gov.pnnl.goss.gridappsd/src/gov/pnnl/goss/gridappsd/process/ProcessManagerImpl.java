@@ -184,11 +184,11 @@ public class ProcessManagerImpl implements ProcessManager {
 	 * Generates and returns process id
 	 * @return process id
 	 */
-	static int generateProcessId(){
-		return Math.abs(new Random().nextInt());
+	static String generateProcessId(){
+		return Integer.toString(Math.abs(new Random().nextInt()));
 	}
 
-	public int assignSimulationPort(int simulationId) throws Exception {
+	public int assignSimulationPort(String simulationId) throws Exception {
 		Integer simIdKey = new Integer(simulationId);
 		if (!simulationPorts.containsKey(simIdKey)) {
 			int tempPort = 49152 + randPort.nextInt(16384);
