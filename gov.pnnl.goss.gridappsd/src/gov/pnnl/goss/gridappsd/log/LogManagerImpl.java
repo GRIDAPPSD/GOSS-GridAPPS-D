@@ -53,7 +53,6 @@ import org.slf4j.LoggerFactory;
 
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -88,9 +87,6 @@ public class LogManagerImpl implements LogManager {
 	@ServiceDependency
 	SecurityConfig securityConfig;
 	
-	@ServiceDependency
-	SimulationManager simulationManager;
-
 	Client client;
 
 	public LogManagerImpl() {
@@ -230,14 +226,14 @@ public class LogManagerImpl implements LogManager {
 	public void log(ProcessStatus processStatus, String processId, String message, LogLevel logLevel, String source) {
 		LogMessage logMessage = new LogMessage(
 				source,
-				new Integer(processId).toString(), 
+				processId, 
 				new Date().getTime(),
 				message, 
 				logLevel,
 				processStatus, 
 				true);
 		String topic = "/topic/"+GridAppsDConstants.topic_platformLog;
-		if(processId!=null && simulationManager.getSimulationContextForId(processId)!=null) {
+		if(processId!=null) {
 			topic = GridAppsDConstants.topic_simulationLog + processId;
 		}
 		this.publishLog(logMessage, topic);
