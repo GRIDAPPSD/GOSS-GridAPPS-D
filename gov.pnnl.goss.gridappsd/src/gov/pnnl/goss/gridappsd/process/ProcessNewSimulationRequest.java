@@ -187,6 +187,7 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationConfigDir);
 			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+			simulationContext.put("logLevel", logManager.getLogLevel());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){

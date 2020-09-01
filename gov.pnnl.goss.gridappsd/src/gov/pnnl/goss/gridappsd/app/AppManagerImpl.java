@@ -742,7 +742,7 @@ public class AppManagerImpl implements AppManager {
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.logMessageFromSource(ProcessStatus.RUNNING, simulationId, line, appInstance.getInstance_id(), LogLevel.INFO);
+	                	logManager.logMessageFromSource(ProcessStatus.RUNNING, simulationId, line, appInstance.getInstance_id(), LogLevel.DEBUG);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();

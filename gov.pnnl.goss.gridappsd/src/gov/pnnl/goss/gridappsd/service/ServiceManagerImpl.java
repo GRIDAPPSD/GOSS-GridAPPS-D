@@ -452,7 +452,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	            try {
 	                while ((line = input.readLine()) != null) {
 	                	logManager.logMessageFromSource(ProcessStatus.RUNNING, simulationId, line,
-	                			serviceInstance.getInstance_id(), LogLevel.INFO);
+	                			serviceInstance.getInstance_id(), LogLevel.DEBUG);
 	                }
 	            } catch (IOException e) {
 	            	if(!(e.getMessage().contains("Stream closed"))){

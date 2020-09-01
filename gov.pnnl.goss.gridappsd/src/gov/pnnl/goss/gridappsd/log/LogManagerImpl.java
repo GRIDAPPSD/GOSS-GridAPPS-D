@@ -88,6 +88,8 @@ public class LogManagerImpl implements LogManager {
 	SecurityConfig securityConfig;
 	
 	Client client;
+	
+	LogLevel logLevel = null;
 
 	public LogManagerImpl() {
 	}
@@ -244,31 +246,37 @@ public class LogManagerImpl implements LogManager {
 		switch (logMessage.getLogLevel()) {
 		case TRACE:
 			if (log.isTraceEnabled() && topic != null) {
+				logLevel = LogLevel.TRACE;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
 		case DEBUG:
 			if (log.isDebugEnabled() && topic != null) {
+				logLevel = LogLevel.DEBUG;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
 		case INFO:
 			if (log.isInfoEnabled() && topic != null) {
+				logLevel = LogLevel.INFO;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
 		case WARN:
 			if (log.isWarnEnabled() && topic != null) {
+				logLevel = LogLevel.WARN;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
 		case ERROR:
 			if (log.isErrorEnabled() && topic != null) {
+				logLevel = LogLevel.ERROR;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
 		case FATAL:
 			if (log.isErrorEnabled() && topic != null) {
+				logLevel = LogLevel.FATAL;
 				client.publish(topic, logMessage.toString());
 			}
 			break;
@@ -321,5 +329,33 @@ public class LogManagerImpl implements LogManager {
 	public LogDataManager getLogDataManager() {
 		return this.logDataManager;
 	}
+	
+	@Override
+	public LogLevel getLogLevel() {
+		
+		if(logLevel!=null)
+			return logLevel;
+		
+		if (log.isTraceEnabled()) 
+				return LogLevel.TRACE;
+
+		if (log.isDebugEnabled()) 
+				return LogLevel.DEBUG;
+		
+		if (log.isInfoEnabled())
+				return LogLevel.INFO;
+		
+		if (log.isWarnEnabled())
+				return LogLevel.WARN;
+		
+		if (log.isErrorEnabled())
+				return LogLevel.ERROR;
+		
+		if (log.isErrorEnabled())
+				return LogLevel.FATAL;
+		
+		return logLevel;
+		
+		}
 
 }

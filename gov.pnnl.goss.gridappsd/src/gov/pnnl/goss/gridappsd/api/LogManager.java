@@ -91,5 +91,7 @@ public interface LogManager {
 	void get(RequestLogMessage message, String outputTopics, String LogTopic);
 	
 	LogDataManager getLogDataManager();
+	
+	LogLevel getLogLevel();
 
 }

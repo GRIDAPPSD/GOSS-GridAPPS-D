@@ -88,6 +88,9 @@ is_initialized = False
 simulation_id = None
 stop_simulation = False
 
+log_level_dict = {'TRACE':1, 'DEBUG':2, 'INFO':3, 'WARN':4, 'ERROR':5, 'FATAL':6}
+platform_log_level = None
+
 difference_attribute_map = {
     "RegulatingControl.mode" : {
         "capacitor" : {
@@ -351,7 +354,7 @@ class GOSSListener(object):
                 #message_str = 'done with timestep '+str(current_time)
                 #_send_simulation_status('RUNNING', message_str, 'DEBUG')
                 message_str = 'incrementing to '+str(current_time + 1)
-                _send_simulation_status('RUNNING', message_str, 'DEBUG')
+                _send_simulation_status('RUNNING', message_str, 'INFO')
                 if run_realtime == True:
                     time.sleep(1)
             self.stop_simulation = True
@@ -1063,24 +1066,28 @@ def _send_simulation_status(status, message, log_level):
         RuntimeError()
     """
     simulation_status_topic = "/topic/goss.gridappsd.simulation.log.{}".format(simulation_id)
-
+    
     valid_status = ['STARTING', 'STARTED', 'RUNNING', 'ERROR', 'CLOSED', 'COMPLETE', 'PAUSED']
-    valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
+    #valid_level = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
+    
     if status in valid_status:
-        if log_level not in valid_level:
+        if log_level not in list(log_level_dict.keys()):
             log_level = 'INFO'
-        t_now = datetime.utcnow()
-        status_message = {
-            "source" : os.path.basename(__file__),
-            "processId" : str(simulation_id),
-            "timestamp" : int(time.mktime(t_now.timetuple()))*1000,
-            "processStatus" : status,
-            "logMessage" : str(message),
-            "logLevel" : log_level,
-            "storeToDb" : True
-        }
-        status_str = json.dumps(status_message)
-        goss_connection.send(simulation_status_topic,status_str)
+            
+        if log_level_dict[log_level] >= platform_log_level:    
+            t_now = datetime.utcnow()
+            status_message = {
+                "source" : os.path.basename(__file__),
+                "processId" : str(simulation_id),
+                "timestamp" : int(time.mktime(t_now.timetuple()))*1000,
+                "processStatus" : status,
+                "logMessage" : str(message),
+                "logLevel" : log_level,
+                "storeToDb" : True
+            }
+            status_str = json.dumps(status_message)
+            print('Publishing log************')
+            goss_connection.send(simulation_status_topic,status_str)
 
 
 def _byteify(data, ignore_dicts = False):
@@ -1399,7 +1406,7 @@ def _keep_alive(is_realtime, archive_db_file, archive_file, only_archive):
 
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True,
           sim_duration=86400, sim_start=0, archive_db_file=None, archive_file=None, only_archive=False):
-
+    
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
     _register_with_goss(simulation_id,'system','manager','127.0.0.1','61613', sim_duration, sim_start)
     _register_with_fncs_broker(simulation_broker_location)
@@ -1412,6 +1419,7 @@ def _get_opts():
     parser.add_argument("broker_location", help="The location of the FNCS broker.")
     parser.add_argument("simulation_directory", help="The simulation files directory.")
     parser.add_argument("simulation_request", help="The simulation request.")
+    parser.add_argument("logLevel", help="The log level at which platform was started")
     opts = parser.parse_args()
     return opts
 
@@ -1420,6 +1428,7 @@ if __name__ == "__main__":
     #stomp_port, username and password as commmand line arguments
     opts = _get_opts()
     simulation_id = opts.simulation_id
+    platform_log_level = log_level_dict[opts.logLevel]
     # logging within the context of the container.
     logfile = "/tmp/gridappsd_tmp/{simulation_id}/fncs_goss_bridge.log".format(simulation_id=simulation_id)
     logging.basicConfig(level=logging.INFO, filename=logfile)
