@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -60,10 +61,10 @@ import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.security.SecurityConfig;
 
 /**
  * This class implements functionalities for Internal Function 409 Log Manager.
@@ -86,6 +87,9 @@ public class LogManagerImpl implements LogManager {
 	
 	@ServiceDependency
 	SecurityConfig securityConfig;
+	
+	@ServiceDependency
+	SimulationManager simulationManager;
 
 	Client client;
 
@@ -96,18 +100,8 @@ public class LogManagerImpl implements LogManager {
 		this.logDataManager = logDataManager;
 	}
 
-	/**
-	 * @param message A DataResponse message.
-	 */
-	private void logIncomingMessage(Serializable message) {
-		DataResponse event = (DataResponse)message;
-		String username = event.getUsername();
-		log(LogMessage.parse(event.getData().toString()), username, null);
-	}
-
 	@Start
 	public void start() {
-		LogMessage logMessage = new LogMessage();
 		try {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
@@ -130,35 +124,24 @@ public class LogManagerImpl implements LogManager {
 					logIncomingMessage(message);
 				}
 			});
-
-
-
-			logMessage.setLogLevel(LogLevel.DEBUG);
-			logMessage.setSource(this.getClass().getName());
-			logMessage.setProcessStatus(ProcessStatus.RUNNING);
-			logMessage.setStoreToDb(true);
-			logMessage.setLogMessage("Starting " + this.getClass().getName());
-			client.publish(GridAppsDConstants.topic_platformLog, logMessage);
+			
+			this.debug(ProcessStatus.RUNNING, null, "Starting " + this.getClass().getName());
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-
+	
 	/**
-	 * Writes the message in log file. Calls LogDataManager to save the log
-	 * message in data store if store_to_db is true in LogMessage object.
-	 *
-	 * @param message
-	 *            an Object of gov.pnnl.goss.gridappsd.dto.LogMessage
-	 * @param username
-	 *            username of the user logging the message
+	 * @param message A DataResponse message.
 	 */
-	@Override
-	public void log(LogMessage message, String username, String topic) {
-
-		if (topic != null && client != null)
-			client.publish(topic, message.toString());
+	private void logIncomingMessage(Serializable message) {
+		DataResponse event = (DataResponse)message;
+		String username = event.getUsername();
+		logToConsole(LogMessage.parse(event.getData().toString()), username, null);
+	}
+	
+	private void logToConsole(LogMessage message, String username, String topic) {
 
 		String source = message.getSource();
 		String requestId = message.getProcessId();
@@ -202,13 +185,103 @@ public class LogManagerImpl implements LogManager {
 		break;
 		default:	log.debug(logString);
 		break;
-
 		}
 
 		if(storeToDb)
 			store(source,requestId,timestamp,log_message,logLevel,processStatus,username,process_type);
 
 	}
+	
+	
+	public void trace(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.TRACE, source);
+	}
+
+	public void debug(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.DEBUG, source);
+	}
+	
+	public void info(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.INFO, source);
+	}
+
+	public void warn(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.WARN, source);
+	}
+
+	public void error(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.ERROR, source);
+	}
+
+	public void fatal(ProcessStatus processStatus, String processId, String message) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(processStatus, processId,  message, LogLevel.FATAL, source);
+	}
+	
+	public void logMessageFromSource(ProcessStatus processStatus, String processId, String message, String source, LogLevel logLevel) {
+		this.log(processStatus, processId,  message, logLevel, source);
+	}
+	
+	public void log(ProcessStatus processStatus, String processId, String message, LogLevel logLevel, String source) {
+		LogMessage logMessage = new LogMessage(
+				source,
+				new Integer(processId).toString(), 
+				new Date().getTime(),
+				message, 
+				logLevel,
+				processStatus, 
+				true);
+		String topic = "/topic/"+GridAppsDConstants.topic_platformLog;
+		if(processId!=null && simulationManager.getSimulationContextForId(processId)!=null) {
+			topic = GridAppsDConstants.topic_simulationLog + processId;
+		}
+		this.publishLog(logMessage, topic);
+	}
+	
+	private void publishLog(LogMessage logMessage, String topic) {
+
+		switch (logMessage.getLogLevel()) {
+		case TRACE:
+			if (log.isTraceEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+		case DEBUG:
+			if (log.isDebugEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+		case INFO:
+			if (log.isInfoEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+		case WARN:
+			if (log.isWarnEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+		case ERROR:
+			if (log.isErrorEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+		case FATAL:
+			if (log.isErrorEnabled() && topic != null) {
+				client.publish(topic, logMessage.toString());
+			}
+			break;
+
+		}
+
+	}
+	
+	
 
 //	@Override
 //	public void log(LogMessage message, String topic) {

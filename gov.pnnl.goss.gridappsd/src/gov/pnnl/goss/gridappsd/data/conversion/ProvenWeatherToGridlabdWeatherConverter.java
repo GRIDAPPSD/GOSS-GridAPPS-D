@@ -79,12 +79,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
 			//TODO send log message and exception
 			if(logManager!=null){
 				//log.warn("No Data manager available for "+getClass());
-				logManager.log(
-						new LogMessage(this.getClass().getName(), new Integer(
-								0).toString(), new Date().getTime(),
-								"No Data manager available for "+getClass(), LogLevel.WARN,
-								ProcessStatus.RUNNING, false), securityConfig.getManagerUser(),
-						GridAppsDConstants.topic_platformLog);
+				logManager.warn(ProcessStatus.RUNNING, null, "No Data manager available for "+getClass());
 			}
 		}
 	}
