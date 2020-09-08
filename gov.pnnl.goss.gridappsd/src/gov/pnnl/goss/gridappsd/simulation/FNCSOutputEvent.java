@@ -76,7 +76,7 @@ public class FNCSOutputEvent implements GossResponseEvent {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			Client client = clientFactory.create(PROTOCOL.STOMP,credentials,true);
 			
 			
 			

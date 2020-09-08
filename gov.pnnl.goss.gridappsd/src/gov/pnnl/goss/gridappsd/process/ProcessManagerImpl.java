@@ -147,7 +147,7 @@ public class ProcessManagerImpl implements ProcessManager {
 
 //			Credentials credentials = new UsernamePasswordCredentials(
 //					GridAppsDConstants.username, GridAppsDConstants.password);
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			Client client = clientFactory.create(PROTOCOL.STOMP,credentials, true);
 
 			logMessageObj.setLogLevel(LogLevel.DEBUG);
 			logMessageObj.setSource(this.getClass().getName());

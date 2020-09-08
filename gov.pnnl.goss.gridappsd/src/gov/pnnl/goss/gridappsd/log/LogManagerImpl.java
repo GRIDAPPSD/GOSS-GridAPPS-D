@@ -111,7 +111,7 @@ public class LogManagerImpl implements LogManager {
 		try {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+			client = clientFactory.create(PROTOCOL.STOMP, credentials, true);
 
 
 
