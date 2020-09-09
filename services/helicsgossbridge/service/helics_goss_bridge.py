@@ -46,6 +46,7 @@ import argparse
 import cmath
 from datetime import datetime
 import gzip
+import inspect
 import json
 import logging
 import math
@@ -64,7 +65,7 @@ import yaml
 
 from gridappsd import GridAPPSD, utils, topics
 
-log = logging.getLogger(__name__)
+log = logging.getLogger(inspect.getmodulename(__file__))
 log.setLevel(logging.DEBUG)
 
 class HelicsGossBridge(object):
@@ -219,6 +220,7 @@ class HelicsGossBridge(object):
     
     
     def __init__(self, simulation_id, broker_port, simulation_request):
+        
         self._simulation_id = simulation_id
         self._broker_port = broker_port
         self._simulation_request = simulation_request
@@ -336,16 +338,20 @@ class HelicsGossBridge(object):
             message_str = json.dumps(message_dict, indent=4, sort_keys=True)
             if federate_state == 2:
                 self._is_initialized = True
+                log.debug(message_str)
                 self._gad_connection.send_simulation_status("RUNNING", message_str, "DEBUG")
             else:
                 self._is_initialized = False
+                log.debug(message_str)
                 self._gad_connection.send_simulation_status("STARTED", message_str, "DEBUG")
             json_msg = yaml.safe_load(str(msg))
             if json_msg.get('command', '') == 'isInitialized':
                 message_str = 'isInitialized check: '+str(self._is_initialized)
                 if self._is_initialized:
+                    log.debug(message_str)
                     self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
+                    log.debug(message_str)
                     self._gad_connection.send_simulation_status('STARTED', message_str, 'DEBUG')
                 message['command'] = 'isInitialized'
                 message['response'] = str(self._is_initialized)
@@ -394,6 +400,7 @@ class HelicsGossBridge(object):
                                 self._measurement_filter.append(x)
             elif json_msg.get('command', '') == 'stop':
                 message_str = 'Stopping the simulation'
+                log.info(message_str)
                 self._gad_connection.send_simulation_status('CLOSED', message_str, 'INFO')
                 self._stop_simulation = True
                 if federate_state == 2:
@@ -402,28 +409,35 @@ class HelicsGossBridge(object):
                         self._close_helics_connection()
             elif json_msg.get('command', '') == 'pause':
                 if self._pause_simulation == True:
+                    log.warning('Pause command received but the simulation is already paused.')
                     self._gad_connection.send_simulation_status('PAUSED', 'Pause command received but the simulation is already paused.', 'WARN')
                 else:
                     self._pause_simulation = True
+                    log.info('The simulation has paused.')
                     self._gad_connection.send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
             elif json_msg.get('command', '') == 'resume':
                 if self._pause_simulation == False:
+                    log.warning('Resume command received but the simulation is already running.')
                     self._gad_connection.send_simulation_status('RUNNING', 'Resume command received but the simulation is already running.', 'WARN')
                 else:
                     self._pause_simulation = False
+                    log.info('The simulation has resumed.')
                     self._gad_connection.send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
             elif json_msg.get('command', '') == 'resumePauseAt':
                 if self._pause_simulation == False:
+                    log.warning('The resumePauseAt command was received but the simulation is already running.')
                     self._gad_connection.send_simulation_status('RUNNING', 'The resumePauseAt command was received but the simulation is already running.', 'WARN')
                 else:
                     self._pause_simulation = False
+                    log.info('The simulation has resumed.')
                     self._gad_connection.send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
                     self._pause_simulation_at = self._simulation_time + json_msg.get('input', {}).get('pauseIn',-1)                       
             elif json_msg.get('command', '') == '':
+                log.warning('The message received did not have a command key. Ignoring malformed message.')
                 self._gad_connection.send_simulation_status('WARNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
         except Exception as e:
-            message_str = 'Error '+str(e)+' in command '+str(msg)
-            print(message_str)
+            message_str = 'Error in processing command message:\n{}.\nError:\n{}'.format(msg,traceback.format_exc())
+            log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             self._stop_simulation = True
             if federate_state == 2:
@@ -434,6 +448,7 @@ class HelicsGossBridge(object):
     
     def on_error(self, headers, message):
         message_str = 'Error in HelicsGossBridge: '+str(message)
+        log.error(message_str)
         self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
         self._stop_simulation = True
         helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
@@ -499,6 +514,7 @@ class HelicsGossBridge(object):
                         targz_file.write((response_msg+"\n").encode('utf-8'))
                 if self._simulation_time == self._pause_simulation_at:
                     self._pause_simulation = True
+                    log.info('The simulation has paused.')
                     self._gad_connection.send_simulation_status('PAUSED', 'The simulation has paused.', 'INFO')
                 while self._pause_simulation == True:
                     time.sleep(1)
@@ -507,6 +523,7 @@ class HelicsGossBridge(object):
                     self._publish_to_helics_bus(self._simulation_command_queue.get(), self._command_filter)
                 self._done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'incrementing to '+str(current_time + 1)
+                log.debug(message_str)
                 self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 if run_realtime == True:
                     time.sleep(1)   
@@ -541,10 +558,11 @@ class HelicsGossBridge(object):
             message['command'] = 'simulationFinished'
             del message['output']
             self._gad_connection.send(self._simulation_manager_input_topic, json.dumps(message))
+            log.info('Simulation {} has finished.'.format(self._simulation_id))
             self._gad_connection.send_simulation_status('COMPLETE', 'Simulation {} has finished.'.format(self._simulation_id), 'INFO')
         except Exception as e:
-            message_str = 'Error in run simulation '+str(e)
-            log.exception(message_str)
+            message_str = 'Error in run simulation {}'.format(traceback.format_exc())
+            log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             self._simulation_finished = True
             if helics.helicsFederateGetState(self._helics_federate) == 2:
@@ -557,7 +575,7 @@ class HelicsGossBridge(object):
             
     def _register_with_goss(self): 
         try:
-            self._gad_connection = GridAPPSD(self._simulation_id, address=utils.get_gridappsd_address(),
+            self._gad_connection = GridAPPSD(self._simulation_id, address=utils.get_gridappsd_address(),                                            
                 username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
             log.debug("Successfully registered with the GridAPPS-D platform.")
         except Exception as e:
@@ -591,7 +609,7 @@ class HelicsGossBridge(object):
             helics.helicsFederateEnterExecutingMode(self._helics_federate)
             log.debug("Successfully registered with the HELICS broker.") 
         except Exception as e:
-            err_msg = "An error occurred when trying to register with the HELICS broker!"
+            err_msg = "An error occurred when trying to register with the HELICS broker!{}".format(traceback.format_exc())
             log.error(err_msg, exc_info=True)
             self._gad_connection.send_simulation_status("ERROR", err_msg, "ERROR")
     
@@ -640,6 +658,7 @@ class HelicsGossBridge(object):
             ValueError()
         """
         message_str = 'translating following message for HELICS simulation '+str(self._simulation_id)+' '+str(goss_message)
+        log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
         if self._simulation_id == None or self._simulation_id == '' or type(self._simulation_id) != str:
             raise ValueError(
@@ -708,6 +727,7 @@ class HelicsGossBridge(object):
                                 helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
                             else:
                                 helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
                                 self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
                         elif cim_attribute == "RegulatingControl.targetDeadband":
                             for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
@@ -772,7 +792,8 @@ class HelicsGossBridge(object):
                             if "C" in object_phases:
                                 helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
                         else:
-                            self._gad_connection.send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
+                            log.warning("Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.".format(cim_attribute))
+                            self._gad_connection.send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.".format(cim_attribute), "WARN")
                 else:
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object","")
@@ -810,6 +831,7 @@ class HelicsGossBridge(object):
             if len(fault_list) != 0:
                 helics_input_message["{}".format(self._simulation_id)]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
             goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
+            log.info("Sending the following message to the simulator. {}".format(goss_message_converted))
             self._gad_connection.send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
             if federate_state == 2 and helics_input_message["{}".format(self._simulation_id)] != {}:
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
@@ -818,9 +840,9 @@ class HelicsGossBridge(object):
         except ValueError as ve:
             raise ValueError(ve)
         except Exception as ex:
-            self._gad_connection.send_simulation_status("ERROR","An error occured while trying to translate the update message received","ERROR")
-            self._gad_connection.send_simulation_status("ERROR",str(ex),"ERROR")
-            raise RuntimeError("An error occured while trying to translate the update message received.\n{}".format(ex))
+            err_msg = "An error occured while trying to translate the update message received\n{}".format(traceback.format_exc())
+            self._gad_connection.send_simulation_status("ERROR",err_msg,"ERROR")
+            raise RuntimeError(err_msg)
         
     
     def _get_helics_bus_messages(self, measurement_filter):
@@ -852,11 +874,10 @@ class HelicsGossBridge(object):
                 message_str = 'helics_output has a message'
             else:
                 message_str = 'helics_output has no messages'
+            log.debug(message_str)
             self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
             cim_output = {}
             if has_message:
-                message_str = 'helics_output has a message'
-                self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 t_now = datetime.utcnow()
                 cim_measurements_dict = {
                     "simulation_id": self._simulation_id,
@@ -866,13 +887,12 @@ class HelicsGossBridge(object):
                     }
                 }
                 helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
-                helics_outupt = helics.helicsMessageGetString(helics_message)
+                helics_output = helics.helicsMessageGetString(helics_message)
                 helics_output_dict = json.loads(helics_output)
-    
+                
                 sim_dict = helics_output_dict.get(self._simulation_id, None)
-    
                 if sim_dict != None:
-                    simulation_time = int(sim_dict.get("globals",{"clock" : "0"}).get("clock", "0"))
+                    simulation_time = int(sim_dict.get("globals",{}).get("clock", 0))
                     if simulation_time != 0:
                         cim_measurements_dict["message"]["timestamp"] = simulation_time
                     for x in self._object_property_to_measurement_id.keys():
@@ -880,10 +900,10 @@ class HelicsGossBridge(object):
                         gld_properties_dict = sim_dict.get(x,None)
                         if gld_properties_dict == None:
                             err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
+                            log.warning(err_msg)
                             self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
-                            #raise RuntimeError(err_msg)
                         else:
-                            for y in self._object_property_to_measurement_id.get(x,{}):
+                            for y in self._object_property_to_measurement_id.get(x,[]):
                                 measurement = {}
                                 property_name = y["property"]
                                 propertyName = property_name
@@ -896,8 +916,8 @@ class HelicsGossBridge(object):
                                     objectType = conducting_equipment_type_str
                                     if prop_val_str == None:
                                         err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
+                                        log.warning(err_msg)
                                         self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
-                                        #raise RuntimeError("{} measurement for object {} is missing from the simulator output.".format(property_name, x))
                                     else:
                                         val_str = str(prop_val_str).split(" ")[0]
                                         conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
@@ -950,6 +970,7 @@ class HelicsGossBridge(object):
                                             else:
                                                 measurement["value"] = int(val_str)
                                         else:
+                                            log.warning("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                             self._gad_connection.send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
                                             raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
                                             # Should it raise runtime?
@@ -958,20 +979,19 @@ class HelicsGossBridge(object):
                     cim_output = cim_measurements_dict
                 else:
                     err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
+                    log.error(err_msg)
                     self._gad_connection.send_simulation_status('ERROR', err_msg, 'ERROR')
                     raise RuntimeError(err_msg)
             else:
                 message_str = 'helics_output has no messages'
+                log.debug(message_str)
                 self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
-            #_send_simulation_status('RUNNING', message_str, 'INFO')
             return cim_output
-            #return fncs_output
         except ValueError as ve:
             raise RuntimeError("{}.\nObject Name: {}\nObject Type: {}\nProperty Name: {}\n Property Value{}".format(str(ve), objectName, objectType, propertyName, propertyValue))
         except Exception as e:
-            message_str = 'Error on get FncsBusMessages for '+str(self._simulation_id)+' '+str(traceback.format_exc())
-            print(message_str)
-            traceback.print_exc()
+            message_str = 'Error on get HELICS Bus Messages for '+str(self._simulation_id)+' '+str(traceback.format_exc())
+            log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             return {}
     
@@ -1001,7 +1021,8 @@ class HelicsGossBridge(object):
                     + 'time_request = {0}.\ntime_approved = {1}'.format(time_request,
                     time_approved))
         except Exception as e:
-            message_str = 'Error in HELICS time request '+str(e)
+            message_str = 'Error in HELICS time request '+str(traceback.format_exc())
+            log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
         
             
@@ -1250,10 +1271,12 @@ class HelicsGossBridge(object):
                     else:
                         self._object_mrid_to_name[y.get("mRID")]["type"] = "load"
         except Exception as e:
-            self._gad_connection.send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, e), 'ERROR')
+            log.error("The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, traceback.format_exc()))
+            self._gad_connection.send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, traceback.format_exc()), 'ERROR')
             
             
 def _main(simulation_id, broker_port, simulation_request):
+    os.environ["GRIDAPPSD_APPLICATION_ID"] = "helics_goss_bridge.py"
     bridge = HelicsGossBridge(simulation_id, broker_port, simulation_request)
     simulation_started = False
     simulation_stopped = False

@@ -1,11 +1,10 @@
 from datetime import datetime
 import json
-import os
+import pathlib
 try:
     from Queue import Queue
 except:
     from queue import Queue
-import sys
 import time
 import unittest.mock
 from unittest.mock import call, patch, PropertyMock
@@ -16,6 +15,7 @@ import pytest
 
 from service.helics_goss_bridge import HelicsGossBridge, _main as helics_main
 
+mfile = "{}/model_dict.json".format(pathlib.Path(__file__).parent.absolute())
 message_header = {
     "header_1": "Hello",
     "header_2": "There!"
@@ -1019,6 +1019,532 @@ object_property_to_measurement_id = {
         }
     ]
 }
+helics_simulation_output_message_dict = {
+    "123": {
+        "632": {
+            "voltage_A": "2161.154124-1412.210005j V",
+            "voltage_B": "-2191.320094-1142.210158j V",
+            "voltage_C": "169.033512+2554.668481j V"
+        },
+        "634_stmtr": {
+            "measured_power_A": "33333.333333-0.000000j VA",
+            "measured_power_B": "33333.333333+0.000000j VA",
+            "measured_power_C": "33333.333333+0.000000j VA",
+            "voltage_A": "245.881558-164.624795j V",
+            "voltage_B": "-252.497259-128.737464j V",
+            "voltage_C": "21.858528+292.763841j V"
+        },
+        "650": {
+            "voltage_A": "2079.969604-1200.954387j V",
+            "voltage_B": "-2080.033392-1200.832131j V",
+            "voltage_C": "0.081991+2401.780489j V"
+        },
+        "671": {
+            "voltage_A": "2122.330386-1557.432087j V",
+            "voltage_B": "-2182.587284-1125.838464j V",
+            "voltage_C": "318.275521+2499.731538j V"
+        },
+        "680": {
+            "voltage_A": "2122.330386-1557.432087j V",
+            "voltage_B": "-2182.587284-1125.838464j V",
+            "voltage_C": "318.275521+2499.731538j V"
+        },
+        "692": {
+            "voltage_A": "2122.317874-1557.418962j V",
+            "voltage_B": "-2182.583043-1125.833901j V",
+            "voltage_C": "318.265457+2499.716338j V"
+        },
+        "brkr": {
+            "voltage_A": "2079.950202-1200.914645j V",
+            "voltage_B": "-2079.993850-1200.838089j V",
+            "voltage_C": "0.051975+2401.740441j V"
+        },
+        "cap_cap1": {
+            "shunt_A": "0.000000+0.034671j S",
+            "shunt_B": "0.000000+0.034671j S",
+            "shunt_C": "0.000000+0.034671j S",
+            "switchA": "CLOSED",
+            "switchB": "CLOSED",
+            "switchC": "CLOSED",
+            "voltage_A": "2104.125779-1569.369263j V",
+            "voltage_B": "-2191.332021-1124.563825j V",
+            "voltage_C": "322.984545+2493.908725j V"
+        },
+        "globals": {
+            "clock": 1583188956
+        },
+        "house": {
+            "voltage_1": "-105.346298-44.440876j V",
+            "voltage_2": "-105.346298-44.440876j V"
+        },
+        "house_stmtr": {
+            "indiv_measured_power_1": "2500.000000-0.000000j VA",
+            "indiv_measured_power_2": "2500.000000-0.000000j VA",
+            "voltage_1": "-105.346298-44.440876j V",
+            "voltage_2": "-105.346298-44.440876j V"
+        },
+        "ld_671": {
+            "measured_power_A": "482864.226406-55250.332069j VA",
+            "measured_power_B": "452798.823323-23485.947298j VA",
+            "measured_power_C": "461243.793543-60815.599962j VA"
+        },
+        "ld_house": {
+            "indiv_measured_power_1": "1050.155689+650.851324j VA",
+            "indiv_measured_power_2": "1050.155689+650.851324j VA"
+        },
+        "line_671680": {
+            "power_in_A": "0.000000-0.000000j VA",
+            "power_in_B": "-0.000000-0.000000j VA",
+            "power_in_C": "-0.000000-0.000000j VA"
+        },
+        "reg_Reg": {
+            "tap_A": 10,
+            "tap_B": 8,
+            "tap_C": 11
+        },
+        "sourcebus": {
+            "voltage_A": "66395.280957+0.000000j V",
+            "voltage_B": "-33197.640478-57500.000000j V",
+            "voltage_C": "-33197.640478+57500.000000j V"
+        },
+        "swt_671692": {
+            "current_in_A": "256.366678-6.127463j A",
+            "current_in_B": "3.214123-88.033656j A",
+            "current_in_C": "-51.372972+252.636618j A",
+            "status": "CLOSED"
+        },
+        "swt_brkr1": {
+            "current_in_A": "591.440664-203.412176j A",
+            "current_in_B": "-455.001435-335.841308j A",
+            "current_in_C": "-100.322221+700.646041j A",
+            "status": "CLOSED"
+        },
+        "swt_rec1": {
+            "current_in_A": "477.057657-137.668179j A",
+            "current_in_B": "-186.788314-197.623464j A",
+            "current_in_C": "-101.870915+577.406707j A",
+            "status": "CLOSED"
+        },
+        "xf_sub3": {
+            "power_in_A": "1451066.303539-183635.053965j VA",
+            "power_in_B": "1490616.645685-292701.002299j VA",
+            "power_in_C": "1565295.356557-203916.427105j VA"
+        }
+    }
+}
+cim_measurement_message = {
+    "message": {
+        "measurements": {
+            "_00bb99d3-741b-4a15-a666-f3f4db3d2b24": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_00bb99d3-741b-4a15-a666-f3f4db3d2b24"
+            },
+            "_060d6afc-88d7-4264-9e15-a9564d0eacb7": {
+                "angle": -119.99999999969847,
+                "magnitude": 66395.28095660523,
+                "measurement_mrid": "_060d6afc-88d7-4264-9e15-a9564d0eacb7"
+            },
+            "_07e84d5c-9ed1-4eeb-963e-1d95a6996aca": {
+                "measurement_mrid": "_07e84d5c-9ed1-4eeb-963e-1d95a6996aca",
+                "value": 1
+            },
+            "_0b0ab00e-a509-4b4a-8276-aa954bcd0298": {
+                "angle": 0.0,
+                "magnitude": 66395.280957,
+                "measurement_mrid": "_0b0ab00e-a509-4b4a-8276-aa954bcd0298"
+            },
+            "_0d19eea3-78e6-45be-aa46-adc249a37baf": {
+                "angle": 31.789248336042018,
+                "magnitude": 1235.489545520972,
+                "measurement_mrid": "_0d19eea3-78e6-45be-aa46-adc249a37baf"
+            },
+            "_0dcaec8e-d75d-4c1f-a6d7-be4d0b6a0bdb": {
+                "angle": -36.27238032668408,
+                "magnitude": 2632.4667088029973,
+                "measurement_mrid": "_0dcaec8e-d75d-4c1f-a6d7-be4d0b6a0bdb"
+            },
+            "_0df0fb2a-6df4-4020-a545-37ca57a6570d": {
+                "angle": -152.8336800656223,
+                "magnitude": 2463.0427975897164,
+                "measurement_mrid": "_0df0fb2a-6df4-4020-a545-37ca57a6570d"
+            },
+            "_133429aa-e2a7-4526-92bd-00eb83db8cb5": {
+                "angle": -30.00113289996849,
+                "magnitude": 2401.7470365080744,
+                "measurement_mrid": "_133429aa-e2a7-4526-92bd-00eb83db8cb5"
+            },
+            "_170ae508-ad8d-4a40-a17d-cc9e10728ff8": {
+                "measurement_mrid": "_170ae508-ad8d-4a40-a17d-cc9e10728ff8",
+                "value": 1
+            },
+            "_1b526731-4c96-43df-b089-c1a4767117c4": {
+                "angle": -36.27238032668408,
+                "magnitude": 2632.4667088029973,
+                "measurement_mrid": "_1b526731-4c96-43df-b089-c1a4767117c4"
+            },
+            "_1b7a1143-e020-4e8d-80fb-a60826f9a606": {
+                "angle": 119.99999999969847,
+                "magnitude": 66395.28095660523,
+                "measurement_mrid": "_1b7a1143-e020-4e8d-80fb-a60826f9a606"
+            },
+            "_21452422-7497-4b4d-aba3-8ee933d2bf4d": {
+                "angle": -0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_21452422-7497-4b4d-aba3-8ee933d2bf4d"
+            },
+            "_23bdbc36-1c3d-4d1b-a962-d453f03f9b54": {
+                "angle": 85.73006702843762,
+                "magnitude": 293.5787149018131,
+                "measurement_mrid": "_23bdbc36-1c3d-4d1b-a962-d453f03f9b54"
+            },
+            "_294818b5-e17b-4835-b232-26b7a772d6ad": {
+                "angle": 86.21445585460627,
+                "magnitude": 2560.2545529681033,
+                "measurement_mrid": "_294818b5-e17b-4835-b232-26b7a772d6ad"
+            },
+            "_2b907ce5-6294-4919-824f-4f68212a042c": {
+                "measurement_mrid": "_2b907ce5-6294-4919-824f-4f68212a042c",
+                "value": 1
+            },
+            "_2baaea4b-5f98-4d4f-8ac3-619bb2712ce7": {
+                "measurement_mrid": "_2baaea4b-5f98-4d4f-8ac3-619bb2712ce7",
+                "value": 10
+            },
+            "_31d1eb6e-5ce1-4df5-bbef-6f667ac50198": {
+                "angle": -7.212543335785178,
+                "magnitude": 1462639.822482304,
+                "measurement_mrid": "_31d1eb6e-5ce1-4df5-bbef-6f667ac50198"
+            },
+            "_330d046c-dc9d-4680-8501-d21fc234a130": {
+                "angle": -150.00156408744056,
+                "magnitude": 2401.777824586826,
+                "measurement_mrid": "_330d046c-dc9d-4680-8501-d21fc234a130"
+            },
+            "_36ec993a-9ef1-4886-bc9b-03b11b05188c": {
+                "angle": -33.80344956325968,
+                "magnitude": 295.9038081764062,
+                "measurement_mrid": "_36ec993a-9ef1-4886-bc9b-03b11b05188c"
+            },
+            "_401731bc-1be4-4d20-8737-1a7fcc004697": {
+                "angle": 98.14852808098416,
+                "magnitude": 707.791934678085,
+                "measurement_mrid": "_401731bc-1be4-4d20-8737-1a7fcc004697"
+            },
+            "_41c462e7-7700-4e72-b14b-07d54d6cd443": {
+                "angle": 82.74392122913375,
+                "magnitude": 2519.9121153999927,
+                "measurement_mrid": "_41c462e7-7700-4e72-b14b-07d54d6cd443"
+            },
+            "_42b0c2b5-ab55-45f4-a1ca-2d94064ffe4a": {
+                "angle": -152.98492646516112,
+                "magnitude": 283.42230053343434,
+                "measurement_mrid": "_42b0c2b5-ab55-45f4-a1ca-2d94064ffe4a"
+            },
+            "_42b662ed-df46-452a-8730-d5569949b5d0": {
+                "measurement_mrid": "_42b662ed-df46-452a-8730-d5569949b5d0",
+                "value": 1
+            },
+            "_4a37c515-3ad5-4e02-b694-316f01b99619": {
+                "angle": -87.90905057825924,
+                "magnitude": 88.0923105349466,
+                "measurement_mrid": "_4a37c515-3ad5-4e02-b694-316f01b99619"
+            },
+            "_4ebeba65-7ec3-4b72-82e2-87265b433cec": {
+                "measurement_mrid": "_4ebeba65-7ec3-4b72-82e2-87265b433cec",
+                "value": 8
+            },
+            "_53c17fc1-eac6-44b9-a865-cb19a96e2c3c": {
+                "measurement_mrid": "_53c17fc1-eac6-44b9-a865-cb19a96e2c3c",
+                "value": 11
+            },
+            "_53cdf9ba-7fa0-4108-b9a9-9e34e65a2e84": {
+                "angle": -6.527514421588502,
+                "magnitude": 486014.87666160957,
+                "measurement_mrid": "_53cdf9ba-7fa0-4108-b9a9-9e34e65a2e84"
+            },
+            "_5652e10f-21ab-43d6-bf66-d8b14f874aff": {
+                "angle": 90.0,
+                "magnitude": 0.034671,
+                "measurement_mrid": "_5652e10f-21ab-43d6-bf66-d8b14f874aff"
+            },
+            "_5a50446d-86f7-4da0-a319-bad0b9549b35": {
+                "measurement_mrid": "_5a50446d-86f7-4da0-a319-bad0b9549b35",
+                "value": 1
+            },
+            "_5ca63cd2-558f-4058-be76-12fde7e27939": {
+                "angle": 85.73006702843762,
+                "magnitude": 293.5787149018131,
+                "measurement_mrid": "_5ca63cd2-558f-4058-be76-12fde7e27939"
+            },
+            "_67a0e66c-8e59-4683-af31-b57fb7ac995f": {
+                "angle": -36.27231113193084,
+                "magnitude": 2632.448856387724,
+                "measurement_mrid": "_67a0e66c-8e59-4683-af31-b57fb7ac995f"
+            },
+            "_6f13ffe1-c257-43d6-8bc1-7808d67ae676": {
+                "angle": -7.422318766154656,
+                "magnitude": 1578521.923351771,
+                "measurement_mrid": "_6f13ffe1-c257-43d6-8bc1-7808d67ae676"
+            },
+            "_715a9996-63ef-43e5-b145-0a8825b5c66d": {
+                "angle": -16.096957971035373,
+                "magnitude": 496.52445620684756,
+                "measurement_mrid": "_715a9996-63ef-43e5-b145-0a8825b5c66d"
+            },
+            "_7190a416-c07d-4ac0-8351-082f4daea4d7": {
+                "angle": -143.56857816122806,
+                "magnitude": 565.5224929312805,
+                "measurement_mrid": "_7190a416-c07d-4ac0-8351-082f4daea4d7"
+            },
+            "_735c610a-cd35-4e4f-a463-a73f1db9a1ca": {
+                "angle": 0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_735c610a-cd35-4e4f-a463-a73f1db9a1ca"
+            },
+            "_74ce9949-af05-4eac-9218-e5b384fef755": {
+                "angle": 82.74410457363855,
+                "magnitude": 2519.89576601564,
+                "measurement_mrid": "_74ce9949-af05-4eac-9218-e5b384fef755"
+            },
+            "_76100369-183d-4481-9d65-b863a5abad55": {
+                "angle": 0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_76100369-183d-4481-9d65-b863a5abad55"
+            },
+            "_76fe6bb2-0bc3-41c8-bb5b-8baf6d00795b": {
+                "angle": -30.001722509372275,
+                "magnitude": 2401.783710748839,
+                "measurement_mrid": "_76fe6bb2-0bc3-41c8-bb5b-8baf6d00795b"
+            },
+            "_7ace1d3c-a108-4101-89ed-f38378b645fa": {
+                "angle": -2.9691792232398164,
+                "magnitude": 453407.5033820876,
+                "measurement_mrid": "_7ace1d3c-a108-4101-89ed-f38378b645fa"
+            },
+            "_7ba6f6e9-e0ef-4baa-bd93-9d58e2bb1dda": {
+                "angle": -7.511196942312625,
+                "magnitude": 465235.8265231469,
+                "measurement_mrid": "_7ba6f6e9-e0ef-4baa-bd93-9d58e2bb1dda"
+            },
+            "_7d023054-6d55-44f6-a934-7600cf302827": {
+                "measurement_mrid": "_7d023054-6d55-44f6-a934-7600cf302827",
+                "value": 1
+            },
+            "_80503dda-d5c8-4e16-bfd5-02be7a77471e": {
+                "angle": 89.99804406011384,
+                "magnitude": 2401.780490399488,
+                "measurement_mrid": "_80503dda-d5c8-4e16-bfd5-02be7a77471e"
+            },
+            "_838da845-5315-4f62-867b-ff491b741b19": {
+                "angle": -152.98492646516112,
+                "magnitude": 283.42230053343434,
+                "measurement_mrid": "_838da845-5315-4f62-867b-ff491b741b19"
+            },
+            "_8aa8e908-53dd-4ba8-b2f0-952d5c0df256": {
+                "angle": -0.0,
+                "magnitude": 2500.0,
+                "measurement_mrid": "_8aa8e908-53dd-4ba8-b2f0-952d5c0df256"
+            },
+            "_8ace00b3-2f70-4726-8927-eafbd868d0aa": {
+                "measurement_mrid": "_8ace00b3-2f70-4726-8927-eafbd868d0aa",
+                "value": 1
+            },
+            "_91975cba-1d25-4cd7-97f8-d59a1610e8eb": {
+                "angle": -152.71407343844422,
+                "magnitude": 2455.8500563553093,
+                "measurement_mrid": "_91975cba-1d25-4cd7-97f8-d59a1610e8eb"
+            },
+            "_9a734acc-649b-4d9e-8f27-a5d09623d894": {
+                "measurement_mrid": "_9a734acc-649b-4d9e-8f27-a5d09623d894",
+                "value": 1
+            },
+            "_9bc57ca8-c6f8-4dc8-accf-3c717901891c": {
+                "angle": -152.71407343844422,
+                "magnitude": 2455.8500563553093,
+                "measurement_mrid": "_9bc57ca8-c6f8-4dc8-accf-3c717901891c"
+            },
+            "_9dc106be-3800-46de-a4e6-9bc21b72936e": {
+                "angle": -180.0,
+                "magnitude": 0.0,
+                "measurement_mrid": "_9dc106be-3800-46de-a4e6-9bc21b72936e"
+            },
+            "_a32c6938-4cfc-4c3f-b2ff-57775c68f47d": {
+                "angle": -180.0,
+                "magnitude": 0.0,
+                "measurement_mrid": "_a32c6938-4cfc-4c3f-b2ff-57775c68f47d"
+            },
+            "_a64ce2d9-dea7-4ee2-982f-e44cc8f9defb": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_a64ce2d9-dea7-4ee2-982f-e44cc8f9defb"
+            },
+            "_a78eb3e2-1df3-4395-b03a-acd3f738a51c": {
+                "angle": -133.38547080219908,
+                "magnitude": 271.928129788593,
+                "measurement_mrid": "_a78eb3e2-1df3-4395-b03a-acd3f738a51c"
+            },
+            "_a99c9ecc-24cc-4b6f-934b-77cc2c62be81": {
+                "measurement_mrid": "_a99c9ecc-24cc-4b6f-934b-77cc2c62be81",
+                "value": 1
+            },
+            "_ae967130-39a2-4013-ade8-e828072b6cf1": {
+                "angle": 82.62073351416988,
+                "magnitude": 2514.7365160071904,
+                "measurement_mrid": "_ae967130-39a2-4013-ade8-e828072b6cf1"
+            },
+            "_b75c0dea-3b18-4252-b671-bbeb273171bf": {
+                "angle": -1.3691753614614928,
+                "magnitude": 256.4398943058042,
+                "measurement_mrid": "_b75c0dea-3b18-4252-b671-bbeb273171bf"
+            },
+            "_b811be3c-b0ff-4cd9-afe3-864b223b2a8d": {
+                "angle": -0.0,
+                "magnitude": 0.0,
+                "measurement_mrid": "_b811be3c-b0ff-4cd9-afe3-864b223b2a8d"
+            },
+            "_b82fbc96-6d1b-44fc-b9ae-6769e3b6a03a": {
+                "angle": -152.46953896816945,
+                "magnitude": 2471.138968048247,
+                "measurement_mrid": "_b82fbc96-6d1b-44fc-b9ae-6769e3b6a03a"
+            },
+            "_b8428048-0930-4f6a-9fcd-f15f78bfe5fa": {
+                "measurement_mrid": "_b8428048-0930-4f6a-9fcd-f15f78bfe5fa",
+                "value": 1
+            },
+            "_be29dc1c-9082-416f-b1d4-01a71a2a249d": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_be29dc1c-9082-416f-b1d4-01a71a2a249d"
+            },
+            "_c03a4c32-d9d5-4eed-b694-481262394955": {
+                "measurement_mrid": "_c03a4c32-d9d5-4eed-b694-481262394955",
+                "value": 1
+            },
+            "_c38ad942-92d7-4bfe-bb98-e7a0afbfb903": {
+                "angle": 89.99876008743956,
+                "magnitude": 2401.740441562384,
+                "measurement_mrid": "_c38ad942-92d7-4bfe-bb98-e7a0afbfb903"
+            },
+            "_c521dd10-16c5-49cf-94ef-aee59f927661": {
+                "angle": 90.0,
+                "magnitude": 0.034671,
+                "measurement_mrid": "_c521dd10-16c5-49cf-94ef-aee59f927661"
+            },
+            "_c5cea1e1-4edd-4bec-8f8b-e5b8849cf50a": {
+                "angle": -0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_c5cea1e1-4edd-4bec-8f8b-e5b8849cf50a"
+            },
+            "_c6a13da5-d6a3-49cc-8d50-d334fe878c69": {
+                "angle": -33.16267984471963,
+                "magnitude": 2581.651457091818,
+                "measurement_mrid": "_c6a13da5-d6a3-49cc-8d50-d334fe878c69"
+            },
+            "_c9c802ba-a12b-4b48-810a-a002250f1ba8": {
+                "angle": -0.0,
+                "magnitude": 2500.0,
+                "measurement_mrid": "_c9c802ba-a12b-4b48-810a-a002250f1ba8"
+            },
+            "_cb894941-f481-492a-9c13-01ccc2d69989": {
+                "angle": 82.74392122913375,
+                "magnitude": 2519.9121153999927,
+                "measurement_mrid": "_cb894941-f481-492a-9c13-01ccc2d69989"
+            },
+            "_d314a1a0-6d5d-45cf-9019-7836323ff514": {
+                "angle": -152.71412269044856,
+                "magnitude": 2455.844195430976,
+                "measurement_mrid": "_d314a1a0-6d5d-45cf-9019-7836323ff514"
+            },
+            "_d6061048-437e-447e-851c-65e1af056ff6": {
+                "angle": 100.0056330327502,
+                "magnitude": 586.3243032755175,
+                "measurement_mrid": "_d6061048-437e-447e-851c-65e1af056ff6"
+            },
+            "_da9f657b-ab28-42fc-a139-52718b18ddbd": {
+                "measurement_mrid": "_da9f657b-ab28-42fc-a139-52718b18ddbd",
+                "value": 1
+            },
+            "_dd8b0cba-b715-4fdf-a22c-0adcd596d5a1": {
+                "angle": -0.0,
+                "magnitude": 2500.0,
+                "measurement_mrid": "_dd8b0cba-b715-4fdf-a22c-0adcd596d5a1"
+            },
+            "_e4ac63f1-ba0d-48f5-ace4-754fb673b292": {
+                "angle": -36.71754003801835,
+                "magnitude": 2624.9314614864747,
+                "measurement_mrid": "_e4ac63f1-ba0d-48f5-ace4-754fb673b292"
+            },
+            "_e76768da-befb-4bd1-8505-cac74ad96c0b": {
+                "angle": -18.979456409300695,
+                "magnitude": 625.442701114831,
+                "measurement_mrid": "_e76768da-befb-4bd1-8505-cac74ad96c0b"
+            },
+            "_e8cf067e-1a5e-4ea9-9d27-5db9d61e4300": {
+                "angle": -0.0,
+                "magnitude": 2500.0,
+                "measurement_mrid": "_e8cf067e-1a5e-4ea9-9d27-5db9d61e4300"
+            },
+            "_eb924da8-a6e4-414a-80af-791aff9b5853": {
+                "angle": -33.80344956325968,
+                "magnitude": 295.9038081764062,
+                "measurement_mrid": "_eb924da8-a6e4-414a-80af-791aff9b5853"
+            },
+            "_eb9d8124-ee2d-4279-9889-7497b68cabcd": {
+                "angle": 101.49422251148148,
+                "magnitude": 257.80698789325066,
+                "measurement_mrid": "_eb9d8124-ee2d-4279-9889-7497b68cabcd"
+            },
+            "_f0c27bcd-942c-45bd-91a8-74a6a4f3ecd9": {
+                "angle": -150.00096936210218,
+                "magnitude": 2401.7465586591343,
+                "measurement_mrid": "_f0c27bcd-942c-45bd-91a8-74a6a4f3ecd9"
+            },
+            "_f107956f-2f01-44e1-84e9-20f9b49b9761": {
+                "angle": 90.0,
+                "magnitude": 0.034671,
+                "measurement_mrid": "_f107956f-2f01-44e1-84e9-20f9b49b9761"
+            },
+            "_f1e02c9f-cef4-4b91-803e-dc7b85822a5c": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_f1e02c9f-cef4-4b91-803e-dc7b85822a5c"
+            },
+            "_f3c42dae-1777-45b7-8669-b000c4604bf5": {
+                "angle": 0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_f3c42dae-1777-45b7-8669-b000c4604bf5"
+            },
+            "_f6302f66-0c47-4728-955e-248555df1db6": {
+                "angle": 0.0,
+                "magnitude": 33333.333333,
+                "measurement_mrid": "_f6302f66-0c47-4728-955e-248555df1db6"
+            },
+            "_f8b09ba0-559f-4443-b643-3effb913ab92": {
+                "angle": -11.10938778739608,
+                "magnitude": 1519082.5721928484,
+                "measurement_mrid": "_f8b09ba0-559f-4443-b643-3effb913ab92"
+            },
+            "_f8ffd642-379e-487a-8853-a84bfd1cf3dc": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_f8ffd642-379e-487a-8853-a84bfd1cf3dc"
+            },
+            "_fa7bd34c-96f9-45f5-90a1-f82ec65f46e8": {
+                "angle": 31.789248336042018,
+                "magnitude": 1235.489545520972,
+                "measurement_mrid": "_fa7bd34c-96f9-45f5-90a1-f82ec65f46e8"
+            },
+            "_ff284d40-d818-427f-9497-bdaead163780": {
+                "angle": -157.12730138437158,
+                "magnitude": 114.33649444491545,
+                "measurement_mrid": "_ff284d40-d818-427f-9497-bdaead163780"
+            }
+        },
+        "timestamp": 1583188956
+    },
+    "simulation_id": "123"
+}
 
 
 @patch.object(HelicsGossBridge,'__init__', return_value=None)
@@ -1743,7 +2269,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
     bridge1 = HelicsGossBridge(123,5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
-    bridge1._create_cim_object_map(map_file='model_dict.json')
+    bridge1._create_cim_object_map(map_file=mfile)
     with pytest.raises(ValueError) as e_info:
         bridge1._publish_to_helics_bus("",[])
     assert str(e_info.value) == "simulation_id must be a nonempty string.\nsimulation_id = 123.\nsimulation_id type = <class 'int'>."
@@ -1751,7 +2277,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
     bridge2 = HelicsGossBridge("123",5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
-    bridge2._create_cim_object_map(map_file='model_dict.json')
+    bridge2._create_cim_object_map(map_file=mfile)
     with pytest.raises(ValueError) as e_info:
         bridge2._publish_to_helics_bus(1235,[])
     assert str(e_info.value) == "goss_message must be a nonempty string.\ngoss_message = 1235.\ngoss_message type = <class 'int'>."
@@ -1759,7 +2285,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
     bridge3 = HelicsGossBridge("123",5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
-    bridge3._create_cim_object_map(map_file='model_dict.json')
+    bridge3._create_cim_object_map(map_file=mfile)
     with pytest.raises(RuntimeError) as e_info:
         bridge3._publish_to_helics_bus("hello",[])
     assert str(e_info.value) == "Cannot publish message as there is no connection to the HELICS message bus."
@@ -1768,7 +2294,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
     mock_helicsFederateGetState.return_value = 2
-    bridge4._create_cim_object_map(map_file='model_dict.json')
+    bridge4._create_cim_object_map(map_file=mfile)
     with pytest.raises(ValueError) as e_info:
         bridge4._publish_to_helics_bus("hello",[])
     assert str(e_info.value) == "goss_message is not a json formatted string of a python dictionary.\ngoss_message = hello"
@@ -1785,7 +2311,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
             }
         ]
     }
-    bridge5._create_cim_object_map(map_file='model_dict.json')
+    bridge5._create_cim_object_map(map_file=mfile)
     goss_message_str = json.dumps(goss_message_dict)
     bridge5._publish_to_helics_bus(goss_message_str, [])
     mock_helicsFederateCreateMessageObject.assert_called_once_with(
@@ -1803,7 +2329,7 @@ def test_helics_goss_bridge_publish_to_helics_bus(
     bridge6 = HelicsGossBridge("123",5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
-    bridge6._create_cim_object_map(map_file='model_dict.json')
+    bridge6._create_cim_object_map(map_file=mfile)
     goss_message_str = json.dumps(goss_message_dict)
     bridge6._publish_to_helics_bus(goss_message_str, [
         {
@@ -1820,21 +2346,32 @@ def test_helics_goss_bridge_publish_to_helics_bus(
     mock_helicsEndpointSendMessageObject("helics_input_endpoint", None)
     
 
-@patch.object(HelicsGossBridge,'__init__', return_value=None)
+@patch.object(HelicsGossBridge,'_register_with_goss')
+@patch.object(HelicsGossBridge,'_register_with_helics')
 @patch.object(helics,'helicsFederateGetEndpoint', return_value="helics_output_endpoint")
-@patch.object(helics,'helicsEndpointHasMessage')
+@patch.object(helics,'helicsEndpointHasMessage', return_value=True)
 @patch.object(HelicsGossBridge,'_gad_connection')
 @unittest.mock.patch('service.helics_goss_bridge.datetime')
 @patch.object(helics,'helicsEndpointGetMessageObject')
-@patch.object(helics,'helicsMessageGetString')
-@patch('service.helics_goss_bridge.HelicsGossBridge._object_property_to_measurement_id',
-    new_callable=PropertyMock)
+@patch.object(helics,'helicsMessageGetString', return_value = json.dumps(
+    helics_simulation_output_message_dict))
 def test_helics_goss_bridge_get_helics_bus_messages(
-        mock_object_property_to_measurement_id,mock_helicsMessageGetString,
+        mock_helicsMessageGetString,
         mock_helicsEndpointGetMessageObject,mock_datetime,mock_gad_connection,
         mock_helicsEndpointHasMessage,mock_helicsFederateGetEndpoint,
-        mock_init):
-    pass
+        mock_register_with_helics,mock_register_with_goss):
+    #test with empty measurement_filter
+    mock_datetime.utcnow.return_value = datetime(2017,8,25,10,33,6,150642)
+    bridge = HelicsGossBridge("123",5570,
+        {"simulation_config":{"run_realtime":0,"duration":5,
+            "simulation_start":0}})
+    bridge._create_cim_object_map(map_file=mfile)
+    measurement_message = bridge._get_helics_bus_messages([])
+    assert measurement_message == cim_measurement_message
+    #test with nonempty measurement_filter
+    measurement_message = bridge._get_helics_bus_messages(["_ff284d40-d818-427f-9497-bdaead163780"])
+    del cim_measurement_message["message"]["measurements"]["_ff284d40-d818-427f-9497-bdaead163780"]
+    assert measurement_message == cim_measurement_message
 
 
 @patch.object(HelicsGossBridge,'__init__', return_value=None)
@@ -1842,7 +2379,7 @@ def test_helics_goss_bridge_get_helics_bus_messages(
 @patch.object(HelicsGossBridge,'_gad_connection')
 def test_helics_goss_bridge_done_with_time_step(mock_gad_connection,
         mock_helicsFederateRequestTime,mock_init):
-    bridge = bridge = HelicsGossBridge("123",5570,
+    bridge = HelicsGossBridge("123",5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
     bridge._done_with_time_step(23)
@@ -1865,17 +2402,12 @@ def test_helics_goss_bridge_create_cim_object_map(mock_gad_connection,
     bridge = bridge = HelicsGossBridge(123,5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
             "simulation_start":0}})
-    bridge._create_cim_object_map(map_file='model_dict.json')
+    bridge._create_cim_object_map(map_file=mfile)
     assert bridge.get_model_mrid() == "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62"
     assert bridge.get_object_property_to_measurement_id() == object_property_to_measurement_id
     assert bridge.get_object_mrid_to_name() == object_mrid_to_name
     bridge._create_cim_object_map()
-    mock_gad_connection.send_simulation_status.assert_called_once_with(
-        'STARTED',
-        "The measurement map file, /tmp/gridappsd_tmp/{}/model_dict.json, couldn't be translated.\nError:{}".format(
-            bridge.get_simulation_id(),
-            "[Errno 2] No such file or directory: '/tmp/gridappsd_tmp//model_dict.json'"),
-         'ERROR')
+    mock_gad_connection.send_simulation_status.assert_called_once()
     
     
     

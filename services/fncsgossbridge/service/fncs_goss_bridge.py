@@ -663,21 +663,21 @@ def _publish_to_fncs_bus(simulation_id, goss_message, command_filter):
             }
             if x.get("attribute", "") != "IdentifiedObject.Fault":
                 if command_pair not in command_filter:
-                    object_name = (object_mrid_to_name.get(x.get("object"))).get("name")
+                    object_name = (object_mrid_to_name.get(x.get("object",{}))).get("name")
                     # _send_simulation_status("ERROR", "Jeff1 " + object_name, "ERROR")
-                    object_phases = (object_mrid_to_name.get(x.get("object"))).get("phases")
+                    object_phases = (object_mrid_to_name.get(x.get("object",{}))).get("phases")
                     # _send_simulation_status("ERROR", "Jeff2 " + object_phases, "ERROR")
-                    object_total_phases = (object_mrid_to_name.get(x.get("object"))).get("total_phases")
+                    object_total_phases = (object_mrid_to_name.get(x.get("object",{}))).get("total_phases")
                     # _send_simulation_status("ERROR", "Jeff3 " + object_total_phases, "ERROR")
-                    object_type = (object_mrid_to_name.get(x.get("object"))).get("type")
+                    object_type = (object_mrid_to_name.get(x.get("object",{}))).get("type")
                     # _send_simulation_status("ERROR", "Jeff4 " + object_type + " " + x.get("attribute"), "ERROR")
-                    object_name_prefix = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("prefix")
+                    object_name_prefix = ((difference_attribute_map.get(x.get("attribute",{}))).get(object_type,{})).get("prefix")
                     # _send_simulation_status("ERROR", "Jeff5 " + object_name_prefix, "ERROR")
                     cim_attribute = x.get("attribute")
         
-                    object_property_list = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("property")
+                    object_property_list = ((difference_attribute_map.get(x.get("attribute",{}))).get(object_type,{})).get("property")
                     # _send_simulation_status("ERROR", "Jeff6 " + str(object_property_list), "ERROR")
-                    phase_in_property = ((difference_attribute_map.get(x.get("attribute"))).get(object_type)).get("phase_sensitive",False)
+                    phase_in_property = ((difference_attribute_map.get(x.get("attribute",{}))).get(object_type,{})).get("phase_sensitive",False)
                     # _send_simulation_status("ERROR", "Jeff7 " + str(phase_in_property), "ERROR")
                     if (object_name_prefix + object_name) not in fncs_input_message["{}".format(simulation_id)].keys():
                         fncs_input_message["{}".format(simulation_id)][object_name_prefix + object_name] = {}
