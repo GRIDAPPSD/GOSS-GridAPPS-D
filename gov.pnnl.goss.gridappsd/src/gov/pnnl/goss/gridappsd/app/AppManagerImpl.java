@@ -148,7 +148,7 @@ public class AppManagerImpl implements AppManager {
 	}
 
 	@Override
-	public void process(int processId, DataResponse event, Serializable message)
+	public void process(String processId, DataResponse event, Serializable message)
 			throws Exception {
 
 		// Get username from message's metadata e.g. event.getUserName()

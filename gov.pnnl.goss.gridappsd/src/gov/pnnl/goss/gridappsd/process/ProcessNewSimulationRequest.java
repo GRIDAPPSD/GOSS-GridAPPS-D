@@ -56,6 +56,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.ServiceConfig;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
@@ -90,7 +91,7 @@ public class ProcessNewSimulationRequest {
 	private volatile LogManager logManager;
 
 	public void process(ConfigurationManager configurationManager,
-			SimulationManager simulationManager, int simulationId,
+			SimulationManager simulationManager, String simulationId,
 			DataResponse event, RequestSimulation simRequest, AppManager appManager,
 			ServiceManager serviceManager, TestManager testManager,
 			DataManager dataManager, String username) {
@@ -100,7 +101,7 @@ public class ProcessNewSimulationRequest {
 	}
 
 	public void process(ConfigurationManager configurationManager,
-			SimulationManager simulationManager, int simulationId,
+			SimulationManager simulationManager, String simulationId,
 			RequestSimulation simRequest, int simulationPort, AppManager appManager,
 			ServiceManager serviceManager, TestManager testManager,DataManager dataManager, String username) {
 
@@ -200,12 +201,12 @@ public class ProcessNewSimulationRequest {
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			} else { //otherwise use gridlabd
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simId);
 				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), new Integer(simulationId).toString(), username);
+				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			
 			logManager
@@ -324,8 +325,16 @@ public class ProcessNewSimulationRequest {
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
 			
-			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username); 
+			ServiceInfo simulationServiceInfo = serviceManager.getService(simRequest.getSimulation_config().simulator);
+			List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
+			for(String service : serviceDependencies) {
+				String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
+				if(serviceInstanceId!=null)
+					simContext.addServiceInstanceIds(serviceInstanceId);
+			}
 			
+			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username);
+		
 			// start test if requested 
 			testManager.handleTestRequest(simRequest.getTest_config(), simContext);
 			

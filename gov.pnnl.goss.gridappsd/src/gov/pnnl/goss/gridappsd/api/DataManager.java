@@ -57,7 +57,7 @@ public interface DataManager {
 
 	void registerDataManagerHandler(DataManagerHandler handler, String name);
 	
-	Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception;
+	Response processDataRequest(Serializable request, String type, String simulationId, String tempDataPath, String username) throws Exception;
 
 	void registerConverter(String inputFormat, String outputFormat, DataFormatConverter converter);
 	DataFormatConverter getConverter(String inputFormat, String outputFormat);

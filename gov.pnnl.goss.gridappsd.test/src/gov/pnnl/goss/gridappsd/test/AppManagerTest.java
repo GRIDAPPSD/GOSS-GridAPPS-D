@@ -69,7 +69,7 @@ public class AppManagerTest {
 	
     
     /*
-     * File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception;
+     * File getSimulationFile(String simulationId, RequestSimulation powerSystemConfig) throws Exception;
 	String getConfigurationProperty(String key);
      */
     

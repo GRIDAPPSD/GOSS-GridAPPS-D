@@ -138,7 +138,7 @@ public class ProcessEvent implements GossResponseEvent {
 		DataResponse event = (DataResponse)message;
 		String username  = event.getUsername();
 		
-		int processId = ProcessManagerImpl.generateProcessId();
+		String processId = ProcessManagerImpl.generateProcessId();
 		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination(), username);
 
 
@@ -182,10 +182,10 @@ public class ProcessEvent implements GossResponseEvent {
 					//if new simulation		
 					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
 						RequestSimulationResponse response = new RequestSimulationResponse();
-						response.setSimulationId(Integer.toString(processId));
+						response.setSimulationId(processId);
 						//RequestSimulation config = RequestSimulation.parse(message.toString());
 						if(simRequest.getTest_config()!=null)
-							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), Integer.toString(processId)));
+							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), processId));
 						client.publish(event.getReplyDestination(), response);
 						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
@@ -310,7 +310,7 @@ public class ProcessEvent implements GossResponseEvent {
 	}
 
 
-	private void sendData(Client client, Destination replyDestination, Serializable data, int processId, String username){
+	private void sendData(Client client, Destination replyDestination, Serializable data, String processId, String username){
 		try {
 			//Make sure it is sending back something in the data field for valid json  (or if it is null maybe it should send error response instead???)
 			 if(data==null || data.toString().length()==0){
@@ -332,7 +332,7 @@ public class ProcessEvent implements GossResponseEvent {
 	}
 
 
-	private void sendError(Client client, Destination replyDestination, String error, int processId, String username){
+	private void sendError(Client client, Destination replyDestination, String error, String processId, String username){
 		try {
 			DataResponse r = new DataResponse();
 			r.setError(new DataError(error));
@@ -347,11 +347,11 @@ public class ProcessEvent implements GossResponseEvent {
 	}
 
 
-	private void debug(int processId, String message, String process_type, String username) {
+	private void debug(String processId, String message, String process_type, String username) {
 
 		LogMessage logMessage = new LogMessage();
 		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(Integer.toString(processId));
+		logMessage.setProcessId(processId);
 		logMessage.setLogLevel(LogLevel.DEBUG);
 		logMessage.setProcessStatus(ProcessStatus.RUNNING);
 		logMessage.setLogMessage(message);
@@ -363,11 +363,11 @@ public class ProcessEvent implements GossResponseEvent {
 
 	}
 
-	private void error(int processId, String message, String username) {
+	private void error(String processId, String message, String username) {
 
 		LogMessage logMessage = new LogMessage();
 		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(Integer.toString(processId));
+		logMessage.setProcessId(processId);
 		logMessage.setLogLevel(LogLevel.ERROR);
 		logMessage.setProcessStatus(ProcessStatus.ERROR);
 		logMessage.setLogMessage(message);

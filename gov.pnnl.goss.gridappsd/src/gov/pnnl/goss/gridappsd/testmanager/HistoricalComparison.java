@@ -96,7 +96,7 @@ public class HistoricalComparison {
 
 		try {
 			response = dataManager.processDataRequest(request, "timeseries",
-					Integer.parseInt(simulationId), null,
+					simulationId, null,
 					username);
 		} catch (Exception e) {
 			// TODO: Log error - excpetion

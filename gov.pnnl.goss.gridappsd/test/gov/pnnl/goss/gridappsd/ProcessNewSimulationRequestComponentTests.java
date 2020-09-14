@@ -103,13 +103,13 @@ public class ProcessNewSimulationRequestComponentTests {
 	public void callsMadeWhen_processStarted(){
 		
 		try {
-			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(new File("test"));
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(),  Mockito.any())).thenReturn(new File("test"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		
-		int simulationId =  Math.abs(new Random().nextInt());
+		String simulationId =  Integer.toString(Math.abs(new Random().nextInt()));
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
 		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager,dataManager,TestConstants.SYSTEM_USER_NAME);
@@ -154,13 +154,13 @@ public class ProcessNewSimulationRequestComponentTests {
 	public void callsMadeWhen_processError(){
 		
 		try {
-			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(new File("test"));
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(),  Mockito.any())).thenReturn(new File("test"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		
-		int simulationId =  Math.abs(new Random().nextInt());
+		String simulationId =  Integer.toString(Math.abs(new Random().nextInt()));
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
 		requestSimulation.getPower_system_config().setGeographicalRegion_name("Bad");
@@ -192,13 +192,13 @@ public class ProcessNewSimulationRequestComponentTests {
 	public void callsMadeWhen_processErrorBecauseNullConfig(){
 		
 		try {
-			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(new File("test"));
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(),  Mockito.any())).thenReturn(new File("test"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		
-		int simulationId =  Math.abs(new Random().nextInt());
+		String simulationId =  Integer.toString(Math.abs(new Random().nextInt()));
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		request.process(configurationManager, simulationManager, simulationId, event, null, appManager, serviceManager, testManager,dataManager,TestConstants.SYSTEM_USER_NAME);
 		
@@ -229,13 +229,13 @@ public class ProcessNewSimulationRequestComponentTests {
 	public void callsMadeWhen_processErrorBecauseNullSimulationFile(){
 		
 		try {
-			Mockito.when(configurationManager.getSimulationFile(Mockito.anyInt(),  Mockito.any())).thenReturn(null);
+			Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(),  Mockito.any())).thenReturn(null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		
-		int simulationId =  Math.abs(new Random().nextInt());
+		String simulationId =  Integer.toString(Math.abs(new Random().nextInt()));
 		ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
 		RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
 		request.process(configurationManager, simulationManager, simulationId, event, requestSimulation,appManager, serviceManager, testManager, dataManager,TestConstants.SYSTEM_USER_NAME);

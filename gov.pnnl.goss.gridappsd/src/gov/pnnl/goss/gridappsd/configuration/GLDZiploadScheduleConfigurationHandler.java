@@ -165,15 +165,15 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "ieeezipload");
-		int simId = -1;
+		String simId = "1";
 		if(simulationID==null || simulationID.trim().length()==0){
 			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		try{
-			simId = new Integer(simulationID);
+			simId = simulationID;
 		}catch (Exception e) {
-			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+			logError("Simulation ID not a valid  "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
 		}
 				
 		RequestTimeseriesData request = new RequestTimeseriesData();
