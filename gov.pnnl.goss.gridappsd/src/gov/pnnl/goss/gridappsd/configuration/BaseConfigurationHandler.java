@@ -78,7 +78,7 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	public void start(){
 	}
 
-	void logRunning(String message, String simulationID, String username, LogManager logManager){
+	/*void logRunning(String message, String simulationID, String username, LogManager logManager){
 		logRunning(message, simulationID, username, logManager, LogLevel.INFO);
 	}
 	void logRunning(String message, String simulationID, String username, LogManager logManager, LogLevel logLevel){
@@ -98,7 +98,7 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 						message, LogLevel.ERROR,
 						ProcessStatus.ERROR, false), username,
 				GridAppsDConstants.topic_platformLog);
-	}
+	}*/
 	
 	
 	void printFileToOutput(File configFile, PrintWriter out) throws IOException{

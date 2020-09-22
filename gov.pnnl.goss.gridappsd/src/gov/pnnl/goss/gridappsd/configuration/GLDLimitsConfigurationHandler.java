@@ -60,6 +60,7 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
@@ -126,19 +127,19 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Limits file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId,"Limits file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
-		logRunning("Generating limits file using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Generating limits file using parameters: "+parameters);
 
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId,"No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
@@ -164,7 +165,7 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 		out.println("}}");
 		out.close();
 				
-		logRunning("Finished generating GridLAB-D limits file.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating GridLAB-D limits file.");
 
 	}
 

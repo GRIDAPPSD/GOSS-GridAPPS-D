@@ -201,12 +201,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 			if(!dssBaseFile.exists())
 					throw new Exception("Error: Could not create DSS base file to export YBus matrix");
 			
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, new Date().getTime(), 
-					"Generating commands file for opendsscmd", 
-					LogLevel.DEBUG, 
-					ProcessStatus.RUNNING, 
-					true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.debug(ProcessStatus.RUNNING, simulationId,"Generating commands file for opendsscmd"); 
 			
 			
 			//Create file with commands for opendsscmd
@@ -232,19 +227,9 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 			fileWriter.flush();
 			fileWriter.close();
 			
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, new Date().getTime(), 
-					"Finished generating commands file for opendsscmd", 
-					LogLevel.DEBUG, 
-					ProcessStatus.RUNNING, 
-					true), username, GridAppsDConstants.topic_platformLog);
+			logManager.debug(ProcessStatus.RUNNING, simulationId, "Finished generating commands file for opendsscmd");
 			
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, new Date().getTime(), 
-					"Generating Y Bus matrix", 
-					LogLevel.DEBUG, 
-					ProcessStatus.RUNNING, 
-					true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.debug(ProcessStatus.RUNNING, simulationId, "Generating Y Bus matrix");
 			
 			ProcessBuilder processServiceBuilder = new ProcessBuilder();
 			processServiceBuilder.directory(baseDSSdir);
@@ -262,12 +247,7 @@ public class YBusExportConfigurationHandler implements ConfigurationHandler {
 			response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
 			response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
 			
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, new Date().getTime(), 
-					"Finished generating Y Bus matrix", 
-					LogLevel.DEBUG, 
-					ProcessStatus.RUNNING, 
-					true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.debug(ProcessStatus.RUNNING, simulationId, "Finished generating Y Bus matrix");
 				
 			out.print(response);
 		}

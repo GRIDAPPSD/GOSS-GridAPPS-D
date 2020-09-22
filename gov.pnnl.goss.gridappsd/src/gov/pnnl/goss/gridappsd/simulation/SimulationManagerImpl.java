@@ -139,14 +139,7 @@ public class SimulationManagerImpl implements SimulationManager{
 		//TODO: remove simulationContext parameter after refactoring service manager
 
 			try {
-				logManager.log(new LogMessage(this.getClass().getSimpleName(),
-						simulationId, 
-						new Date().getTime(), 
-						"Starting simulation "+simulationId, 
-						LogLevel.INFO, 
-						ProcessStatus.STARTING, 
-						true),simContext.getSimulationUser(),
-						GridAppsDConstants.topic_platformLog);
+				logManager.info(ProcessStatus.STARTING, simulationId, "Starting simulation "+simulationId);
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
 			}

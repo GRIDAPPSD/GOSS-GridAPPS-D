@@ -39,7 +39,8 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.api;
 
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestLogMessage;
 
 public interface LogManager {
@@ -56,8 +57,22 @@ public interface LogManager {
 	 * @param topic
 	 *            Message should be published on this topic if topic is not null. 
 	 */
-	void log(LogMessage message, String username, String topic);
+	//void log(LogMessage message, String username, String topic);
 	
+	
+	public void trace(ProcessStatus processStatus, String processId, String message);
+
+	public void debug(ProcessStatus processStatus, String processId, String message);
+	
+	public void info(ProcessStatus processStatus, String processId, String message);
+
+	public void warn(ProcessStatus processStatus, String processId, String message);
+
+	public void error(ProcessStatus processStatus, String processId, String message);
+
+	public void fatal(ProcessStatus processStatus, String processId, String message);
+	
+	public void logMessageFromSource(ProcessStatus processStatus, String processId, String message, String source, LogLevel logLevel);
 	/**
 	 * Use platform's default username and call previous log method. 
 	 * 
@@ -76,5 +91,7 @@ public interface LogManager {
 	void get(RequestLogMessage message, String outputTopics, String LogTopic);
 	
 	LogDataManager getLogDataManager();
+	
+	LogLevel getLogLevel();
 
 }
