@@ -908,11 +908,14 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                                         else:
                                             measurement["value"] = int(val_str)
                                     elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
-                                        val = complex(val_str)
-                                        (mag,ang_rad) = cmath.polar(val)
-                                        ang_deg = math.degrees(ang_rad)
-                                        measurement["magnitude"] = mag
-                                        measurement["angle"] = ang_deg
+                                        if property_name == "state_of_charge":
+                                            measurement["value"] = float(val)*100.0
+                                        else:
+                                            val = complex(val_str)
+                                            (mag,ang_rad) = cmath.polar(val)
+                                            ang_deg = math.degrees(ang_rad)
+                                            measurement["magnitude"] = mag
+                                            measurement["angle"] = ang_deg
                                     elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
                                         if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                             val = complex(val_str)
@@ -1243,6 +1246,9 @@ def _create_cim_object_map(map_file=None):
                         elif measurement_type == "A":
                             object_name = conducting_equipment_name;
                             property_name = "measured_current_" + phases;
+                        elif measurement_type == "SoC":
+                            object_name = conducting_equipment_name;
+                            property_name = "state_of_charge"
                         else:
                             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
                     elif "SynchronousMachine" in conducting_equipment_type:
