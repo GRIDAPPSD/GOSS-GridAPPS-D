@@ -322,6 +322,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate, boolean useHouses) throws Exception{
 		logRunning("Generating startup file for GridLAB-D configuration using parameters: "+parameters, processId, username, logManager);
 
+		String gldInterface = configManager.getConfigurationProperty(GridAppsDConstants.GRIDLABD_INTERFACE);
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
 			logError("No "+SIMULATIONBROKERHOST+" parameter provided", processId, username, logManager);
@@ -421,13 +422,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("module reliability;");
 
+		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
+			startupFileWriter.println("object helics_msg {");
+			startupFileWriter.println("      name "+simulationID+";");
+			startupFileWriter.println("      message_type JSON;");
+			startupFileWriter.println("      configure model_outputs.json;");
+			startupFileWriter.println("}");
 
-		startupFileWriter.println("object fncs_msg {");
-		startupFileWriter.println("     name "+simulationID+";");
-		startupFileWriter.println("     message_type JSON;");
-		startupFileWriter.println("     configure model_outputs.json;");
-		startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
-		startupFileWriter.println("}");
+		} else {
+			startupFileWriter.println("object fncs_msg {");
+			startupFileWriter.println("     name "+simulationID+";");
+			startupFileWriter.println("     message_type JSON;");
+			startupFileWriter.println("     configure model_outputs.json;");
+			startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
+			startupFileWriter.println("}");
+		}
+		
 		startupFileWriter.println("object recorder {");
 		startupFileWriter.println("     parent "+simulationID+";");
 		startupFileWriter.println("     property message_type;");
