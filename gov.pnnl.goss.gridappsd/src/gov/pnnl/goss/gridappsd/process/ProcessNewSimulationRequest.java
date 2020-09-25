@@ -275,7 +275,7 @@ public class ProcessNewSimulationRequest {
 			// start simulation
 			logManager.debug(ProcessStatus.RUNNING, simulationId,"Starting simulation for id " + simulationId);
 			simulationManager.startSimulation(simulationId, simRequest.getSimulation_config(),simContext, simulationContext);
-			logManager.debug(ProcessStatus.RUNNING, simulationId,"Started simulation for id " + simulationId);
+			logManager.info(ProcessStatus.RUNNING, simulationId,"Started simulation for id " + simulationId);
 			
 
 		} catch (Exception e) {
