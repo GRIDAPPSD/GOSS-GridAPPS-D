@@ -51,6 +51,7 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
@@ -137,7 +138,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean bWantSched = false;
 		SimulationContext simContext = null;
 
-		logRunning("Generating all DSS configuration files using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating all DSS configuration files using parameters: "+parameters);
 		
 		
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
@@ -166,13 +167,13 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
 		if(directory==null || directory.trim().length()==0){
-			logError("No "+DIRECTORY+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No "+DIRECTORY+" parameter provided");
 			throw new Exception("Missing parameter "+DIRECTORY);
 		}
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
@@ -194,7 +195,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		 ModelState modelState = new ModelState();
 		 String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
 		 if(modelStateStr==null || modelStateStr.trim().length()==0){
-			 logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+			 logManager.info(ProcessStatus.RUNNING, processId, "No "+MODELSTATE+" parameter provided");
 		 } else {
 			 Gson  gson = new Gson();
 			 modelState = gson.fromJson(modelStateStr, ModelState.class);
@@ -230,8 +231,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		CIMImporter cimImporter = new CIMImporter(); 
 		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		
-		logRunning("Finished generating all DSS configuration files.", processId, username, logManager);
-		
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all DSS configuration files.");
 		
 
 	}

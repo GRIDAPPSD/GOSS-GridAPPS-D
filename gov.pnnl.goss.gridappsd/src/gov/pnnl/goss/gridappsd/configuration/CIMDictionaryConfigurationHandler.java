@@ -63,6 +63,7 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -114,8 +115,7 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating Dictionary GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
-
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating Dictionary GridLAB-D configuration file using parameters: "+parameters);
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = false;
 		if(parameters.containsKey(USEHOUSES))
@@ -128,18 +128,18 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary GridLAB-D configuration file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId, "Generating Dictionary GridLAB-D configuration file using parameters: "+parameters);
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId, "No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
         ModelState modelState = new ModelState();
 		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
 		if(modelStateStr==null || modelStateStr.trim().length()==0){
-			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+			logManager.warn(ProcessStatus.RUNNING, processId, "No "+MODELSTATE+" parameter provided");
 		} else {
 			Gson  gson = new Gson();
 			modelState = gson.fromJson(modelStateStr, ModelState.class);
@@ -147,7 +147,7 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -171,8 +171,8 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
 			//config was written to file, so return that
 			printFileToOutput(configFile, out);
 		}
-		
-		logRunning("Finished generating Dictionary GridLAB-D configuration file.", processId, username, logManager);
+
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating Dictionary GridLAB-D configuration file.");
 	}
 	
 	

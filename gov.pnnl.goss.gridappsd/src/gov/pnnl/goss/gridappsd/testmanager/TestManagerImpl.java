@@ -207,7 +207,7 @@ public class TestManagerImpl implements TestManager {
 								compareSimulations(testConfig, testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo(),request);
 							}else{
 								publishResponse(request, "Missing parameter for testConfig simId");
-								logMessage("Missing parameter for testConfig "+ testConfig.toString());
+								logManager.error(ProcessStatus.RUNNING, null, "Missing parameter for testConfig "+ testConfig.toString());
 							}	
 						}
 						if(requestTest != null){
@@ -230,7 +230,7 @@ public class TestManagerImpl implements TestManager {
 
 		} catch (Exception e) {
 			//TODO-log.error("Error in test manager", e);
-			logMessage("Error in test manager ");
+			logManager.error(ProcessStatus.ERROR, null, "Error in test manager ");
 		}
 	}
 	
@@ -251,7 +251,7 @@ public class TestManagerImpl implements TestManager {
 		String simulationDir = simulationContext.getSimulationDir();
 		sim_status.put(simulationId, SimulationStatus.STARTED);
 		if(testConfig == null){
-			logMessage("testConfig is null ",simulationId);
+			logManager.warn(ProcessStatus.RUNNING, simulationId, "testConfig is null" );
 			return;
 		}
 
@@ -343,29 +343,6 @@ public class TestManagerImpl implements TestManager {
 	}
 	}
 	
-	public void logMessage(String msgStr) {
-		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setSource(this.getClass().getSimpleName());
-		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
-		logMessageObj.setStoreToDb(true);
-		logMessageObj.setTimestamp(new Date().getTime());
-		logMessageObj.setLogMessage(msgStr);
-		logManager.log(logMessageObj,securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
-	}
-	
-	public void logMessage(String msgStr, String simulationId) {
-		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setProcessId(simulationId);
-		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setSource(this.getClass().getSimpleName());
-		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
-		logMessageObj.setStoreToDb(true);
-		logMessageObj.setTimestamp(new Date().getTime());
-		logMessageObj.setLogMessage(msgStr);
-		logManager.log(logMessageObj,securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
-	}
-	
 	public void storeResults(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, TestResultSeries testResultSeries){
 //		(String test_id, String processId, long simulation_time,
 //	            String mrid, String property, String expected, String actual, String difference_direction, String difference_mrid) 
@@ -439,7 +416,7 @@ public class TestManagerImpl implements TestManager {
 		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		JsonObject expectedObject = hc.getExpectedFrom(response);
 		if(expectedObject == null){
-			logMessage("Response from time sereis db is empty for simulation "+ simulationIdOne,currentSimulationId);
+			logManager.error(ProcessStatus.ERROR, currentSimulationId, "Response from time sereis db is empty for simulation "+ simulationIdOne);
 			return;
 		}
 //		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
@@ -493,7 +470,7 @@ public class TestManagerImpl implements TestManager {
 				simJsonObj = simJsonObj.get("input").getAsJsonObject();
 
 				if ( ! simJsonObj.has("message")) {
-					logMessage( "TestManager received empty message key in simulation input", simulationId);
+					logManager.error(ProcessStatus.ERROR, simulationId, "TestManager received empty message key in simulation input");
 					return;
 				}
 				
@@ -595,7 +572,7 @@ public class TestManagerImpl implements TestManager {
 				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
 
 				if ( ! simOutputJsonObj.has("message")) {
-					logMessage( "TestManager received empty message key in simulation output", simulationId);
+					logManager.error(ProcessStatus.RUNNING, simulationId, "TestManager received empty message key in simulation output");
 					return;
 				}
 				
