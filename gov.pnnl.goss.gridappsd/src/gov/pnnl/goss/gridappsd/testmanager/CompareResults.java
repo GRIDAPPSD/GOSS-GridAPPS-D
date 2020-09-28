@@ -62,6 +62,9 @@ import com.google.gson.JsonPrimitive;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import pnnl.goss.core.Client;
 	
 	/**
 	*
@@ -72,21 +75,33 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 		
 	//	private static Logger log = LoggerFactory.getLogger(TestManagerImpl.class);
 		
-		LogManager logManager;
+		private LogManager logManager;
+				
+		private Client client;
+		
+		private String testId; 
+		
+		private String testOutputTopic = GridAppsDConstants.topic_simulationTestOutput;
 		
 		private final static double EPSILON_e3 = 0.001001;
 		
 		private final static double EPSILON_e1 = 0.100001;
 		
-		private Set<String> propSet = new HashSet<String>(); 
+		private Set<String> propSet = new HashSet<String>();
+
+		private TestConfig testConfig;
 		
-		public CompareResults(){
-			propSet.add("value");
-			propSet.add("angle");
-			propSet.add("magnitude");
-		}
-		public CompareResults(LogManager logManager){
-			this.logManager = logManager;
+//		public CompareResults(Client client){
+//			this.client = client;
+//			propSet.add("value");
+//			propSet.add("angle");
+//			propSet.add("magnitude");
+//		}
+		
+		public CompareResults(Client client, TestConfig testConfig){
+			this.client = client;
+			this.testConfig = testConfig;
+			this.testId = testConfig.getTestId();
 			propSet.add("value");
 			propSet.add("angle");
 			propSet.add("magnitude");
@@ -115,7 +130,34 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 			System.out.println(o1.equals(o3));
 	//		Assert.assertEquals(o1, o2);
 		}
-	
+		
+//		public void publishTestResults(String id, TestResultSeries testResultsSeries, Boolean storeMatches) {
+//			client.publish(testOutputTopic+id,testResultsSeries.toJson(storeMatches));
+//		}
+
+		public void publishTestResults(String id, TestResults testResults, Boolean storeMatches) {
+			String tr  = testResults.toJson(storeMatches);
+//			System.out.println(storeMatches);
+//			System.out.println(tr);
+			if (! tr.isEmpty()){
+				System.out.println(tr);
+	//			System.out.println(testOutputTopic+id);
+				client.publish(testOutputTopic+id,tr);
+			}
+		}
+		
+		private void publish(String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
+			TestResults temp = new TestResults();
+			temp.add(key, prop, expectedOutputObjstring, simOutputObjstring2, match);
+			publishTestResults(testId, temp, testConfig.getStoreMatches());
+		}
+		
+		private void publish(String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
+			TestResults temp = new TestResults();
+			temp.add( obj, prop, expected, actual, diff_mrid, diff_type, match);
+			publishTestResults(testId, temp, testConfig.getStoreMatches());	
+		}
+		
 //		public SimulationOutput getOutputProperties(String path) {
 //			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 //			JsonReader jsonReader;
@@ -271,6 +313,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 			if (expectedForwardMap == null){
 				System.out.println("no index for "+timestamp2 );
 				testResults.add("NA", "NA", "NA", "NA", false);
+				publish("NA", "NA", "NA", "NA", false);
 				return testResults;
 			}
 //			if (expectedForwardMap == null) return new TestResults();
@@ -417,8 +460,15 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 											simOutputObj.get(prop).toString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
 											simOutputObj.get("difference_mrid").getAsString(), true);
+									publish(simOutputObj.get("object").getAsString(),
+											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											expectedOutputObj.get(prop).toString(),
+											simOutputObj.get(prop).toString(),
+											simOutputObj.get("hasMeasurementDifference").getAsString(),
+											simOutputObj.get("difference_mrid").getAsString(), true);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
+									publish(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 								}
 							}
 							else{
@@ -435,6 +485,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 											simOutputObj.get("difference_mrid").getAsString());
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
+									publish(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
 								}
 							}
 						}
@@ -446,6 +497,9 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 			}
 //			System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
 		}
+		
+
+
 		
 //		public void compareExpectedAndSimOld(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
 //				Set<Entry<String, JsonElement>> simOutputSet) {
@@ -505,6 +559,7 @@ import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 //			return jsonObject;
 //		}
 		
+
 		/**
 		 * 
 		 * @param simOutputPath
