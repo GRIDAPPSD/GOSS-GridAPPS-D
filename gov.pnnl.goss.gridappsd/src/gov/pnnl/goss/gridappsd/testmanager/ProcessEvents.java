@@ -81,12 +81,14 @@ public class ProcessEvents {
     }
 	
 	public void addEvents(List<Event> events) {
-		events.forEach(event -> {addEvent(event);});
+		if(events!=null){
+			events.forEach(event -> {addEvent(event);});
+		}
 	}
 
 	public void addEvent(Event event) {
 		if(event.occuredDateTime >= event.stopDateTime){
-			logMessage("Invalid command event.occuredDateTime >= event.stopDateTime.", simulationID);
+			logManager.debug(ProcessStatus.RUNNING, simulationID, "Invalid command event.occuredDateTime >= event.stopDateTime.");
 			return;
 		}
 		
@@ -101,7 +103,7 @@ public class ProcessEvents {
 
 	public void updateQueue(PriorityBlockingQueue<Event> q ,Event e){
 		if(e.faultMRID == null){
-			logMessage("Could not update event. The faultMRID is null.", simulationID);
+			logManager.debug(ProcessStatus.RUNNING, simulationID, "Could not update event. The faultMRID is null.");
 		}
 		for (Event tempEvent : q) {
 			if(tempEvent.faultMRID.equals(e.faultMRID)){
@@ -110,7 +112,7 @@ public class ProcessEvents {
 					tempEvent.stopDateTime = e.stopDateTime;
 					q.add(tempEvent);
 				} else{
-					logMessage("Could not update event " + e.toString(), simulationID);
+					logManager.debug(ProcessStatus.RUNNING, simulationID,"Could not update event " + e.toString());
 				}
 			}
 		}
@@ -216,7 +218,7 @@ public class ProcessEvents {
 			Event temp = pq_initiated.remove();
 			pq_cleared.remove();
 //			System.out.println("Fault event occures before the simulation start");
-			logMessage("Fault event occures before the simulation start " + temp.toString(), simulationID);
+			logManager.warn(ProcessStatus.RUNNING, simulationID,"Fault event occures before the simulation start ");
     		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
 			initied++;
 			cleared++;
@@ -226,7 +228,7 @@ public class ProcessEvents {
 				Event temp = pq_initiated.remove();
 				pq_cleared.remove();
 //				System.out.println("Fault event occures after the simulation end");
-				logMessage("Fault event occures after the simulation end" + temp.toString(), simulationID);
+				logManager.warn(ProcessStatus.RUNNING, simulationID,"Fault event occures after the simulation end" + temp.toString());
 	    		eventStatus.put(temp.getFaultMRID(),EventStatus.CLEARED);
 				initied++;
 				cleared++;
@@ -283,7 +285,7 @@ public class ProcessEvents {
 		if (command != null){
 //			System.out.println("Message to platform at time "+ current_time);
 //			System.out.println(gson.toJson(command));
-			logMessage("Sending command to " + command.toString(), simulationID);
+			logManager.debug(ProcessStatus.RUNNING, simulationID,"Sending command to " + command.toString());
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 		command = createDiffCommand(simulationID, dmComm, "CommOutage");
@@ -291,7 +293,7 @@ public class ProcessEvents {
 			command.add("input", dmComm.toJsonElement());
 //			System.out.println("Message to platform at time " + current_time);
 //			System.out.println(gson.toJson(command));
-			logMessage("Sending command to " + command.toString(), simulationID);
+			logManager.debug(ProcessStatus.RUNNING, simulationID, "Sending command to " + command.toString());
 			client.publish(GridAppsDConstants.topic_simulationInput+"."+simulationID, command.toString());
 		}
 	}
@@ -336,18 +338,6 @@ public class ProcessEvents {
 		command.addProperty("command", commandStr);
 		command.add("input", input);
 		return command;
-	}
-	
-	public void logMessage(String msgStr, String simulationId) {
-		LogMessage logMessageObj = new LogMessage();
-		logMessageObj.setProcessId(simulationId);
-		logMessageObj.setLogLevel(LogLevel.DEBUG);
-		logMessageObj.setSource(this.getClass().getSimpleName());
-		logMessageObj.setProcessStatus(ProcessStatus.RUNNING);
-		logMessageObj.setStoreToDb(true);
-		logMessageObj.setTimestamp(new Date().getTime());
-		logMessageObj.setLogMessage(msgStr);
-		logManager.log(logMessageObj,username,GridAppsDConstants.topic_platformLog);
 	}
 
 }

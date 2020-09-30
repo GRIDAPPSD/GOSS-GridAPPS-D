@@ -45,7 +45,7 @@ import java.util.List;
 import pnnl.goss.core.Response;
 
 public interface GridAppsDataHandler {
-	public Response handle(Serializable request, int simulationId, String tempDataPath, LogManager logManager) throws Exception;
+	public Response handle(Serializable request, String simulationId, String tempDataPath, LogManager logManager) throws Exception;
 	
 	public String getDescription();
 	

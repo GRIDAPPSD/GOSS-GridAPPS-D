@@ -113,15 +113,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		if (configManager != null) {
 			configManager.registerConfigurationHandler(TYPENAME, this);
 		} else {
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					null, 
-					new Date().getTime(), 
-					"No Config manager avilable for " + getClass().getSimpleName(), 
-					LogLevel.WARN, 
-					ProcessStatus.ERROR, 
-					true), 
-					securityConfig.getManagerUser(),
-					GridAppsDConstants.topic_platformLog);
+			logManager.error(ProcessStatus.ERROR, null, "No Config manager avilable for " + getClass().getSimpleName());
 		}
 	}
 
@@ -129,32 +121,28 @@ public class GLDZiploadScheduleConfigurationHandler extends
 	public void generateConfig(Properties parameters, PrintWriter out,
 			String processId, String username) throws Exception {
 
-		logRunning(
-				"Generating zipload schedule GridLAB-D configuration files using parameters: "
-						+ parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating zipload schedule GridLAB-D configuration files using parameters: "
+						+ parameters);
 
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters,
 				SCHEDULENAME, null);
 		String directory = GridAppsDConstants.getStringProperty(parameters,
 				DIRECTORY, null);
 		if (directory == null || directory.trim().length() == 0) {
-			logError("No " + DIRECTORY + " parameter provided", processId,
-					username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No " + DIRECTORY + " parameter provided");
 			throw new Exception("Missing parameter " + DIRECTORY);
 		}
 
 		long simulationStartTime = GridAppsDConstants.getLongProperty(
 				parameters, SIMULATIONSTARTTIME, -1);
 		if (simulationStartTime < 0) {
-			logError("No " + SIMULATIONSTARTTIME + " parameter provided",
-					processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId,"No " + SIMULATIONSTARTTIME + " parameter provided");
 			throw new Exception("Missing parameter " + SIMULATIONSTARTTIME);
 		}
 		long simulationDuration = GridAppsDConstants.getLongProperty(
 				parameters, SIMULATIONDURATION, 0);
 		if (simulationDuration == 0) {
-			logError("No " + SIMULATIONDURATION + " parameter provided",
-					processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, processId,"No " + SIMULATIONDURATION + " parameter provided");
 			throw new Exception("Missing parameter " + SIMULATIONDURATION);
 		}
 		File dir = new File(directory);
@@ -165,15 +153,15 @@ public class GLDZiploadScheduleConfigurationHandler extends
 		
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "ieeezipload");
-		int simId = -1;
+		String simId = "1";
 		if(simulationID==null || simulationID.trim().length()==0){
-			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR, simulationID,"No "+SIMULATIONID+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		try{
-			simId = new Integer(simulationID);
+			simId = simulationID;
 		}catch (Exception e) {
-			logError("Simulation ID not a valid integer "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+			logManager.error(ProcessStatus.ERROR, simulationID,"Simulation ID not a valid  "+simulationID+", defaulting to "+simId);
 		}
 				
 		RequestTimeseriesData request = new RequestTimeseriesData();
@@ -206,8 +194,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 			fout.close();
 		}
 
-		logRunning("Finished generating all GridLAB-D configuration files.",
-				processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all GridLAB-D configuration files.");
 
 	}
 

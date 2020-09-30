@@ -139,7 +139,7 @@ public class DataManagerImpl implements DataManager {
 	}
 
 	@Override
-	public Response processDataRequest(Serializable request, String type, int simulationId, String tempDataPath, String username) throws Exception {
+	public Response processDataRequest(Serializable request, String type, String simulationId, String tempDataPath, String username) throws Exception {
 				
 		
 		if(request!=null && type!=null){
@@ -217,12 +217,7 @@ public class DataManagerImpl implements DataManager {
 			return dataConverters.get(converterKey);
 		} else {
 			//TODO should we log a warning that the converter is not found?
-			logManager.log(
-					new LogMessage(this.getClass().getName(), new Integer(
-							0).toString(), new Date().getTime(),
-							"No Data converter available for "+inputFormat+" to "+outputFormat, LogLevel.WARN,
-							ProcessStatus.RUNNING, false), "system",
-					GridAppsDConstants.topic_platformLog);
+			logManager.warn(ProcessStatus.RUNNING, null, "No Data converter available for "+inputFormat+" to "+outputFormat);
 			return null;
 		}
 	}

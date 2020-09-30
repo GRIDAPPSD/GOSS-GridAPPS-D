@@ -148,7 +148,7 @@ public class AppManagerImpl implements AppManager {
 	}
 
 	@Override
-	public void process(int processId, DataResponse event, Serializable message)
+	public void process(String processId, DataResponse event, Serializable message)
 			throws Exception {
 
 		// Get username from message's metadata e.g. event.getUserName()
@@ -259,24 +259,11 @@ public class AppManagerImpl implements AppManager {
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		try{
-		logManager.log(new LogMessage(this.getClass().getName(),
-				null,
-				new Date().getTime(),
-				"Starting "+this.getClass().getName(),
-				LogLevel.INFO,
-				ProcessStatus.RUNNING,
-				true),securityConfig.getManagerUser(),
-				GridAppsDConstants.topic_platformLog);
+		logManager.info(ProcessStatus.RUNNING, null, "Starting "+this.getClass().getName());
 
 		scanForApps();
 
-		logManager.log(new LogMessage(this.getClass().getName(),
-				null,
-				new Date().getTime(),
-				String.format("Found %s applications", apps.size()),
-				LogLevel.INFO,
-				ProcessStatus.RUNNING,
-				true),securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
+		logManager.info(ProcessStatus.RUNNING, null, String.format("Found %s applications", apps.size()));
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -551,12 +538,7 @@ public class AppManagerImpl implements AppManager {
 			processAppBuilder.redirectErrorStream(true);
 			processAppBuilder.redirectOutput();
 			processAppBuilder.directory(appDirectory);
-			logManager.log(new LogMessage(this.getClass().getSimpleName(),
-					simulationId, new Date().getTime(),
-					"Starting app with command "+ String.join(" ",commands),
-					LogLevel.INFO, ProcessStatus.RUNNING, true),
-					securityConfig.getManagerUser(),
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.info(ProcessStatus.RUNNING, simulationId, "Starting app with command "+ String.join(" ",commands));
 			try {
 				process = processAppBuilder.start();
 			} catch (IOException e) {
@@ -609,7 +591,7 @@ public class AppManagerImpl implements AppManager {
 				runtimeOptions, simulationId, simulationId, process);
 		appInstance.setApp_info(appInfo);
 		if (!AppType.REMOTE.equals(appInfo.getType())){
-			watch(appInstance);
+			watch(appInstance, simulationId);
 		}
 		// add to app instances map
 		appInstances.put(instanceId, appInstance);
@@ -719,7 +701,7 @@ public class AppManagerImpl implements AppManager {
 					.toPath()));
 			appInfo = AppInfo.parse(appConfigStr);
 		} catch (IOException e) {
-			logManager.log(new LogMessage(this.getClass().getName(),null,new Date().getTime(), "Error while reading app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username,GridAppsDConstants.topic_platformLog);
+			logManager.error(ProcessStatus.RUNNING, null, "Error while reading app config file: "+e.getMessage());
 		}
 
 		return appInfo;
@@ -734,7 +716,7 @@ public class AppManagerImpl implements AppManager {
 		try {
 			Files.write(confFile.toPath(), appInfo.toString().getBytes());
 		} catch (IOException e) {
-			logManager.log(new LogMessage(this.getClass().getName(),null, new Date().getTime(), "Error while writing app config file: "+e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false),username,GridAppsDConstants.topic_platformLog);
+			logManager.error(ProcessStatus.ERROR, null, "Error while writing app config file: "+e.getMessage());
 		}
 	}
 
@@ -752,7 +734,7 @@ public class AppManagerImpl implements AppManager {
 		bos.close();
 	}
 
-	private void watch(final AppInstance appInstance) {
+	private void watch(final AppInstance appInstance, String simulationId) {
 		System.out.println("WATCHING "+appInstance.getInstance_id());
 	    new Thread() {
 	        public void run() {
@@ -760,11 +742,11 @@ public class AppManagerImpl implements AppManager {
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), username, GridAppsDConstants.topic_platformLog);
+	                	logManager.logMessageFromSource(ProcessStatus.RUNNING, simulationId, line, appInstance.getInstance_id(), LogLevel.DEBUG);
 	                }
 	            } catch (IOException e) {
 	            	e.printStackTrace();
-                	logManager.log(new LogMessage(this.getClass().getName(),appInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), username, GridAppsDConstants.topic_platformLog);
+                	logManager.logMessageFromSource(ProcessStatus.ERROR, simulationId, e.getMessage(), appInstance.getInstance_id(), LogLevel.ERROR);
 	            }
 	        }
 	    }.start();

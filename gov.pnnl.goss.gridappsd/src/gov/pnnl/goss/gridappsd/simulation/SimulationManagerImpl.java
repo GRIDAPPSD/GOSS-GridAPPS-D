@@ -135,25 +135,16 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(int simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext){
+	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext){
 		//TODO: remove simulationContext parameter after refactoring service manager
 
 			try {
-				logManager.log(new LogMessage(this.getClass().getSimpleName(),
-						Integer.toString(simulationId), 
-						new Date().getTime(), 
-						"Starting simulation "+simulationId, 
-						LogLevel.INFO, 
-						ProcessStatus.STARTING, 
-						true),simContext.getSimulationUser(),
-						GridAppsDConstants.topic_platformLog);
+				logManager.info(ProcessStatus.STARTING, simulationId, "Starting simulation "+simulationId);
 			} catch (Exception e2) {
 				log.warn("Error while reporting status "+e2.getMessage());
 			}
 			
 			simContexts.put(simContext.getSimulationId(), simContext);
-			
-			startServiceDependencies(simulationConfig, simContext, simulationContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
 						simulationConfig, simulationId, logManager, appManager, client, securityConfig);
@@ -200,18 +191,6 @@ public class SimulationManagerImpl implements SimulationManager{
 	@Override
 	public SimulationContext getSimulationContextForId(String simulationId){
 		return this.simContexts.get(simulationId);
-	}
-	
-	@Override
-	public void startServiceDependencies(SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext){
-		ServiceInfo simulationServiceInfo = serviceManager.getService(simulationConfig.simulator);
-		List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
-		for(String service : serviceDependencies) {
-			String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
-			if(serviceInstanceId!=null)
-				simContext.addServiceInstanceIds(serviceInstanceId);
-		}
-		
 	}
 	
 	

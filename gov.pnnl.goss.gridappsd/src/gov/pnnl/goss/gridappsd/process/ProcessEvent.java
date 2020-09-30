@@ -51,6 +51,11 @@ import gov.pnnl.goss.gridappsd.dto.ConfigurationRequest;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
+import gov.pnnl.goss.gridappsd.dto.events.Event;
+import gov.pnnl.goss.gridappsd.dto.events.Fault;
+import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
+import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -75,6 +80,8 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -121,6 +128,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.dataManager = dataManager;
 		this.testManager = testManager;
 		this.roleManager = roleManager;
+		
 	}
 
 
@@ -130,11 +138,18 @@ public class ProcessEvent implements GossResponseEvent {
 		DataResponse event = (DataResponse)message;
 		String username  = event.getUsername();
 		
-		int processId = ProcessManagerImpl.generateProcessId();
-		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination(), username);
+		String processId = ProcessManagerImpl.generateProcessId();
+		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
 
 
 		try{ 
+			GsonBuilder gsonBuilder = new GsonBuilder();
+			RuntimeTypeAdapterFactory<Event> commandAdapterFactory = RuntimeTypeAdapterFactory.of(Event.class, "event_type")
+			.registerSubtype(CommOutage.class,"CommOutage").registerSubtype(Fault.class, "Fault").registerSubtype(ScheduledCommandEvent.class, "ScheduledCommandEvent");
+			gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
+			gsonBuilder.setPrettyPrinting();
+			Gson gsonSpecial = gsonBuilder.create();		
+//			simRequest = gson.fromJson(request.toString(), RequestSimulation.class);
 
 			if(event.getDestination().contains(GridAppsDConstants.topic_requestSimulation )){
 				//Parse simluation request
@@ -152,7 +167,8 @@ public class ProcessEvent implements GossResponseEvent {
 					if(request!=null){
 						//make sure it doesn't fail if request is null, although it should never be null
 						try{
-							simRequest = RequestSimulation.parse(request.toString());
+//							simRequest = RequestSimulation.parse(request.toString());
+							simRequest = gsonSpecial.fromJson(request.toString(), RequestSimulation.class);
 						}catch(JsonSyntaxException e){
 							e.printStackTrace();
 							//TODO log error
@@ -166,10 +182,10 @@ public class ProcessEvent implements GossResponseEvent {
 					//if new simulation		
 					if (simRequest.simulation_request_type==null || simRequest.simulation_request_type.equals(SimulationRequestType.NEW)){
 						RequestSimulationResponse response = new RequestSimulationResponse();
-						response.setSimulationId(Integer.toString(processId));
+						response.setSimulationId(processId);
 						//RequestSimulation config = RequestSimulation.parse(message.toString());
 						if(simRequest.getTest_config()!=null)
-							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), Integer.toString(processId)));
+							response.setEvents(testManager.sendEventsToSimulation(simRequest.getTest_config().getEvents(), processId));
 						client.publish(event.getReplyDestination(), response);
 						//TODO also verify that we have the correct sub-configurations as part of the request
 						//newSimulationProcess.process(configurationManager, simulationManager, processId, event, event.getData(), appManager, serviceManager);
@@ -201,7 +217,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 				String type = requestTopicExtension;
 
-				this.debug(processId, "Received data request of type: "+type,null, username);
+				logManager.debug(ProcessStatus.RUNNING, processId,"Received data request of type: "+type);
 
 				Serializable request;
 				if (message instanceof DataResponse){
@@ -244,7 +260,7 @@ public class ProcessEvent implements GossResponseEvent {
 						StringWriter sww = new StringWriter();
 						PrintWriter pw = new PrintWriter(sww);
 						e.printStackTrace(pw);
-						this.error(processId,sww.toString(), username);
+						logManager.error(ProcessStatus.ERROR,processId,sww.toString());
 						sendError(client, event.getReplyDestination(), e.getMessage(), processId, username);
 					}
 					String result = sw.toString();
@@ -259,7 +275,7 @@ public class ProcessEvent implements GossResponseEvent {
 						sendData(client, event.getReplyDestination(), result, processId, username);
 
 				} else {
-					this.error(processId, "No valid configuration request received, request: "+request, username);
+					logManager.error(ProcessStatus.ERROR, processId, "No valid configuration request received, request: "+request);
 					sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request, processId, username);
 				}
 
@@ -288,13 +304,13 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 			sendError(client, event.getReplyDestination(), sw.toString(), processId, username);
 		}
 	}
 
 
-	private void sendData(Client client, Destination replyDestination, Serializable data, int processId, String username){
+	private void sendData(Client client, Destination replyDestination, Serializable data, String processId, String username){
 		try {
 			//Make sure it is sending back something in the data field for valid json  (or if it is null maybe it should send error response instead???)
 			 if(data==null || data.toString().length()==0){
@@ -310,13 +326,13 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 			//TODO log error and send error response
 		}
 	}
 
 
-	private void sendError(Client client, Destination replyDestination, String error, int processId, String username){
+	private void sendError(Client client, Destination replyDestination, String error, String processId, String username){
 		try {
 			DataResponse r = new DataResponse();
 			r.setError(new DataError(error));
@@ -326,40 +342,9 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 		}
 	}
 
-
-	private void debug(int processId, String message, String process_type, String username) {
-
-		LogMessage logMessage = new LogMessage();
-		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(Integer.toString(processId));
-		logMessage.setLogLevel(LogLevel.DEBUG);
-		logMessage.setProcessStatus(ProcessStatus.RUNNING);
-		logMessage.setLogMessage(message);
-		logMessage.setStoreToDb(true);
-		logMessage.setTimestamp(new Date().getTime());
-		if(process_type!=null)
-			logMessage.setProcess_type(process_type);
-		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
-
-	}
-
-	private void error(int processId, String message, String username) {
-
-		LogMessage logMessage = new LogMessage();
-		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(Integer.toString(processId));
-		logMessage.setLogLevel(LogLevel.ERROR);
-		logMessage.setProcessStatus(ProcessStatus.ERROR);
-		logMessage.setLogMessage(message);
-		logMessage.setStoreToDb(true);
-		logMessage.setTimestamp(new Date().getTime());
-
-		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
-
-	}
 
 }

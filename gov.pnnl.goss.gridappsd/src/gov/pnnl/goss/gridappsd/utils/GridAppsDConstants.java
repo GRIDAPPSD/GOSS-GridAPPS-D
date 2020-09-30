@@ -107,7 +107,7 @@ public class GridAppsDConstants {
 	public static final String topic_simulationInput = topic_simulation+".input";
 	public static final String topic_simulationOutput = "/topic/"+topic_simulation+".output";
 	public static final String topic_simulationLog = topic_simulation+".log.";
-	public static final String topic_simulationTestOutput = "/topic/"+topic_simulation+".test.output.";
+	public static final String topic_simulationTestOutput = topic_simulation+".test.output.";
 	public static final String topic_simulationTestInput = "/topic/"+topic_simulation+".test.input.";
 	
 	//Service Topics
@@ -249,27 +249,5 @@ public class GridAppsDConstants {
 		
 		return defaultValue;
 	}
-	
-	
-	public static void logMessage(LogManager logManager, String fromClass, String message, String simulationID, String username, LogLevel logLevel){
-		
-		if(logManager!=null){
-			if(logLevel==LogLevel.ERROR){
-				logManager.log(
-						new LogMessage(fromClass, simulationID, new Date().getTime(),
-								message, LogLevel.ERROR,
-								ProcessStatus.ERROR, false), username,
-						GridAppsDConstants.topic_platformLog);
-			} else {
-				logManager.log(
-						new LogMessage(fromClass, simulationID, new Date().getTime(),
-								message, logLevel,
-								ProcessStatus.RUNNING, false), username,
-						GridAppsDConstants.topic_platformLog);
-			}
-			
-		} else {
-			//???  what to do if they didn't set a log manager?
-		}
-	}
+
 }

@@ -68,12 +68,7 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
 		}
 		else { 
 			if(logManager!=null){
-				logManager.log(
-						new LogMessage(this.getClass().getName(), new Integer(
-								0).toString(), new Date().getTime(),
-								"No Data manager available for "+getClass(), LogLevel.WARN,
-								ProcessStatus.RUNNING, false), "system",
-						GridAppsDConstants.topic_platformLog);
+				logManager.warn(ProcessStatus.RUNNING, null, "No Data manager available for "+getClass());
 			}
 		}
 	}

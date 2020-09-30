@@ -52,7 +52,7 @@ public class LogMessage implements Serializable {
 		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
 	}
 	public enum ProcessStatus {
-		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE, STOPPED
+		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE, STOPPED, PAUSED
 	}
 
 	String source;

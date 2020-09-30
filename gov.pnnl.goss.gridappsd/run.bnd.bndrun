@@ -74,7 +74,7 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	blazegraph.cim2glm;version=18.0.3,\
+	blazegraph.cim2glm;version=19.1.1,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	javax.servlet-api,\
 	com.bigdata.rdf,\

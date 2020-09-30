@@ -82,7 +82,6 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 public class ConfigurationManagerImpl implements ConfigurationManager{
 	private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
-	private static Logger log = LoggerFactory.getLogger(ConfigurationManagerImpl.class);
 	Client client = null; 
 	
 	@ServiceDependency
@@ -124,14 +123,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 	 * @return
 	 */
 	@Override
-	public synchronized File getSimulationFile(int simulationId, RequestSimulation powerSystemConfig) throws Exception{
-		logManager.log(
-				new LogMessage(this.getClass().getName(), new Integer(
-						simulationId).toString(), new Date().getTime(),
-						"ConfigurationManager.getSimulationFile will be deprecated", LogLevel.WARN,
-						ProcessStatus.RUNNING, false), "",
-				GridAppsDConstants.topic_platformLog);
-		log.debug(powerSystemConfig.toString());
+	public synchronized File getSimulationFile(String simulationId, RequestSimulation powerSystemConfig) throws Exception{
+		
+		logManager.warn(ProcessStatus.RUNNING, simulationId, "ConfigurationManager.getSimulationFile will be deprecated");
+		
 		//TODO call dataManager's method to get power grid model data and create simulation file
 		Response resp = dataManager.processDataRequest(powerSystemConfig, null, simulationId, getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH), "");
 		
@@ -161,8 +156,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 
 	@Override
 	public void registerConfigurationHandler(String type, ConfigurationHandler handler) {
-		//TODO send to log mgr
-		log.info("Registring config "+type+" "+handler.getClass());
+		logManager.info(ProcessStatus.RUNNING, null, "Registring config "+type+" "+handler.getClass());
 		configHandlers.put(type, handler);
 	}
 
@@ -171,12 +165,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager{
 		if(configHandlers.containsKey(type) && configHandlers.get(type)!=null){
 			configHandlers.get(type).generateConfig(parameters, out, processId, username);
 		} else {
-			logManager.log(
-					new LogMessage(this.getClass().getName(), new Integer(
-							processId).toString(), new Date().getTime(),
-							"No configuration handler registered for '"+type+"'", LogLevel.ERROR,
-							ProcessStatus.ERROR, false), "",
-					GridAppsDConstants.topic_platformLog);			
+			logManager.error(ProcessStatus.ERROR, processId, "No configuration handler registered for '"+type+"'");
 			throw new Exception("No configuration handler registered for '"+type+"'");
 		}
 		
