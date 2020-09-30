@@ -912,7 +912,7 @@ def _get_fncs_bus_messages(simulation_id, measurement_filter):
                                             measurement["value"] = int(val_str)
                                     elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
                                         if property_name == "state_of_charge":
-                                            measurement["value"] = float(val)*100.0
+                                            measurement["value"] = float(val_str)*100.0
                                         else:
                                             val = complex(val_str)
                                             (mag,ang_rad) = cmath.polar(val)
