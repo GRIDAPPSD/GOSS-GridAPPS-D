@@ -145,12 +145,7 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 			log.debug(key.toString() + " = "+ parameters.getProperty(key.toString()));
 		}
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Generating DSS base file", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+		logManager.debug(ProcessStatus.RUNNING, simulationId, "Generating DSS base file");
 		
 		//Create DSS base file
 		PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
@@ -160,20 +155,9 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		if(!dssBaseFile.exists())
 				throw new Exception("Error: Could not create DSS base file to export Vnom matrix");
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Finished generating DSS base file", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
+		logManager.debug(ProcessStatus.RUNNING, simulationId,"Finished generating DSS base file"); 
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Generating commands file for opendsscmd", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
-		
+		logManager.debug(ProcessStatus.RUNNING, simulationId,"Generating commands file for opendsscmd");
 		
 		//Create file with commands for opendsscmd
 		PrintWriter fileWriter = new PrintWriter(commandFile);
@@ -198,19 +182,9 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		fileWriter.flush();
 		fileWriter.close();
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Finished generating commands file for opendsscmd", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_platformLog);
+		logManager.debug(ProcessStatus.RUNNING, simulationId, "Finished generating commands file for opendsscmd");
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Generating Y Bus matrix", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+		logManager.debug(ProcessStatus.RUNNING, simulationId, "Generating Y Bus matrix");
 		
 		ProcessBuilder processServiceBuilder = new ProcessBuilder();
 		processServiceBuilder.directory(simulationDir);
@@ -231,12 +205,7 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		
 		response.setVnom(Files.readAllLines(Paths.get(vnomPath.getPath())));
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId, new Date().getTime(), 
-				"Finished generating Vnom export", 
-				LogLevel.DEBUG, 
-				ProcessStatus.RUNNING, 
-				true), username, GridAppsDConstants.topic_simulationLog+simulationId);
+		logManager.debug(ProcessStatus.RUNNING, simulationId, "Finished generating Vnom export");
 			
 		out.print(response);
 		

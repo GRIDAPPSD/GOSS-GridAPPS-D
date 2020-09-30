@@ -96,8 +96,8 @@ public class ServiceManagerImpl implements ServiceManager{
 	
 	private HashMap<String, ServiceInstance> serviceInstances = new HashMap<String, ServiceInstance>();
 	
-	public String simulationId;
-	public String simulationPort;
+	//public String simulationId;
+	//public String simulationPort;
 	
 	
 	
@@ -122,24 +122,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	public void start(){
 		//statusReporter.reportStatus(String.format("Starting %s", this.getClass().getName()));
 		try{
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				simulationId,
-				new Date().getTime(), 
-				"Starting "+this.getClass().getName(), 
-				LogLevel.INFO, 
-				ProcessStatus.RUNNING, 
-				true),securityConfig.getManagerUser(),
-				GridAppsDConstants.topic_platformLog);
+		logManager.info(ProcessStatus.RUNNING, null, "Starting "+this.getClass().getName());
 		
 		scanForServices();
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-				null,
-				new Date().getTime(), 
-				String.format("Found %s services", services.size()), 
-				LogLevel.INFO, 
-				ProcessStatus.RUNNING, 
-				true),securityConfig.getManagerUser(),GridAppsDConstants.topic_platformLog);
+		logManager.info(ProcessStatus.RUNNING, null,String.format("Found %s services", services.size()));
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -251,8 +238,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Override
 	public String startServiceForSimultion(String serviceId, HashMap<String, Object> runtimeOptions,  Map<String, Object> simulationContext) {
 		
-		if(simulationId == null)
-			this.simulationId = simulationContext.get("simulationId").toString();
+		String simulationId = simulationContext.get("simulationId").toString();
 				
 		String instanceId = serviceId+"-"+new Date().getTime();
 		// get execution path
@@ -264,12 +250,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 		// are multiple allowed? if not check to see if it is already running, if it is then send warning message
 		if(!serviceInfo.isMultiple_instances() && listRunningServices(serviceId, simulationId).size()>0){
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, new Date().getTime(),
-					serviceId + " service is already running and multiple instances are not allowed for single simulation", 
-					LogLevel.WARN, ProcessStatus.RUNNING, true), 
-					securityConfig.getManagerUser(),
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.warn(ProcessStatus.RUNNING, simulationId, serviceId + " service is already running and multiple instances are not allowed for single simulation");
 			return null;
 		}
 
@@ -334,12 +315,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
 				
-				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-						simulationId, new Date().getTime(),
-						"Starting service with command "+ String.join(" ",commands), 
-						LogLevel.INFO, ProcessStatus.RUNNING, true), 
-						securityConfig.getManagerUser(),
-						GridAppsDConstants.topic_simulationLog+simulationId);
+				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 				
@@ -350,12 +326,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-						simulationId, new Date().getTime(),
-						"Starting service with command "+ String.join(" ",commands), 
-						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
-						securityConfig.getManagerUser(),
-						GridAppsDConstants.topic_simulationLog+simulationId);
+				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
@@ -366,12 +337,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-						simulationId, new Date().getTime(),
-						"Starting service with command "+ String.join(" ",commands), 
-						LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
-						securityConfig.getManagerUser(),
-						GridAppsDConstants.topic_simulationLog+simulationId);
+				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 	
 					
@@ -398,24 +364,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				commandString.append(" ");
 			}
 
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, 
-					new Date().getTime(), 
-					"Error running command + "+ commandString,
-					LogLevel.ERROR,
-					ProcessStatus.ERROR,
-					true), 
-					securityConfig.getManagerUser(),
-					GridAppsDConstants.topic_simulationLog+simulationId);
-			logManager.log(new LogMessage(this.getClass().getSimpleName(), 
-					simulationId, 
-					new Date().getTime(), 
-					sStackTrace,
-					LogLevel.ERROR,
-					ProcessStatus.ERROR,
-					true), 
-					securityConfig.getManagerUser(),
-					GridAppsDConstants.topic_simulationLog+simulationId);
+			logManager.error(ProcessStatus.ERROR, simulationId, "Error running command + "+ commandString);
+			logManager.error(ProcessStatus.ERROR, simulationId, sStackTrace);
 		}
 		
 		//create serviceinstance object
@@ -425,7 +375,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		//add to service instances map
 		serviceInstances.put(instanceId, serviceInstance);
 		
-		watch(serviceInstance);
+		watch(serviceInstance, simulationId);
 		
 		return instanceId;
 		
@@ -493,7 +443,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		this.configurationProperties = config;
 	}
 	
-	private void watch(final ServiceInstance serviceInstance) {
+	private void watch(final ServiceInstance serviceInstance, String simulationId) {
 		System.out.println("WATCHING "+serviceInstance.getInstance_id());
 	    new Thread() {
 	        public void run() {
@@ -501,12 +451,14 @@ public class ServiceManagerImpl implements ServiceManager{
 	            String line = null;
 	            try {
 	                while ((line = input.readLine()) != null) {
-	                	logManager.log(new LogMessage(this.getClass().getSimpleName(),serviceInstance.getInstance_id(), new Date().getTime(), line, LogLevel.DEBUG, ProcessStatus.RUNNING, false), securityConfig.getManagerUser(), GridAppsDConstants.topic_simulationLog+simulationId);
+	                	logManager.logMessageFromSource(ProcessStatus.RUNNING, simulationId, line,
+	                			serviceInstance.getInstance_id(), LogLevel.DEBUG);
 	                }
 	            } catch (IOException e) {
 	            	if(!(e.getMessage().contains("Stream closed"))){
 	            	e.printStackTrace();
-                	logManager.log(new LogMessage(this.getClass().getName(),serviceInstance.getInstance_id(), new Date().getTime(), e.getMessage(), LogLevel.ERROR, ProcessStatus.ERROR, false), securityConfig.getManagerUser(), GridAppsDConstants.topic_simulationLog+simulationId);
+                	logManager.logMessageFromSource(ProcessStatus.ERROR, simulationId, serviceInstance.getInstance_id()+" : "+e.getMessage(),
+                			serviceInstance.getInstance_id(), LogLevel.ERROR);
 	            	}
 	            }
 	        }

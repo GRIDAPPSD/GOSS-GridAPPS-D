@@ -61,6 +61,7 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -128,7 +129,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
-		logRunning("Generating Base DSS configuration file using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating Base DSS configuration file using parameters: "+parameters);
 		
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -142,11 +143,11 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary DSS base file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId, "Dictionary DSS base file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
@@ -175,7 +176,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, "", logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -212,7 +213,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 			idFileWriter.close();
 		}
-		logRunning("Finished generating DSS Base configuration file.", processId, "", logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating DSS Base configuration file.");
 
 	}
 	
