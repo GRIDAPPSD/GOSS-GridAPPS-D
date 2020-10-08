@@ -397,8 +397,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("A")) {
 				objectName = conductingEquipmentName;
 				propertyName = "measured_current_" + phases;
+			} else if (measurementType.equals("SoC")) {
+				objectName = conductingEquipmentName;
+				propertyName = "state_of_charge";
 			} else {
-				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, PNV, and SoC.\nmeasurementType = %s.",measurementType));
 			}
 		} else if (conductingEquipmentType.contains("SynchronousMachine")) {
 			if(measurementType.equals("VA")) {
