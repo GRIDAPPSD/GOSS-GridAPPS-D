@@ -207,9 +207,17 @@ public class HistoricalComparison {
 		if(simInputObject.entrySet().isEmpty() || expected_input_series.entrySet().isEmpty()){
 			System.out.println("Empty inputs");
 			return testResultSeries;
+		}else{
+			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey().toString(), time_entry.getKey().toString(), simInputObject, expected_input_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+			}
 		}
 		
-		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+		//rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		return testResultSeries;
 	}
 
@@ -272,11 +280,16 @@ public class HistoricalComparison {
 		if (expectedObject.has("input") && expected_series.has("input") ){
 			JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 			JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
-	//		System.out.println("processWithAllTimes expectedJson");
-	//		System.out.println(simInputObject.toString());
-	//		System.out.println(expected_input_series.toString());
-	
-			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+
+			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey().toString(), time_entry.getKey().toString(), simInputObject, expected_input_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+			}
+			
+//			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		}
 		return testResultSeries;
 	}

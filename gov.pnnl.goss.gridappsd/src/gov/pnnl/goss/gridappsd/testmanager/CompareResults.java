@@ -146,15 +146,19 @@ import pnnl.goss.core.Client;
 			}
 		}
 		
-		private void publish(String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
+		private void publish(String timestamp, String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
 			TestResults temp = new TestResults();
 			temp.add(key, prop, expectedOutputObjstring, simOutputObjstring2, match);
+			temp.setIndexOne(Long.parseLong(timestamp));
+			temp.setIndexTwo(Long.parseLong(timestamp));
 			publishTestResults(testId, temp, testConfig.getStoreMatches());
 		}
 		
-		private void publish(String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
+		private void publish(String timestamp, String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
 			TestResults temp = new TestResults();
 			temp.add( obj, prop, expected, actual, diff_mrid, diff_type, match);
+			temp.setIndexOne(Long.parseLong(timestamp));
+			temp.setIndexTwo(Long.parseLong(timestamp));
 			publishTestResults(testId, temp, testConfig.getStoreMatches());	
 		}
 		
@@ -303,7 +307,7 @@ import pnnl.goss.core.Client;
 	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
 		
-			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+			return compareExpectedWithSimulationOutput(timestamp, expectedOutputMap, jsonObject);
 		}
 		 
 		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
@@ -313,7 +317,7 @@ import pnnl.goss.core.Client;
 			if (expectedForwardMap == null){
 				System.out.println("no index for "+timestamp2 );
 				testResults.add("NA", "NA", "NA", "NA", false);
-				publish("NA", "NA", "NA", "NA", false);
+				publish(timestamp1, "NA", "NA", "NA", "NA", false);
 				return testResults;
 			}
 //			if (expectedForwardMap == null) return new TestResults();
@@ -329,8 +333,8 @@ import pnnl.goss.core.Client;
 	//		String firstKey = getFirstKey(output);
 			
 //			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(jsonObject);
-			compareExpectedAndSim(expectedForwardMap, testResults, forwardMap);
-			compareExpectedAndSim(expectedReverseMap, testResults, reverseMap);
+			compareExpectedAndSim(timestamp1, expectedForwardMap, testResults, forwardMap);
+			compareExpectedAndSim(timestamp1, expectedReverseMap, testResults, reverseMap);
 			
 			return testResults;
 //			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
@@ -394,7 +398,7 @@ import pnnl.goss.core.Client;
 //			return expectedOutputNames;
 //		}
 //	
-		public TestResults compareExpectedWithSimulationOutput(Map<String, JsonElement> expectedOutputMap,
+		public TestResults compareExpectedWithSimulationOutput(String timestamp,Map<String, JsonElement> expectedOutputMap,
 				 JsonObject jsonObject) {
 	
 			TestResults testResults = new TestResults();
@@ -402,7 +406,7 @@ import pnnl.goss.core.Client;
 	//		String firstKey = getFirstKey(output);
 			
 			Map<String, JsonElement> simOutputMap= getMeasurmentsMap(jsonObject);
-			compareExpectedAndSim(expectedOutputMap, testResults, simOutputMap);
+			compareExpectedAndSim(timestamp, expectedOutputMap, testResults, simOutputMap);
 			return testResults;
 	
 	//		JsonObject simOutput = null;
@@ -435,10 +439,10 @@ import pnnl.goss.core.Client;
 //	
 //		}
 		
-		public void compareExpectedAndSim(Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+		public void compareExpectedAndSim(String timestamp, Map<String, JsonElement> expectedOutputMap, TestResults testResults,
 				Map<String, JsonElement> simOutputMap) {
 			for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
-	//			System.out.println(entry);
+				System.out.println(entry);
 				if (entry.getValue().isJsonObject()) {
 					JsonObject expectedOutputObj = expectedOutputMap.get(entry.getKey()).getAsJsonObject();
 					if ( simOutputMap.containsKey(entry.getKey()) ){
@@ -460,7 +464,7 @@ import pnnl.goss.core.Client;
 											simOutputObj.get(prop).toString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
 											simOutputObj.get("difference_mrid").getAsString(), true);
-									publish(simOutputObj.get("object").getAsString(),
+									publish(timestamp, simOutputObj.get("object").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
@@ -468,7 +472,7 @@ import pnnl.goss.core.Client;
 											simOutputObj.get("difference_mrid").getAsString(), true);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
-									publish(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
+									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 								}
 							}
 							else{
@@ -483,9 +487,15 @@ import pnnl.goss.core.Client;
 											simOutputObj.get(prop).toString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
 											simOutputObj.get("difference_mrid").getAsString());
+									publish(timestamp, simOutputObj.get("object").getAsString(),
+											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											expectedOutputObj.get(prop).toString(),
+											simOutputObj.get(prop).toString(),
+											simOutputObj.get("hasMeasurementDifference").getAsString(),
+											simOutputObj.get("difference_mrid").getAsString(), false);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
-									publish(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
+									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
 								}
 							}
 						}

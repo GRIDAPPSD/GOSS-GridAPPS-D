@@ -47,7 +47,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -82,15 +81,13 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
 import gov.pnnl.goss.gridappsd.dto.RuleSettings;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.TestConfig.TestType;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
@@ -391,7 +388,7 @@ public class TestManagerImpl implements TestManager {
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
 		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, simulationIdTwo, testConfig);		
 //		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
-		publishResponse(request);
+		//publishResponse(request);
 		storeResults(testConfig, simulationIdOne, simulationIdTwo, testResultsSeries);
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
@@ -428,10 +425,11 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
 		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, testConfig, expectedResultObject);
 //		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
-		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
+
 		publishResponse(request);
 		storeResults(testConfig, simulationIdOne, "expectedJson", testResultsSeries);
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
@@ -446,9 +444,9 @@ public class TestManagerImpl implements TestManager {
 			int inputCount=0;
 			int expecetedLast=0;
 
-			int first1=0;
+//			int first1=0;
 //			int first2=0;
-			Boolean firstSet = false;
+//			Boolean firstSet = false;
 //			SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
 //			for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
 //				inputKeys2.add(Integer.valueOf(time_entry.getKey()));
@@ -493,18 +491,18 @@ public class TestManagerImpl implements TestManager {
 					return;
 				}
 				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				if( ! firstSet){
-					first1 = Integer.valueOf(simulationTimestamp);
-					firstSet=true;
-				}
-				
-				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
-				System.out.println("size and inputCount");
-				System.out.println(inputKeys2.size());
-				System.out.println(inputCount);
-				if(inputKeys2.size() <= inputCount){
-					return;
-				}
+//				if( ! firstSet){
+//					first1 = Integer.valueOf(simulationTimestamp);
+//					firstSet=true;
+//				}
+//				
+//				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
+//				System.out.println("size and inputCount");
+//				System.out.println(inputKeys2.size());
+//				System.out.println(inputCount);
+//				if(inputKeys2.size() <= inputCount){
+//					return;
+//				}
 
 				String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
@@ -514,9 +512,19 @@ public class TestManagerImpl implements TestManager {
 //				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				JsonObject simJsonObjAtTime = new JsonObject();
 				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
-				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, inputKeys2.toArray()[inputCount].toString(),
+//				System.out.println("simulationTimestamp");
+//				System.out.println(simulationTimestamp);
+//				System.out.println("simJsonObjAtTime");
+//				System.out.println(simJsonObjAtTime);
+//				System.out.println(expectedResults);
+				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, 
+						simulationTimestamp,
+//						inputKeys2.toArray()[inputCount].toString(),
 						simJsonObjAtTime, expectedResults);
-				testResultSeries.add(originalTimestamp,inputKeys2.toArray()[inputCount].toString(), testResults);
+				testResultSeries.add(originalTimestamp,
+						simulationTimestamp,
+//						inputKeys2.toArray()[inputCount].toString(), 
+						testResults);
 				if (testResults != null) {
 //					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
 					//TODO: Store results in timeseries store.
