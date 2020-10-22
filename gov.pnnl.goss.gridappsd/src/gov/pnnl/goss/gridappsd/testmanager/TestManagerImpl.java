@@ -234,13 +234,17 @@ public class TestManagerImpl implements TestManager {
 	public void publishResponse(DataResponse request) {
 		String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
 		System.out.println("TestManager topic dest" + request.getReplyDestination());
-		client.publish(request.getReplyDestination(), r);
+		if(request.getReplyDestination() != null){
+			client.publish(request.getReplyDestination(), r);
+		}
 	}
 	
 	public void publishResponse(DataResponse request, String message) {
 		String r = "{\"data\":[\""+message+"\"],\"responseComplete\":true,\"id\":\"null\"}";
 		System.out.println("TestManager topic dest" + request.getReplyDestination());
-		client.publish(request.getReplyDestination(), r);
+		if(request.getReplyDestination() != null){
+			client.publish(request.getReplyDestination(), r);
+		}
 	}
 	
 	public void handleTestRequest(TestConfig testConfig, SimulationContext simulationContext) {
