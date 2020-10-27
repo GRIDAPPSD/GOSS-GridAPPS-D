@@ -72,8 +72,8 @@ import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
@@ -163,7 +163,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean bWantZip = true;
 		boolean bWantSched = false;
 
-		logRunning("Generating all GridLAB-D configuration files using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Generating all GridLAB-D configuration files using parameters: "+parameters);
 
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
 		double iFraction = GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0);
@@ -182,13 +182,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
 		if(directory==null || directory.trim().length()==0){
-			logError("No "+DIRECTORY+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+DIRECTORY+" parameter provided");
 			throw new Exception("Missing parameter "+DIRECTORY);
 		}
 
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
@@ -198,19 +198,19 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		String simId = "1";
 		if(simulationID==null || simulationID.trim().length()==0){
-			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONID+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		try{
 			simId = simulationID;
 		}catch (Exception e) {
-			logError("Simulation ID not a valid "+simulationID+", defaulting to "+simId, simulationID, username, logManager);
+			logManager.error(ProcessStatus.ERROR,simulationID,"Simulation ID not a valid "+simulationID+", defaulting to "+simId);
 		}
 		
 		ModelState modelState = new ModelState();
 		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
 		if(modelStateStr==null || modelStateStr.trim().length()==0){
-			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+			logManager.info(ProcessStatus.RUNNING,processId,"No "+MODELSTATE+" parameter provided");
 		} else {
 			Gson  gson = new Gson();
 			modelState = gson.fromJson(modelStateStr, ModelState.class);
@@ -218,12 +218,12 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
-			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONSTARTTIME+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
 		}
 		long simulationDuration = GridAppsDConstants.getLongProperty(parameters, SIMULATIONDURATION, 0);
 		if(simulationDuration==0){
-			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONDURATION+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
 		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
@@ -261,10 +261,12 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				//TODO either we need more weather data in the database, or make this more flexible where we only have to search by month/day
 				c.setTime(new Date(simulationStartTime*1000));
 				c.set(Calendar.YEAR, TIMEFILTER_YEAR);
+				c.add(Calendar.MINUTE, -1);
 				//Convert to UTC time until the input time is correct
 				////TODO this will be changed in the future
 				//c.add(Calendar.HOUR, 6);
 				queryFilter.put(STARTTIME_FILTER, ""+c.getTimeInMillis()+"000000");
+				simulationDuration = simulationDuration+60;
 				c.add(Calendar.SECOND, new Long(simulationDuration).intValue());
 				queryFilter.put(ENDTIME_FILTER, ""+c.getTimeInMillis()+"000000");
 				weatherRequest.setQueryFilter(queryFilter);
@@ -282,12 +284,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 				}
 			}
 		} catch (JsonSyntaxException e) {
-			logRunning("No weather data was found in proven. Running Simulation without weather data.",
-					processId, username, logManager, LogLevel.WARN);
+			logManager.warn(ProcessStatus.RUNNING,processId,"No weather data was found in proven. Running Simulation without weather data.");
 			useClimate = false;
 		}catch (Exception e) {
-			logRunning(e.getMessage(),
-					processId, username, logManager, LogLevel.WARN);
+			logManager.warn(ProcessStatus.RUNNING,processId,e.getMessage());
 		}
 		
 		//Generate zip load profile player file
@@ -314,32 +314,32 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 		out.write(dir.getAbsolutePath());
 
-		logRunning("Finished generating all GridLAB-D configuration files.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating all GridLAB-D configuration files.");
 
 	}
 
 
 	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate, boolean useHouses) throws Exception{
-		logRunning("Generating startup file for GridLAB-D configuration using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Generating startup file for GridLAB-D configuration using parameters: "+parameters);
 
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
-			logError("No "+SIMULATIONBROKERHOST+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERHOST+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONBROKERHOST);
 		}
 		String simulationBrokerPort = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERPORT, null);
 		if(simulationBrokerPort==null || simulationBrokerPort.trim().length()==0){
-			logError("No "+SIMULATIONBROKERPORT+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERPORT+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONBROKERPORT);
 		}
 		long simulationStartTime = GridAppsDConstants.getLongProperty(parameters, SIMULATIONSTARTTIME, -1);
 		if(simulationStartTime<0){
-			logError("No "+SIMULATIONSTARTTIME+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONSTARTTIME+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONSTARTTIME);
 		}
 		String simulationDuration = GridAppsDConstants.getStringProperty(parameters, SIMULATIONDURATION, null);
 		if(simulationDuration==null || simulationDuration.trim().length()==0){
-			logError("No "+SIMULATIONDURATION+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONDURATION+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
 		String solverMethod = GridAppsDConstants.getStringProperty(parameters, SOLVERMETHOD, null);
@@ -349,7 +349,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		if(simulationID==null || simulationID.trim().length()==0){
-			logError("No "+SIMULATIONID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONID+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
@@ -369,7 +369,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			nominalv = vnom / sqrt3;
 		}catch (Exception e) {
 			//send error and fail in vnom not found in model or bad format
-			logError("Could not find valid nominal voltage for feeder:"+modelId, processId, username, logManager);
+			logManager.error(ProcessStatus.ERROR,processId,"Could not find valid nominal voltage for feeder:"+modelId);
 			// Throw the real exception because its could just be a problem with the query
 			// itself.
 			throw e;
@@ -483,7 +483,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.flush();
 		startupFileWriter.close();
 
-		logRunning("Finished generating startup file for GridLAB-D configuration.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating startup file for GridLAB-D configuration.");
 
 	}
 

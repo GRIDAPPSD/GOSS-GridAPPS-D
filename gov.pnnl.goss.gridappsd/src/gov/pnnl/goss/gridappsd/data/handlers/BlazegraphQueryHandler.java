@@ -51,6 +51,7 @@ import org.apache.jena.query.ResultSetCloseable;
 import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 public class BlazegraphQueryHandler implements QueryHandler {
@@ -93,7 +94,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	@Override
 	public ResultSetCloseable query(String szQuery, String szTag) { 
 		Query query = QueryFactory.create (Q_PREFIX + szQuery);
-		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
+		logManager.debug(ProcessStatus.RUNNING, processID, "Executing query "+szQuery);
 
 		long start = new Date().getTime();
 
@@ -117,14 +118,15 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 
 		long end = new Date().getTime();
-		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
+		logManager.debug(ProcessStatus.RUNNING, processID, "Query execution took: "+(end-start)+"ms");
+		
 		ResultSetCloseable rs=  ResultSetCloseable.closeableResultSet(qexec);
 		return rs;
 	}
 	@Override
 	public ResultSet construct(String szQuery) { 
 		Query query = QueryFactory.create (Q_PREFIX + szQuery); 
-		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Executing query "+szQuery, processID, username, LogLevel.DEBUG);
+		logManager.debug(ProcessStatus.RUNNING, processID, "Executing query "+szQuery);
 
 		long start = new Date().getTime();
 
@@ -148,7 +150,7 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		QueryExecution qexec = QueryExecutionFactory.sparqlService (endpoint, query);
 
 		long end = new Date().getTime();
-		GridAppsDConstants.logMessage(logManager, this.getClass().getName(), "Query execution took: "+(end-start)+"ms", processID, username, LogLevel.DEBUG);
+		logManager.debug(ProcessStatus.RUNNING, processID, "Query execution took: "+(end-start)+"ms");
 		ResultSet rs=  qexec.execSelect();
 		return rs;
 	}

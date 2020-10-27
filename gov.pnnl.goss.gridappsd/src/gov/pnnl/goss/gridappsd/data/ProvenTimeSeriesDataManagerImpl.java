@@ -1,24 +1,5 @@
 package gov.pnnl.goss.gridappsd.data;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
-import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.proven.api.producer.ProvenProducer;
-import gov.pnnl.proven.api.producer.ProvenResponse;
-
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -31,14 +12,30 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.DataManagerHandler;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
+import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.proven.api.producer.ProvenProducer;
+import gov.pnnl.proven.api.producer.ProvenResponse;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.security.SecurityConfig;
-
-import com.google.gson.Gson;
 
 @Component
 public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler{
@@ -87,11 +84,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	public void start(){
 		
 		
-		logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
-				new Date().getTime(), "Starting "+this.getClass().getSimpleName(), 
-				LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
-				securityConfig.getManagerUser(),
-				GridAppsDConstants.topic_platformLog);
+		logManager.debug(ProcessStatus.RUNNING, null, "Starting "+this.getClass().getSimpleName());
 		
 		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
@@ -170,7 +163,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     
     
     
-    private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId) throws Exception{
+    private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId, String simulationId) throws Exception{
     	
     	Credentials credentials = new UsernamePasswordCredentials(
 				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
@@ -180,7 +173,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
             public void onMessage(Serializable message) {
                 DataResponse event = (DataResponse)message;
                 try{
-                	provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId);
+                	provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
                 }catch(Exception e){
                     
                     StringWriter sw = new StringWriter();
@@ -188,11 +181,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     e.printStackTrace(pw);
                     String sStackTrace = sw.toString(); // stack trace as a string
                     System.out.println(sStackTrace);
-                    logManager.log(new LogMessage(this.getClass().getSimpleName(), null, 
-                            new Date().getTime(), "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace, 
-                            LogLevel.DEBUG, ProcessStatus.RUNNING, true), 
-                    		event.getUsername(),
-                            GridAppsDConstants.topic_platformLog);
+                    logManager.error(ProcessStatus.RUNNING, null, "Error storing timeseries data for message at "+event.getDestination()+" : "+sStackTrace);
                 }
             }
         });
@@ -200,32 +189,32 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     
     @Override
 	public void storeSimulationOutput(String simulationId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".output."+simulationId,"simulation",null);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".output."+simulationId,"simulation",null,simulationId);
 	}
 	
 	@Override
 	public void storeSimulationInput(String simulationId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".input."+simulationId,"simulation",null);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+".input."+simulationId,"simulation",null, simulationId);
 	}
 	
 	@Override
 	public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
-	        subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId);
+	        subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".output", serviceId, instanceId, simulationId);
 	}
 	
 	@Override
 	public void storeServiceInput(String simulationId, String serviceId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".input", serviceId, instanceId);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+serviceId+"."+simulationId+".input", serviceId, instanceId, simulationId);
 	}
 	
 	@Override
 	public void storeAppOutput(String simulationId, String appId, String instanceId) throws Exception {
-		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".output", appId, instanceId);
+		subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".output", appId, instanceId, simulationId);
 	}
 	
 	@Override
 	public void storeAppInput(String simulationId, String appId, String instanceId) throws Exception {
-    	subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".input", appId, instanceId);
+    	subscribeAndStoreDataFromTopic("/topic/"+GridAppsDConstants.topic_simulation+"."+appId+"."+simulationId+".input", appId, instanceId, simulationId);
 	}
 
 }

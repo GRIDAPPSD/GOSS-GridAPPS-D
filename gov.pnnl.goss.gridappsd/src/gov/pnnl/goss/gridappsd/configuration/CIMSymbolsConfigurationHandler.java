@@ -61,6 +61,7 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -109,7 +110,7 @@ public class CIMSymbolsConfigurationHandler extends BaseConfigurationHandler imp
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating Symbols GridLAB-D configuration file using parameters: "+parameters, processId, "", logManager);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating Symbols GridLAB-D configuration file using parameters: "+parameters);
 		
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -120,17 +121,17 @@ public class CIMSymbolsConfigurationHandler extends BaseConfigurationHandler imp
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary GridLAB-D symbols file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId,"Dictionary GridLAB-D symbols file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.RUNNING, processId,"No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -155,7 +156,7 @@ public class CIMSymbolsConfigurationHandler extends BaseConfigurationHandler imp
 			//config was written to file, so return that
 			printFileToOutput(configFile, out);
 		}
-		logRunning("Finished generating Symbols GridLAB-D configuration file.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating Symbols GridLAB-D configuration file.");
 
 	}
 	

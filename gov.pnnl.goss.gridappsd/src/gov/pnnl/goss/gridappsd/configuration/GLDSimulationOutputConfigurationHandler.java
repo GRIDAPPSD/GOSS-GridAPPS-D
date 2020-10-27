@@ -76,8 +76,9 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -131,7 +132,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating simulation output configuration file using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Generating simulation output configuration file using parameters: "+parameters);
 		File dictFile = null;
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
@@ -144,24 +145,24 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary GridLAB-D simulation outputs file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId,"Dictionary GridLAB-D simulation outputs file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, username, logManager);
+			logManager.error(ProcessStatus.RUNNING, processId,"No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
 		ModelState modelState = new ModelState();
 		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
 		if(modelStateStr==null || modelStateStr.trim().length()==0){
-			logRunning("No "+MODELSTATE+" parameter provided", processId, username, logManager);
+			logManager.info(ProcessStatus.RUNNING, processId,"No "+MODELSTATE+" parameter provided");
 		} else {
 			Gson  gson = new Gson();
 			modelState = gson.fromJson(modelStateStr, ModelState.class);
@@ -213,7 +214,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		out.write(result);
 		out.flush();
 		
-		logRunning("Finished generating simulation output configuration file.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating simulation output configuration file.");
 
 	}
 	
@@ -252,10 +253,10 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			jsonObjStr = gson.toJson(gldConfigObj);
 			
 		} catch (JsonIOException e) {
-			logError("Error while generating simulation output: "+e.getMessage(), processId, username, logManager);
+			logManager.error(ProcessStatus.RUNNING, processId,"Error while generating simulation output: "+e.getMessage());
 			throw e;
 		} catch (JsonParseException e) {
-			logError("Error while generating simulation output: "+e.getMessage(), processId, username, logManager);
+			logManager.error(ProcessStatus.RUNNING, processId,"Error while generating simulation output: "+e.getMessage());
 			throw e;
 		}
 		return jsonObjStr;
@@ -396,8 +397,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else if (measurementType.equals("A")) {
 				objectName = conductingEquipmentName;
 				propertyName = "measured_current_" + phases;
+			} else if (measurementType.equals("SoC")) {
+				objectName = conductingEquipmentName;
+				propertyName = "state_of_charge";
 			} else {
-				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, PNV, and SoC.\nmeasurementType = %s.",measurementType));
 			}
 		} else if (conductingEquipmentType.contains("SynchronousMachine")) {
 			if(measurementType.equals("VA")) {

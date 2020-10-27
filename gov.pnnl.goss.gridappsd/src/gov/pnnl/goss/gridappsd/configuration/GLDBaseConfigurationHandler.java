@@ -59,8 +59,9 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -114,7 +115,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating Base GridLAB-D configuration file using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Generating Base GridLAB-D configuration file using parameters: "+parameters);
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -125,11 +126,11 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary GridLAB-D base file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING, processId,"Dictionary GridLAB-D base file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: ");
 			}
 		}
 		
@@ -191,7 +192,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 			//config was written to file, so return that
 			printFileToOutput(configFile, out);
 		}
-		logRunning("Finished generating Base GridLAB-D configuration file.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating Base GridLAB-D configuration file.");
 
 	}
 	

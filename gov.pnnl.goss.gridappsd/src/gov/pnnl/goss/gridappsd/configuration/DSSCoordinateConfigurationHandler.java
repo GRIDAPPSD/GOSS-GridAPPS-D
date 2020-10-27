@@ -59,8 +59,9 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
@@ -114,7 +115,7 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logRunning("Generating DSS Coordinate configuration file using parameters: "+parameters, processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Generating DSS Coordinate configuration file using parameters: "+parameters);
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -125,17 +126,17 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
 				//If the config file already has been created for this simulation then return it
 				if(configFile.exists()){
 					printFileToOutput(configFile, out);
-					logRunning("Dictionary DSS coordinates file for simulation "+simulationId+" already exists.", processId, username, logManager);
+					logManager.info(ProcessStatus.RUNNING,processId,"Dictionary DSS coordinates file for simulation "+simulationId+" already exists.");
 					return;
 				}
 			} else {
-				logRunning("No simulation context found for simulation_id: "+simulationId, processId, username, logManager, LogLevel.WARN);
+				logManager.warn(ProcessStatus.RUNNING,processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
 		
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logError("No "+MODELID+" parameter provided", processId, "", logManager);
+			logManager.error(ProcessStatus.ERROR, processId, "No "+MODELID+" parameter provided");
 			throw new Exception("Missing parameter "+MODELID);
 		}
 		
@@ -160,7 +161,7 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
 			//config was written to file, so return that
 			printFileToOutput(configFile, out);
 		}
-		logRunning("Finished generating DSS Coordinate configuration file.", processId, username, logManager);
+		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating DSS Coordinate configuration file.");
 
 	}
 	

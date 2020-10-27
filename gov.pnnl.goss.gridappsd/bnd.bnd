@@ -29,11 +29,11 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	blazegraph.cim2glm;version=19.1.0,\
+	blazegraph.cim2glm;version=19.1.1,\
 	httpclient,\
 	com.bigdata.rdf,\
-	proven-client;version=0.2.3,\
-	proven-message;version=0.4,\
+    proven-client;version=0.3,\
+    proven-message;version=0.4,\
 	com.nimbusds.nimbus-jose-jwt-dependencies
 		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug

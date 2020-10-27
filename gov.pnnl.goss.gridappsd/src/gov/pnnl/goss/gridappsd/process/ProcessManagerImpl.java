@@ -172,10 +172,7 @@ public class ProcessManagerImpl implements ProcessManager {
 		}
 		catch(Exception e){
 			e.printStackTrace();
-			logMessageObj.setTimestamp(new Date().getTime());
-			logMessageObj.setLogLevel(LogLevel.ERROR);
-			logMessageObj.setLogMessage(e.getMessage());
-			logManager.log(logMessageObj, securityConfig.getManagerUser(), GridAppsDConstants.topic_platformLog);
+			logManager.error(ProcessStatus.ERROR, null, e.getMessage());
 		}
 
 	}
