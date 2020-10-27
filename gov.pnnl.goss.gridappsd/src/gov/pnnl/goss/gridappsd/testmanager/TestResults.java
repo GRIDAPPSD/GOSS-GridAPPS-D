@@ -176,7 +176,6 @@ public class TestResults implements Serializable{
 	
 	public String toJson(Boolean storeMatches) {
 //		Boolean storeMatches = true;
-		ArrayList<TestResultFullDetails> list = new ArrayList<TestResultFullDetails>();
 		TestResultFullDetails trfd = null;
 			for (Entry<String, HashMap<String, TestResultDetails>> entry : getObjectPropComparison().entrySet()) {
 				HashMap<String, TestResultDetails> propMap = entry.getValue();
@@ -198,8 +197,6 @@ public class TestResults implements Serializable{
 	}
 	
 	public String toJson() {
-		Boolean storeMatches = true;
-		ArrayList<TestResultFullDetails> list = new ArrayList<TestResultFullDetails>();
 		TestResultFullDetails trfd = null;
 			for (Entry<String, HashMap<String, TestResultDetails>> entry : getObjectPropComparison().entrySet()) {
 				HashMap<String, TestResultDetails> propMap = entry.getValue();

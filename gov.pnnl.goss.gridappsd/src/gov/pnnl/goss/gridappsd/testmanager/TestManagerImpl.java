@@ -529,10 +529,9 @@ public class TestManagerImpl implements TestManager {
 						simulationTimestamp,
 //						inputKeys2.toArray()[inputCount].toString(), 
 						testResults);
-				if (testResults != null) {
+//				if (testResults != null) {
 //					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
-					//TODO: Store results in timeseries store.
-				}
+//				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 				inputCount++;
 			}
@@ -594,9 +593,9 @@ public class TestManagerImpl implements TestManager {
 				testResultSeries.add(simulationTimestamp, simulationTimestamp, testResults);
 				if (testResults != null) {
 					String resultJson = testResultSeries.toJson(testConfig.getStoreMatches());
-					if (resultJson != null && ! resultJson.isEmpty()){
+//					if (resultJson != null && ! resultJson.isEmpty()){
 //						client.publish(testOutputTopic+testConfig.getTestId(), resultJson);
-					}
+//					}
 					//TODO: Store results in timeseries store.
 				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);

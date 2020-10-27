@@ -22,9 +22,9 @@ import pnnl.goss.core.Client;
 
 public class HistoricalComparison {
 	
-	DataManager dataManager;
-	String username;
-	Client client;
+	private DataManager dataManager;
+	private String username;
+	private Client client;
 	private Logger log = LoggerFactory.getLogger(getClass());
 	
 	public HistoricalComparison(DataManager dataManager, String username, Client client) {
