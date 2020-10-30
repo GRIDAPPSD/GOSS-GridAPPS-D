@@ -2105,8 +2105,7 @@ def test_helics_goss_bridge_run_simulation(mock_close_helics_connection,
 
 
 @patch.object(HelicsGossBridge,'__init__', return_value=None)
-@unittest.mock.patch('service.helics_goss_bridge.GridAPPSD',
-    return_value=23)
+@unittest.mock.patch('service.helics_goss_bridge.GridAPPSD')
 def test_helics_goss_bridge_register_with_goss(mock_GridAPPSD,mock_init):
     bridge = HelicsGossBridge(123,5570,
         {"simulation_config":{"run_realtime":0,"duration":5,
@@ -2114,7 +2113,11 @@ def test_helics_goss_bridge_register_with_goss(mock_GridAPPSD,mock_init):
     bridge._register_with_goss()
     mock_GridAPPSD.assert_called_once_with(bridge.get_simulation_id(), address=utils.get_gridappsd_address(),
                 username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
-    assert bridge.get_gad_connection() == 23
+    assert bridge._gad_connection.subscribe.call_count == 2
+    subscribe_calls = [
+        call(topics.simulation_input_topic("123"), bridge.on_message)]
+    bridge._gad_connection.subscribe.assert_has_calls()
+    #assert bridge.get_gad_connection() == 23
     
     
 @patch.object(HelicsGossBridge,'_register_with_goss')

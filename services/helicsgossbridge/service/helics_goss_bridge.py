@@ -497,7 +497,7 @@ class HelicsGossBridge(object):
                 self._gad_connection.send("goss.gridappsd.fncs.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": current_time + simulation_start}))
                 #forward messages from HELICS to GOSS
                 if self._filter_all_measurements == False:
-                    message['output'] = self._get_helics_bus_messages(self._simulation_id, self._measurement_filter)
+                    message['output'] = self._get_helics_bus_messages(self._measurement_filter)
                 else:
                     message['output'] = {}
                 response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
@@ -537,7 +537,7 @@ class HelicsGossBridge(object):
             self._gad_connection.send("goss.gridappsd.fncs.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": self._simulation_time + simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
-                message['output'] = self._get_helics_bus_messages(self._simulation_id, self._measurement_filter)
+                message['output'] = self._get_helics_bus_messages(self._measurement_filter)
             else:
                 message['output'] = {}
             response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
@@ -578,6 +578,8 @@ class HelicsGossBridge(object):
             self._gad_connection = GridAPPSD(self._simulation_id, address=utils.get_gridappsd_address(),                                            
                 username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
             log.debug("Successfully registered with the GridAPPS-D platform.")
+            self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
+            self._gad_connection.subscribe("/topic/goss.gridappsd.fncs.input", self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
             
@@ -1308,4 +1310,4 @@ if __name__ == '__main__':
     parser.add_argument("simulation_request", help="The simulation request.")
     args = parser.parse_args()
     sim_request = json.loads(args.simulation_request.replace("\'",""))
-    _main(args.simulation_id, args.broker_port, args.simulation_request)
+    _main(args.simulation_id, args.broker_port, sim_request)

@@ -103,15 +103,17 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String DICTIONARY_FILE = "dictionary_file";
 	public static final String SIMULATIONID = "simulation_id";
 	public static final String USEHOUSES = "use_houses";
+	public static final String SIMULATIONBROKERHOST = "simulation_broker_host";
+	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 	
 	
-	public static final String HELIX_PREFIX = "{\"name\": \"PROCESS_ID\",\"log_level\": 3,"
-			+ "\"period\": 1.0,	\"endpoints\": [{\"name\": \"helics_input\","
+	public static final String HELICS_PREFIX = "{\"name\": \"PROCESS_ID\",\"log_level\": 3,"
+			+ "\"period\": 1.0,\"broker\": \"BROKER_LOCATION:BROKER_PORT\",\"endpoints\": [{\"name\": \"helics_input\","
 			+ "\"global\": false,\"type\": \"string\",	"
 			+ "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\"},"
 			+ "{\"name\": \"helics_output\",\"global\": false,\"type\": \"string\",	"
 			+ "\"destination\": \"HELICS_GOSS_Bridge_PROCESS_ID/helics_output\",	\"info\": \"";
-	public static final String HELIX_SUFFIX = "\"}]}";
+	public static final String HELICS_SUFFIX = "\"}]}";
 
 	public GLDSimulationOutputConfigurationHandler() {
 	}
@@ -162,17 +164,19 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
-		
+		StringWriter parameters_writer = new StringWriter();
+		parameters.list(new PrintWriter(parameters_writer));
+		String parameters_list = parameters_writer.getBuffer().toString();
 		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
 		if(modelId==null || modelId.trim().length()==0){
-			logManager.error(ProcessStatus.RUNNING, processId,"No "+MODELID+" parameter provided");
-			throw new Exception("Missing parameter "+MODELID);
+			logManager.error(ProcessStatus.RUNNING, processId,"No "+MODELID+" parameter provided.\nSimulationParameters: "+parameters_list);
+			throw new Exception("Missing parameter "+MODELID+"\nSimulation Parameters: "+parameters_list);
 		}
 		
 		ModelState modelState = new ModelState();
 		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
 		if(modelStateStr==null || modelStateStr.trim().length()==0){
-			logManager.info(ProcessStatus.RUNNING, processId,"No "+MODELSTATE+" parameter provided");
+			logManager.info(ProcessStatus.RUNNING, processId,"No "+MODELSTATE+" parameter provided.\nSimulationParameters: "+parameters_list);
 		} else {
 			Gson  gson = new Gson();
 			modelState = gson.fromJson(modelStateStr, ModelState.class);
@@ -218,9 +222,23 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		//if it is for helics wrap it in the helix endpoint definition
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			//Escape the json and embed it in the helics config file
-			result = HELIX_PREFIX.replaceAll("PROCESS_ID", processId)
+			String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
+			if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
+				logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERHOST+" parameter provided.\nSimulationParameters: "+parameters_list);
+				throw new Exception("Missing parameter "+SIMULATIONBROKERHOST+"\nSimulation Parameters: "+parameters_list);
+			}
+			String simulationBrokerPort = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERPORT, null);
+			if(simulationBrokerPort==null || simulationBrokerPort.trim().length()==0){
+				logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERPORT+" parameter provided.\nSimulationParameters: "+parameters_list);
+				throw new Exception("Missing parameter "+SIMULATIONBROKERPORT+"\nSimulation Parameters: "+parameters_list);
+			}
+			String brokerLocation = simulationBrokerHost;
+			String brokerPort = String.valueOf(simulationBrokerPort);
+			String HELICS_PREFIX1 = HELICS_PREFIX.replaceAll("BROKER_LOCATION", brokerLocation);
+			String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort);
+			result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId)
 					+result.replaceAll("\"", "\\\\\"").replaceAll("\n","")+
-					HELIX_SUFFIX;
+					HELICS_SUFFIX;
 		}
 
 		if(configFile!=null){
