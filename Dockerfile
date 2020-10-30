@@ -48,7 +48,7 @@ RUN cd ${TEMP_DIR} \
   && cp -r * /gridappsd/services/gridappsd-alarms \
   && cp /gridappsd/services/gridappsd-alarms/gridappsd-alarms.config /gridappsd/services/ 
 
- Get the gridappsd-estimator from the proper repository
+# Get the gridappsd-estimator from the proper repository
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-state-estimator \
   && cd gridappsd-state-estimator \
