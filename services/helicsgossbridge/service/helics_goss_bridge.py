@@ -36,6 +36,7 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
+from time import sleep
 """
 Created on Mar 9, 2020
 
@@ -49,6 +50,7 @@ import gzip
 import inspect
 import json
 import logging
+import logging.config
 import math
 import os
 import traceback
@@ -65,8 +67,43 @@ import yaml
 
 from gridappsd import GridAPPSD, utils, topics
 
+logConfig = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "debug": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s; %(message)s",
+            "datefmt": "%d/%m/%Y %H:%M:%S"
+        }
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "debug",
+            "stream": "ext://sys.stdout"
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "formatter": "debug",
+            "filename": "HELICS_GOSS_Bridge.log",
+            "mode": "w"
+        }
+    },
+    "loggers": {
+        "__main__": {
+            "handlers": ["console","file"],
+            "level": "DEBUG",
+            "propagate": False
+        }
+    }
+}
+
 log = logging.getLogger(inspect.getmodulename(__file__))
 log.setLevel(logging.DEBUG)
+#logging.config.dictConfig(logConfig)
+#log = logging.getLogger(__name__)
 
 class HelicsGossBridge(object):
     '''
@@ -359,6 +396,7 @@ class HelicsGossBridge(object):
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
                 self._gad_connection.send(self._simulation_manager_input_topic , json.dumps(message))
             elif json_msg.get('command', '') == 'update':
+                json_msg['input']["time_received"] = time.perf_counter()
                 message['command'] = 'update'
                 if self._filter_all_commands == False:
                     self._simulation_command_queue.put(json.dumps(json_msg['input']))
@@ -487,7 +525,10 @@ class HelicsGossBridge(object):
                 create_db_connection(archive_db_file)
             message = {}
             message['command'] = 'nextTimeStep'
+            measurement_message_count = 0
+            simulation_run_time_start = time.perf_counter()
             for current_time in range(simulation_length):
+                begin_time_step = time.perf_counter()
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
                 self._simulation_time = current_time
                 if self._stop_simulation == True:
@@ -503,6 +544,8 @@ class HelicsGossBridge(object):
                 response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
 
                 if message['output']!={}:
+                    measurement_message_count += 1
+                    log.debug("measurement message recieved at timestep {}.".format(current_time))
                     if not only_archive:
                         self._gad_connection.send(simulation_output_topic, response_msg)
                     if archive_db_file:
@@ -526,7 +569,16 @@ class HelicsGossBridge(object):
                 log.debug(message_str)
                 self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 if run_realtime == True:
-                    time.sleep(1)   
+                    sleep_time = 1 - time.perf_counter() + begin_time_step
+                    if sleep_time < 0:
+                        warn_message = f"Simulation {self._simulation_id} is running slower than real time!!!. Time step took {1.0 - sleep_time} seconds to execute"
+                        log.warning(warn_message)
+                        self._gad_connection.send_simulation_status('RUNNING', warn_message, 'WARN')
+                    else:
+                        dbg_message = f"Time step took {1 - sleep_time} seconds to execute."
+                        log.debug(dbg_message)
+                        self._gad_connection.send_simulation_status('RUNNING', dbg_message, 'DEBUG')
+                        time.sleep(sleep_time)
             federate_state = helics.helicsFederateGetState(self._helics_federate)
             if not self._stop_simulation:
                 self._simulation_time = current_time + 1
@@ -542,6 +594,8 @@ class HelicsGossBridge(object):
                 message['output'] = {}
             response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
             if message['output']!={}:
+                measurement_message_count += 1
+                log.debug("measurement message recieved at end of simulation.".format(current_time))
                 if not only_archive:
                     self._gad_connection.send(simulation_output_topic, response_msg)
                 if archive_db_file:
@@ -555,11 +609,13 @@ class HelicsGossBridge(object):
                 helics.helicsFederateFinalize(self._helics_federate)
             self._close_helics_connection()
             self._simulation_finished = True
+            log.debug(f"Simulation finished in {time.perf_counter() - simulation_run_time_start} seconds.")
             message['command'] = 'simulationFinished'
             del message['output']
             self._gad_connection.send(self._simulation_manager_input_topic, json.dumps(message))
             log.info('Simulation {} has finished.'.format(self._simulation_id))
             self._gad_connection.send_simulation_status('COMPLETE', 'Simulation {} has finished.'.format(self._simulation_id), 'INFO')
+            log.debug("total measurement messages recieved {}".format(measurement_message_count))
         except Exception as e:
             message_str = 'Error in run simulation {}'.format(traceback.format_exc())
             log.error(message_str)
@@ -659,6 +715,7 @@ class HelicsGossBridge(object):
             RuntimeError()
             ValueError()
         """
+        publish_to_helics_bus_start = time.perf_counter()
         message_str = 'translating following message for HELICS simulation '+str(self._simulation_id)+' '+str(goss_message)
         log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
@@ -839,6 +896,13 @@ class HelicsGossBridge(object):
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
                 helics.helicsEndpointSendMessageObject(helics_input_endpoint, helics_msg)
+            publish_to_helics_bus_finish = time.perf_counter()
+            publish_to_helics_profile = {
+                "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
+                "time_messege_processing": publish_to_helics_bus_finish - publish_to_helics_bus_start,
+                "total_time": publish_to_helics_bus_finish - test_goss_message_format.get("time_received",publish_to_helics_bus_start)
+            }
+            log.debug(f"Message Processing Profile: {json.dumps(publish_to_helics_profile, indent=4, sort_keys=True)}")
         except ValueError as ve:
             raise ValueError(ve)
         except Exception as ex:
@@ -864,6 +928,7 @@ class HelicsGossBridge(object):
         objectName = ""
         objectType = ""
         propertyValue = ""
+        get_helics_bus_messages_start = time.perf_counter()
         try:
             helics_message = None
             if self._simulation_id == None or self._simulation_id == '' or type(self._simulation_id) != str:
@@ -987,10 +1052,7 @@ class HelicsGossBridge(object):
                     log.error(err_msg)
                     self._gad_connection.send_simulation_status('ERROR', err_msg, 'ERROR')
                     raise RuntimeError(err_msg)
-            else:
-                message_str = 'helics_output has no messages'
-                log.debug(message_str)
-                self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
+            log.debug(f"Message from simulation processing time: {time.perf_counter() - get_helics_bus_messages_start}.")
             return cim_output
         except ValueError as ve:
             raise RuntimeError("{}.\nObject Name: {}\nObject Type: {}\nProperty Name: {}\n Property Value{}".format(str(ve), objectName, objectType, propertyName, propertyValue))
@@ -1013,6 +1075,7 @@ class HelicsGossBridge(object):
             RuntimeError()
             ValueError()
         """
+        done_with_time_step_start = time.perf_counter()
         try:
             if current_time == None or type(current_time) != int:
                 raise ValueError(
@@ -1025,6 +1088,7 @@ class HelicsGossBridge(object):
                     'The time approved from helics_broker is not the time requested.\n'
                     + 'time_request = {0}.\ntime_approved = {1}'.format(time_request,
                     time_approved))
+            log.debug(f"done_with_time_step took {time.perf_counter() - done_with_time_step_start} seconds to finish.")
         except Exception as e:
             message_str = 'Error in HELICS time request '+str(traceback.format_exc())
             log.error(message_str)
