@@ -26,6 +26,7 @@ message_is_initialized = {
 message_update = {
     "command" : "update",
     "input" : {
+        "time_received" : 0.0,
         "simulation_id" : "123456",
         "message" : {
             "timestamp" : 1357048800,
@@ -1750,10 +1751,14 @@ def test_helics_goss_bridge_getters(mock_cim_object_map,
 @unittest.mock.patch('service.helics_goss_bridge.datetime')
 @patch.object(helics,'helicsFederateGlobalError')
 @patch.object(HelicsGossBridge,'_close_helics_connection')
-def test_helics_goss_bridge_on_message(mock_close_helics_connection,
+@unittest.mock.patch('service.helics_goss_bridge.time')
+def test_helics_goss_bridge_on_message(mock_time,mock_close_helics_connection,
         mock_helicsFederateGlobalError,mock_datetime,mock_gad_connection,
         mock_helicsFederateGetState,mock_init):
-    mock_datetime.utcnow.return_value = datetime(2017,8,25,10,33,6,150642)
+    t_date = datetime(2017,8,25,10,33,6,150642)
+    mock_datetime.utcnow.return_value = t_date
+    mock_time.perf_counter.return_value = 0.0
+    mock_time.mktime.return_value = time.mktime(t_date.timetuple())
     bridge = HelicsGossBridge(123,5570,
         {"simulation_config":{"run_realtime":1,"duration":120,
             "simulation_start":0}})
@@ -1994,6 +1999,7 @@ def test_helics_goss_bridge_run_simulation(mock_close_helics_connection,
     mock_gad_connection,mock_helicsFederateGlobalError,
     mock_helicsFederateGetState,mock_create_cim_object_map,
     mock_register_with_helics,mock_register_with_goss):
+    mock_time.perf_counter.return_value = 0.0
     #test when _stop_simulation == true
     bridge = HelicsGossBridge(123,5570,
         {"simulation_config":{"run_realtime":0,"duration":120,
@@ -2115,9 +2121,9 @@ def test_helics_goss_bridge_register_with_goss(mock_GridAPPSD,mock_init):
                 username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
     assert bridge._gad_connection.subscribe.call_count == 2
     subscribe_calls = [
-        call(topics.simulation_input_topic("123"), bridge.on_message)]
-    bridge._gad_connection.subscribe.assert_has_calls()
-    #assert bridge.get_gad_connection() == 23
+        call(topics.simulation_input_topic(bridge.get_simulation_id()), bridge.on_message),
+        call("/topic/goss.gridappsd.fncs.input", bridge.on_message)]
+    bridge._gad_connection.subscribe.assert_has_calls(subscribe_calls)
     
     
 @patch.object(HelicsGossBridge,'_register_with_goss')
