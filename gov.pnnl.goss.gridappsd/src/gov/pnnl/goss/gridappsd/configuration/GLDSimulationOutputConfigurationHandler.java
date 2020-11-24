@@ -163,17 +163,9 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			}
 		}
 		
-		String gldInterface = GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
-		try{
-			String dependencies = simulationManager.getSimulationContextForId(simulationId).getServiceDependencies();
-			gldInterface = getGLDInterface(dependencies);
-			if(gldInterface!=null){
-				parameters.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
-			}
-		}catch (Exception e) {
-			logManager.error(ProcessStatus.ERROR,simulationId,"Failed to process service dependencies for  "+simulationId+", gldInterface defaulting to "+GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
-		}
-		
+		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+		System.out.println("FOUND GLD INTERFACE PROPERTY "+parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE));
+
 		StringWriter parameters_writer = new StringWriter();
 		parameters.list(new PrintWriter(parameters_writer));
 		String parameters_list = parameters_writer.getBuffer().toString();

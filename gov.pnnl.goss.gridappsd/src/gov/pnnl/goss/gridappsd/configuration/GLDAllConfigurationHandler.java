@@ -205,16 +205,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}catch (Exception e) {
 			logManager.error(ProcessStatus.ERROR,simulationID,"Simulation ID not a valid "+simulationID+", defaulting to "+simId);
 		}
-		try{
-			String dependencies = simulationManager.getSimulationContextForId(simId).getServiceDependencies();
-			String gldInterface = getGLDInterface(dependencies);
-			if(gldInterface!=null){
-				parameters.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
-			}
-		}catch (Exception e) {
-			logManager.error(ProcessStatus.ERROR,simulationID,"Failed to process service dependencies for  "+simulationID+", gldInterface defaulting to "+GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
-		}
-		
 		
 		ModelState modelState = new ModelState();
 		String modelStateStr = GridAppsDConstants.getStringProperty(parameters, MODELSTATE, null);
@@ -334,7 +324,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		logManager.info(ProcessStatus.RUNNING,processId,"Generating startup file for GridLAB-D configuration using parameters: "+parameters);
 		
 		
-		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, "fncs");
+		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+		System.out.println("FOUND GLD INTERFACE PROPERTY "+parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE));
 		
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){

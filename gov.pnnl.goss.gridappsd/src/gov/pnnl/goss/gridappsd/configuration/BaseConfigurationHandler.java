@@ -85,18 +85,5 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 		reader.close();
 	}
 	
-	//Look to see if fncs or helics is listed in the service dependencies for gridlabd  (set in the GridLAB-D.config file in services).  Default to fncs if not found
-	protected String getGLDInterface(String dependencies){
-		String[] dependencyArr = dependencies.split(",");
-		for(String dep:dependencyArr){
-			if(GridAppsDConstants.GRIDLABD_INTERFACE_FNCS.toLowerCase().equals(dep.trim().toLowerCase())){
-				return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
-			} else if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.toLowerCase().equals(dep.trim().toLowerCase())){
-				return GridAppsDConstants.GRIDLABD_INTERFACE_HELICS;
-			}
-		}
-			
-		return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
-	}
 	
 }

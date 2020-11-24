@@ -158,7 +158,15 @@ public class ProcessNewSimulationRequest {
 				e.printStackTrace();
 			}
 
+			
+			String gldInterface = null;
+			ServiceInfo gldService = serviceManager.getService("GridLAB-D");
+			if(gldService!=null){
+				List<String> deps = gldService.getService_dependencies();
+				gldInterface = GridAppsDConstants.getGLDInterface(deps);
+				System.out.println("PUTTING PROCESS NEW SIMULATION REQUEST GLDINTERFACE PARAM "+gldInterface);
 
+			} 
 
 			String simulator = simRequest.getSimulation_config().getSimulator();
 			//generate config files for requested simulator
@@ -167,11 +175,17 @@ public class ProcessNewSimulationRequest {
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			} else { //otherwise use gridlabd
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
 				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			
