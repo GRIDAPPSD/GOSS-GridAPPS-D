@@ -164,7 +164,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		}
 		
 		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
-		System.out.println("FOUND GLD INTERFACE PROPERTY "+parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE));
 
 		StringWriter parameters_writer = new StringWriter();
 		parameters.list(new PrintWriter(parameters_writer));

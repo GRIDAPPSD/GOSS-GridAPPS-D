@@ -325,7 +325,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		
 		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
-		System.out.println("FOUND GLD INTERFACE PROPERTY "+parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE));
 		
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){

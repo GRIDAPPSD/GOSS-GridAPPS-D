@@ -164,8 +164,6 @@ public class ProcessNewSimulationRequest {
 			if(gldService!=null){
 				List<String> deps = gldService.getService_dependencies();
 				gldInterface = GridAppsDConstants.getGLDInterface(deps);
-				System.out.println("PUTTING PROCESS NEW SIMULATION REQUEST GLDINTERFACE PARAM "+gldInterface);
-
 			} 
 
 			String simulator = simRequest.getSimulation_config().getSimulator();

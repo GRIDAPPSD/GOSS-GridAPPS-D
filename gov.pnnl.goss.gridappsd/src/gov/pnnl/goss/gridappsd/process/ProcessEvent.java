@@ -262,7 +262,6 @@ public class ProcessEvent implements GossResponseEvent {
 						List<String> deps = gldService.getService_dependencies();
 						String gldInterface = GridAppsDConstants.getGLDInterface(deps);
 						configRequest.getParameters().put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
-						System.out.println("PUTTING CONFIG REQUEST GLDINTERFACE PARAM "+gldInterface);
 					} 
 
 					
