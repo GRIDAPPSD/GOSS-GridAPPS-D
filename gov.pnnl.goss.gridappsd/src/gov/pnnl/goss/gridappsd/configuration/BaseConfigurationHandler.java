@@ -44,16 +44,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Date;
 
 import org.apache.felix.dm.annotation.api.Start;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 
@@ -78,28 +74,6 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	public void start(){
 	}
 
-	/*void logRunning(String message, String simulationID, String username, LogManager logManager){
-		logRunning(message, simulationID, username, logManager, LogLevel.INFO);
-	}
-	void logRunning(String message, String simulationID, String username, LogManager logManager, LogLevel logLevel){
-		logManager.log(
-				new LogMessage(this.getClass().getSimpleName(), new Integer(
-						simulationID).toString(), new Date().getTime(),
-						message, logLevel,
-						ProcessStatus.RUNNING, false), username,
-				GridAppsDConstants.topic_platformLog);
-
-	}
-	
-	void logError(String message, String simulationID, String username, LogManager logManager){
-		logManager.log(
-				new LogMessage(this.getClass().getName(), new Integer(
-						simulationID).toString(), new Date().getTime(),
-						message, LogLevel.ERROR,
-						ProcessStatus.ERROR, false), username,
-				GridAppsDConstants.topic_platformLog);
-	}*/
-	
 	
 	void printFileToOutput(File configFile, PrintWriter out) throws IOException{
 		BufferedReader reader = new BufferedReader(new FileReader(configFile));
@@ -109,6 +83,20 @@ public abstract class BaseConfigurationHandler  implements ConfigurationHandler 
 	        }
 		out.flush();
 		reader.close();
+	}
+	
+	//Look to see if fncs or helics is listed in the service dependencies for gridlabd  (set in the GridLAB-D.config file in services).  Default to fncs if not found
+	protected String getGLDInterface(String dependencies){
+		String[] dependencyArr = dependencies.split(",");
+		for(String dep:dependencyArr){
+			if(GridAppsDConstants.GRIDLABD_INTERFACE_FNCS.toLowerCase().equals(dep.trim().toLowerCase())){
+				return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
+			} else if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.toLowerCase().equals(dep.trim().toLowerCase())){
+				return GridAppsDConstants.GRIDLABD_INTERFACE_HELICS;
+			}
+		}
+			
+		return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
 	}
 	
 }

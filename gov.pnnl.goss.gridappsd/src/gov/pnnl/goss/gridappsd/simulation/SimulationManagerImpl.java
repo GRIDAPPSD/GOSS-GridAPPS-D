@@ -144,6 +144,14 @@ public class SimulationManagerImpl implements SimulationManager{
 				log.warn("Error while reporting status "+e2.getMessage());
 			}
 			
+			ServiceInfo gldService = serviceManager.getService("GridLAB-D");
+			if(gldService!=null){
+				List<String> deps = gldService.getService_dependencies();
+				simContext.setServiceDependencies(String.join(",", deps));
+			} else {
+				simContext.setServiceDependencies("");
+			}
+			
 			simContexts.put(simContext.getSimulationId(), simContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 

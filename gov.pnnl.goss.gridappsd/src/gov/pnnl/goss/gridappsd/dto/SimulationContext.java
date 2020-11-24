@@ -17,6 +17,7 @@ public class SimulationContext implements Serializable {
 	public String simulatorPath;
 	public List<String> appInstanceIds;
 	public List<String> serviceInstanceIds;
+	public String serviceDependencies;
 	public String simulationUser;
 
 	public String getSimulationId() {
@@ -101,6 +102,14 @@ public class SimulationContext implements Serializable {
 
 	public void setSimulationUser(String simulationUser) {
 		this.simulationUser = simulationUser;
+	}
+
+	public String getServiceDependencies() {
+		return serviceDependencies;
+	}
+
+	public void setServiceDependencies(String serviceDependencies) {
+		this.serviceDependencies = serviceDependencies;
 	}
 
 
