@@ -139,7 +139,7 @@ public class ProcessEvent implements GossResponseEvent {
 		String username  = event.getUsername();
 		
 		String processId = ProcessManagerImpl.generateProcessId();
-		this.debug(processId, "Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username, event.getDestination(), username);
+		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
 
 
 		try{ 
@@ -217,7 +217,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 				String type = requestTopicExtension;
 
-				this.debug(processId, "Received data request of type: "+type,null, username);
+				logManager.debug(ProcessStatus.RUNNING, processId,"Received data request of type: "+type);
 
 				Serializable request;
 				if (message instanceof DataResponse){
@@ -260,7 +260,7 @@ public class ProcessEvent implements GossResponseEvent {
 						StringWriter sww = new StringWriter();
 						PrintWriter pw = new PrintWriter(sww);
 						e.printStackTrace(pw);
-						this.error(processId,sww.toString(), username);
+						logManager.error(ProcessStatus.ERROR,processId,sww.toString());
 						sendError(client, event.getReplyDestination(), e.getMessage(), processId, username);
 					}
 					String result = sw.toString();
@@ -275,7 +275,7 @@ public class ProcessEvent implements GossResponseEvent {
 						sendData(client, event.getReplyDestination(), result, processId, username);
 
 				} else {
-					this.error(processId, "No valid configuration request received, request: "+request, username);
+					logManager.error(ProcessStatus.ERROR, processId, "No valid configuration request received, request: "+request);
 					sendError(client, event.getReplyDestination(), "No valid configuration request received, request: "+request, processId, username);
 				}
 
@@ -304,7 +304,7 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 			sendError(client, event.getReplyDestination(), sw.toString(), processId, username);
 		}
 	}
@@ -326,7 +326,7 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 			//TODO log error and send error response
 		}
 	}
@@ -342,40 +342,9 @@ public class ProcessEvent implements GossResponseEvent {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			this.error(processId,sw.toString(), username);
+			logManager.error(ProcessStatus.ERROR, processId,sw.toString());
 		}
 	}
 
-
-	private void debug(String processId, String message, String process_type, String username) {
-
-		LogMessage logMessage = new LogMessage();
-		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(processId);
-		logMessage.setLogLevel(LogLevel.DEBUG);
-		logMessage.setProcessStatus(ProcessStatus.RUNNING);
-		logMessage.setLogMessage(message);
-		logMessage.setStoreToDb(true);
-		logMessage.setTimestamp(new Date().getTime());
-		if(process_type!=null)
-			logMessage.setProcess_type(process_type);
-		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
-
-	}
-
-	private void error(String processId, String message, String username) {
-
-		LogMessage logMessage = new LogMessage();
-		logMessage.setSource(this.getClass().getSimpleName());
-		logMessage.setProcessId(processId);
-		logMessage.setLogLevel(LogLevel.ERROR);
-		logMessage.setProcessStatus(ProcessStatus.ERROR);
-		logMessage.setLogMessage(message);
-		logMessage.setStoreToDb(true);
-		logMessage.setTimestamp(new Date().getTime());
-
-		logManager.log(logMessage, username, GridAppsDConstants.topic_platformLog);	
-
-	}
 
 }
