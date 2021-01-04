@@ -157,9 +157,6 @@ public class LogManagerImpl implements LogManager {
 		ProcessStatus processStatus = message.getProcessStatus();
 		Boolean storeToDb = message.getStoreToDb();
 		String process_type = message.getProcess_type();
-		log.info("***********************************");
-		log.info(process_type);
-		log.info("***********************************");
 		String logString;
 		if(requestId!=null)
 			logString = String.format("%s|%s|%s|%s|%s|%s\n%s\n", timestamp, source, requestId,
