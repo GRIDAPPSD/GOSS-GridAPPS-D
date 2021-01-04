@@ -94,4 +94,6 @@ public interface LogManager {
 	
 	LogLevel getLogLevel();
 
+	public void setProcessType(String processId, String process_type);
+
 }
