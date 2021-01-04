@@ -140,7 +140,7 @@ public class ProcessEvent implements GossResponseEvent {
 		
 		String processId = ProcessManagerImpl.generateProcessId();
 		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
-
+        logManager.setProcessType(processId, event.getDestination());
 
 		try{ 
 			GsonBuilder gsonBuilder = new GsonBuilder();
