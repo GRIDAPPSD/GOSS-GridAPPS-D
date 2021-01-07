@@ -155,7 +155,7 @@ public class ProcessEvent implements GossResponseEvent {
 //				System.out.println("JSON TOKEN "+jsonToken);
 //				System.out.println("SETTING USERNAME TO "+tokenObj.getSub());
 			} catch (ParseException e) {
-				sendError(client, event.getReplyDestination(), "Failure to parse authentication token:"+e.getMessage(), processId, username);
+				logManager.error(ProcessStatus.ERROR, processId,"Failure to parse authentication token:"+e.getMessage());
 				e.printStackTrace();
 			}
 		} 
