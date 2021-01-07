@@ -95,8 +95,6 @@ public class ProcessEventTests {
 	Client client;
 	@Mock
 	TestManager testManager;
-	@Mock
-	RoleManager roleManager;
 	
 	@Captor
 	ArgumentCaptor<String> argCaptor;
@@ -115,7 +113,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
@@ -146,7 +144,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		
@@ -170,7 +168,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager,roleManager);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		

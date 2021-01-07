@@ -43,7 +43,6 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.RoleManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
@@ -56,6 +55,7 @@ import gov.pnnl.goss.gridappsd.dto.events.Event;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
+import gov.pnnl.goss.gridappsd.dto.UserToken;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -68,6 +68,8 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -83,6 +85,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.google.gson.JsonSyntaxException;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jwt.SignedJWT;
 
 /**
  * ProcessEvent class processes requests received by the Process Manager.
@@ -109,14 +113,13 @@ public class ProcessEvent implements GossResponseEvent {
 	ServiceManager serviceManager;
 	DataManager dataManager;
 	TestManager testManager;
-	RoleManager roleManager;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
 			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
-			DataManager dataManager, TestManager testManager, RoleManager roleManager){
+			DataManager dataManager, TestManager testManager){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -127,8 +130,6 @@ public class ProcessEvent implements GossResponseEvent {
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
 		this.testManager = testManager;
-		this.roleManager = roleManager;
-		
 	}
 
 
@@ -136,9 +137,29 @@ public class ProcessEvent implements GossResponseEvent {
 	public void onMessage(Serializable message) {
 
 		DataResponse event = (DataResponse)message;
-		String username  = event.getUsername();
+		String token  = event.getUsername();
 		
 		String processId = ProcessManagerImpl.generateProcessId();
+
+		String username = token;
+		if(token!=null && token.length()>250){
+			//Parse json token
+			SignedJWT signed;
+			try {
+				signed = SignedJWT.parse(username);
+				Payload payload = signed.getPayload();
+				String jsonToken = payload.toJSONObject().toJSONString();
+				UserToken tokenObj = UserToken.parse(jsonToken);
+				username = tokenObj.getSub();
+				//TODO use the roles from the token object to determine permissions
+//				System.out.println("JSON TOKEN "+jsonToken);
+//				System.out.println("SETTING USERNAME TO "+tokenObj.getSub());
+			} catch (ParseException e) {
+				logManager.error(ProcessStatus.ERROR, processId,"Failure to parse authentication token:"+e.getMessage());
+				e.printStackTrace();
+			}
+		} 
+		
 		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
         logManager.setProcessType(processId, event.getDestination());
 
@@ -295,7 +316,8 @@ public class ProcessEvent implements GossResponseEvent {
 				client.publish(event.getReplyDestination(), platformStatus);
 				
 			} else if (event.getDestination().contains(GridAppsDConstants.topic_requestMyRoles)){
-				List<String> roles = roleManager.getRoles(username);
+				List<String> roles = new ArrayList<String>();//.getRoles(username);
+				//TODO get from user token
 				RoleList roleListResult = new RoleList();
 				roleListResult.setRoles(roles);
 				sendData(client, event.getReplyDestination(), roleListResult.toString(), processId, username);

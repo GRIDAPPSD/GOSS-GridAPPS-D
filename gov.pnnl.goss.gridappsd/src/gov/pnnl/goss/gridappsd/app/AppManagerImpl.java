@@ -159,7 +159,7 @@ public class AppManagerImpl implements AppManager {
 		if (client == null) { 
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+			client = clientFactory.create(PROTOCOL.STOMP, credentials, true);
 		}
 		Destination replyDestination = event.getReplyDestination();
 

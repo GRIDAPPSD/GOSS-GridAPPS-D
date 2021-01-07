@@ -54,6 +54,8 @@
 	pnnl.goss.core.goss-core-server-api;version=latest,\
 	pnnl.goss.core.goss-core-server-registry;version=latest,\
 	pnnl.goss.core.security-propertyfile;version=latest,\
+	pnnl.goss.core.security-system;version=latest,\
+	pnnl.goss.core.security-jwt;version=latest,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
@@ -76,7 +78,6 @@
 	xml-apis,\
 	blazegraph.cim2glm;version=19.1.1,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
-	javax.servlet-api,\
 	com.bigdata.rdf,\
 	proven-message;version=0.4,\
 	proven-client;version=0.3,\
@@ -100,7 +101,13 @@
 	org.glassfish.jersey.core.jersey-server;version=2.26.0,\
 	org.glassfish.jersey.inject.jersey-hk2,\
 	org.glassfish.hk2.locator;version=2.5.0,\
-	javassist
+	javassist,\
+	com.nimbusds.nimbus-jose-jwt-dependencies,\
+	bouncycastle-jce-jdk13,\
+	org.apache.felix.http.servlet-api,\
+	com.fasterxml.jackson.jaxrs.jackson-jaxrs-base,\
+	javax.ws.rs.jsr311-api,\
+	javax.ws.rs-api
 	
 	
 
