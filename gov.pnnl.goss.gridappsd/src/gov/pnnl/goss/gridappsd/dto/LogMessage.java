@@ -66,7 +66,7 @@ public class LogMessage implements Serializable {
 
 	public LogMessage(){}
 
-	public LogMessage(String source, String requestId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb){
+	public LogMessage(String source, String requestId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb, String process_type){
 		this.source = source;
 		this.processId = requestId;
 		this.timestamp = timestamp;
@@ -74,6 +74,7 @@ public class LogMessage implements Serializable {
 		this.logMessage = logMessage;
 		this.processStatus = processStatus;
 		this.storeToDb = storeToDb;
+		this.process_type = process_type;
 	}
 
 	public String getSource() {
