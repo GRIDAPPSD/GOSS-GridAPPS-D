@@ -82,7 +82,7 @@ public class FNCSOutputEvent implements GossResponseEvent {
 			
 			
 			//TODO: Parse message and update simulation status or communicate with bridge accordingly
-			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
+			client.publish(GridAppsDConstants.topic_COSIM_input, "test message");
 					
 		
 		} catch (Exception e) {

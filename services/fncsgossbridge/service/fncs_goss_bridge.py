@@ -77,8 +77,8 @@ except:
 
 __version__ = '2019.9.0'
 
-input_from_goss_topic = '/topic/goss.gridappsd.fncs.input' #this should match GridAppsDConstants.topic_FNCS_input
-output_to_simulation_manager = 'goss.gridappsd.fncs.output'
+input_from_goss_topic = '/topic/goss.gridappsd.cosim.input' #this should match GridAppsDConstants.topic_FNCS_input
+output_to_simulation_manager = 'goss.gridappsd.cosim.output'
 output_to_goss_topic = '/topic/goss.gridappsd.simulation.output.' #this should match GridAppsDConstants.topic_FNCS_output
 simulation_input_topic = '/topic/goss.gridappsd.simulation.input.'
 _log = logging.getLogger(__name__)
@@ -324,7 +324,7 @@ class GOSSListener(object):
                     if fncs.is_initialized():
                         fncs.die()
                     break
-                goss_connection.send("goss.gridappsd.fncs.timestamp.{}".format(simulation_id), json.dumps({"timestamp": current_time + self.simulation_start}))
+                goss_connection.send("goss.gridappsd.cosim.timestamp.{}".format(simulation_id), json.dumps({"timestamp": current_time + self.simulation_start}))
                 #forward messages from FNCS to GOSS
                 if self.filter_all_measurements == False:
                     message['output'] = _get_fncs_bus_messages(simulation_id, self.measurement_filter)

@@ -36,7 +36,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
 # UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
 #-------------------------------------------------------------------------------
-from time import sleep
 """
 Created on Mar 9, 2020
 
@@ -116,7 +115,7 @@ class HelicsGossBridge(object):
     _helics_configuration = {}
     _helics_federate = None
     _is_initialized = False
-    _simulation_manager_input_topic = 'goss.gridappsd.fncs.output'
+    _simulation_manager_input_topic = 'goss.gridappsd.cosim.output'
     _simulation_command_queue = Queue()
     _start_simulation = False
     _filter_all_commands = False
@@ -380,7 +379,7 @@ class HelicsGossBridge(object):
             else:
                 self._is_initialized = False
                 log.debug(message_str)
-                self._gad_connection.send_simulation_status("STARTED", message_str, "DEBUG")
+                self._gad_connection.send_simulation_status("STARTING", message_str, "DEBUG")
             json_msg = yaml.safe_load(str(msg))
             if json_msg.get('command', '') == 'isInitialized':
                 message_str = 'isInitialized check: '+str(self._is_initialized)
@@ -389,7 +388,7 @@ class HelicsGossBridge(object):
                     self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
                 else:
                     log.debug(message_str)
-                    self._gad_connection.send_simulation_status('STARTED', message_str, 'DEBUG')
+                    self._gad_connection.send_simulation_status('STARTING', message_str, 'DEBUG')
                 message['command'] = 'isInitialized'
                 message['response'] = str(self._is_initialized)
                 t_now = datetime.utcnow()
@@ -401,6 +400,7 @@ class HelicsGossBridge(object):
                 if self._filter_all_commands == False:
                     self._simulation_command_queue.put(json.dumps(json_msg['input']))
             elif json_msg.get('command', '') == 'StartSimulation':
+                self._gad_connection.send_simulation_status('STARTED', f"Simulation {self._simulation_id} has started.", 'INFO')
                 if self._start_simulation == False:
                     self._start_simulation = True
             elif json_msg.get('command', '') == 'CommOutage':
@@ -530,12 +530,16 @@ class HelicsGossBridge(object):
             for current_time in range(simulation_length):
                 begin_time_step = time.perf_counter()
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
+                if federate_state == 4:
+                    self._gad_connection.send_simulation_status("ERROR",f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.", "ERROR")
+                    log.error(f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.")
+                    raise RuntimeError(f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.")
                 self._simulation_time = current_time
                 if self._stop_simulation == True:
                     if federate_state == 2:
                         helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
                     break
-                self._gad_connection.send("goss.gridappsd.fncs.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": current_time + simulation_start}))
+                self._gad_connection.send("goss.gridappsd.cosim.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": current_time + simulation_start}))
                 #forward messages from HELICS to GOSS
                 if self._filter_all_measurements == False:
                     message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -567,7 +571,7 @@ class HelicsGossBridge(object):
                 self._done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
                 message_str = 'incrementing to '+str(current_time + 1)
                 log.debug(message_str)
-                self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
+                self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
                 if run_realtime == True:
                     sleep_time = 1 - time.perf_counter() + begin_time_step
                     if sleep_time < 0:
@@ -586,7 +590,7 @@ class HelicsGossBridge(object):
                 self._simulation_time = current_time
                 if federate_state == 2:
                     helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
-            self._gad_connection.send("goss.gridappsd.fncs.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": self._simulation_time + simulation_start}))
+            self._gad_connection.send("goss.gridappsd.cosim.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": self._simulation_time + simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
                 message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -635,7 +639,7 @@ class HelicsGossBridge(object):
                 username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
             log.debug("Successfully registered with the GridAPPS-D platform.")
             self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
-            self._gad_connection.subscribe("/topic/goss.gridappsd.fncs.input", self.on_message)
+            self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input", self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
             
@@ -1064,7 +1068,7 @@ class HelicsGossBridge(object):
     
     
     def _done_with_time_step(self, current_time):
-        """tell the fncs_broker to move to the next time step.
+        """tell the helics_broker to move to the next time step.
     
         Function arguments:
             current_time -- Type: integer. Description: the current time in seconds.

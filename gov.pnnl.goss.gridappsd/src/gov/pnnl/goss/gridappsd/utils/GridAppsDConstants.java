@@ -132,11 +132,11 @@ public class GridAppsDConstants {
 	public static final String topic_getDataFilesLocation = topic_prefix+".data.filesLocation";
 	public static final String topic_getDataContent = topic_prefix+".data.content";
 	
-	//FNCS GOSS Bridge Topics
-	public static final String topic_FNCS = topic_prefix+".fncs";
-	public static final String topic_FNCS_input = topic_FNCS+".input";
-	public static final String topic_FNCS_output = topic_FNCS+".output";
-	public static final String topic_FNCS_timestamp = topic_FNCS+".timestamp";
+	//GOSS Bridge Topics
+	public static final String topic_COSIM = topic_prefix+".cosim";
+	public static final String topic_COSIM_input = topic_COSIM+".input";
+	public static final String topic_COSIM_output = topic_COSIM+".output";
+	public static final String topic_COSIM_timestamp = topic_COSIM+".timestamp";
 	
 	
 	public static final String FNCS_PATH = "fncs.path";
