@@ -87,7 +87,7 @@ public class SimulationEvent implements GossResponseEvent {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials);
+			Client client = clientFactory.create(PROTOCOL.STOMP,credentials,true);
 			
 			
 			//Extract simulation id and simulation files from message

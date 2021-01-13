@@ -167,7 +167,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     	
     	Credentials credentials = new UsernamePasswordCredentials(
 				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-        Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials);
+        Client inputClient = clientFactory.create(PROTOCOL.STOMP,credentials,true);
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override
             public void onMessage(Serializable message) {
