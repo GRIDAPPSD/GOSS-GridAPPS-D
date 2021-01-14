@@ -76,7 +76,6 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -147,7 +146,6 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 		File dictFile = null;
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
-		String gldInterface = configManager.getConfigurationProperty(GridAppsDConstants.GRIDLABD_INTERFACE);
 		File configFile = null;
 		if(simulationId!=null){
 			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
@@ -164,6 +162,9 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
 			}
 		}
+		
+		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+
 		StringWriter parameters_writer = new StringWriter();
 		parameters.list(new PrintWriter(parameters_writer));
 		String parameters_list = parameters_writer.getBuffer().toString();
