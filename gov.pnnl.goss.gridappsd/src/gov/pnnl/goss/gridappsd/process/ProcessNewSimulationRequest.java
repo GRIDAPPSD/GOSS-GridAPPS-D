@@ -78,17 +78,20 @@ import java.util.Properties;
 import com.google.gson.Gson;
 
 import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.security.SecurityConfig;
 
 public class ProcessNewSimulationRequest {
 
 	public ProcessNewSimulationRequest() {
 	}
 
-	public ProcessNewSimulationRequest(LogManager logManager) {
+	public ProcessNewSimulationRequest(LogManager logManager, SecurityConfig securityConfig) {
 		this.logManager = logManager;
+		this.securityConfig = securityConfig;
 	}
 
 	private volatile LogManager logManager;
+	private volatile SecurityConfig securityConfig;
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, String simulationId,
@@ -188,6 +191,8 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationDir",simulationConfigDir);
 			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			simulationContext.put("logLevel", logManager.getLogLevel());
+			simulationContext.put("username", securityConfig.getManagerUser());
+			simulationContext.put("password", securityConfig.getManagerPassword());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){
