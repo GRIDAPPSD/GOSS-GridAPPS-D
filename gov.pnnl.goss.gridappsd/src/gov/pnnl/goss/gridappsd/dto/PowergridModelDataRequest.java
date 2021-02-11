@@ -22,7 +22,7 @@ public class PowergridModelDataRequest implements Serializable{
 	//For all except query model names
 	public String modelId;
 	//Expected to match ResultFormat enum
-	public String resultFormat;
+	public String resultFormat = "JSON";
 	
 	//For query
 	public String queryString;
