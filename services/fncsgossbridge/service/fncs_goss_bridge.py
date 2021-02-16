@@ -999,7 +999,7 @@ def _done_with_time_step(current_time):
         _send_simulation_status('ERROR', message_str, 'ERROR')
 
 
-def _register_with_goss(sim_id,user,passwd,goss_server='localhost',
+def _register_with_goss(sim_id,goss_server='localhost',
                       stomp_port='61613', sim_duration=86400, sim_start=0):
     """Register with the GOSS server broker and return.
 
@@ -1012,8 +1012,6 @@ def _register_with_goss(sim_id,user,passwd,goss_server='localhost',
         stomp_port -- Type: string. Description: The port for Stomp
         protocol for the GOSS server. It must not be an empty string.
             Default: '61613'.
-        username -- Type: string. Description: User name for GOSS connection.
-        password -- Type: string. Description: Password for GOSS connection.
 
     Function returns:
         None.
@@ -1040,7 +1038,7 @@ def _register_with_goss(sim_id,user,passwd,goss_server='localhost',
     #goss_connection.start()
     #goss_connection.connect(username,password, wait=True)
     server = [goss_server, stomp_port]
-    goss_connection = GridAPPSD(simulation_id, address=server, username=user, password=passwd)
+    goss_connection = GridAPPSD(simulation_id, address=server)
     #goss_connection.subscribe(input_from_goss_topic,1)
     #goss_connection.subscribe(simulation_input_topic + "{}".format(simulation_id),2)
     goss_connection.subscribe(input_from_goss_topic, goss_listener_instance)
@@ -1410,10 +1408,10 @@ def _keep_alive(is_realtime, archive_db_file, archive_file, only_archive):
 
 
 def _main(simulation_id, simulation_broker_location='tcp://localhost:5570', measurement_map_dir='', is_realtime=True,
-          sim_duration=86400, sim_start=0, archive_db_file=None, archive_file=None, only_archive=False, username='system', password='manger'):
+          sim_duration=86400, sim_start=0, archive_db_file=None, archive_file=None, only_archive=False):
     
     measurement_map_file=str(measurement_map_dir)+"model_dict.json"
-    _register_with_goss(simulation_id,username,password,'127.0.0.1','61613', sim_duration, sim_start)
+    _register_with_goss(simulation_id,'127.0.0.1','61613', sim_duration, sim_start)
     _register_with_fncs_broker(simulation_broker_location)
     _create_cim_object_map(measurement_map_file)
     _keep_alive(is_realtime, archive_db_file, archive_file, only_archive)
@@ -1425,14 +1423,12 @@ def _get_opts():
     parser.add_argument("simulation_directory", help="The simulation files directory.")
     parser.add_argument("simulation_request", help="The simulation request.")
     parser.add_argument("logLevel", help="The log level at which platform was started")
-    parser.add_argument("username", help="The username to connect to the message bus.")
-    parser.add_argument("password", help="The password to connect to the message bus.")
     opts = parser.parse_args()
     return opts
 
 if __name__ == "__main__":
     #TODO: send simulation_id, fncsBrokerLocation, gossLocation,
-    #stomp_port, username and password as commmand line arguments
+    #stomp_port as commmand line arguments
     opts = _get_opts()
     simulation_id = opts.simulation_id
     platform_log_level = log_level_dict[opts.logLevel]
@@ -1440,9 +1436,6 @@ if __name__ == "__main__":
     logfile = "/tmp/gridappsd_tmp/{simulation_id}/fncs_goss_bridge.log".format(simulation_id=simulation_id)
     logging.basicConfig(level=logging.INFO, filename=logfile)
 
-
-    username = opts.username
-    password = opts.password
     sim_broker_location = opts.broker_location
     sim_dir = opts.simulation_directory
     sim_request = json.loads(opts.simulation_request.replace("\'",""))
@@ -1466,4 +1459,4 @@ if __name__ == "__main__":
     _log.debug("Archive settings:\n\tarchive_db_file: {}\n\tarchive_file: {}\n\tonly_archive: {}".format(
         archive_db_file, archive_file, only_archive))
     _main(simulation_id, sim_broker_location, sim_dir, run_realtime, sim_duration, sim_start_str,
-          archive_db_file, archive_file, only_archive, username, password)
+          archive_db_file, archive_file, only_archive)
