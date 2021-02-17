@@ -47,7 +47,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -82,15 +81,13 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate;
 import gov.pnnl.goss.gridappsd.dto.RequestTestUpdate.RequestType;
 import gov.pnnl.goss.gridappsd.dto.RuleSettings;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.TestConfig.TestType;
 import gov.pnnl.goss.gridappsd.dto.events.CommOutage;
 import gov.pnnl.goss.gridappsd.dto.events.Event;
@@ -135,6 +132,12 @@ public class TestManagerImpl implements TestManager {
 	
 	private Hashtable<String, AtomicInteger> rulePorts = new Hashtable<String, AtomicInteger>();
 	
+	public enum SimulationStatus {
+	    STARTED, RUNNING, FINISHED
+	}
+	
+	private Hashtable<String, SimulationStatus> sim_status = new Hashtable<String, SimulationStatus>();
+	
 	private Random randPort = new Random();
 	
 //	private enum EventStatus {
@@ -150,6 +153,7 @@ public class TestManagerImpl implements TestManager {
 	Gson gson;
 	
 	String testOutputTopic = GridAppsDConstants.topic_simulationTestOutput;
+//	String testOutputTopic = "/topic/goss.gridappsd.simulation.test.output.";
 
 	public TestManagerImpl(){}
 	public TestManagerImpl(ClientFactory clientFactory, 
@@ -230,19 +234,23 @@ public class TestManagerImpl implements TestManager {
 	public void publishResponse(DataResponse request) {
 		String r = "{\"data\":[],\"responseComplete\":true,\"id\":\"null\"}";
 		System.out.println("TestManager topic dest" + request.getReplyDestination());
-		client.publish(request.getReplyDestination(), r);
+		if(request.getReplyDestination() != null){
+			client.publish(request.getReplyDestination(), r);
+		}
 	}
 	
 	public void publishResponse(DataResponse request, String message) {
 		String r = "{\"data\":[\""+message+"\"],\"responseComplete\":true,\"id\":\"null\"}";
 		System.out.println("TestManager topic dest" + request.getReplyDestination());
-		client.publish(request.getReplyDestination(), r);
+		if(request.getReplyDestination() != null){
+			client.publish(request.getReplyDestination(), r);
+		}
 	}
 	
 	public void handleTestRequest(TestConfig testConfig, SimulationContext simulationContext) {
 		String simulationId = simulationContext.getSimulationId();
 		String simulationDir = simulationContext.getSimulationDir();
-
+		sim_status.put(simulationId, SimulationStatus.STARTED);
 		if(testConfig == null){
 			logManager.warn(ProcessStatus.RUNNING, simulationId, "testConfig is null" );
 			return;
@@ -253,11 +261,15 @@ public class TestManagerImpl implements TestManager {
 		}
 		
 		if(testConfig.getTestType() == TestType.simulation_vs_expected && testConfig.getExpectedResultObject() != null){
+			checkForStoppedSimulation(testConfig,simulationId);
+			client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
 			compareRunningSimulationOutputWithExpected(testConfig, simulationId, testConfig.getExpectedResultObject(),"expected");
 			compareRunningSimulationInputWithExpected(testConfig, simulationId, testConfig.getExpectedResultObject(),"expected");
+//			client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 		}
 		
 		if(testConfig.getTestType() == TestType.simulation_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() == null){
+			checkForStoppedSimulation(testConfig,simulationId);
 			compareRunningWithTimeseriesSimulation(testConfig, simulationId, testConfig.getCompareWithSimId());
 		}
 
@@ -376,11 +388,13 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, simulationIdTwo);		
-		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
-		publishResponse(request);
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
+		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, simulationIdTwo, testConfig);		
+//		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
+		//publishResponse(request);
 		storeResults(testConfig, simulationIdOne, simulationIdTwo, testResultsSeries);
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
 	
 	
@@ -398,8 +412,8 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void compareRunningWithTimeseriesSimulation(TestConfig testConfig, String currentSimulationId, String simulationIdOne){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
 		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		JsonObject expectedObject = hc.getExpectedFrom(response);
 		if(expectedObject == null){
@@ -411,14 +425,18 @@ public class TestManagerImpl implements TestManager {
 //		
 		compareRunningSimulationOutputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
 		compareRunningSimulationInputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
+//		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
 	
 	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser());
-		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, expectedResultObject);
-		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
+		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, testConfig, expectedResultObject);
+//		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
+
 		publishResponse(request);
 		storeResults(testConfig, simulationIdOne, "expectedJson", testResultsSeries);
+		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
 	
 	@Override
@@ -426,12 +444,13 @@ public class TestManagerImpl implements TestManager {
 		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
 
 		new GossResponseEvent() {
+			
 			int inputCount=0;
 			int expecetedLast=0;
 
-			int first1=0;
+//			int first1=0;
 //			int first2=0;
-			Boolean firstSet = false;
+//			Boolean firstSet = false;
 //			SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
 //			for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
 //				inputKeys2.add(Integer.valueOf(time_entry.getKey()));
@@ -439,6 +458,7 @@ public class TestManagerImpl implements TestManager {
 
 //			System.out.println(inputKeys2.toString());
 			public void onMessage(Serializable message) {
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
 				TestResultSeries testResultSeries = new TestResultSeries();
 				DataResponse event = (DataResponse) message;
 				String simOutputStr = event.getData().toString();
@@ -447,7 +467,7 @@ public class TestManagerImpl implements TestManager {
 //					simOutputStr = simOutputStr.substring(0, 200);
 				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
 //				 {"command": "update", "input": {"simulation_id": "797789794", "message": {"timestamp": 1588968302
-				CompareResults compareResults = new CompareResults();
+				CompareResults compareResults = new CompareResults(client, testConfig);
 				JsonObject simJsonObj = CompareResults.getSimulationJson(simOutputStr);
 				simJsonObj = simJsonObj.get("input").getAsJsonObject();
 
@@ -475,18 +495,18 @@ public class TestManagerImpl implements TestManager {
 					return;
 				}
 				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				if( ! firstSet){
-					first1 = Integer.valueOf(simulationTimestamp);
-					firstSet=true;
-				}
-				
-				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
-				System.out.println("size and inputCount");
-				System.out.println(inputKeys2.size());
-				System.out.println(inputCount);
-				if(inputKeys2.size() <= inputCount){
-					return;
-				}
+//				if( ! firstSet){
+//					first1 = Integer.valueOf(simulationTimestamp);
+//					firstSet=true;
+//				}
+//				
+//				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
+//				System.out.println("size and inputCount");
+//				System.out.println(inputKeys2.size());
+//				System.out.println(inputCount);
+//				if(inputKeys2.size() <= inputCount){
+//					return;
+//				}
 
 				String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
@@ -496,13 +516,22 @@ public class TestManagerImpl implements TestManager {
 //				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				JsonObject simJsonObjAtTime = new JsonObject();
 				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
-				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, inputKeys2.toArray()[inputCount].toString(),
+//				System.out.println("simulationTimestamp");
+//				System.out.println(simulationTimestamp);
+//				System.out.println("simJsonObjAtTime");
+//				System.out.println(simJsonObjAtTime);
+//				System.out.println(expectedResults);
+				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, 
+						simulationTimestamp,
+//						inputKeys2.toArray()[inputCount].toString(),
 						simJsonObjAtTime, expectedResults);
-				testResultSeries.add(originalTimestamp,inputKeys2.toArray()[inputCount].toString(), testResults);
-				if (testResults != null) {
-					client.publish(testOutputTopic+simulationId, testResultSeries.toJson(testConfig.getStoreMatches()));
-					//TODO: Store results in timeseries store.
-				}
+				testResultSeries.add(originalTimestamp,
+						simulationTimestamp,
+//						inputKeys2.toArray()[inputCount].toString(), 
+						testResults);
+//				if (testResults != null) {
+//					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
+//				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
 				inputCount++;
 			}
@@ -542,6 +571,7 @@ public class TestManagerImpl implements TestManager {
 
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
 				TestResultSeries testResultSeries = new TestResultSeries();
 				DataResponse event = (DataResponse) message;
 				String simOutputStr = event.getData().toString();
@@ -549,7 +579,7 @@ public class TestManagerImpl implements TestManager {
 //					simOutputStr = simOutputStr.substring(0, 200);
 				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
 				
-				CompareResults compareResults = new CompareResults();
+				CompareResults compareResults = new CompareResults(client, testConfig);
 				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
 
 				if ( ! simOutputJsonObj.has("message")) {
@@ -562,10 +592,37 @@ public class TestManagerImpl implements TestManager {
 						simOutputJsonObj, expectedResults);
 				testResultSeries.add(simulationTimestamp, simulationTimestamp, testResults);
 				if (testResults != null) {
-					client.publish(testOutputTopic+simulationId, testResultSeries.toJson(testConfig.getStoreMatches()));
+					String resultJson = testResultSeries.toJson(testConfig.getStoreMatches());
+//					if (resultJson != null && ! resultJson.isEmpty()){
+//						client.publish(testOutputTopic+testConfig.getTestId(), resultJson);
+//					}
 					//TODO: Store results in timeseries store.
 				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+			}
+
+		});
+	}
+	
+	
+	public void checkForStoppedSimulation(TestConfig testConfig, String simulationId) {
+		//BASE_SIMULATION_STATUS_TOPIC = "/topic/goss.gridappsd.simulation.log"
+		client.subscribe("/topic/"+GridAppsDConstants.topic_applicationLog + "." + simulationId,
+
+		new GossResponseEvent() {
+			public void onMessage(Serializable message) {
+				DataResponse event = (DataResponse) message;
+				String simOutputStr = event.getData().toString();
+				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
+				if (simOutputJsonObj.has("processStatus") && 
+						simOutputJsonObj.get("processStatus").getAsString().equals("COMPLETE")){
+//	            if 'processStatus' in message and message['processStatus'] == "COMPLETE":
+//	                print(message)
+					sim_status.put(simulationId, SimulationStatus.FINISHED);
+					// publish finish
+					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+				}
 			}
 
 		});
@@ -677,3 +734,4 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 }
+
