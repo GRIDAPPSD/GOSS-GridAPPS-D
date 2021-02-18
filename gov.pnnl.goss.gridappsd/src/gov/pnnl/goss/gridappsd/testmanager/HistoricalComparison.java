@@ -17,19 +17,23 @@ import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.TestConfig;
+import pnnl.goss.core.Client;
 
 public class HistoricalComparison {
 	
-	DataManager dataManager;
-	String username;
+	private DataManager dataManager;
+	private String username;
+	private Client client;
 	private Logger log = LoggerFactory.getLogger(getClass());
 	
-	public HistoricalComparison(DataManager dataManager, String username) {
+	public HistoricalComparison(DataManager dataManager, String username, Client client) {
 		this.dataManager = dataManager;
 		this.username = username;
+		this.client = client;
 	}
 
-	public TestResultSeries testProven(String simulationId, JsonObject expected_output_series){
+	public TestResultSeries testProven(String simulationId, TestConfig testConfig, JsonObject expected_output_series){
 
 		String responseStr = timeSeriesQuery(simulationId, "1532971828475", null, null);
 		if(! responseStr.contains("data")){
@@ -37,11 +41,11 @@ public class HistoricalComparison {
 			log.warn("No timeseries data for simulation " + simulationId);
 			return new TestResultSeries();
 		}
-		TestResultSeries testResultSeries = processWithAllTimes(expected_output_series, simulationId, responseStr);
+		TestResultSeries testResultSeries = processWithAllTimes(expected_output_series, testConfig, responseStr);
 		return testResultSeries;
 	}
 	
-	public TestResultSeries testProven(String simulationIdOne, String simulationIdTwo){
+	public TestResultSeries testProven(String simulationIdOne, String simulationIdTwo, TestConfig testConfig){
 
 		String responseStrOne = timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
 		String responseStrTwo = timeSeriesQuery(simulationIdTwo, "1532971828475", null, null);
@@ -53,7 +57,7 @@ public class HistoricalComparison {
 			System.out.println("No data for " + responseStrTwo);
 			return new TestResultSeries();
 		}
-		TestResultSeries testResultSeries = processWithAllTimes("123", responseStrOne, responseStrTwo);
+		TestResultSeries testResultSeries = processWithAllTimes("123", testConfig, responseStrOne, responseStrTwo);
 		return testResultSeries;
 	}
 	
@@ -175,9 +179,9 @@ public class HistoricalComparison {
 		return outputObject;
 	}
 
-	public TestResultSeries processWithAllTimes(String simulationId, String responseOne, String responseTwo) {
+	public TestResultSeries processWithAllTimes(String simulationId,TestConfig testConfig, String responseOne, String responseTwo) {
 		TestResultSeries testResultSeries = new TestResultSeries();
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(client, testConfig);
 
 		JsonObject expectedObjectOne = getExpectedFrom(responseOne);
 		JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
@@ -203,9 +207,17 @@ public class HistoricalComparison {
 		if(simInputObject.entrySet().isEmpty() || expected_input_series.entrySet().isEmpty()){
 			System.out.println("Empty inputs");
 			return testResultSeries;
+		}else{
+			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey().toString(), time_entry.getKey().toString(), simInputObject, expected_input_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+			}
 		}
 		
-		rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+		//rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		return testResultSeries;
 	}
 
@@ -244,9 +256,9 @@ public class HistoricalComparison {
 		return expectedObject;
 	}
 	
-	public TestResultSeries processWithAllTimes(JsonObject expected_series, String simulationId, String response) {
+	public TestResultSeries processWithAllTimes(JsonObject expected_series, TestConfig testConfig, String response) {
 		TestResultSeries testResultSeries = new TestResultSeries();
-		CompareResults compareResults = new CompareResults();
+		CompareResults compareResults = new CompareResults(client, testConfig);
 //		System.out.println(response);
 
 		JsonObject expectedObject = getExpectedFrom(response);
@@ -268,11 +280,16 @@ public class HistoricalComparison {
 		if (expectedObject.has("input") && expected_series.has("input") ){
 			JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
 			JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
-	//		System.out.println("processWithAllTimes expectedJson");
-	//		System.out.println(simInputObject.toString());
-	//		System.out.println(expected_input_series.toString());
-	
-			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
+
+			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey().toString(), time_entry.getKey().toString(), simInputObject, expected_input_series);
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+			}
+			
+//			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		}
 		return testResultSeries;
 	}

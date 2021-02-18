@@ -70,6 +70,7 @@ RUN ln -s run-gridappsd.sh run-docker.sh
 # Add the opendss command and library to the container
 COPY ./opendss/opendsscmd /usr/local/bin
 COPY ./opendss/liblinenoise.so /usr/local/lib
+COPY ./opendss/libklusolve.so /usr/local/lib
 RUN chmod +x /usr/local/bin/opendsscmd && \
   ldconfig
 

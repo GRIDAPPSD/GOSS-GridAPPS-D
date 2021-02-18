@@ -160,7 +160,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 
 			if(newSimulationProcess==null)
-				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager);
+				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager, this.securityConfig);
 
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
