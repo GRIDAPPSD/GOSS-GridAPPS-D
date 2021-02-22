@@ -162,24 +162,8 @@ public class ProcessEvent implements GossResponseEvent {
 			//Get username from token
 			JWTAuthenticationToken tokenObj = securityConfig.parseToken(token);
 			username = tokenObj.getSub();
-			System.out.println("PARSED TOKEN, GOT USERNAME "+username);
 			
 			
-//			//Parse json token
-//			SignedJWT signed;
-//			try {
-//				signed = SignedJWT.parse(username);
-//				Payload payload = signed.getPayload();
-//				String jsonToken = payload.toJSONObject().toJSONString();
-//				UserToken tokenObj = UserToken.parse(jsonToken);
-//				username = tokenObj.getSub();
-//				//TODO use the roles from the token object to determine permissions
-////				System.out.println("JSON TOKEN "+jsonToken);
-////				System.out.println("SETTING USERNAME TO "+tokenObj.getSub());
-//			} catch (ParseException e) {
-//				logManager.error(ProcessStatus.ERROR, processId,"Failure to parse authentication token:"+e.getMessage());
-//				e.printStackTrace();
-//			}
 		} 
 		
 		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
