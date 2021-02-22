@@ -49,7 +49,7 @@ public class LogManagerTest {
 		LogLevel log_level = LogLevel.DEBUG;
 		ProcessStatus process_status = ProcessStatus.RUNNING;
 		Boolean storeToDB = true;
-		LogMessage logMessage = new LogMessage(source, requestId,timestamp, log_message, log_level, process_status, storeToDB);
+		LogMessage logMessage = new LogMessage(source, requestId,timestamp, log_message, log_level, process_status, storeToDB, null);
 		
 		String id = client.getResponse(logMessage, destination, null).toString();
 		

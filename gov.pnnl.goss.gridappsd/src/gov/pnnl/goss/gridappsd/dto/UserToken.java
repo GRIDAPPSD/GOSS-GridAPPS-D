@@ -36,61 +36,98 @@
  * 
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/
-package gov.pnnl.goss.gridappsd.simulation;
+ ******************************************************************************/ 
+package gov.pnnl.goss.gridappsd.dto;
+
 
 import java.io.Serializable;
+import java.util.List;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
-import pnnl.goss.core.Client;
-import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.SecurityConfig;
-import pnnl.goss.core.ClientFactory;
-import pnnl.goss.core.GossResponseEvent;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
-/**
- * FNCSOutputEvent processes all messages coming from fncs-goss-bridge.py
- * @author shar064
- *
- */
-@Component
-public class FNCSOutputEvent implements GossResponseEvent {
-	
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
-	@ServiceDependency
-    private volatile SecurityConfig securityConfig;
+public class UserToken implements Serializable {
 	/**
-	 * message is in the JSON string format
-	 * {}
+	 * 
 	 */
+	private static final long serialVersionUID = -6949464126224009033L;
+	
+	String sub;
+	long nbf;
+	List<String> roles;
+	String iss;
+	long exp;
+	long iat;
+	String jti;
+
+	public String getSub() {
+		return sub;
+	}
+
+	public void setSub(String sub) {
+		this.sub = sub;
+	}
+
+	public long getNbf() {
+		return nbf;
+	}
+
+	public void setNbf(long nbf) {
+		this.nbf = nbf;
+	}
+
+	public List<String> getRoles() {
+		return roles;
+	}
+
+	public void setRoles(List<String> roles) {
+		this.roles = roles;
+	}
+
+	public String getIss() {
+		return iss;
+	}
+
+	public void setIss(String iss) {
+		this.iss = iss;
+	}
+
+	public long getExp() {
+		return exp;
+	}
+
+	public void setExp(long exp) {
+		this.exp = exp;
+	}
+
+	public long getIat() {
+		return iat;
+	}
+
+	public void setIat(long iat) {
+		this.iat = iat;
+	}
+
+	public String getJti() {
+		return jti;
+	}
+
+	public void setJti(String jti) {
+		this.jti = jti;
+	}
+
 	@Override
-	public void onMessage(Serializable message) {
-		
-		try {
-			Credentials credentials = new UsernamePasswordCredentials(
-					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-			
-			Client client = clientFactory.create(PROTOCOL.STOMP,credentials,true);
-			
-			
-			
-			
-			//TODO: Parse message and update simulation status or communicate with bridge accordingly
-			client.publish(GridAppsDConstants.topic_FNCS_input, "test message");
-					
-		
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
 	}
 	
-
+	public static UserToken parse(String jsonString){
+		Gson  gson = new Gson();
+		UserToken obj = gson.fromJson(jsonString, UserToken.class);
+		if(obj.sub==null)
+			throw new JsonSyntaxException("Expected attribute sub not found");
+		return obj;
+	}
+	
 }

@@ -103,7 +103,7 @@ public class LogManagerImpl implements LogManager {
 		try {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-			client = clientFactory.create(PROTOCOL.STOMP, credentials);
+			client = clientFactory.create(PROTOCOL.STOMP, credentials, true);
 
 
 
@@ -157,7 +157,6 @@ public class LogManagerImpl implements LogManager {
 		ProcessStatus processStatus = message.getProcessStatus();
 		Boolean storeToDb = message.getStoreToDb();
 		String process_type = message.getProcess_type();
-
 		String logString;
 		if(requestId!=null)
 			logString = String.format("%s|%s|%s|%s|%s|%s\n%s\n", timestamp, source, requestId,
@@ -193,39 +192,44 @@ public class LogManagerImpl implements LogManager {
 	
 	public void trace(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.TRACE, source);
+		this.log(processStatus, processId,  message, LogLevel.TRACE, source, null);
 	}
 
 	public void debug(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.DEBUG, source);
+		this.log(processStatus, processId,  message, LogLevel.DEBUG, source, null);
 	}
 	
 	public void info(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.INFO, source);
+		this.log(processStatus, processId,  message, LogLevel.INFO, source, null);
 	}
 
 	public void warn(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.WARN, source);
+		this.log(processStatus, processId,  message, LogLevel.WARN, source, null);
 	}
 
 	public void error(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.ERROR, source);
+		this.log(processStatus, processId,  message, LogLevel.ERROR, source, null);
 	}
 
 	public void fatal(ProcessStatus processStatus, String processId, String message) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(processStatus, processId,  message, LogLevel.FATAL, source);
+		this.log(processStatus, processId,  message, LogLevel.FATAL, source, null);
+	}
+	
+	public void setProcessType(String processId, String process_type) {
+		String source = Thread.currentThread().getStackTrace()[2].getClassName();
+		this.log(ProcessStatus.RUNNING, processId,  "New process id generated with new process type", LogLevel.INFO, source, process_type);
 	}
 	
 	public void logMessageFromSource(ProcessStatus processStatus, String processId, String message, String source, LogLevel logLevel) {
-		this.log(processStatus, processId,  message, logLevel, source);
+		this.log(processStatus, processId,  message, logLevel, source, null);
 	}
 	
-	public void log(ProcessStatus processStatus, String processId, String message, LogLevel logLevel, String source) {
+	private void log(ProcessStatus processStatus, String processId, String message, LogLevel logLevel, String source, String process_type) {
 		LogMessage logMessage = new LogMessage(
 				source,
 				processId, 
@@ -233,7 +237,8 @@ public class LogManagerImpl implements LogManager {
 				message, 
 				logLevel,
 				processStatus, 
-				true);
+				true,
+				process_type);
 		String topic = "/topic/"+GridAppsDConstants.topic_platformLog;
 		if(processId!=null) {
 			topic = GridAppsDConstants.topic_simulationLog + processId;
