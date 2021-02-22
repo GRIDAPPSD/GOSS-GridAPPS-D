@@ -160,7 +160,7 @@ public class ProcessManagerImpl implements ProcessManager {
 			client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 
 			if(newSimulationProcess==null)
-				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager, this.securityConfig);
+				newSimulationProcess = new ProcessNewSimulationRequest(this.logManager, securityConfig);
 
 			logMessageObj.setTimestamp(new Date().getTime());
 			logMessageObj.setLogMessage("Starting "+this.getClass().getName());
@@ -168,7 +168,7 @@ public class ProcessManagerImpl implements ProcessManager {
 
 
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this,
-					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager));
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig));
 		}
 		catch(Exception e){
 			e.printStackTrace();
