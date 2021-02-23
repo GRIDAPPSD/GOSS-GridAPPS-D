@@ -63,6 +63,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.security.JWTAuthenticationToken;
 import pnnl.goss.core.security.SecurityConfig;
 
 /**
@@ -134,8 +135,22 @@ public class LogManagerImpl implements LogManager {
 	 * @param message A DataResponse message.
 	 */
 	private void logIncomingMessage(Serializable message) {
+		
 		DataResponse event = (DataResponse)message;
 		String username = event.getUsername();
+		LogMessage logMessage = LogMessage.parse(event.getData().toString());
+		
+		//If it is a token instead of username
+		if(username!=null && username.length()>250){ //if it is a token
+			boolean valid = securityConfig.validateToken(username);
+			if(!valid){
+				this.error(ProcessStatus.ERROR, logMessage.getProcessId(),"Failure to validate authentication token:"+username);
+				return;
+			}
+			//Get username from token
+			JWTAuthenticationToken tokenObj = securityConfig.parseToken(username);
+			username = tokenObj.getSub();
+		}
 		logToConsole(LogMessage.parse(event.getData().toString()), username, null);
 	}
 	
