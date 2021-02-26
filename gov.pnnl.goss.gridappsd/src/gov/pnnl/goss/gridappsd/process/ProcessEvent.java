@@ -81,10 +81,13 @@ import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
+import pnnl.goss.core.security.JWTAuthenticationToken;
+import pnnl.goss.core.security.SecurityConfig;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
@@ -114,13 +117,14 @@ public class ProcessEvent implements GossResponseEvent {
 	ServiceManager serviceManager;
 	DataManager dataManager;
 	TestManager testManager;
+	SecurityConfig securityConfig;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
 			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
-			DataManager dataManager, TestManager testManager){
+			DataManager dataManager, TestManager testManager, SecurityConfig securityConfig){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -131,6 +135,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.serviceManager = serviceManager;
 		this.dataManager = dataManager;
 		this.testManager = testManager;
+		this.securityConfig = securityConfig;
 	}
 
 
@@ -143,22 +148,23 @@ public class ProcessEvent implements GossResponseEvent {
 		String processId = ProcessManagerImpl.generateProcessId();
 
 		String username = token;
+		
+		//If it looks like a token
 		if(token!=null && token.length()>250){
-			//Parse json token
-			SignedJWT signed;
-			try {
-				signed = SignedJWT.parse(username);
-				Payload payload = signed.getPayload();
-				String jsonToken = payload.toJSONObject().toJSONString();
-				UserToken tokenObj = UserToken.parse(jsonToken);
-				username = tokenObj.getSub();
-				//TODO use the roles from the token object to determine permissions
-//				System.out.println("JSON TOKEN "+jsonToken);
-//				System.out.println("SETTING USERNAME TO "+tokenObj.getSub());
-			} catch (ParseException e) {
-				logManager.error(ProcessStatus.ERROR, processId,"Failure to parse authentication token:"+e.getMessage());
-				e.printStackTrace();
+			
+			//Verify Token, throw exception if it cannot be verified
+			boolean valid = securityConfig.validateToken(token);
+			if(!valid){
+				logManager.error(ProcessStatus.ERROR, processId,"Failure to validate authentication token:"+token);
+				//TODO, USERNAME WOULD STILL BE THE FULL TOKEN HERE, HOW DO WE WANT TO ADDRESS THAT?
+				sendError(client, event.getReplyDestination(), "Failure to validate authentication token", processId, username);
+				return;
 			}
+			//Get username from token
+			JWTAuthenticationToken tokenObj = securityConfig.parseToken(token);
+			username = tokenObj.getSub();
+			
+			
 		} 
 		
 		logManager.debug(ProcessStatus.RUNNING, processId,"Received message: "+ event.getData() +" on topic "+event.getDestination()+" from user "+username);
