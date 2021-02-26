@@ -635,8 +635,7 @@ class HelicsGossBridge(object):
             
     def _register_with_goss(self): 
         try:
-            self._gad_connection = GridAPPSD(self._simulation_id, address=utils.get_gridappsd_address(),                                            
-                username=utils.get_gridappsd_user(), password=utils.get_gridappsd_pass())
+            self._gad_connection = GridAPPSD(self._simulation_id)
             log.debug("Successfully registered with the GridAPPS-D platform.")
             self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
             self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input", self.on_message)
