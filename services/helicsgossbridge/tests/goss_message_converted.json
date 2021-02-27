@@ -1,0 +1,40 @@
+{
+    "123": {
+        "671": {
+            "base_power_A": 2000.0,
+            "base_power_B": 2000.0,
+            "base_power_C": 2000.0
+        },
+        "cap_cap1": {
+            "control": "VAR",
+            "dwell_time": 60.0,
+            "switchA": "CLOSED",
+            "switchB": "CLOSED",
+            "switchC": "CLOSED"
+        },
+        "external_event_handler": {
+            "external_fault_event": "[{\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"SLG-A\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"TLL\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"LL-AB\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"TLG\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"DLG-AC\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"OC3\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"OC2-BC\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\", \"fault_object\": \"line_object_name\", \"type\": \"OC-C\"}, {\"name\": \"_EF469BD6-BE77-433A-95A6-2EF18601A0AA\"}]"
+        },
+        "inv_pv_house": {
+            "P_Out": 4500.0,
+            "Q_Out": -2400.0
+        },
+        "ld_house": {
+            "base_power_1": 3000.0,
+            "base_power_2": 3000.0
+        },
+        "rcon_Reg": {
+            "Control": "MANUAL",
+            "band_center": 2400.0,
+            "compensator_r_setting_A": 120.0,
+            "compensator_x_setting_A": 240.0,
+            "dwell_time": 30.0
+        },
+        "reg_Reg": {
+            "tap_A": 5
+        },
+        "swt_brkr1": {
+            "status": "OPEN"
+        }
+    }
+}

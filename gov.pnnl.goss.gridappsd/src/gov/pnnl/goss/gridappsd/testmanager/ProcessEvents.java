@@ -179,7 +179,7 @@ public class ProcessEvents {
 	}
 	
 	public void processEvents(Client client) {
-		client.subscribe(GridAppsDConstants.topic_FNCS_timestamp + "." + simulationID,
+		client.subscribe(GridAppsDConstants.topic_COSIM_timestamp + "." + simulationID,
 		new GossResponseEvent() {
 			public void onMessage(Serializable message) {
 

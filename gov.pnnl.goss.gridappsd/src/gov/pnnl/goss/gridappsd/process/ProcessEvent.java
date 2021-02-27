@@ -56,6 +56,7 @@ import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 import gov.pnnl.goss.gridappsd.dto.RuntimeTypeAdapterFactory;
 import gov.pnnl.goss.gridappsd.dto.UserToken;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.PlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestPlatformStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -281,6 +282,16 @@ public class ProcessEvent implements GossResponseEvent {
 				if(configRequest!=null){
 					StringWriter sw = new StringWriter();
 					PrintWriter out = new PrintWriter(sw);
+					
+					
+					ServiceInfo gldService = serviceManager.getService("GridLAB-D");
+					if(gldService!=null){
+						List<String> deps = gldService.getService_dependencies();
+						String gldInterface = GridAppsDConstants.getGLDInterface(deps);
+						configRequest.getParameters().put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+					} 
+
+					
 					try {
 						configurationManager.generateConfiguration(configRequest.getConfigurationType(), configRequest.getParameters(), out, new Integer(processId).toString(), username);
 					} catch (Exception e) {

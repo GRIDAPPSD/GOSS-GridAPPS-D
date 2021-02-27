@@ -121,9 +121,9 @@ public class SimulationProcess extends Thread {
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
-            client.subscribe(GridAppsDConstants.topic_FNCS_output, gossFncsResponseEvent);
+            client.subscribe(GridAppsDConstants.topic_COSIM_output, gossFncsResponseEvent);
             
-            logManager.info(ProcessStatus.RUNNING, simulationId, "Checking fncs is initialized, currently "+isInitialized.isInited);
+            logManager.info(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation is initialized, currently "+isInitialized.isInited);
 
             int initAttempts = 0;
             while(!isInitialized.isInited && initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
@@ -131,28 +131,28 @@ public class SimulationProcess extends Thread {
                 //TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
                 //This call would return true/false for initialization and simulation output of time step 0.
                 
-                client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"isInitialized\"}");
+                client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\": \"isInitialized\"}");
                 initAttempts++;
                 Thread.sleep(1000);
 
             }
 
             if(initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
-                logManager.info(ProcessStatus.RUNNING, simulationId, "FNCS Initialized");
+                logManager.info(ProcessStatus.RUNNING, simulationId, "Co-Simulation Bridge Initialized");
 
 
-                //Send the start simulation command to the fncsgossbridge
+                //Send the start simulation command to the co-simulation bridge
                 startSimulation(gossFncsResponseEvent, simulationConfig, simulationId);
-                while(!isFinished.isFinished){
-                    logManager.debug(ProcessStatus.RUNNING, simulationId, "Checking if FNCS simulation is finished, currently "+isFinished.isFinished);
+                while(!gossFncsResponseEvent.simulationTracker.isFinished){
+                    logManager.debug(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation federation is finished, currently "+gossFncsResponseEvent.simulationTracker.isFinished);
                     Thread.sleep(1000);
                 }
             } else {
-                logManager.error(ProcessStatus.ERROR, simulationId, "FNCS Initialization Failed");
+                logManager.error(ProcessStatus.ERROR, simulationId, "Co-simulation Bridge Initialization Failed");
             }
 
-            //call to stop the fncs broker
-            client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":  \"stop\"}");
+            //call to stop the simulation
+            client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\":  \"stop\"}");
             logManager.info(ProcessStatus.COMPLETE, simulationId,  "Simulation "+simulationId+" complete");
         }
         catch(Exception e){
@@ -186,7 +186,7 @@ public class SimulationProcess extends Thread {
         // Send the start simulation command to the fncsgossbridge so that it runs it's time loop to move the fncs simulation forward
         logManager.debug(ProcessStatus.RUNNING, simulationId, "Sending start simulation to bridge.");
         String message = "{\"command\": \"StartSimulation\"}";
-        client.publish(GridAppsDConstants.topic_FNCS_input, message);
+        client.publish(GridAppsDConstants.topic_COSIM_input, message);
     }
 
     private void watch(final Process process, String processName) {
@@ -239,14 +239,14 @@ public class SimulationProcess extends Thread {
 
                 DataResponse dataResponse = (DataResponse)response;
 
-                logManager.debug(ProcessStatus.RUNNING, simulationId, "FNCS-GOSS Bridge response:"+dataResponse.getData());
+                logManager.debug(ProcessStatus.RUNNING, simulationId, "Co-simulation Bridge response:"+dataResponse.getData());
 
                 Gson  gson = new Gson();
 
                 FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
                 //log.debug("FNCS output message: "+responseJson);
                 if("isInitialized".equals(responseJson.command)){
-                    log.debug("FNCS Initialized response: "+responseJson);
+                    log.debug("Bridge Initialized response: "+responseJson);
                     if("True".equals(responseJson.response)){
                         //log.info("FNCS is initialized "+initializedTracker);
                         initializedTracker.isInited = true;
