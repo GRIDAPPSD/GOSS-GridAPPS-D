@@ -1,4 +1,4 @@
-docker pull gridappsd/gridappsd_base:helics
+docker pull gridappsd/gridappsd_base:master
 
 ./gradlew clean
 rm -rf gov.pnnl.goss/gridappsd/generated
