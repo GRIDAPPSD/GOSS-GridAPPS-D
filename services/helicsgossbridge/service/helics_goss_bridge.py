@@ -898,7 +898,7 @@ class HelicsGossBridge(object):
             if federate_state == 2 and helics_input_message["{}".format(self._simulation_id)] != {}:
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
-                helics.helicsEndpointSendMessageObject(helics_input_endpoint, helics_msg)
+                helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
             publish_to_helics_bus_finish = time.perf_counter()
             publish_to_helics_profile = {
                 "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
