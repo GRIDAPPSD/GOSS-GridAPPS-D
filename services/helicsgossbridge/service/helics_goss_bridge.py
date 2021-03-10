@@ -472,7 +472,7 @@ class HelicsGossBridge(object):
                     self._pause_simulation_at = self._simulation_time + json_msg.get('input', {}).get('pauseIn',-1)                       
             elif json_msg.get('command', '') == '':
                 log.warning('The message received did not have a command key. Ignoring malformed message.')
-                self._gad_connection.send_simulation_status('WARNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
+                self._gad_connection.send_simulation_status('RUNNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
         except Exception as e:
             message_str = 'Error in processing command message:\n{}.\nError:\n{}'.format(msg,traceback.format_exc())
             log.error(message_str)
