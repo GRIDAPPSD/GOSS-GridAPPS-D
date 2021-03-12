@@ -281,6 +281,7 @@ public class ServiceManagerImpl implements ServiceManager{
 	    }
 	    envVars.put("GRIDAPPSD_USER", simulationContext.get("username").toString());
 	    envVars.put("GRIDAPPSD_PASSWORD", simulationContext.get("password").toString());
+	    envVars.put("GRIDAPPSD_LOG_LEVEL", simulationContext.get("logLevel").toString());
 	    
 		
 		//add executation command	        
