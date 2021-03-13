@@ -158,7 +158,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	}
 	@Override
 	public void endSimulation(String simulationId){
-		client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"stop\"}");
+		client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\": \"stop\"}");
 
 	}
 	

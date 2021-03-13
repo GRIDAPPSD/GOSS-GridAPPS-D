@@ -71,7 +71,6 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -226,7 +225,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONDURATION+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
-		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
+//		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
 
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
@@ -308,6 +307,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.USEHOUSES, Boolean.toString(useHouses));
+		simOutputParams.setProperty(SIMULATIONBROKERHOST, parameters.getProperty(SIMULATIONBROKERHOST,"127.0.0.1"));
+		simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT,"5570"));
+		simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE,GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 
@@ -321,7 +323,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate, boolean useHouses) throws Exception{
 		logManager.info(ProcessStatus.RUNNING,processId,"Generating startup file for GridLAB-D configuration using parameters: "+parameters);
-
+		
+		
+		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+		
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERHOST+" parameter provided");
@@ -382,7 +387,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String brokerPort = String.valueOf(simulationBrokerPort);
 
 		Calendar c = Calendar.getInstance();
-		simulationStartTime = simulationStartTime;
+//		simulationStartTime = simulationStartTime;
 		Date startTime = new Date(simulationStartTime * 1000);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 		c.setTime(startTime);
 		c.add(Calendar.SECOND, new Integer(simulationDuration));
@@ -421,13 +426,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("module reliability;");
 
+		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
+			startupFileWriter.println("object helics_msg {");
+			startupFileWriter.println("      name "+simulationID+";");
+			startupFileWriter.println("      message_type JSON;");
+			startupFileWriter.println("      configure model_outputs.json;");
+			startupFileWriter.println("}");
 
-		startupFileWriter.println("object fncs_msg {");
-		startupFileWriter.println("     name "+simulationID+";");
-		startupFileWriter.println("     message_type JSON;");
-		startupFileWriter.println("     configure model_outputs.json;");
-		startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
-		startupFileWriter.println("}");
+		} else {
+			startupFileWriter.println("object fncs_msg {");
+			startupFileWriter.println("     name "+simulationID+";");
+			startupFileWriter.println("     message_type JSON;");
+			startupFileWriter.println("     configure model_outputs.json;");
+			startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
+			startupFileWriter.println("}");
+		}
+		
 		startupFileWriter.println("object recorder {");
 		startupFileWriter.println("     parent "+simulationID+";");
 		startupFileWriter.println("     property message_type;");
@@ -486,5 +500,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating startup file for GridLAB-D configuration.");
 
 	}
-
+	
+	
 }
