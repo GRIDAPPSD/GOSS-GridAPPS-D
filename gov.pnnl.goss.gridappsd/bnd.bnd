@@ -29,7 +29,7 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	cimhub.lib;version=0.2.1,\
+	cimhub.lib;version=0.2.2,\
 	httpclient,\
 	com.bigdata.rdf,\
     proven-client;version=0.3,\
