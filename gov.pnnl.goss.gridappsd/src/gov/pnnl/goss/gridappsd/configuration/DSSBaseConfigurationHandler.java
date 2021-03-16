@@ -51,8 +51,8 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -81,11 +81,11 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 	@ServiceDependency 
 	private volatile LogManager logManager;
 	
-	public static final String CIM2GLM_PREFIX = "model";
-	public static final String DSSBASE_FILENAME = CIM2GLM_PREFIX+"_base.dss";
-	public static final String DSSBUSXY_FILENAME = CIM2GLM_PREFIX+"_busxy.ds";
-	public static final String DSSGUID_FILENAME = CIM2GLM_PREFIX+"_guid.ds";
-	public static final String DSSDICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
+	public static final String cimhub_PREFIX = "model";
+	public static final String DSSBASE_FILENAME = cimhub_PREFIX+"_base.dss";
+	public static final String DSSBUSXY_FILENAME = cimhub_PREFIX+"_busxy.ds";
+	public static final String DSSGUID_FILENAME = cimhub_PREFIX+"_guid.ds";
+	public static final String DSSDICTIONARY_FILENAME = cimhub_PREFIX+"_dict.json";
 	
 	
 	public static final String TYPENAME = "DSS Base";

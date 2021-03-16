@@ -5,7 +5,7 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 

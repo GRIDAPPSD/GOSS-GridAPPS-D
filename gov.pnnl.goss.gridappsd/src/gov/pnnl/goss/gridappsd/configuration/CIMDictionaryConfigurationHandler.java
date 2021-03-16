@@ -52,9 +52,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.dto.ModelState;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.dto.ModelState;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;

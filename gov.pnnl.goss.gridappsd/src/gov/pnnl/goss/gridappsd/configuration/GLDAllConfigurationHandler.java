@@ -59,9 +59,10 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.dto.ModelState;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.CIMQuerySetter;
+import gov.pnnl.gridappsd.cimhub.dto.ModelState;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -121,13 +122,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 //	public static final String CONFIGTARGET = "glm";
 	public static final String CONFIGTARGET = "both"; //will build files for both glm and dss
 
-	public static final String CIM2GLM_PREFIX = "model";
-	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
-	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
-	public static final String SCHEDULES_FILENAME = CIM2GLM_PREFIX+"_schedules.glm";
-	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
-	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
-	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
+	public static final String cimhub_PREFIX = "model";
+	public static final String BASE_FILENAME = cimhub_PREFIX+"_base.glm";
+	public static final String STARTUP_FILENAME = cimhub_PREFIX+"_startup.glm";
+	public static final String SCHEDULES_FILENAME = cimhub_PREFIX+"_schedules.glm";
+	public static final String MEASUREMENTOUTPUTS_FILENAME = cimhub_PREFIX+"_outputs.json";
+	public static final String DICTIONARY_FILENAME = cimhub_PREFIX+"_dict.json";
+	public static final String WEATHER_FILENAME = cimhub_PREFIX+"_weather.csv";
 
 	final double sqrt3 = Math.sqrt(3);
 
@@ -234,7 +235,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(!dir.exists()){
 			dir.mkdirs();
 		}
-		String fRoot = dir.getAbsolutePath()+File.separator+CIM2GLM_PREFIX;
+		String fRoot = dir.getAbsolutePath()+File.separator+cimhub_PREFIX;
 
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		//TODO
@@ -242,9 +243,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		boolean bHaveEventGen = true;
 
-		//CIM2GLM utility uses
+		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		CIMQuerySetter qs = new CIMQuerySetter();
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
