@@ -40,9 +40,12 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.gson.Gson;
 
 /**
  * Class to keep track of the test result differences.
@@ -169,6 +172,47 @@ public class TestResults implements Serializable{
 			}
 		}
 		return temp;
+	}
+	
+	public String toJson(Boolean storeMatches) {
+//		Boolean storeMatches = true;
+		TestResultFullDetails trfd = null;
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : getObjectPropComparison().entrySet()) {
+				HashMap<String, TestResultDetails> propMap = entry.getValue();
+				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
+					trfd = new TestResultFullDetails(prop.getValue());
+					trfd.setObject(entry.getKey());
+					trfd.setAttribute(prop.getKey());
+					trfd.setIndexOne(indexOne);
+					trfd.setIndexTwo(indexTwo);
+//					if(! storeMatches && trfd.getMatch())
+//						list.add(trfd);
+				}
+		}
+		if (storeMatches == false && trfd.getMatch() == true){
+			return "";
+		}
+		Gson  gson = new Gson();
+		return gson.toJson(trfd);
+	}
+	
+	public String toJson() {
+		TestResultFullDetails trfd = null;
+			for (Entry<String, HashMap<String, TestResultDetails>> entry : getObjectPropComparison().entrySet()) {
+				HashMap<String, TestResultDetails> propMap = entry.getValue();
+				for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
+					trfd = new TestResultFullDetails(prop.getValue());
+					trfd.setObject(entry.getKey());
+					trfd.setAttribute(prop.getKey());
+					trfd.setIndexOne(indexOne);
+					trfd.setIndexTwo(indexTwo);
+//					if(! storeMatches && trfd.getMatch())
+//						list.add(trfd);
+				}
+		}
+			
+		Gson  gson = new Gson();
+		return gson.toJson(trfd);
 	}
 	
 	public static void main(String[] args) {

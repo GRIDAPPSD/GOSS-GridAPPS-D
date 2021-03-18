@@ -94,7 +94,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 	public static final String ENDTIME_FILTER = "endTime";
 	public static final int TIMEFILTER_YEAR = 2018;
 
-	public static final String CIM2GLM_PREFIX = "model";
+	public static final String cimhub_PREFIX = "model";
 	
 	final double sqrt3 = Math.sqrt(3);
 

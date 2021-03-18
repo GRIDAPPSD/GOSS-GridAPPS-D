@@ -78,17 +78,20 @@ import java.util.Properties;
 import com.google.gson.Gson;
 
 import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.security.SecurityConfig;
 
 public class ProcessNewSimulationRequest {
 
 	public ProcessNewSimulationRequest() {
 	}
 
-	public ProcessNewSimulationRequest(LogManager logManager) {
+	public ProcessNewSimulationRequest(LogManager logManager, SecurityConfig securityConfig) {
 		this.logManager = logManager;
+		this.securityConfig = securityConfig;
 	}
 
 	private volatile LogManager logManager;
+	private volatile SecurityConfig securityConfig;
 
 	public void process(ConfigurationManager configurationManager,
 			SimulationManager simulationManager, String simulationId,
@@ -158,7 +161,13 @@ public class ProcessNewSimulationRequest {
 				e.printStackTrace();
 			}
 
-
+			
+			String gldInterface = null;
+			ServiceInfo gldService = serviceManager.getService("GridLAB-D");
+			if(gldService!=null){
+				List<String> deps = gldService.getService_dependencies();
+				gldInterface = GridAppsDConstants.getGLDInterface(deps);
+			} 
 
 			String simulator = simRequest.getSimulation_config().getSimulator();
 			//generate config files for requested simulator
@@ -167,11 +176,17 @@ public class ProcessNewSimulationRequest {
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			} else { //otherwise use gridlabd
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
 				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			
@@ -188,6 +203,8 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationDir",simulationConfigDir);
 			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			simulationContext.put("logLevel", logManager.getLogLevel());
+			simulationContext.put("username", securityConfig.getManagerUser());
+			simulationContext.put("password", securityConfig.getManagerPassword());
 			try{
 				simulationContext.put("simulatorPath",serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path());
 			}catch(NullPointerException e){

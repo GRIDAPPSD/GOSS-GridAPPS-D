@@ -1,0 +1,1416 @@
+{
+    "feeders": [
+        {
+            "batteries": [
+                {
+                    "CN1": "house",
+                    "batteryState": "Charging",
+                    "mRID": "_D75B3B35-5B4F-47F9-97C4-1160CABAC482",
+                    "maxIFault": 1.111,
+                    "name": "house",
+                    "p": -5000.0,
+                    "phases": "BS",
+                    "q": 0.0,
+                    "ratedE": 13500.0,
+                    "ratedS": 5000.0,
+                    "ratedU": 208.0,
+                    "storedE": 5000.0
+                },
+                {
+                    "CN1": "634",
+                    "batteryState": "Charging",
+                    "mRID": "_9575E63E-E682-4BAC-A0CD-D4B9BA86C2A9",
+                    "maxIFault": 1.111,
+                    "name": "school",
+                    "p": -100000.0,
+                    "phases": "ABC",
+                    "q": 0.0,
+                    "ratedE": 200000.0,
+                    "ratedS": 100000.0,
+                    "ratedU": 480.0,
+                    "storedE": 100000.0
+                }
+            ],
+            "breakers": [
+                {
+                    "CN1": "650",
+                    "CN2": "brkr",
+                    "breakingCapacity": 400.0,
+                    "mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "name": "brkr1",
+                    "normalOpen": false,
+                    "phases": "ABC",
+                    "ratedCurrent": 400.0
+                }
+            ],
+            "capacitors": [
+                {
+                    "CN1": "675",
+                    "aVRDelay": 0.0,
+                    "enabled": false,
+                    "grounded": true,
+                    "kvar_A": 200.0,
+                    "kvar_B": 200.0,
+                    "kvar_C": 200.0,
+                    "mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "mode": null,
+                    "monitoredBus": null,
+                    "monitoredClass": null,
+                    "monitoredName": null,
+                    "monitoredPhase": null,
+                    "name": "cap1",
+                    "nomU": 4160.0,
+                    "nominalVoltage": 4160.0,
+                    "phaseConnection": "Y",
+                    "phases": "ABC",
+                    "targetDeadband": 0.0,
+                    "targetValue": 0.0
+                }
+            ],
+            "disconnectors": [],
+            "energyconsumers": [
+                {
+                    "mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "name": "671",
+                    "phases": "ABC"
+                },
+                {
+                    "mRID": "_C066F793-B149-4E3E-89E4-A7DD0B7A0DF7",
+                    "name": "house",
+                    "phases": "s2:s1"
+                }
+            ],
+            "fuses": [
+                {
+                    "CN1": "633",
+                    "CN2": "xf1",
+                    "breakingCapacity": 0.0,
+                    "mRID": "_654B989E-9E9C-4617-A61B-3172E453D556",
+                    "name": "fuse1",
+                    "normalOpen": false,
+                    "phases": "ABC",
+                    "ratedCurrent": 100.0
+                }
+            ],
+            "mRID": "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62",
+            "measurements": [
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "680",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_4A639D7B-2D0B-4F50-9A1F-75EC215D657E",
+                    "mRID": "_0dcaec8e-d75d-4c1f-a6d7-be4d0b6a0bdb",
+                    "measurementType": "PNV",
+                    "name": "ACLineSegment_671680_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "680",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_4A639D7B-2D0B-4F50-9A1F-75EC215D657E",
+                    "mRID": "_91975cba-1d25-4cd7-97f8-d59a1610e8eb",
+                    "measurementType": "PNV",
+                    "name": "ACLineSegment_671680_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "680",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_4A639D7B-2D0B-4F50-9A1F-75EC215D657E",
+                    "mRID": "_cb894941-f481-492a-9c13-01ccc2d69989",
+                    "measurementType": "PNV",
+                    "name": "ACLineSegment_671680_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_2FD192AD-8148-47F8-B044-313D1A11DCF7",
+                    "mRID": "_b811be3c-b0ff-4cd9-afe3-864b223b2a8d",
+                    "measurementType": "VA",
+                    "name": "ACLineSegment_671680_Power",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_2FD192AD-8148-47F8-B044-313D1A11DCF7",
+                    "mRID": "_a32c6938-4cfc-4c3f-b2ff-57775c68f47d",
+                    "measurementType": "VA",
+                    "name": "ACLineSegment_671680_Power",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EF469BD6-BE77-433A-95A6-2EF18601A0AA",
+                    "ConductingEquipment_name": "671680",
+                    "ConductingEquipment_type": "ACLineSegment",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "line_671680",
+                    "Terminal_mRID": "_2FD192AD-8148-47F8-B044-313D1A11DCF7",
+                    "mRID": "_9dc106be-3800-46de-a4e6-9bc21b72936e",
+                    "measurementType": "VA",
+                    "name": "ACLineSegment_671680_Power",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_b8428048-0930-4f6a-9fcd-f15f78bfe5fa",
+                    "measurementType": "Pos",
+                    "name": "Breaker_brkr1_State",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_da9f657b-ab28-42fc-a139-52718b18ddbd",
+                    "measurementType": "Pos",
+                    "name": "Breaker_brkr1_State",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_07e84d5c-9ed1-4eeb-963e-1d95a6996aca",
+                    "measurementType": "Pos",
+                    "name": "Breaker_brkr1_State",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "brkr",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_6B09640B-4835-45A1-9C45-73EDDE1D1205",
+                    "mRID": "_133429aa-e2a7-4526-92bd-00eb83db8cb5",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "brkr",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_6B09640B-4835-45A1-9C45-73EDDE1D1205",
+                    "mRID": "_f0c27bcd-942c-45bd-91a8-74a6a4f3ecd9",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "brkr",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_6B09640B-4835-45A1-9C45-73EDDE1D1205",
+                    "mRID": "_c38ad942-92d7-4bfe-bb98-e7a0afbfb903",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_76fe6bb2-0bc3-41c8-bb5b-8baf6d00795b",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_330d046c-dc9d-4680-8501-d21fc234a130",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_80503dda-d5c8-4e16-bfd5-02be7a77471e",
+                    "measurementType": "PNV",
+                    "name": "Breaker_brkr1_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_e76768da-befb-4bd1-8505-cac74ad96c0b",
+                    "measurementType": "A",
+                    "name": "Breaker_brkr1_Current",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_7190a416-c07d-4ac0-8351-082f4daea4d7",
+                    "measurementType": "A",
+                    "name": "Breaker_brkr1_Current",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_00E2D49D-6F87-4E71-8225-75840868E5C0",
+                    "ConductingEquipment_name": "brkr1",
+                    "ConductingEquipment_type": "Breaker",
+                    "ConnectivityNode": "650",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_brkr1",
+                    "Terminal_mRID": "_BF8EC133-1CB0-4825-B7D3-6997723D3BC2",
+                    "mRID": "_401731bc-1be4-4d20-8737-1a7fcc004697",
+                    "measurementType": "A",
+                    "name": "Breaker_brkr1_Current",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_C066F793-B149-4E3E-89E4-A7DD0B7A0DF7",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_house",
+                    "Terminal_mRID": "_82EC427A-5D20-4239-BCF0-E448702D07F4",
+                    "mRID": "_00bb99d3-741b-4a15-a666-f3f4db3d2b24",
+                    "measurementType": "PNV",
+                    "name": "EnergyConsumer_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_C066F793-B149-4E3E-89E4-A7DD0B7A0DF7",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_house",
+                    "Terminal_mRID": "_82EC427A-5D20-4239-BCF0-E448702D07F4",
+                    "mRID": "_be29dc1c-9082-416f-b1d4-01a71a2a249d",
+                    "measurementType": "PNV",
+                    "name": "EnergyConsumer_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_C066F793-B149-4E3E-89E4-A7DD0B7A0DF7",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_house",
+                    "Terminal_mRID": "_82EC427A-5D20-4239-BCF0-E448702D07F4",
+                    "mRID": "_fa7bd34c-96f9-45f5-90a1-f82ec65f46e8",
+                    "measurementType": "VA",
+                    "name": "EnergyConsumer_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_C066F793-B149-4E3E-89E4-A7DD0B7A0DF7",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_house",
+                    "Terminal_mRID": "_82EC427A-5D20-4239-BCF0-E448702D07F4",
+                    "mRID": "_0d19eea3-78e6-45be-aa46-adc249a37baf",
+                    "measurementType": "VA",
+                    "name": "EnergyConsumer_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_1b526731-4c96-43df-b089-c1a4767117c4",
+                    "measurementType": "PNV",
+                    "name": "EnergyConsumer_671",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_9bc57ca8-c6f8-4dc8-accf-3c717901891c",
+                    "measurementType": "PNV",
+                    "name": "EnergyConsumer_671",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_41c462e7-7700-4e72-b14b-07d54d6cd443",
+                    "measurementType": "PNV",
+                    "name": "EnergyConsumer_671",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_53cdf9ba-7fa0-4108-b9a9-9e34e65a2e84",
+                    "measurementType": "VA",
+                    "name": "EnergyConsumer_671",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_7ace1d3c-a108-4101-89ed-f38378b645fa",
+                    "measurementType": "VA",
+                    "name": "EnergyConsumer_671",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_46F2C3DE-8EC9-443F-8F7E-9CC70DB1465A",
+                    "ConductingEquipment_name": "671",
+                    "ConductingEquipment_type": "EnergyConsumer",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "ld_671",
+                    "Terminal_mRID": "_008D6F6C-9D37-4685-A3FF-A8D826862413",
+                    "mRID": "_7ba6f6e9-e0ef-4baa-bd93-9d58e2bb1dda",
+                    "measurementType": "VA",
+                    "name": "EnergyConsumer_671",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_42b662ed-df46-452a-8730-d5569949b5d0",
+                    "measurementType": "Pos",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_c03a4c32-d9d5-4eed-b694-481262394955",
+                    "measurementType": "Pos",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_7d023054-6d55-44f6-a934-7600cf302827",
+                    "measurementType": "Pos",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_e4ac63f1-ba0d-48f5-ace4-754fb673b292",
+                    "measurementType": "PNV",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_0df0fb2a-6df4-4020-a545-37ca57a6570d",
+                    "measurementType": "PNV",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_ae967130-39a2-4013-ade8-e828072b6cf1",
+                    "measurementType": "PNV",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_c521dd10-16c5-49cf-94ef-aee59f927661",
+                    "measurementType": "VA",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_f107956f-2f01-44e1-84e9-20f9b49b9761",
+                    "measurementType": "VA",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_EAC7564D-2126-4138-8525-26B63DB6FDEE",
+                    "ConductingEquipment_name": "cap1",
+                    "ConductingEquipment_type": "LinearShuntCompensator",
+                    "ConnectivityNode": "675",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "cap_cap1",
+                    "Terminal_mRID": "_B7CE5B58-0F81-459A-BC50-47359A840565",
+                    "mRID": "_5652e10f-21ab-43d6-bf66-d8b14f874aff",
+                    "measurementType": "VA",
+                    "name": "LinearShuntCompensator_cap1",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_2b907ce5-6294-4919-824f-4f68212a042c",
+                    "measurementType": "Pos",
+                    "name": "LoadBreakSwitch_671692_State",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_5a50446d-86f7-4da0-a319-bad0b9549b35",
+                    "measurementType": "Pos",
+                    "name": "LoadBreakSwitch_671692_State",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_9a734acc-649b-4d9e-8f27-a5d09623d894",
+                    "measurementType": "Pos",
+                    "name": "LoadBreakSwitch_671692_State",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_b75c0dea-3b18-4252-b671-bbeb273171bf",
+                    "measurementType": "A",
+                    "name": "LoadBreakSwitch_671692_Current",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_4a37c515-3ad5-4e02-b694-316f01b99619",
+                    "measurementType": "A",
+                    "name": "LoadBreakSwitch_671692_Current",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "671",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_4D7F4D6A-E951-4880-B374-66545DB004CA",
+                    "mRID": "_eb9d8124-ee2d-4279-9889-7497b68cabcd",
+                    "measurementType": "A",
+                    "name": "LoadBreakSwitch_671692_Current",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "692",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_7FA26D4F-C01A-4C95-ACA3-617CA4E954E5",
+                    "mRID": "_67a0e66c-8e59-4683-af31-b57fb7ac995f",
+                    "measurementType": "PNV",
+                    "name": "LoadBreakSwitch_671692_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "692",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_7FA26D4F-C01A-4C95-ACA3-617CA4E954E5",
+                    "mRID": "_d314a1a0-6d5d-45cf-9019-7836323ff514",
+                    "measurementType": "PNV",
+                    "name": "LoadBreakSwitch_671692_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "ConductingEquipment_name": "671692",
+                    "ConductingEquipment_type": "LoadBreakSwitch",
+                    "ConnectivityNode": "692",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_671692",
+                    "Terminal_mRID": "_7FA26D4F-C01A-4C95-ACA3-617CA4E954E5",
+                    "mRID": "_74ce9949-af05-4eac-9218-e5b384fef755",
+                    "measurementType": "PNV",
+                    "name": "LoadBreakSwitch_671692_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_7061D6D1-6313-476A-819C-551E58337E64",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_C6302AEC-C957-4C80-A414-C8E4DA2BD78A",
+                    "mRID": "_f8ffd642-379e-487a-8853-a84bfd1cf3dc",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_BatteryUnit_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_7061D6D1-6313-476A-819C-551E58337E64",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_C6302AEC-C957-4C80-A414-C8E4DA2BD78A",
+                    "mRID": "_ff284d40-d818-427f-9497-bdaead163780",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_BatteryUnit_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_7061D6D1-6313-476A-819C-551E58337E64",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_C6302AEC-C957-4C80-A414-C8E4DA2BD78A",
+                    "mRID": "_8aa8e908-53dd-4ba8-b2f0-952d5c0df256",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_BatteryUnit_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_7061D6D1-6313-476A-819C-551E58337E64",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_C6302AEC-C957-4C80-A414-C8E4DA2BD78A",
+                    "mRID": "_dd8b0cba-b715-4fdf-a22c-0adcd596d5a1",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_BatteryUnit_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_81A3A9F2-DAF6-406B-BB3F-E0FC97708D67",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_DF79AE20-265C-4867-BBB4-48C0472B41BE",
+                    "mRID": "_a64ce2d9-dea7-4ee2-982f-e44cc8f9defb",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_81A3A9F2-DAF6-406B-BB3F-E0FC97708D67",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_DF79AE20-265C-4867-BBB4-48C0472B41BE",
+                    "mRID": "_f1e02c9f-cef4-4b91-803e-dc7b85822a5c",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_81A3A9F2-DAF6-406B-BB3F-E0FC97708D67",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_DF79AE20-265C-4867-BBB4-48C0472B41BE",
+                    "mRID": "_c9c802ba-a12b-4b48-810a-a002250f1ba8",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_house",
+                    "phases": "s1"
+                },
+                {
+                    "ConductingEquipment_mRID": "_81A3A9F2-DAF6-406B-BB3F-E0FC97708D67",
+                    "ConductingEquipment_name": "house",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "house",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "house_stmtr",
+                    "Terminal_mRID": "_DF79AE20-265C-4867-BBB4-48C0472B41BE",
+                    "mRID": "_e8cf067e-1a5e-4ea9-9d27-5db9d61e4300",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_house",
+                    "phases": "s2"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_36ec993a-9ef1-4886-bc9b-03b11b05188c",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_838da845-5315-4f62-867b-ff491b741b19",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_23bdbc36-1c3d-4d1b-a962-d453f03f9b54",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_c5cea1e1-4edd-4bec-8f8b-e5b8849cf50a",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_76100369-183d-4481-9d65-b863a5abad55",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_9978CE4B-1979-43D7-BEF6-18B61F879B60",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_139017DD-A360-45B3-B59F-80754CC5D7F4",
+                    "mRID": "_735c610a-cd35-4e4f-a463-a73f1db9a1ca",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_BatteryUnit_school",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_eb924da8-a6e4-414a-80af-791aff9b5853",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_42b0c2b5-ab55-45f4-a1ca-2d94064ffe4a",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_5ca63cd2-558f-4058-be76-12fde7e27939",
+                    "measurementType": "PNV",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_21452422-7497-4b4d-aba3-8ee933d2bf4d",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_f3c42dae-1777-45b7-8669-b000c4604bf5",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_043C49F8-D07C-4471-8BCB-955C691E3F4D",
+                    "ConductingEquipment_name": "school",
+                    "ConductingEquipment_type": "PowerElectronicsConnection",
+                    "ConnectivityNode": "634",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "634_stmtr",
+                    "Terminal_mRID": "_08961B29-B436-454F-8EC6-BD1A8F501075",
+                    "mRID": "_f6302f66-0c47-4728-955e-248555df1db6",
+                    "measurementType": "VA",
+                    "name": "PowerElectronicsConnection_PhotovoltaicUnit_school",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_0b0ab00e-a509-4b4a-8276-aa954bcd0298",
+                    "measurementType": "PNV",
+                    "name": "PowerTransformer_sub3_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_060d6afc-88d7-4264-9e15-a9564d0eacb7",
+                    "measurementType": "PNV",
+                    "name": "PowerTransformer_sub3_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_1b7a1143-e020-4e8d-80fb-a60826f9a606",
+                    "measurementType": "PNV",
+                    "name": "PowerTransformer_sub3_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_31d1eb6e-5ce1-4df5-bbef-6f667ac50198",
+                    "measurementType": "VA",
+                    "name": "PowerTransformer_sub3_Power",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_f8b09ba0-559f-4443-b643-3effb913ab92",
+                    "measurementType": "VA",
+                    "name": "PowerTransformer_sub3_Power",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_27F9090B-A8E7-420C-8049-41F41FDC2795",
+                    "ConductingEquipment_name": "sub3",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "sourcebus",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "xf_sub3",
+                    "Terminal_mRID": "_9A16E5E9-166E-49F0-89C0-BC4A2BAD7D4C",
+                    "mRID": "_6f13ffe1-c257-43d6-8bc1-7808d67ae676",
+                    "measurementType": "VA",
+                    "name": "PowerTransformer_sub3_Power",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_E682BC6D-C2E2-48D0-9D08-EBD89C2767A6",
+                    "ConductingEquipment_name": "Reg",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "rg60",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "reg_Reg",
+                    "Terminal_mRID": "_339C222B-A8C7-4900-BCFE-A91B00F059C9",
+                    "mRID": "_2baaea4b-5f98-4d4f-8ac3-619bb2712ce7",
+                    "measurementType": "Pos",
+                    "name": "RatioTapChanger_Reg",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_E682BC6D-C2E2-48D0-9D08-EBD89C2767A6",
+                    "ConductingEquipment_name": "Reg",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "rg60",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "reg_Reg",
+                    "Terminal_mRID": "_BE080AFA-CA1C-42E5-95E4-65B4FB54CF13",
+                    "mRID": "_4ebeba65-7ec3-4b72-82e2-87265b433cec",
+                    "measurementType": "Pos",
+                    "name": "RatioTapChanger_Reg",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_E682BC6D-C2E2-48D0-9D08-EBD89C2767A6",
+                    "ConductingEquipment_name": "Reg",
+                    "ConductingEquipment_type": "PowerTransformer",
+                    "ConnectivityNode": "rg60",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "reg_Reg",
+                    "Terminal_mRID": "_57810B26-443A-424E-A3EC-585EC73DF889",
+                    "mRID": "_53c17fc1-eac6-44b9-a865-cb19a96e2c3c",
+                    "measurementType": "Pos",
+                    "name": "RatioTapChanger_Reg",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_a99c9ecc-24cc-4b6f-934b-77cc2c62be81",
+                    "measurementType": "Pos",
+                    "name": "Recloser_rec1_State",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_8ace00b3-2f70-4726-8927-eafbd868d0aa",
+                    "measurementType": "Pos",
+                    "name": "Recloser_rec1_State",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Discrete",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_170ae508-ad8d-4a40-a17d-cc9e10728ff8",
+                    "measurementType": "Pos",
+                    "name": "Recloser_rec1_State",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_c6a13da5-d6a3-49cc-8d50-d334fe878c69",
+                    "measurementType": "PNV",
+                    "name": "Recloser_rec1_Voltage",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_b82fbc96-6d1b-44fc-b9ae-6769e3b6a03a",
+                    "measurementType": "PNV",
+                    "name": "Recloser_rec1_Voltage",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_294818b5-e17b-4835-b232-26b7a772d6ad",
+                    "measurementType": "PNV",
+                    "name": "Recloser_rec1_Voltage",
+                    "phases": "C"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_715a9996-63ef-43e5-b145-0a8825b5c66d",
+                    "measurementType": "A",
+                    "name": "Recloser_rec1_Current",
+                    "phases": "A"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_a78eb3e2-1df3-4395-b03a-acd3f738a51c",
+                    "measurementType": "A",
+                    "name": "Recloser_rec1_Current",
+                    "phases": "B"
+                },
+                {
+                    "ConductingEquipment_mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "ConductingEquipment_name": "rec1",
+                    "ConductingEquipment_type": "Recloser",
+                    "ConnectivityNode": "632",
+                    "MeasurementClass": "Analog",
+                    "SimObject": "swt_rec1",
+                    "Terminal_mRID": "_9040D6A9-4D57-43FF-917E-EA547625DFA0",
+                    "mRID": "_d6061048-437e-447e-851c-65e1af056ff6",
+                    "measurementType": "A",
+                    "name": "Recloser_rec1_Current",
+                    "phases": "C"
+                }
+            ],
+            "name": "ieee13nodeckt",
+            "reclosers": [
+                {
+                    "CN1": "632",
+                    "CN2": "mid",
+                    "breakingCapacity": 400.0,
+                    "mRID": "_6F2BCF22-348B-4AF4-9555-1D7C3B12F9E9",
+                    "name": "rec1",
+                    "normalOpen": false,
+                    "phases": "ABC",
+                    "ratedCurrent": 400.0
+                }
+            ],
+            "region": "IEEE",
+            "regionID": "_73C512BD-7249-4F50-50DA-D93849B89C43",
+            "regulators": [
+                {
+                    "RegulatingControl.discrete": [
+                        true,
+                        true,
+                        true
+                    ],
+                    "RegulatingControl.enabled": [
+                        true,
+                        true,
+                        true
+                    ],
+                    "RegulatingControl.mode": [
+                        "voltage",
+                        "voltage",
+                        "voltage"
+                    ],
+                    "TapChanger.controlEnabled": [
+                        true,
+                        true,
+                        true
+                    ],
+                    "TapChanger.tculControlMode": [
+                        "volt",
+                        "volt",
+                        "volt"
+                    ],
+                    "bankName": "Reg",
+                    "bankPhases": "ABC",
+                    "ctRating": [
+                        700.0,
+                        700.0,
+                        700.0
+                    ],
+                    "ctRatio": [
+                        3500.0,
+                        3500.0,
+                        3500.0
+                    ],
+                    "endNumber": [
+                        2,
+                        2,
+                        2
+                    ],
+                    "endPhase": [
+                        "A",
+                        "B",
+                        "C"
+                    ],
+                    "highStep": [
+                        16,
+                        16,
+                        16
+                    ],
+                    "initialDelay": [
+                        15.0,
+                        15.0,
+                        15.0
+                    ],
+                    "limitVoltage": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "lineDropCompensation": [
+                        true,
+                        true,
+                        true
+                    ],
+                    "lineDropR": [
+                        3.0,
+                        3.0,
+                        3.0
+                    ],
+                    "lineDropX": [
+                        9.0,
+                        9.0,
+                        9.0
+                    ],
+                    "lowStep": [
+                        -16,
+                        -16,
+                        -16
+                    ],
+                    "ltcFlag": [
+                        true,
+                        true,
+                        true
+                    ],
+                    "mRID": [
+                        "_2C2316E3-C3FC-4B24-BBDE-1982F4B24138",
+                        "_98525341-BE02-428C-B70F-6F78850F7D49",
+                        "_C6C04885-5480-4C12-9FAC-46D852CEDC2B"
+                    ],
+                    "monitoredPhase": [
+                        "A",
+                        "B",
+                        "C"
+                    ],
+                    "neutralStep": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "neutralU": [
+                        2400.0,
+                        2400.0,
+                        2400.0
+                    ],
+                    "normalStep": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "ptRatio": [
+                        20.0,
+                        20.0,
+                        20.0
+                    ],
+                    "reverseLineDropR": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "reverseLineDropX": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rtcName": [
+                        "reg1",
+                        "reg2",
+                        "reg3"
+                    ],
+                    "size": "3",
+                    "step": [
+                        10,
+                        8,
+                        11
+                    ],
+                    "stepVoltageIncrement": [
+                        0.625,
+                        0.625,
+                        0.625
+                    ],
+                    "subsequentDelay": [
+                        2.0,
+                        2.0,
+                        2.0
+                    ],
+                    "tankName": [
+                        "reg1",
+                        "reg2",
+                        "reg3"
+                    ],
+                    "targetDeadband": [
+                        2.0,
+                        2.0,
+                        2.0
+                    ],
+                    "targetValue": [
+                        122.0,
+                        122.0,
+                        122.0
+                    ]
+                }
+            ],
+            "sectionalisers": [],
+            "solarpanels": [
+                {
+                    "CN1": "house",
+                    "mRID": "_6D402486-96FB-4666-A3A3-7C0A180041DC",
+                    "maxIFault": 1.111,
+                    "name": "house",
+                    "p": 4000.0,
+                    "phases": "BS",
+                    "q": 0.0,
+                    "ratedS": 5000.0,
+                    "ratedU": 208.0
+                },
+                {
+                    "CN1": "634",
+                    "mRID": "_DFF0FD0E-9383-4D6E-8D2C-8BD0809FB5DD",
+                    "maxIFault": 1.111,
+                    "name": "school",
+                    "p": 240000.0,
+                    "phases": "ABC",
+                    "q": 0.0,
+                    "ratedS": 300000.0,
+                    "ratedU": 480.0
+                }
+            ],
+            "subregion": "Small",
+            "subregionID": "_ABEB635F-729D-24BF-B8A4-E2EF268D8B9E",
+            "substation": "IEEE13",
+            "substationID": "_6C62C905-6FC7-653D-9F1E-1340F974A587",
+            "switches": [
+                {
+                    "CN1": "671",
+                    "CN2": "692",
+                    "breakingCapacity": 400.0,
+                    "mRID": "_A2280E52-4563-4114-B7F5-1BC9D734EC68",
+                    "name": "671692",
+                    "normalOpen": false,
+                    "phases": "ABC",
+                    "ratedCurrent": 400.0
+                }
+            ],
+            "synchronousmachines": []
+        }
+    ]
+}

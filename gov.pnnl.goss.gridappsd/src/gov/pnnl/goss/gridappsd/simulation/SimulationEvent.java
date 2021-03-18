@@ -114,10 +114,10 @@ public class SimulationEvent implements GossResponseEvent {
 			client.publish(GridAppsDConstants.topic_simulationLog+simulationId, "FNCS-GOSS Bridge started");
 			
 			//Subscribe to GOSS FNCS Bridge output topic
-			client.subscribe(GridAppsDConstants.topic_FNCS_output, new FNCSOutputEvent());
+			client.subscribe(GridAppsDConstants.topic_COSIM_output, new FNCSOutputEvent());
 			
 			//Communicate with GOSS FNCS Bride to get status and output
-			client.publish(GridAppsDConstants.topic_FNCS, "isInitialized");
+			client.publish(GridAppsDConstants.topic_COSIM, "isInitialized");
 		
 		
 		} catch (Exception e) {

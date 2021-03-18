@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -132,11 +133,11 @@ public class GridAppsDConstants {
 	public static final String topic_getDataFilesLocation = topic_prefix+".data.filesLocation";
 	public static final String topic_getDataContent = topic_prefix+".data.content";
 	
-	//FNCS GOSS Bridge Topics
-	public static final String topic_FNCS = topic_prefix+".fncs";
-	public static final String topic_FNCS_input = topic_FNCS+".input";
-	public static final String topic_FNCS_output = topic_FNCS+".output";
-	public static final String topic_FNCS_timestamp = topic_FNCS+".timestamp";
+	//GOSS Bridge Topics
+	public static final String topic_COSIM = topic_prefix+".cosim";
+	public static final String topic_COSIM_input = topic_COSIM+".input";
+	public static final String topic_COSIM_output = topic_COSIM+".output";
+	public static final String topic_COSIM_timestamp = topic_COSIM+".timestamp";
 	
 	
 	public static final String FNCS_PATH = "fncs.path";
@@ -146,12 +147,15 @@ public class GridAppsDConstants {
 	public static final String GRIDAPPSD_TEMP_PATH = "gridappsd.temp.path";
 	public static final String APPLICATIONS_PATH = "applications.path";
 	public static final String SERVICES_PATH = "services.path";
+	public static final String GRIDLABD_INTERFACE = "gridlabd.interface";
+	public static final String GRIDLABD_INTERFACE_HELICS = "helics";
+	public static final String GRIDLABD_INTERFACE_FNCS = "fncs";
 
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
 	public static final String BLAZEGRAPH_NS_PATH = "blazegraph.ns.path";
 	public static final String PROVEN_PATH = "proven.path";
-        public static final String PROVEN_WRITE_PATH = "proven.write.path";
-        public static final String PROVEN_QUERY_PATH = "proven.query.path";
+	public static final String PROVEN_WRITE_PATH = "proven.write.path";
+	public static final String PROVEN_QUERY_PATH = "proven.query.path";
 
 	public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 	public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -247,4 +251,17 @@ public class GridAppsDConstants {
 		return defaultValue;
 	}
 
+	//Look to see if fncs or helics is listed in the service dependencies for gridlabd  (set in the GridLAB-D.config file in services).  Default to fncs if not found
+	public static String getGLDInterface(List<String> dependencies){
+		for(String dep:dependencies){
+			if(GridAppsDConstants.GRIDLABD_INTERFACE_FNCS.toLowerCase().equals(dep.trim().toLowerCase())){
+				return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
+			} else if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.toLowerCase().equals(dep.trim().toLowerCase())){
+				return GridAppsDConstants.GRIDLABD_INTERFACE_HELICS;
+			}
+		}
+				
+		return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
+	}
+	
 }
