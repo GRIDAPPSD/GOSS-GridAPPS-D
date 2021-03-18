@@ -4,7 +4,7 @@ Copyright (c) 2008-2021, Electric Power Research Institute, Inc.
 Copyright (c) 2017-2021, Battelle Memorial Institute
 All rights reserved.
 
-opendsscmd version 1.2.15
+opendsscmd version 1.2.17
 =========================
 
 This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 7.6.5 of the Windows-only version, and source code revision r2181. The major differences between opendsscmd and Windows-only OpenDSS are:
@@ -150,9 +150,16 @@ Change Log
 1.2.15 - retain the user-input line length units for subsequent CIM export
        - installs FNCS and HELICS
 
+1.2.16 - CIM export uses load.class=2 to prevent s1, s2 phases on 3-phase LV loads
+
+1.2.17 - links with HELICS, includes three HELICS examples
+       - Distance (21) and incremental distance (TD21) types added to Relay
+       - fix voltage base for 3-phase VCCS in RMS mode
+       - VCCS will cease to inject current when a terminal opens, e.g., by a Relay
+       - VCCS injects positive sequence current only when in RMS mode
+       - Distance (21) and TD21 relays have a reverse-looking flag
 
 Open Issues
-
 ===========
 
 1. The regular expressions for the batchedit command, which are implemented in ExecHelper.pas, have become case-sensitive.  They need to be made case-insensitive.
@@ -181,3 +188,5 @@ Use of this software is subject to a license. The terms are in:
 
 1 - A file called "license.txt" distributed with the software, and
 2 - The user manual
+
+
