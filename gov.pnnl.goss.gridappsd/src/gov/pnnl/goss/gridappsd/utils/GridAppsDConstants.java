@@ -151,6 +151,9 @@ public class GridAppsDConstants {
 	public static final String GRIDLABD_INTERFACE_HELICS = "helics";
 	public static final String GRIDLABD_INTERFACE_FNCS = "fncs";
 
+  public static final String OPENDSS_INTERFACE = "opendss.interface";
+  public static final String OPENDSS_INTERFACE_HELICS = "helics";
+
 	public static final String BLAZEGRAPH_HOST_PATH = "blazegraph.host.path";
 	public static final String BLAZEGRAPH_NS_PATH = "blazegraph.ns.path";
 	public static final String PROVEN_PATH = "proven.path";
@@ -264,4 +267,8 @@ public class GridAppsDConstants {
 		return GridAppsDConstants.GRIDLABD_INTERFACE_FNCS;
 	}
 	
+  // can only be a HELICS interface
+  public static String getDSSInterface(List<String> dependencies){
+    return GridAppsDConstants.OPENDSS_INTERFACE_HELICS;
+  }
 }

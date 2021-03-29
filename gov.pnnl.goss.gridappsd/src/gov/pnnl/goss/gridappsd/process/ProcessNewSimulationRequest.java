@@ -168,6 +168,12 @@ public class ProcessNewSimulationRequest {
 				List<String> deps = gldService.getService_dependencies();
 				gldInterface = GridAppsDConstants.getGLDInterface(deps);
 			} 
+      String dssInterface = null;
+      ServiceInfo dssService = serviceManager.getService("OpenDSS");
+      if(dssService!=null){
+        List<String> deps = dssService.getService_dependencies();
+        dssInterface = GridAppsDConstants.getDSSInterface(deps);
+      } 
 
 			String simulator = simRequest.getSimulation_config().getSimulator();
 			//generate config files for requested simulator
@@ -176,8 +182,8 @@ public class ProcessNewSimulationRequest {
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
-				if(gldInterface!=null){
-					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				if(dssInterface!=null){
+					simulationParams.put(GridAppsDConstants.OPENDSS_INTERFACE, dssInterface);
 				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			} else { //otherwise use gridlabd
