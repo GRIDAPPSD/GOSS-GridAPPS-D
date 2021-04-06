@@ -39,9 +39,10 @@
  ******************************************************************************/ 
 package gov.pnnl.goss.gridappsd.configuration;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.dto.ModelState;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.CIMQuerySetter;
+import gov.pnnl.gridappsd.cimhub.dto.ModelState;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -227,9 +228,10 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		//TODO add climate
 		
-		//CIM2GLM utility uses 
+		//cimhub utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		CIMQuerySetter qs = new CIMQuerySetter();
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		
 		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all DSS configuration files.");
 		

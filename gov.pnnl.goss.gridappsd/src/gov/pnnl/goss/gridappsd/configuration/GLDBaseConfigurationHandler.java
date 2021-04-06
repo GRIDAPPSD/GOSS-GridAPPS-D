@@ -50,8 +50,6 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -59,10 +57,12 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.CIMQuerySetter;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import pnnl.goss.core.Client;
 
 
@@ -181,12 +181,13 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		boolean bHaveEventGen = true;
 		
 		CIMImporter cimImporter = new CIMImporter(); 
+		CIMQuerySetter qs = new CIMQuerySetter();
 		
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateGLMFile(queryHandler, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen);
+			cimImporter.generateGLMFile(queryHandler, qs, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen);
 		} else {
-			cimImporter.generateGLMFile(queryHandler, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses,zFraction, iFraction, pFraction, bHaveEventGen);
+			cimImporter.generateGLMFile(queryHandler, qs, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses,zFraction, iFraction, pFraction, bHaveEventGen);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that
