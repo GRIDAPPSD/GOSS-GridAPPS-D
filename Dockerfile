@@ -7,7 +7,7 @@ ARG TIMESTAMP
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
   && cd gridappsd-python \
-  && pip3 install . \
+  && pip3 install -r requirements.txt \
   && rm -rf /root/.cache/pip/wheels
 
 # Get the gridappsd-sensor-simulator from the proper repository
