@@ -992,11 +992,27 @@ class HelicsGossBridge(object):
                                         val_str = str(prop_val_str).split(" ")[0]
                                         conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
                                         if conducting_equipment_type == "LinearShuntCompensator":
-                                            if property_name in ["shunt_"+phases,"voltage_"+phases]:
+                                            if property_name in ["voltage_"+phases]:
                                                 val = complex(val_str)
                                                 (mag,ang_rad) = cmath.polar(val)
                                                 ang_deg = math.degrees(ang_rad)
                                                 measurement["magnitude"] = mag
+                                                measurement["angle"] = ang_deg
+                                            elif property_name in ["shunt_"+phases]:
+                                                # Need voltage value and switch status to compute the reactive power
+                                                prop_val_str = gld_properties_dict.get("voltage_"+phases, None)
+                                                val_strVolt = str(prop_val_str).split(" ")[0]
+                                                valVolt = complex(val_strVolt)
+                                                (magV,ang_radV) = cmath.polar(valVolt)
+                                                prop_val_str = gld_properties_dict.get("switch"+phases, None)
+                                                val_str_switch = str(prop_val_str).split(" ")[0]
+                                                status = 1
+                                                if val_str_switch == "OPEN":
+                                                    status = 0                                                   
+                                                val = complex(val_str)
+                                                (mag,ang_rad) = cmath.polar(val)
+                                                ang_deg = math.degrees(ang_rad)
+                                                measurement["magnitude"] = mag * magV * magV * status
                                                 measurement["angle"] = ang_deg
                                             else:
                                                 if val_str == "OPEN":
