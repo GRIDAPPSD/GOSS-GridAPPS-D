@@ -441,10 +441,6 @@ class HelicsGossBridge(object):
                 log.info(message_str)
                 self._gad_connection.send_simulation_status('CLOSED', message_str, 'INFO')
                 self._stop_simulation = True
-                if federate_state == 2:
-                    if self._simulation_finished == False:
-                        helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
-                        self._close_helics_connection()
             elif json_msg.get('command', '') == 'pause':
                 if self._pause_simulation == True:
                     log.warning('Pause command received but the simulation is already paused.')
@@ -528,6 +524,8 @@ class HelicsGossBridge(object):
             measurement_message_count = 0
             simulation_run_time_start = time.perf_counter()
             for current_time in range(simulation_length):
+                if self._stop_simulation == True:
+                    break
                 begin_time_step = time.perf_counter()
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
                 if federate_state == 4:
@@ -583,13 +581,11 @@ class HelicsGossBridge(object):
                         log.debug(dbg_message)
                         self._gad_connection.send_simulation_status('RUNNING', dbg_message, 'DEBUG')
                         time.sleep(sleep_time)
-            federate_state = helics.helicsFederateGetState(self._helics_federate)
             if not self._stop_simulation:
+                federate_state = helics.helicsFederateGetState(self._helics_federate)
                 self._simulation_time = current_time + 1
             else:
                 self._simulation_time = current_time
-                if federate_state == 2:
-                    helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
             self._gad_connection.send("goss.gridappsd.cosim.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": self._simulation_time + simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
@@ -609,9 +605,10 @@ class HelicsGossBridge(object):
                     write_db_archive(ts, meas)
                 if targz_file:
                     targz_file.write((response_msg+"\n").encode('utf-8'))
-            if federate_state == 2:
-                helics.helicsFederateFinalize(self._helics_federate)
-            self._close_helics_connection()
+            if not self._stop_simulation:
+                if federate_state == 2:
+                    helics.helicsFederateFinalize(self._helics_federate)
+                self._close_helics_connection()
             self._simulation_finished = True
             log.debug(f"Simulation finished in {time.perf_counter() - simulation_run_time_start} seconds.")
             message['command'] = 'simulationFinished'
@@ -629,6 +626,9 @@ class HelicsGossBridge(object):
                 helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
             self._close_helics_connection()
         finally:
+            if self._stop_simulation:
+                helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
+                self._close_helics_connection()
             if targz_file:
                 targz_file.close()
     
@@ -992,11 +992,27 @@ class HelicsGossBridge(object):
                                         val_str = str(prop_val_str).split(" ")[0]
                                         conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
                                         if conducting_equipment_type == "LinearShuntCompensator":
-                                            if property_name in ["shunt_"+phases,"voltage_"+phases]:
+                                            if property_name in ["voltage_"+phases]:
                                                 val = complex(val_str)
                                                 (mag,ang_rad) = cmath.polar(val)
                                                 ang_deg = math.degrees(ang_rad)
                                                 measurement["magnitude"] = mag
+                                                measurement["angle"] = ang_deg
+                                            elif property_name in ["shunt_"+phases]:
+                                                # Need voltage value and switch status to compute the reactive power
+                                                prop_val_str = gld_properties_dict.get("voltage_"+phases, None)
+                                                val_strVolt = str(prop_val_str).split(" ")[0]
+                                                valVolt = complex(val_strVolt)
+                                                (magV,ang_radV) = cmath.polar(valVolt)
+                                                prop_val_str = gld_properties_dict.get("switch"+phases, None)
+                                                val_str_switch = str(prop_val_str).split(" ")[0]
+                                                status = 1
+                                                if val_str_switch == "OPEN":
+                                                    status = 0                                                   
+                                                val = complex(val_str)
+                                                (mag,ang_rad) = cmath.polar(val)
+                                                ang_deg = math.degrees(ang_rad)
+                                                measurement["magnitude"] = mag * magV * magV * status
                                                 measurement["angle"] = ang_deg
                                             else:
                                                 if val_str == "OPEN":

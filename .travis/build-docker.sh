@@ -11,6 +11,19 @@ GITHASH=`git log -1 --pretty=format:"%h"`
 BUILD_VERSION="${TIMESTAMP}_${GITHASH}${TRAVIS_BRANCH:+:$TRAVIS_BRANCH}"
 echo "BUILD_VERSION $BUILD_VERSION"
 
+if [ -n "$DOCKER_USERNAME" -a -n "$DOCKER_PASSWORD" ]; then
+
+  echo " "
+  echo "Connecting to docker"
+
+  echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+  status=$?
+  if [ $status -ne 0 ]; then
+    echo "Error: status $status"
+    exit 1
+  fi
+fi
+
 # Pass gridappsd tag to docker-compose
 docker build --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:${TIMESTAMP}_${GITHASH} .
 status=$?

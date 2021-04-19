@@ -76,7 +76,7 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	blazegraph.cim2glm;version=19.1.1,\
+	cimhub.lib;version=0.2.4,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	com.bigdata.rdf,\
 	proven-message;version=0.4,\
