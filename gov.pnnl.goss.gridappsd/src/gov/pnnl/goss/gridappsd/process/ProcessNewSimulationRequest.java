@@ -39,6 +39,19 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import com.google.gson.Gson;
+
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -48,10 +61,9 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.configuration.DSSAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -62,21 +74,6 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import com.google.gson.Gson;
-
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.security.SecurityConfig;
 
@@ -180,7 +177,17 @@ public class ProcessNewSimulationRequest {
 					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
 				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
-			} else { //otherwise use gridlabd
+			}
+			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.CONFIGTARGET)){
+				Properties simulationParams = generateSimulationParameters(simRequest);
+				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
+				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
+				configurationManager.generateConfiguration(OchreAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
+			}
+			else { //otherwise use gridlabd
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
