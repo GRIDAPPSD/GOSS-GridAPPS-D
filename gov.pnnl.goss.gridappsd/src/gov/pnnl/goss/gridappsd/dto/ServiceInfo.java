@@ -75,7 +75,7 @@ public class ServiceInfo implements Serializable {
 	List<String> service_dependencies;
 	boolean multiple_instances;
 	List<EnvironmentVariable> environmentVariables;
-	ServiceCategory catagory = ServiceCategory.SERVICE;
+	ServiceCategory category = ServiceCategory.SERVICE;
 	
 	
 
@@ -178,11 +178,11 @@ public class ServiceInfo implements Serializable {
 	}
 	
 	public ServiceCategory getCatagory() {
-		return catagory;
+		return category;
 	}
 
 	public void setCatagory(ServiceCategory catagory) {
-		this.catagory = catagory;
+		this.category = catagory;
 	}
 
 	@Override
