@@ -57,7 +57,7 @@ public class ServiceInfo implements Serializable {
 		   PYTHON, JAVA, WEB, EXE
 		}
 	
-	public enum ServiceCatagory {
+	public enum ServiceCategory {
 		SIMULATOR, COSIMULATOR, SERVICE
 	}
 	
@@ -75,7 +75,7 @@ public class ServiceInfo implements Serializable {
 	List<String> service_dependencies;
 	boolean multiple_instances;
 	List<EnvironmentVariable> environmentVariables;
-	ServiceCatagory catagory = ServiceCatagory.SERVICE;
+	ServiceCategory catagory = ServiceCategory.SERVICE;
 	
 	
 
@@ -177,11 +177,11 @@ public class ServiceInfo implements Serializable {
 		this.environmentVariables = environmentVariables;
 	}
 	
-	public ServiceCatagory getCatagory() {
+	public ServiceCategory getCatagory() {
 		return catagory;
 	}
 
-	public void setCatagory(ServiceCatagory catagory) {
+	public void setCatagory(ServiceCategory catagory) {
 		this.catagory = catagory;
 	}
 
