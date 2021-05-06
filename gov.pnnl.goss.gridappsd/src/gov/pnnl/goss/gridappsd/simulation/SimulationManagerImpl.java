@@ -119,14 +119,8 @@ public class SimulationManagerImpl implements SimulationManager{
 		
 		Credentials credentials = new UsernamePasswordCredentials(
 				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-		client = clientFactory.create(PROTOCOL.STOMP,credentials);
-		client.publish("goss.gridappsd.log.platform", new LogMessage(this.getClass().getSimpleName(),
-				null,
-				new Date().getTime(), 
-				this.getClass().getSimpleName()+" Started", 
-				LogLevel.INFO, 
-				ProcessStatus.STARTED, 
-				true).toString());
+		client = clientFactory.create(PROTOCOL.STOMP, credentials);
+		logManager.info(ProcessStatus.STARTED, null, this.getClass().getSimpleName()+" Started");
 	}
 
 	/**
@@ -164,7 +158,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	}
 	@Override
 	public void endSimulation(String simulationId){
-		client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"stop\"}");
+		client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\": \"stop\"}");
 
 	}
 	

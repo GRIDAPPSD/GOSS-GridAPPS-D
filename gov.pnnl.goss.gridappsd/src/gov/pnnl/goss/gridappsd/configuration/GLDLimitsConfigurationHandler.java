@@ -49,9 +49,9 @@ import org.apache.felix.dm.annotation.api.Start;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.OperationalLimits;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.OperationalLimits;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -88,8 +88,8 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
 	public static final String MODELID = "model_id";
 	public static final String SIMULATIONID = "simulation_id";
-	public static final String CIM2GLM_PREFIX = "model";
-	public static final String LIMITS_FILENAME = CIM2GLM_PREFIX+"_limits.json";
+	public static final String cimhub_PREFIX = "model";
+	public static final String LIMITS_FILENAME = cimhub_PREFIX+"_limits.json";
 
 	public GLDLimitsConfigurationHandler() {
 	}
@@ -150,7 +150,7 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
 
-		//CIM2GLM utility uses
+		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
 		
 		OperationalLimits oLimits = new OperationalLimits();

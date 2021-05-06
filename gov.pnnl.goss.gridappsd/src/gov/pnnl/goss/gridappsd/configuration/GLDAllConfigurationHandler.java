@@ -59,9 +59,10 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import gov.pnnl.goss.cim2glm.CIMImporter;
-import gov.pnnl.goss.cim2glm.dto.ModelState;
-import gov.pnnl.goss.cim2glm.queryhandler.QueryHandler;
+import gov.pnnl.gridappsd.cimhub.CIMImporter;
+import gov.pnnl.gridappsd.cimhub.CIMQuerySetter;
+import gov.pnnl.gridappsd.cimhub.dto.ModelState;
+import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -71,7 +72,6 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -122,13 +122,13 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 //	public static final String CONFIGTARGET = "glm";
 	public static final String CONFIGTARGET = "both"; //will build files for both glm and dss
 
-	public static final String CIM2GLM_PREFIX = "model";
-	public static final String BASE_FILENAME = CIM2GLM_PREFIX+"_base.glm";
-	public static final String STARTUP_FILENAME = CIM2GLM_PREFIX+"_startup.glm";
-	public static final String SCHEDULES_FILENAME = CIM2GLM_PREFIX+"_schedules.glm";
-	public static final String MEASUREMENTOUTPUTS_FILENAME = CIM2GLM_PREFIX+"_outputs.json";
-	public static final String DICTIONARY_FILENAME = CIM2GLM_PREFIX+"_dict.json";
-	public static final String WEATHER_FILENAME = CIM2GLM_PREFIX+"_weather.csv";
+	public static final String cimhub_PREFIX = "model";
+	public static final String BASE_FILENAME = cimhub_PREFIX+"_base.glm";
+	public static final String STARTUP_FILENAME = cimhub_PREFIX+"_startup.glm";
+	public static final String SCHEDULES_FILENAME = cimhub_PREFIX+"_schedules.glm";
+	public static final String MEASUREMENTOUTPUTS_FILENAME = cimhub_PREFIX+"_outputs.json";
+	public static final String DICTIONARY_FILENAME = cimhub_PREFIX+"_dict.json";
+	public static final String WEATHER_FILENAME = cimhub_PREFIX+"_weather.csv";
 
 	final double sqrt3 = Math.sqrt(3);
 
@@ -226,7 +226,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONDURATION+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONDURATION);
 		}
-		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
+//		long simulationEndTime = simulationStartTime+(1000*simulationDuration);
 
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
@@ -235,7 +235,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(!dir.exists()){
 			dir.mkdirs();
 		}
-		String fRoot = dir.getAbsolutePath()+File.separator+CIM2GLM_PREFIX;
+		String fRoot = dir.getAbsolutePath()+File.separator+cimhub_PREFIX;
 
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
 		//TODO
@@ -243,9 +243,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		boolean bHaveEventGen = true;
 
-		//CIM2GLM utility uses
+		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
-		cimImporter.start(queryHandler, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		CIMQuerySetter qs = new CIMQuerySetter();
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
@@ -308,6 +309,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.DICTIONARY_FILE, dictFile);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.MODELID, modelId);
 		simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.USEHOUSES, Boolean.toString(useHouses));
+		simOutputParams.setProperty(SIMULATIONBROKERHOST, parameters.getProperty(SIMULATIONBROKERHOST,"127.0.0.1"));
+		simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT,"5570"));
+		simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters.getProperty(GridAppsDConstants.GRIDLABD_INTERFACE,GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
 		GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(configManager, powergridModelManager, logManager);
 		simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
 
@@ -321,7 +325,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	protected void generateStartupFile(Properties parameters, String tempDataPath, PrintWriter startupFileWriter, String modelId, String processId, String username, boolean useClimate, boolean useHouses) throws Exception{
 		logManager.info(ProcessStatus.RUNNING,processId,"Generating startup file for GridLAB-D configuration using parameters: "+parameters);
-
+		
+		
+		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+		
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERHOST+" parameter provided");
@@ -382,7 +389,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		String brokerPort = String.valueOf(simulationBrokerPort);
 
 		Calendar c = Calendar.getInstance();
-		simulationStartTime = simulationStartTime;
+//		simulationStartTime = simulationStartTime;
 		Date startTime = new Date(simulationStartTime * 1000);  //GridAppsDConstants.SDF_GLM_CLOCK.parse(simulationStartTime);
 		c.setTime(startTime);
 		c.add(Calendar.SECOND, new Integer(simulationDuration));
@@ -421,13 +428,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		startupFileWriter.println("module reliability;");
 
+		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
+			startupFileWriter.println("object helics_msg {");
+			startupFileWriter.println("      name "+simulationID+";");
+			startupFileWriter.println("      message_type JSON;");
+			startupFileWriter.println("      configure model_outputs.json;");
+			startupFileWriter.println("}");
 
-		startupFileWriter.println("object fncs_msg {");
-		startupFileWriter.println("     name "+simulationID+";");
-		startupFileWriter.println("     message_type JSON;");
-		startupFileWriter.println("     configure model_outputs.json;");
-		startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
-		startupFileWriter.println("}");
+		} else {
+			startupFileWriter.println("object fncs_msg {");
+			startupFileWriter.println("     name "+simulationID+";");
+			startupFileWriter.println("     message_type JSON;");
+			startupFileWriter.println("     configure model_outputs.json;");
+			startupFileWriter.println("     option \"transport:hostname "+brokerLocation+", port "+brokerPort+"\";");
+			startupFileWriter.println("}");
+		}
+		
 		startupFileWriter.println("object recorder {");
 		startupFileWriter.println("     parent "+simulationID+";");
 		startupFileWriter.println("     property message_type;");
@@ -486,5 +502,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating startup file for GridLAB-D configuration.");
 
 	}
-
+	
+	
 }

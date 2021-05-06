@@ -125,11 +125,11 @@ public class AppManagerTest2 {
 		appInfo.setExecution_path("app/vvoapp.py");
 		
 		List<String> inputs = new ArrayList<String>();
-		inputs.add(GridAppsDConstants.topic_FNCS_output);
+		inputs.add(GridAppsDConstants.topic_COSIM_input);
 		appInfo.setInputs(inputs);
 		
 		List<String> outputs = new ArrayList<String>();
-		outputs.add(GridAppsDConstants.topic_FNCS_input);
+		outputs.add(GridAppsDConstants.topic_COSIM_input);
 		appInfo.setOutputs(outputs);
 		
 		appInfo.setLaunch_on_startup(false);
