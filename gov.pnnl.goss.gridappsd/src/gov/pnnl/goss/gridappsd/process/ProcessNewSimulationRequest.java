@@ -178,7 +178,7 @@ public class ProcessNewSimulationRequest {
 				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
-			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.CONFIGTARGET)){
+			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.TYPENAME)){
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());

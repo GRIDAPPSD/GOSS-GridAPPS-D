@@ -60,6 +60,7 @@ import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import gov.pnnl.gridappsd.cimhub.CIMImporter;
 import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import pnnl.goss.core.Client;
@@ -81,9 +82,13 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 	private volatile LogManager logManager;
 	
 	public static final String TYPENAME = "OCHRE";
+	public static final String DIRECTORY = "directory";
 	public static final String MODELID = "model_id";
 	public static final String SIMULATIONID = "simulation_id";
-	public static final String CONFIGTARGET = "both"; //will build files for both glm and ochre
+	public static final String CONFIGTARGET = "ochre"; //will build files for both glm and ochre
+	public static final String CONFIG_FILENAME = "ochre_helics_config.json";
+	public static final String SIMULATIONBROKERHOST = "simulation_broker_host";
+	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 
 	public OchreAllConfigurationHandler() {
 	}
@@ -110,56 +115,51 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logManager.info(ProcessStatus.RUNNING,processId,"Generating DSS Coordinate configuration file using parameters: "+parameters);
+		logManager.info(ProcessStatus.RUNNING,processId,"Generating OCHRE HELICS config file using parameters: "+parameters);
 
-		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		File configFile = null;
-		if(simulationId!=null){
-			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
-			if(simulationContext!=null){
-				configFile = new File(simulationContext.getSimulationDir()+File.separator+DSSBaseConfigurationHandler.DSSBUSXY_FILENAME);
-				//If the config file already has been created for this simulation then return it
-				if(configFile.exists()){
-					printFileToOutput(configFile, out);
-					logManager.info(ProcessStatus.RUNNING,processId,"Dictionary DSS coordinates file for simulation "+simulationId+" already exists.");
-					return;
-				}
-			} else {
-				logManager.warn(ProcessStatus.RUNNING,processId,"No simulation context found for simulation_id: "+simulationId);
-			}
+		String directory = GridAppsDConstants.getStringProperty(parameters, DIRECTORY, null);
+		if(directory==null || directory.trim().length()==0){
+			logManager.error(ProcessStatus.ERROR,processId,"No "+DIRECTORY+" parameter provided");
+			throw new Exception("Missing parameter "+DIRECTORY);
+		}
+		File dir = new File(directory);
+		if(!dir.exists()){
+			dir.mkdirs();
+		String tempDataPath = dir.getAbsolutePath();
+		
+		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
+		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERHOST+" parameter provided");
+			throw new Exception("Missing parameter "+SIMULATIONBROKERHOST);
 		}
 		
-		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-		if(modelId==null || modelId.trim().length()==0){
-			logManager.error(ProcessStatus.ERROR, processId, "No "+MODELID+" parameter provided");
-			throw new Exception("Missing parameter "+MODELID);
+		String simulationBrokerPort = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERPORT, null);
+		if(simulationBrokerPort==null || simulationBrokerPort.trim().length()==0){
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERPORT+" parameter provided");
+			throw new Exception("Missing parameter "+SIMULATIONBROKERPORT);
 		}
+						
+		try{
+            RunCommandLine.runCommand("python /gridappsd/services/gridappsd-cohre/bin/make_config_file.py "+
+            							simulationBrokerHost+" "+ 
+            							tempDataPath+" "+
+            							CONFIG_FILENAME+" "+
+            							simulationBrokerPort+" "+
+            							processId);
+            logManager.info(ProcessStatus.RUNNING, processId, "python /gridappsd/services/gridappsd-cohre/bin/make_config_file.py "+
+					simulationBrokerHost+" "+ 
+					tempDataPath+" "+
+					CONFIG_FILENAME+" "+
+					simulationBrokerPort+" "+
+					processId);
+        }catch(Exception e){
+            log.warn("Could not create OCHRE HELICS config file");
+        }
 		
-		
-		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
-		if(bgHost==null || bgHost.trim().length()==0){
-			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT; 
-		}
-		
-		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
-		queryHandler.addFeederSelection(modelId);
-		
-		CIMImporter cimImporter = new CIMImporter(); 
-		//If the simulation info is available also write to file
-		if(configFile!=null){
-			cimImporter.generateDSSCoordinates(queryHandler, new PrintWriter(new FileWriter(configFile)));
-		} else {
-			cimImporter.generateDSSCoordinates(queryHandler, out);
-		}
-		if(configFile!=null){
-			//config was written to file, so return that
-			printFileToOutput(configFile, out);
-		}
-		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating DSS Coordinate configuration file.");
+		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating OCHRE HELICS config file.");
 
 	}
-	
+	}
 	
 	
 	
