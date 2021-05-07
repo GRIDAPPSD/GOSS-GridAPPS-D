@@ -110,10 +110,10 @@ public class SimulationProcess extends Thread {
             //}
 
             //Start Simulator
-            logManager.info(ProcessStatus.RUNNING, simulationId, simContext.getSimulatorPath()+" "+simulationFile);
-            ProcessBuilder simulatorBuilder = null;
+            ProcessBuilder simulatorBuilder = new ProcessBuilder();
+            List<String> commands = new ArrayList<String>();
+            
             if(simulationConfig.getSimulator().equals("OCHRE")){
-            	List<String> commands = new ArrayList<String>();
             	commands.add(simContext.getSimulatorPath());
             	ServiceInfo serviceInfo = serviceManager.getService(simulationConfig.getSimulator());
             	List<String> staticArgsList = serviceInfo.getStatic_args();
@@ -131,15 +131,18 @@ public class SimulationProcess extends Thread {
         		    	commands.add(staticArg);
         		    }
         		}
-            	simulatorBuilder = new ProcessBuilder();
             	simulatorBuilder.command(commands);
             }
-            else
-            	 simulatorBuilder = new ProcessBuilder(simContext.getSimulatorPath(), simulationFile.getAbsolutePath());
+            else if(simulationConfig.getSimulator().equals("GridLAB-D")){
+            	commands.add(simContext.getSimulatorPath());
+            	commands.add(simulationFile.getAbsolutePath());
+            	simulatorBuilder.command(commands);
+            }
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
             //launch from directory containing simulation files
             simulatorBuilder.directory(simulationFile.getParentFile());
+            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting simulator with command "+String.join(" ",commands));
             simulatorProcess = simulatorBuilder.start();
             // Watch the process
             watch(simulatorProcess, "Simulator-"+simulationId);
