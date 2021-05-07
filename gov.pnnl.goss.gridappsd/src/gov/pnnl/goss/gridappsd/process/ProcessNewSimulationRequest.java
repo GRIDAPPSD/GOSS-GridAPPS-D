@@ -145,7 +145,10 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationId = simulationId;
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
-			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
+				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
+				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json";
 			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
@@ -208,7 +211,10 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationConfigDir);
-			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
+				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
+				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json");
 			simulationContext.put("logLevel", logManager.getLogLevel());
 			simulationContext.put("username", securityConfig.getManagerUser());
 			simulationContext.put("password", securityConfig.getManagerPassword());

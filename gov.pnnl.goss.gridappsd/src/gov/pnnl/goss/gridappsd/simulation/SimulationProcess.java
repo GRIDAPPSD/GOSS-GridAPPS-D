@@ -6,6 +6,7 @@ import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -18,10 +19,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,10 +67,11 @@ public class SimulationProcess extends Thread {
     AppManager appManager;
     Client client;
     SecurityConfig securityConfig;
+    Map<String, Object> simulationContex;
 
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
             SimulationConfig simulationConfig, String simulationId, LogManager logManager,
-            AppManager appManager, Client client, SecurityConfig securityConfig){
+            AppManager appManager, Client client, SecurityConfig securityConfig, Map<String, Object> simulationContex){
         this.simContext = simContext;
         this.serviceManager = serviceManager;
         this.simulationConfig = simulationConfig;
@@ -75,6 +80,7 @@ public class SimulationProcess extends Thread {
         this.appManager = appManager;
         this.client = client;
         this.securityConfig = securityConfig;
+        this.simulationContex = simulationContex;
     }
 
 
@@ -103,9 +109,33 @@ public class SimulationProcess extends Thread {
             }
             //}
 
-            //Start GridLAB-D
+            //Start Simulator
             logManager.info(ProcessStatus.RUNNING, simulationId, simContext.getSimulatorPath()+" "+simulationFile);
-            ProcessBuilder simulatorBuilder = new ProcessBuilder(simContext.getSimulatorPath(), simulationFile.getAbsolutePath());
+            ProcessBuilder simulatorBuilder = null;
+            if(simulationConfig.getSimulator().equals("OCHRE")){
+            	List<String> commands = new ArrayList<String>();
+            	commands.add(simContext.getSimulatorPath());
+            	ServiceInfo serviceInfo = serviceManager.getService(simulationConfig.getSimulator());
+            	List<String> staticArgsList = serviceInfo.getStatic_args();
+        		for(String staticArg : staticArgsList) {
+        		    if(staticArg!=null){
+        		    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+        				if(simulationContex!=null){
+        			    	if(staticArg.contains("(")){
+        				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+        				    	 for(String args : replaceArgs){
+        				    		 staticArg = staticArg.replace("("+args+")",simulationContex.get(args).toString());
+        				    	 }
+        			    	}
+        				}
+        		    	commands.add(staticArg);
+        		    }
+        		}
+            	simulatorBuilder = new ProcessBuilder();
+            	simulatorBuilder.command(commands);
+            }
+            else
+            	 simulatorBuilder = new ProcessBuilder(simContext.getSimulatorPath(), simulationFile.getAbsolutePath());
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
             //launch from directory containing simulation files
@@ -117,7 +147,7 @@ public class SimulationProcess extends Thread {
 
             //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 
-            logManager.info(ProcessStatus.RUNNING, simulationId,  "GridLAB-D started");
+            logManager.info(ProcessStatus.RUNNING, simulationId,  simulationConfig.getSimulator()+" simulator started");
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
