@@ -123,7 +123,7 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 			throw new Exception("Missing parameter "+DIRECTORY);
 		}
 		File dir = new File(directory);
-		if(!dir.exists()){
+		if(!dir.exists())
 			dir.mkdirs();
 		String tempDataPath = dir.getAbsolutePath();
 		
@@ -140,7 +140,7 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 		}
 						
 		try{
-            RunCommandLine.runCommand("python /gridappsd/services/gridappsd-cohre/bin/make_config_file.py "+
+            RunCommandLine.runCommand("python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
             							simulationBrokerHost+" "+ 
             							tempDataPath+" "+
             							CONFIG_FILENAME+" "+
@@ -158,7 +158,7 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 		
 		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating OCHRE HELICS config file.");
 
-	}
+	
 	}
 	
 	
