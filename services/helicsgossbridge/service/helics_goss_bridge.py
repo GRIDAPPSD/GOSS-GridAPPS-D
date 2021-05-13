@@ -470,7 +470,7 @@ class HelicsGossBridge(object):
                 log.warning('The message received did not have a command key. Ignoring malformed message.')
                 self._gad_connection.send_simulation_status('RUNNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
         except Exception as e:
-            message_str = 'Error in processing command message:\n{}.\nError:\n{}'.format(msg,traceback.format_exc())
+            message_str = f'Error in processing command message:\n{msg}.\nError:\n{traceback.format_exc()}'
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             self._stop_simulation = True
@@ -509,10 +509,10 @@ class HelicsGossBridge(object):
         only_archive = self._simulation_request.get("simulation_config",{}).get("only_archive", False)
         archive_db_file = None
         if make_db_archive:
-            archive_db_file = "/tmp/gridappsd_tmp/{}/archive.sqlite".format(self._simulation_id)
+            archive_db_file = f"/tmp/gridappsd_tmp/{self._simulation_id}/archive.sqlite"
         archive_file = None
         if make_archive:
-            archive_file = "/tmp/gridappsd_tmp/{}/archive.tar.gz".format(self._simulation_id)
+            archive_file = f"/tmp/gridappsd_tmp/{self._simulation_id}/archive.tar.gz"
         targz_file = None
         try:
             if archive_file:
@@ -537,7 +537,7 @@ class HelicsGossBridge(object):
                     if federate_state == 2:
                         helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
                     break
-                self._gad_connection.send("goss.gridappsd.cosim.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": current_time + simulation_start}))
+                self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}", json.dumps({"timestamp": current_time + simulation_start}))
                 #forward messages from HELICS to GOSS
                 if self._filter_all_measurements == False:
                     message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -547,7 +547,7 @@ class HelicsGossBridge(object):
 
                 if message['output']!={}:
                     measurement_message_count += 1
-                    log.debug("measurement message recieved at timestep {}.".format(current_time))
+                    log.debug(f"measurement message recieved at timestep {current_time}.")
                     if not only_archive:
                         self._gad_connection.send(simulation_output_topic, response_msg)
                     if archive_db_file:
@@ -586,7 +586,7 @@ class HelicsGossBridge(object):
                 self._simulation_time = current_time + 1
             else:
                 self._simulation_time = current_time
-            self._gad_connection.send("goss.gridappsd.cosim.timestamp.{}".format(self._simulation_id), json.dumps({"timestamp": self._simulation_time + simulation_start}))
+            self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}", json.dumps({"timestamp": self._simulation_time + simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
                 message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -614,11 +614,11 @@ class HelicsGossBridge(object):
             message['command'] = 'simulationFinished'
             del message['output']
             self._gad_connection.send(self._simulation_manager_input_topic, json.dumps(message))
-            log.info('Simulation {} has finished.'.format(self._simulation_id))
-            self._gad_connection.send_simulation_status('COMPLETE', 'Simulation {} has finished.'.format(self._simulation_id), 'INFO')
-            log.debug("total measurement messages recieved {}".format(measurement_message_count))
+            log.info(f'Simulation {self._simulation_id} has finished.')
+            self._gad_connection.send_simulation_status('COMPLETE', f'Simulation {self._simulation_id} has finished.', 'INFO')
+            log.debug(f"total measurement messages received {measurement_message_count}")
         except Exception as e:
-            message_str = 'Error in run simulation {}'.format(traceback.format_exc())
+            message_str = f'Error in run simulation {traceback.format_exc()}'
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             self._simulation_finished = True
@@ -646,15 +646,15 @@ class HelicsGossBridge(object):
     def _register_with_helics(self):
         try:
             self._helics_configuration = {
-                "name": "HELICS_GOSS_Bridge_{}".format(self._simulation_id),
+                "name": f"HELICS_GOSS_Bridge_{self._simulation_id}",
                 "period": 1.0,
                 "log_level": 7,
-                "broker": "127.0.0.1:{}".format(self._broker_port),
+                "broker": f"127.0.0.1:{self._broker_port}",
                 "endpoints": [
                     {
                         "name": "helics_input",
                         "global": False,
-                        "destination": "{}/helics_input".format(self._simulation_id),
+                        "destination": f"{self._simulation_id}/helics_input",
                         "type": "string",
                         "info": "This is the endpoint which sends CIM attribute commands to the GridLAB-D simulator."
                     },
@@ -670,7 +670,7 @@ class HelicsGossBridge(object):
             helics.helicsFederateEnterExecutingMode(self._helics_federate)
             log.debug("Successfully registered with the HELICS broker.") 
         except Exception as e:
-            err_msg = "An error occurred when trying to register with the HELICS broker!{}".format(traceback.format_exc())
+            err_msg = f"An error occurred when trying to register with the HELICS broker!{traceback.format_exc()}"
             log.error(err_msg, exc_info=True)
             self._gad_connection.send_simulation_status("ERROR", err_msg, "ERROR")
     
@@ -725,13 +725,13 @@ class HelicsGossBridge(object):
         if self._simulation_id == None or self._simulation_id == '' or type(self._simulation_id) != str:
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
-                + 'simulation_id = {0}.\n'.format(self._simulation_id)
-                + 'simulation_id type = {0}.'.format(type(self._simulation_id)))
+                + f'simulation_id = {self._simulation_id}.\n'
+                + f'simulation_id type = {type(self._simulation_id)}.')
         if goss_message == None or goss_message == '' or type(goss_message) != str:
             raise ValueError(
                 'goss_message must be a nonempty string.\n'
-                + 'goss_message = {0}.\n'.format(goss_message)
-                + 'goss_message type = {}.'.format(type(goss_message)))
+                + f'goss_message = {goss_message}.\n'
+                + f'goss_message type = {type(goss_message)}.')
         federate_state = helics.helicsFederateGetState(self._helics_federate)
         if federate_state != 2:
             raise RuntimeError(
@@ -742,10 +742,11 @@ class HelicsGossBridge(object):
             if type(test_goss_message_format) != dict:
                 raise ValueError(
                     'goss_message is not a json formatted string of a python dictionary.'
-                    + '\ngoss_message = {0}'.format(goss_message))
+                    + f'\ngoss_message = {goss_message}')
             helics_input_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_input")
-            helics_input_message = {"{}".format(self._simulation_id) : {}}
-            helics_input_message["{}".format(self._simulation_id)]["external_event_handler"] = {}
+            helics_ochre
+            helics_input_message = {f"{self._simulation_id}" : {}}
+            helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
             forward_differences_list = test_goss_message_format["message"]["forward_differences"]
             reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
             fault_list = []
@@ -756,14 +757,14 @@ class HelicsGossBridge(object):
                 }
                 if x.get("attribute", "") != "IdentifiedObject.Fault":
                     if command_pair not in command_filter:
-                        object_name = (self._object_mrid_to_name.get(x.get("object",{}),{})).get("name")
-                        object_phases = (self._object_mrid_to_name.get(x.get("object",{}),{})).get("phases")
-                        object_total_phases = (self._object_mrid_to_name.get(x.get("object",{}),{})).get("total_phases")
-                        object_type = (self._object_mrid_to_name.get(x.get("object",{}),{})).get("type")
-                        object_name_prefix = ((self._difference_attribute_map.get(x.get("attribute",{}),{})).get(object_type,{})).get("prefix")
+                        object_name = (self._object_mrid_to_name.get(x.get("object",""),{})).get("name")
+                        object_phases = (self._object_mrid_to_name.get(x.get("object",""),{})).get("phases")
+                        object_total_phases = (self._object_mrid_to_name.get(x.get("object",""),{})).get("total_phases")
+                        object_type = (self._object_mrid_to_name.get(x.get("object",""),{})).get("type")
+                        object_name_prefix = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("prefix")
                         cim_attribute = x.get("attribute")
-                        object_property_list = ((self._difference_attribute_map.get(x.get("attribute",{}),{})).get(object_type,{})).get("property")
-                        phase_in_property = ((self._difference_attribute_map.get(x.get("attribute",{}),{})).get(object_type,{})).get("phase_sensitive",False)
+                        object_property_list = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("property")
+                        phase_in_property = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("phase_sensitive",False)
                         if object_name == None or object_phases == None or object_total_phases == None or object_type == None or object_name_prefix == None or cim_attribute == None or object_property_list == None:
                             parsed_result = {
                                 "object_name":object_name,
@@ -774,88 +775,101 @@ class HelicsGossBridge(object):
                                 "cim_attribute":cim_attribute,
                                 "object_property_list":object_property_list
                             }
-                            raise RuntimeError("Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{}\nparsed result:{}".format(json.dumps(x,indent=4,sort_keys=True),json.dumps(parsed_result,indent=4,sort_keys=True)))
-                        if (object_name_prefix + object_name) not in helics_input_message["{}".format(self._simulation_id)].keys():
-                            helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name] = {}
+                            raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
+                        if (object_name_prefix + object_name) not in helics_input_message[f"{self._simulation_id}"].keys():
+                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name] = {}
                         if cim_attribute == "RegulatingControl.mode":
                             val = int(x.get("value"))
                             if val == 0:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
                             if val == 1:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                             elif val == 2:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VAR"
                             elif val == 3:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
                             else:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                                 log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
                                 self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
                         elif cim_attribute == "RegulatingControl.targetDeadband":
                             for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][y] = float(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
                         elif cim_attribute == "RegulatingControl.targetValue":
                             for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][y] = float(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
                         elif cim_attribute == "RotatingMachine.p":
                             for y in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                         elif cim_attribute == "RotatingMachine.q":
                             for y in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                         elif cim_attribute == "ShuntCompensator.aVRDelay":
                             for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][y] = float(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
                         elif cim_attribute == "ShuntCompensator.sections":
                             if int(x.get("value")) == 1:
                                 val = "CLOSED"
                             else:
                                 val = "OPEN"
                             for y in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = "{}".format(val)
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
                         elif cim_attribute == "Switch.open":
                             if int(x.get("value")) == 1:
                                 val = "OPEN"
                             else:
                                 val = "CLOSED"
-                            helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
+                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
                         elif cim_attribute == "TapChanger.initialDelay":
                             for y in object_property_list:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][y] = float(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
                         elif cim_attribute == "TapChanger.step":
                             for y in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
                         elif cim_attribute == "TapChanger.lineDropCompensation":
                             if int(x.get("value")) == 1:
                                 val = "LINE_DROP_COMP"
                             else:
                                 val = "MANUAL"
-                            helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = "{}".format(val)
+                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
                         elif cim_attribute == "TapChanger.lineDropR":
                             for y in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                         elif cim_attribute == "TapChanger.lineDropX":
                             for y in object_phases:
-                              helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                              helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                         elif cim_attribute == "PowerElectronicsConnection.p":
-                            helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
                         elif cim_attribute == "PowerElectronicsConnection.q":
-                            helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
                         elif cim_attribute == "EnergyConsumer.p":
                             phase_count = len(object_phases)
                             if "s1" in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
                             if "s2" in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
                             if "A" in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
                             if "B" in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
                             if "C" in object_phases:
-                                helics_input_message["{}".format(self._simulation_id)][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
+                        elif cim_attribute == "Ochre.command":
+                            if federate_state == 2:
+                                val = x.get("value")
+                                house_id = x.get("object")
+                                default_destination = helics.helicsEndpointGetDefaultDestination(helics_input_endpoint)
+                                ochre_destination = f"{self._simulation_id}/{house_id}/command_input"
+                                helics.helicsEndpointSetDefaultDestination(helics_input_endpoint, ochre_destination)
+                                log.info(f"Sending the following message to {ochre_destination}. {val}")
+                                self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to {ochre_destination}. {val}","INFO")
+                                helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
+                                helics.helicsMessageSetString(helics_msg, val)
+                                helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
+                                helics.helicsEndpointSetDefaultDestination(helics_input_endpoint, default_destination)
                         else:
-                            log.warning("Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.".format(cim_attribute))
-                            self._gad_connection.send_simulation_status("RUNNING", "Attribute, {}, is not a supported attribute in the simulator at this current time. ignoring difference.".format(cim_attribute), "WARN")
+                            log.warning(f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.")
+                            self._gad_connection.send_simulation_status("RUNNING", f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
                 else:
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object","")
@@ -891,11 +905,11 @@ class HelicsGossBridge(object):
                     fault_val_dict["name"] = x.get("object", "")
                     fault_list.append(fault_val_dict)
             if len(fault_list) != 0:
-                helics_input_message["{}".format(self._simulation_id)]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
+                helics_input_message[f"{self._simulation_id}"]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
             goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
             log.info("Sending the following message to the simulator. {}".format(goss_message_converted))
             self._gad_connection.send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
-            if federate_state == 2 and helics_input_message["{}".format(self._simulation_id)] != {}:
+            if federate_state == 2 and helics_input_message[f"{self._simulation_id}"] != {}:
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
                 helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
