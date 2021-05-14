@@ -744,7 +744,6 @@ class HelicsGossBridge(object):
                     'goss_message is not a json formatted string of a python dictionary.'
                     + f'\ngoss_message = {goss_message}')
             helics_input_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_input")
-            helics_ochre
             helics_input_message = {f"{self._simulation_id}" : {}}
             helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
             forward_differences_list = test_goss_message_format["message"]["forward_differences"]
