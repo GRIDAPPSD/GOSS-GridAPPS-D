@@ -949,7 +949,7 @@ class HelicsGossBridge(object):
             if self._simulation_id == None or self._simulation_id == '' or type(self._simulation_id) != str:
                 raise ValueError(
                     'simulation_id must be a nonempty string.\n'
-                    + 'simulation_id = {0}'.format(self._simulation_id))
+                    + f'simulation_id = {self._simulation_id}')
             helics_output_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_output")
             has_message = helics.helicsEndpointHasMessage(helics_output_endpoint)
             if has_message:
@@ -1111,14 +1111,13 @@ class HelicsGossBridge(object):
             if current_time == None or not isinstance(current_time, int):
                 raise ValueError(
                     'current_time must be an integer.\n'
-                    + 'current_time = {0}'.format(current_time))
+                    + f'current_time = {current_time}')
             time_request = float(current_time + 1)
             time_approved = helics.helicsFederateRequestTime(self._helics_federate, time_request)
             if time_approved != time_request:
                 raise RuntimeError(
                     'The time approved from helics_broker is not the time requested.\n'
-                    + 'time_request = {0}.\ntime_approved = {1}'.format(time_request,
-                    time_approved))
+                    + f'time_request = {time_request}.\ntime_approved = {time_approved}')
             log.debug(f"done_with_time_step took {time.perf_counter() - done_with_time_step_start} seconds to finish.")
         except Exception as e:
             message_str = 'Error in HELICS time request '+str(traceback.format_exc())
