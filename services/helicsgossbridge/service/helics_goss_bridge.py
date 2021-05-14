@@ -232,7 +232,6 @@ class HelicsGossBridge(object):
         "TapChanger.lineDropR" : {
             "regulator" : {
                 "property" : ["compensator_r_setting_{}"],
-    
                 "prefix" : "rcon_"
             }
         },
@@ -465,7 +464,7 @@ class HelicsGossBridge(object):
                     self._pause_simulation = False
                     log.info('The simulation has resumed.')
                     self._gad_connection.send_simulation_status('RUNNING', 'The simulation has resumed.', 'INFO')
-                    self._pause_simulation_at = self._simulation_time + json_msg.get('input', {}).get('pauseIn',-1)                       
+                    self._pause_simulation_at = self._simulation_time + json_msg.get('input', {}).get('pauseIn',-1)
             elif json_msg.get('command', '') == '':
                 log.warning('The message received did not have a command key. Ignoring malformed message.')
                 self._gad_connection.send_simulation_status('RUNNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
@@ -595,13 +594,13 @@ class HelicsGossBridge(object):
             response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
             if message['output']!={}:
                 measurement_message_count += 1
-                log.debug("measurement message recieved at end of simulation.".format(current_time))
+                log.debug("measurement message received at end of simulation.")
                 if not only_archive:
                     self._gad_connection.send(simulation_output_topic, response_msg)
                 if archive_db_file:
                     ts = message['output']['message']['timestamp']
                     meas = message['output']['message']['measurements']
-                    log.debug("Passing timestamp {ts} to write_db_archive".format(ts=ts))
+                    log.debug(f"Passing timestamp {ts} to write_db_archive")
                     write_db_archive(ts, meas)
                 if targz_file:
                     targz_file.write((response_msg+"\n").encode('utf-8'))
@@ -633,7 +632,7 @@ class HelicsGossBridge(object):
                 targz_file.close()
     
             
-    def _register_with_goss(self): 
+    def _register_with_goss(self):
         try:
             self._gad_connection = GridAPPSD(self._simulation_id)
             log.debug("Successfully registered with the GridAPPS-D platform.")
@@ -668,7 +667,7 @@ class HelicsGossBridge(object):
             }
             self._helics_federate = helics.helicsCreateMessageFederateFromConfig(json.dumps(self._helics_configuration))
             helics.helicsFederateEnterExecutingMode(self._helics_federate)
-            log.debug("Successfully registered with the HELICS broker.") 
+            log.debug("Successfully registered with the HELICS broker.")
         except Exception as e:
             err_msg = f"An error occurred when trying to register with the HELICS broker!{traceback.format_exc()}"
             log.error(err_msg, exc_info=True)
@@ -722,12 +721,12 @@ class HelicsGossBridge(object):
         message_str = 'translating following message for HELICS simulation '+str(self._simulation_id)+' '+str(goss_message)
         log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
-        if self._simulation_id == None or self._simulation_id == '' or type(self._simulation_id) != str:
+        if self._simulation_id == None or self._simulation_id == '' or not isinstance(self._simulation_id, str):
             raise ValueError(
                 'simulation_id must be a nonempty string.\n'
                 + f'simulation_id = {self._simulation_id}.\n'
                 + f'simulation_id type = {type(self._simulation_id)}.')
-        if goss_message == None or goss_message == '' or type(goss_message) != str:
+        if goss_message == None or goss_message == '' or not isinstance(goss_message,str):
             raise ValueError(
                 'goss_message must be a nonempty string.\n'
                 + f'goss_message = {goss_message}.\n'
@@ -739,7 +738,7 @@ class HelicsGossBridge(object):
                 + ' to the HELICS message bus.')
         try:
             test_goss_message_format = yaml.safe_load(goss_message)
-            if type(test_goss_message_format) != dict:
+            if not isinstance(test_goss_message_format, dict):
                 raise ValueError(
                     'goss_message is not a json formatted string of a python dictionary.'
                     + f'\ngoss_message = {goss_message}')
@@ -872,30 +871,30 @@ class HelicsGossBridge(object):
                 else:
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object","")
-                    fault_object_mrid = (x.get("value",{})).get("ObjectMRID","")               
+                    fault_object_mrid = (x.get("value",{})).get("ObjectMRID","")
                     fault_val_dict["fault_object"] = self._get_gld_object_name(fault_object_mrid)
                     phases = (x.get("value",{})).get("PhaseCode","")
                     fault_kind_type = (x.get("value",{})).get("PhaseConnectedFaultKind","")
                     fault_type = ""
                     if fault_kind_type == "lineToGround":
-                        fault_type = "SLG-{}".format(phases)
+                        fault_type = f"SLG-{phases}"
                     elif fault_kind_type == "lineToLine":
                         if len(phases) == 3:
                             fault_type = "TLL"
                         else:
-                            fault_type = "LL-{}".format(phases)
+                            fault_type = f"LL-{phases}"
                     elif fault_kind_type == "lineToLineToGround":
                         if len(phases) == 3:
                             fault_type = "TLG"
                         else:
-                            fault_type = "DLG-{}".format(phases)
+                            fault_type = f"DLG-{phases}"
                     elif fault_kind_type == "lineOpen":
                         if len(phases) == 3:
                             fault_type = "OC3"
                         elif len(phases) == 2:
-                            fault_type = "OC2-{}".format(phases)
+                            fault_type = f"OC2-{phases}"
                         else:
-                            fault_type = "OC-{}".format(phases)
+                            fault_type = f"OC-{phases}"
                     fault_val_dict["type"] = fault_type
                     fault_list.append(fault_val_dict)
             for x in reverse_differences_list:
@@ -906,8 +905,8 @@ class HelicsGossBridge(object):
             if len(fault_list) != 0:
                 helics_input_message[f"{self._simulation_id}"]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
             goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
-            log.info("Sending the following message to the simulator. {}".format(goss_message_converted))
-            self._gad_connection.send_simulation_status("RUNNING", "Sending the following message to the simulator. {}".format(goss_message_converted),"INFO")
+            log.info(f"Sending the following message to the simulator. {goss_message_converted}")
+            self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to the simulator. {goss_message_converted}","INFO")
             if federate_state == 2 and helics_input_message[f"{self._simulation_id}"] != {}:
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
@@ -922,7 +921,7 @@ class HelicsGossBridge(object):
         except ValueError as ve:
             raise ValueError(ve)
         except Exception as ex:
-            err_msg = "An error occured while trying to translate the update message received\n{}".format(traceback.format_exc())
+            err_msg = f"An error occured while trying to translate the update message received\n{traceback.format_exc()}"
             self._gad_connection.send_simulation_status("ERROR",err_msg,"ERROR")
             raise RuntimeError(err_msg)
         
@@ -998,7 +997,7 @@ class HelicsGossBridge(object):
                                     propertyValue = prop_val_str
                                     objectType = conducting_equipment_type_str
                                     if prop_val_str == None:
-                                        err_msg = "{} measurement for object {} is missing from the simulator output.".format(property_name, x)
+                                        err_msg = f"{property_name} measurement for object {x} is missing from the simulator output."
                                         log.warning(err_msg)
                                         self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
                                     else:
@@ -1021,7 +1020,7 @@ class HelicsGossBridge(object):
                                                 val_str_switch = str(prop_val_str).split(" ")[0]
                                                 status = 1
                                                 if val_str_switch == "OPEN":
-                                                    status = 0                                                   
+                                                    status = 0
                                                 val = complex(val_str)
                                                 (mag,ang_rad) = cmath.polar(val)
                                                 ang_deg = math.degrees(ang_rad)
@@ -1072,9 +1071,9 @@ class HelicsGossBridge(object):
                                             else:
                                                 measurement["value"] = int(val_str)
                                         else:
-                                            log.warning("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
+                                            log.warning(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
                                             self._gad_connection.send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                            raise RuntimeError("{} is not a recognized conducting equipment type.".format(conducting_equipment_type))
+                                            raise RuntimeError(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
                                             # Should it raise runtime?
                                         # change to be a dictionary rather than an array
                                         cim_measurements_dict['message']["measurements"][measurement["measurement_mrid"]] = measurement
@@ -1087,9 +1086,9 @@ class HelicsGossBridge(object):
             log.debug(f"Message from simulation processing time: {time.perf_counter() - get_helics_bus_messages_start}.")
             return cim_output
         except ValueError as ve:
-            raise RuntimeError("{}.\nObject Name: {}\nObject Type: {}\nProperty Name: {}\n Property Value{}".format(str(ve), objectName, objectType, propertyName, propertyValue))
+            raise RuntimeError(f"{str(ve)}.\nObject Name: {objectName}\nObject Type: {objectType}\nProperty Name: {propertyName}\n Property Value{propertyValue}")
         except Exception as e:
-            message_str = 'Error on get HELICS Bus Messages for '+str(self._simulation_id)+' '+str(traceback.format_exc())
+            message_str = f'Error on get HELICS Bus Messages for {self._simulation_id} {traceback.format_exc()}'
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             return {}
@@ -1109,7 +1108,7 @@ class HelicsGossBridge(object):
         """
         done_with_time_step_start = time.perf_counter()
         try:
-            if current_time == None or type(current_time) != int:
+            if current_time == None or not isinstance(current_time, int):
                 raise ValueError(
                     'current_time must be an integer.\n'
                     + 'current_time = {0}'.format(current_time))
@@ -1129,7 +1128,7 @@ class HelicsGossBridge(object):
             
     def _create_cim_object_map(self,map_file=None):
         if map_file == None:
-            map_file="/tmp/gridappsd_tmp/{}/model_dict.json".format(self._simulation_id)
+            map_file=f"/tmp/gridappsd_tmp/{self._simulation_id}/model_dict.json"
         try:
             with open(map_file, "r", encoding="utf-8") as file_input_stream:
                 file_dict = json.load(file_input_stream)
@@ -1171,7 +1170,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "voltage_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {}.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {measurement_type}.")
                     elif "PowerTransformer" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1183,7 +1182,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
                     elif "RatioTapChanger" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1198,7 +1197,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {}.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {measurement_type}.")
                     elif "ACLineSegment" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1220,7 +1219,7 @@ class HelicsGossBridge(object):
                             else:
                                 property_name = "current_in_" + phases
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
                     elif "LoadBreakSwitch" in conducting_equipment_type or "Recloser" in conducting_equipment_type or "Breaker" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1235,7 +1234,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {}.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
                     elif "EnergyConsumer" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1250,7 +1249,7 @@ class HelicsGossBridge(object):
                             object_name = connectivity_node;
                             property_name = "measured_current_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = {measurement_type}.")
                     elif "PowerElectronicsConnection" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
@@ -1280,9 +1279,9 @@ class HelicsGossBridge(object):
                             object_name = connectivity_node;
                             property_name = "measured_current_" + phases;
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurement_type = %s.".format(measurement_type))
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurement_type = {measurement_type}.")
                     else:
-                        raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\nconducting_equipment_type = {}.".format(conducting_equipment_type))
+                        raise RuntimeError(f"_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\nconducting_equipment_type = {conducting_equipment_type}.")
 
                     property_dict = {
                         "property" : property_name,
@@ -1375,8 +1374,8 @@ class HelicsGossBridge(object):
                     else:
                         self._object_mrid_to_name[y.get("mRID")]["type"] = "load"
         except Exception as e:
-            log.error("The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, traceback.format_exc()))
-            self._gad_connection.send_simulation_status('STARTED', "The measurement map file, {}, couldn't be translated.\nError:{}".format(map_file, traceback.format_exc()), 'ERROR')
+            log.error(f"The measurement map file, {map_file}, couldn't be translated.\nError:{traceback.format_exc()}")
+            self._gad_connection.send_simulation_status('STARTED', f"The measurement map file, {map_file}, couldn't be translated.\nError:{traceback.format_exc()}", 'ERROR')
             
             
 def _main(simulation_id, broker_port, simulation_request):
@@ -1384,7 +1383,6 @@ def _main(simulation_id, broker_port, simulation_request):
     bridge = HelicsGossBridge(simulation_id, broker_port, simulation_request)
     simulation_started = False
     simulation_stopped = False
-    timout = 0
     while not simulation_stopped:
         sim_is_initialized = bridge.get_is_initialized()
         start_sim = bridge.get_start_simulation()
