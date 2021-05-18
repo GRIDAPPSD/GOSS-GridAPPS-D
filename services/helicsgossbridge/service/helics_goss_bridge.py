@@ -763,17 +763,18 @@ class HelicsGossBridge(object):
                         cim_attribute = x.get("attribute")
                         object_property_list = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("property")
                         phase_in_property = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("phase_sensitive",False)
-                        if object_name == None or object_phases == None or object_total_phases == None or object_type == None or object_name_prefix == None or cim_attribute == None or object_property_list == None:
-                            parsed_result = {
-                                "object_name":object_name,
-                                "object_phases":object_phases,
-                                "object_total_phases":object_total_phases,
-                                "object_type":object_type,
-                                "object_name_prefix":object_name_prefix,
-                                "cim_attribute":cim_attribute,
-                                "object_property_list":object_property_list
-                            }
-                            raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
+                        if cim_attribute != "Ochre.command":
+                            if object_name == None or object_phases == None or object_total_phases == None or object_type == None or object_name_prefix == None or cim_attribute == None or object_property_list == None:
+                                parsed_result = {
+                                    "object_name":object_name,
+                                    "object_phases":object_phases,
+                                    "object_total_phases":object_total_phases,
+                                    "object_type":object_type,
+                                    "object_name_prefix":object_name_prefix,
+                                    "cim_attribute":cim_attribute,
+                                    "object_property_list":object_property_list
+                                }
+                                raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
                         if (object_name_prefix + object_name) not in helics_input_message[f"{self._simulation_id}"].keys():
                             helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name] = {}
                         if cim_attribute == "RegulatingControl.mode":
