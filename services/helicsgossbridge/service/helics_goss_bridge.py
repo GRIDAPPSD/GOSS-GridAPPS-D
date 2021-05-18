@@ -775,85 +775,89 @@ class HelicsGossBridge(object):
                                     "object_property_list":object_property_list
                                 }
                                 raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
-                        if (object_name_prefix + object_name) not in helics_input_message[f"{self._simulation_id}"].keys():
-                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name] = {}
-                        if cim_attribute == "RegulatingControl.mode":
-                            val = int(x.get("value"))
-                            if val == 0:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
-                            if val == 1:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                            elif val == 2:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VAR"
-                            elif val == 3:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                            if (object_name_prefix + object_name) not in helics_input_message[f"{self._simulation_id}"].keys():
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name] = {}
+                            if cim_attribute == "RegulatingControl.mode":
+                                val = int(x.get("value"))
+                                if val == 0:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                                if val == 1:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                elif val == 2:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                                elif val == 3:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                                else:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                    log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
+                                    self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+                            elif cim_attribute == "RegulatingControl.targetDeadband":
+                                for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                            elif cim_attribute == "RegulatingControl.targetValue":
+                                for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                            elif cim_attribute == "RotatingMachine.p":
+                                for y in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                            elif cim_attribute == "RotatingMachine.q":
+                                for y in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                            elif cim_attribute == "ShuntCompensator.aVRDelay":
+                                for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                            elif cim_attribute == "ShuntCompensator.sections":
+                                if int(x.get("value")) == 1:
+                                    val = "CLOSED"
+                                else:
+                                    val = "OPEN"
+                                for y in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
+                            elif cim_attribute == "Switch.open":
+                                if int(x.get("value")) == 1:
+                                    val = "OPEN"
+                                else:
+                                    val = "CLOSED"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                            elif cim_attribute == "TapChanger.initialDelay":
+                                for y in object_property_list:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                            elif cim_attribute == "TapChanger.step":
+                                for y in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
+                            elif cim_attribute == "TapChanger.lineDropCompensation":
+                                if int(x.get("value")) == 1:
+                                    val = "LINE_DROP_COMP"
+                                else:
+                                    val = "MANUAL"
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                            elif cim_attribute == "TapChanger.lineDropR":
+                                for y in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                            elif cim_attribute == "TapChanger.lineDropX":
+                                for y in object_phases:
+                                  helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                            elif cim_attribute == "PowerElectronicsConnection.p":
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                            elif cim_attribute == "PowerElectronicsConnection.q":
+                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                            elif cim_attribute == "EnergyConsumer.p":
+                                phase_count = len(object_phases)
+                                if "s1" in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
+                                if "s2" in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
+                                if "A" in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
+                                if "B" in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
+                                if "C" in object_phases:
+                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
+                            
                             else:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
-                                self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
-                        elif cim_attribute == "RegulatingControl.targetDeadband":
-                            for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
-                        elif cim_attribute == "RegulatingControl.targetValue":
-                            for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
-                        elif cim_attribute == "RotatingMachine.p":
-                            for y in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
-                        elif cim_attribute == "RotatingMachine.q":
-                            for y in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
-                        elif cim_attribute == "ShuntCompensator.aVRDelay":
-                            for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
-                        elif cim_attribute == "ShuntCompensator.sections":
-                            if int(x.get("value")) == 1:
-                                val = "CLOSED"
-                            else:
-                                val = "OPEN"
-                            for y in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
-                        elif cim_attribute == "Switch.open":
-                            if int(x.get("value")) == 1:
-                                val = "OPEN"
-                            else:
-                                val = "CLOSED"
-                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
-                        elif cim_attribute == "TapChanger.initialDelay":
-                            for y in object_property_list:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
-                        elif cim_attribute == "TapChanger.step":
-                            for y in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
-                        elif cim_attribute == "TapChanger.lineDropCompensation":
-                            if int(x.get("value")) == 1:
-                                val = "LINE_DROP_COMP"
-                            else:
-                                val = "MANUAL"
-                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
-                        elif cim_attribute == "TapChanger.lineDropR":
-                            for y in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
-                        elif cim_attribute == "TapChanger.lineDropX":
-                            for y in object_phases:
-                              helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
-                        elif cim_attribute == "PowerElectronicsConnection.p":
-                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
-                        elif cim_attribute == "PowerElectronicsConnection.q":
-                            helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
-                        elif cim_attribute == "EnergyConsumer.p":
-                            phase_count = len(object_phases)
-                            if "s1" in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
-                            if "s2" in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
-                            if "A" in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
-                            if "B" in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
-                            if "C" in object_phases:
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
-                        elif cim_attribute == "Ochre.command":
+                                log.warning(f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.")
+                                self._gad_connection.send_simulation_status("RUNNING", f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
+                        else:
                             if federate_state == 2:
                                 val = x.get("value")
                                 house_id = x.get("object")
@@ -866,9 +870,6 @@ class HelicsGossBridge(object):
                                 helics.helicsMessageSetString(helics_msg, val)
                                 helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
                                 helics.helicsEndpointSetDefaultDestination(helics_input_endpoint, default_destination)
-                        else:
-                            log.warning(f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.")
-                            self._gad_connection.send_simulation_status("RUNNING", f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
                 else:
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object","")
