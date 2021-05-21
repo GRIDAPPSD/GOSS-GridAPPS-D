@@ -165,7 +165,7 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
 		out.println("}}");
 		out.close();
 				
-		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating GridLAB-D limits file.");
+		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating GridLAB-D/OpenDSS limits file.");
 
 	}
 

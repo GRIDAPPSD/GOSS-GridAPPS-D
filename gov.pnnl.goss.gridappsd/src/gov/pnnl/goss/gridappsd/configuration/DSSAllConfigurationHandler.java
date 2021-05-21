@@ -139,7 +139,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean bWantSched = false;
 		SimulationContext simContext = null;
 
-		logManager.info(ProcessStatus.RUNNING, processId, "Generating all DSS configuration files using parameters: "+parameters);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating All OpenDSS configuration files using parameters: "+parameters);
 		
 		
 		double zFraction = GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0);
@@ -233,7 +233,7 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		CIMQuerySetter qs = new CIMQuerySetter();
 		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
 		
-		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all DSS configuration files.");
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating All OpenDSS configuration files.");
 		
 
 	}

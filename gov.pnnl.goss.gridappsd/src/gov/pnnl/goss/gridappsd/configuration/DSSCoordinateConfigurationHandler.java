@@ -115,7 +115,7 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
 
 	@Override
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		logManager.info(ProcessStatus.RUNNING,processId,"Generating DSS Coordinate configuration file using parameters: "+parameters);
+		logManager.info(ProcessStatus.RUNNING,processId,"Generating OpenDSS Coordinate configuration file using parameters: "+parameters);
 
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -161,7 +161,7 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
 			//config was written to file, so return that
 			printFileToOutput(configFile, out);
 		}
-		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating DSS Coordinate configuration file.");
+		logManager.info(ProcessStatus.RUNNING,processId,"Finished generating OpenDSS Coordinate configuration file.");
 
 	}
 	

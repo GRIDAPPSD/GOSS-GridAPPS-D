@@ -129,7 +129,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = false;
 		boolean bWantSched = false;
-		logManager.info(ProcessStatus.RUNNING, processId, "Generating Base DSS configuration file using parameters: "+parameters);
+		logManager.info(ProcessStatus.RUNNING, processId, "Generating OpenDSS Base configuration file using parameters: "+parameters);
 		
 		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
 		File configFile = null;
@@ -213,7 +213,7 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
 			idFileWriter.close();
 		}
-		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating DSS Base configuration file.");
+		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating OpenDSS Base configuration file.");
 
 	}
 	
