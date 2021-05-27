@@ -862,7 +862,7 @@ class HelicsGossBridge(object):
                                 val = x.get("value")
                                 house_id = x.get("object")
                                 default_destination = helics.helicsEndpointGetDefaultDestination(helics_input_endpoint)
-                                ochre_destination = f"{self._simulation_id}/{house_id}/command_input"
+                                ochre_destination = f"{house_id}/command_input"
                                 helics.helicsEndpointSetDefaultDestination(helics_input_endpoint, ochre_destination)
                                 log.info(f"Sending the following message to {ochre_destination}. {val}")
                                 self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to {ochre_destination}. {val}","INFO")
