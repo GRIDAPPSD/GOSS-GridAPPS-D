@@ -140,13 +140,18 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 		}
 						
 		try{
+			File tmpDir = new File(tempDataPath);
+			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/inputs/ "+tempDataPath);
+			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/agents/ "+tempDataPath);
+			simulationBrokerHost = "localhost";
+			
             RunCommandLine.runCommand("python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
             							simulationBrokerHost+" "+ 
             							tempDataPath+" "+
             							CONFIG_FILENAME+" "+
             							simulationBrokerPort+" "+
             							processId);
-            logManager.info(ProcessStatus.RUNNING, processId, "python /gridappsd/services/gridappsd-cohre/bin/make_config_file.py "+
+            logManager.info(ProcessStatus.RUNNING, processId, "python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
 					simulationBrokerHost+" "+ 
 					tempDataPath+" "+
 					CONFIG_FILENAME+" "+
