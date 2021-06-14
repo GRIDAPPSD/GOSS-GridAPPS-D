@@ -123,9 +123,16 @@ public class SimulationProcess extends Thread {
 				commands.add(gldSimulatorPath);
 //            	commands.add(simulationFile.getAbsolutePath());
             	commands.add(gldStartupFile.getAbsolutePath());
-				simulatorBuilder.command(commands);
-            	
-            	
+                ProcessBuilder gldSimulatorBuilder = new ProcessBuilder();
+                gldSimulatorBuilder.command(commands);
+                gldSimulatorBuilder.redirectErrorStream(true);
+                gldSimulatorBuilder.redirectOutput();
+	            //launch from directory containing simulation files
+                gldSimulatorBuilder.directory(simulationFile.getParentFile());
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting gridlabd simulator with command "+String.join(" ",commands));
+	            simulatorProcess = gldSimulatorBuilder.start();
+	            // Watch the process
+	            watch(simulatorProcess, "GLDSimulator-"+simulationId);
             	
             	//Start ochre
             	commands = new ArrayList<String>();
