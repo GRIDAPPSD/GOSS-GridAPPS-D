@@ -233,12 +233,14 @@ public class ProcessNewSimulationRequest {
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectServiceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
-			
+			logManager.info(ProcessStatus.RUNNING, simulationId, "Service configs "+simRequest.service_configs);
 			if (simRequest.service_configs == null) {
 				logManager.warn(ProcessStatus.RUNNING, simulationId, "No services found in request  ="+simRequest.getSimulation_config().getSimulator());
 			}
 			else{
 				for(ServiceConfig serviceConfig : simRequest.service_configs){
+					logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service"+serviceConfig.getId());
+
 					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), null, simulationContext);
 					if(serviceInstanceId!=null){
 						connectServiceInstanceIds.add(serviceInstanceId);

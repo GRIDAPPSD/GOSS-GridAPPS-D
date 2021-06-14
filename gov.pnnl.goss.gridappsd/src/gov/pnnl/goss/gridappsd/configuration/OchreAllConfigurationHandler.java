@@ -157,7 +157,10 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 					CONFIG_FILENAME+" "+
 					simulationBrokerPort+" "+
 					processId);
-        }catch(Exception e){
+
+			RunCommandLine.runCommand("cp /gridappsd/services/gridappsd-ochre/inputs/gridlabd/IEEE-13/gld_helics_config.json "+tempDataPath);
+
+		}catch(Exception e){
             log.warn("Could not create OCHRE HELICS config file");
         }
 		
