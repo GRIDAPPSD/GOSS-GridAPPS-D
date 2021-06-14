@@ -188,6 +188,7 @@ public class ProcessNewSimulationRequest {
 				if(gldInterface!=null){
 					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
 				}
+				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 				configurationManager.generateConfiguration(OchreAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			else { //otherwise use gridlabd
