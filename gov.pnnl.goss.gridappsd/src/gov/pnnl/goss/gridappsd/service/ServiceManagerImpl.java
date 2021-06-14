@@ -241,6 +241,9 @@ public class ServiceManagerImpl implements ServiceManager{
 		String simulationId = simulationContext.get("simulationId").toString();
 				
 		String instanceId = serviceId+"-"+new Date().getTime();
+		
+		logManager.info(ProcessStatus.RUNNING, simulationId, "Calling start service: "+instanceId);
+
 		// get execution path
 		ServiceInfo serviceInfo = services.get(serviceId);
 		if(serviceInfo==null){
@@ -378,7 +381,8 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 		//add to service instances map
 		serviceInstances.put(instanceId, serviceInstance);
-		
+		logManager.info(ProcessStatus.RUNNING, simulationId, "Started service: "+instanceId);
+
 		watch(serviceInstance, simulationId);
 		
 		return instanceId;
