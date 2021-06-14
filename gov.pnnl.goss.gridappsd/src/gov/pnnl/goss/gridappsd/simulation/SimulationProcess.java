@@ -4,6 +4,7 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
@@ -38,7 +39,7 @@ import com.google.gson.Gson;
 
 public class SimulationProcess extends Thread {
     private static Logger log = LoggerFactory.getLogger(SimulationProcess.class);
-
+    private static String gridlabdConstant = "GridLAB-D";
 
     boolean running = true;
 
@@ -113,7 +114,21 @@ public class SimulationProcess extends Thread {
             ProcessBuilder simulatorBuilder = new ProcessBuilder();
             List<String> commands = new ArrayList<String>();
             
-            if(simulationConfig.getSimulator().equals("OCHRE")){
+            if(simulationConfig.getSimulator().equals(OchreAllConfigurationHandler.TYPENAME)){
+            	//Start gridlabd
+//				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+				File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
+//            	commands.add(simContext.getSimulatorPath());
+				commands.add(gldSimulatorPath);
+//            	commands.add(simulationFile.getAbsolutePath());
+            	commands.add(gldStartupFile.getAbsolutePath());
+				simulatorBuilder.command(commands);
+            	
+            	
+            	
+            	//Start ochre
+            	commands = new ArrayList<String>();
             	commands.add(simContext.getSimulatorPath());
             	ServiceInfo serviceInfo = serviceManager.getService(simulationConfig.getSimulator());
             	List<String> staticArgsList = serviceInfo.getStatic_args();
@@ -133,10 +148,12 @@ public class SimulationProcess extends Thread {
         		}
             	simulatorBuilder.command(commands);
             }
-            else if(simulationConfig.getSimulator().equals("GridLAB-D")){
+            else if(simulationConfig.getSimulator().equals(gridlabdConstant)){
             	commands.add(simContext.getSimulatorPath());
             	commands.add(simulationFile.getAbsolutePath());
             	simulatorBuilder.command(commands);
+            } else {
+            	log.warn("No known simulator: "+simulationConfig.getSimulator());
             }
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
