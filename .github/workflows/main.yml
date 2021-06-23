@@ -21,6 +21,7 @@ jobs:
   push:
     runs-on: ubuntu-latest
     name: Build and push the docker container
+    needs: build
     steps:
       - uses: actions/checkout@v2
 
