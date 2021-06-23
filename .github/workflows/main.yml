@@ -1,0 +1,108 @@
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+      - name: Build with Gradle
+        run: ./gradlew export
+
+  push:
+    runs-on: ubuntu-latest
+    name: Build and push the docker container
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Checking environment
+        env:
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+        run: |
+          if [ "x${{ env.DOCKER_IMAGE_NAME }}" == "x" ]; then
+            echo "Error: missing DOCKER_IMAGE_NAME"
+            exit 1
+          fi
+
+      - name: Log in to docker
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" -a -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+          
+            echo " "
+            echo "Connecting to docker"
+            echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "Error: status $status"
+              exit 1
+            fi
+          fi
+          
+      - name: Build the image
+        env:
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+        if: env.DOCKER_IMAGE_NAME != null
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
+          ORG="${ORG:-gridappsd}"
+          ORG="${ORG:+${ORG}/}"
+          IMAGE="${ORG}${{ env.DOCKER_IMAGE_NAME }}"
+          TIMESTAMP=`date +'%y%m%d%H'`
+          GITHASH=`git log -1 --pretty=format:"%h"`
+          BUILD_VERSION="${TIMESTAMP}_${GITHASH}${BRANCH:+:$TAG}"
+          echo "BUILD_VERSION $BUILD_VERSION"
+          echo "TAG ${IMAGE}:${TIMESTAMP}_${GITHASH}"
+          docker build --build-arg VERSION="${TAG}" --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:${TIMESTAMP}_${GITHASH} .
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "Error: status $status"
+            exit 1
+          fi
+
+      - name: Push the image
+        env:
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+        if: env.DOCKER_IMAGE_NAME != null
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
+          ORG="${ORG:-gridappsd}"
+          ORG="${ORG:+${ORG}/}"
+          IMAGE="${ORG}${{ env.DOCKER_IMAGE_NAME }}"
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" -a -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+          
+            if [ -n "$TAG" -a -n "$ORG" ]; then
+              # Get the built container name
+              CONTAINER=`docker images --format "{{.Repository}}:{{.Tag}}" ${IMAGE}`
+          
+              echo "docker push ${CONTAINER}"
+              docker push "${CONTAINER}"
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+          
+              echo "docker tag ${CONTAINER} ${IMAGE}:$TAG"
+              docker tag ${CONTAINER} ${IMAGE}:$TAG
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+          
+              echo "docker push ${IMAGE}:$TAG"
+              docker push ${IMAGE}:$TAG
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+            fi
+          
+          fi
