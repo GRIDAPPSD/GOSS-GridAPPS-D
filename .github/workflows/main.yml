@@ -13,21 +13,21 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew export
 
-      - uses: actions/upload-artifact@v2
-        with:
-          name: gridappsd-artifact
-          path: gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar
-
-  push:
-    runs-on: ubuntu-latest
-    name: Build and push the docker container
-    needs: build
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: gridappsd-artifact
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: gridappsd-artifact
+#          path: gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar
+#
+#  push:
+#    runs-on: ubuntu-latest
+#    name: Build and push the docker container
+#    needs: build
+#    steps:
+#      - uses: actions/checkout@v2
+#
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: gridappsd-artifact
 
       - name: Checking environment
         env:
