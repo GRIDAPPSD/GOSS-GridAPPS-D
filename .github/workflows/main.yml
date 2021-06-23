@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: run.bnd.jar
+          name: gridappsd-artifact
           path: gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar
 
   push:
@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: run.bnd.jar
+          name: gridappsd-artifact
 
       - name: Checking environment
         env:
