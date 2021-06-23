@@ -13,11 +13,20 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew export
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: run.bnd.jar
+          path: gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar
+
   push:
     runs-on: ubuntu-latest
     name: Build and push the docker container
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: run.bnd.jar
 
       - name: Checking environment
         env:
