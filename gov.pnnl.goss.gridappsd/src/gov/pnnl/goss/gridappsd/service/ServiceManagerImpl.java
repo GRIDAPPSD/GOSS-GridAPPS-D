@@ -333,7 +333,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
+				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
@@ -344,7 +344,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
+				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 	
 					

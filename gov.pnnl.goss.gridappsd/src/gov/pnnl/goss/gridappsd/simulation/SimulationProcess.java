@@ -115,6 +115,9 @@ public class SimulationProcess extends Thread {
             List<String> commands = new ArrayList<String>();
             
             if(simulationConfig.getSimulator().equals(OchreAllConfigurationHandler.TYPENAME)){
+            	simContext.setNumFederates(42);
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Setting num federates ");
+
             	//Start gridlabd
 //				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 				File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
@@ -154,6 +157,8 @@ public class SimulationProcess extends Thread {
         		    }
         		}
             	simulatorBuilder.command(commands);
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Command for ochre ready "+String.join(" ",commands));
+
             }
             else if(simulationConfig.getSimulator().equals(gridlabdConstant)){
             	commands.add(simContext.getSimulatorPath());
@@ -168,6 +173,8 @@ public class SimulationProcess extends Thread {
             simulatorBuilder.directory(simulationFile.getParentFile());
             logManager.info(ProcessStatus.RUNNING, simulationId, "Starting simulator with command "+String.join(" ",commands));
             simulatorProcess = simulatorBuilder.start();
+            logManager.info(ProcessStatus.RUNNING, simulationId, "Started simulator with command "+String.join(" ",commands));
+
             // Watch the process
             watch(simulatorProcess, "Simulator-"+simulationId);
 
@@ -303,7 +310,7 @@ public class SimulationProcess extends Thread {
                 FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
                 //log.debug("FNCS output message: "+responseJson);
                 if("isInitialized".equals(responseJson.command)){
-                    log.debug("Bridge Initialized response: "+responseJson);
+                    log.info("Bridge Initialized response: "+responseJson);
                     if("True".equals(responseJson.response)){
                         //log.info("FNCS is initialized "+initializedTracker);
                         initializedTracker.isInited = true;
