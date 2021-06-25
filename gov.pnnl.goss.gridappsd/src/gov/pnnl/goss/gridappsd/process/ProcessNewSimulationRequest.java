@@ -169,10 +169,12 @@ public class ProcessNewSimulationRequest {
 				gldInterface = GridAppsDConstants.getGLDInterface(deps);
 			} 
 
+			int numFederates = 2;
 			String simulator = simRequest.getSimulation_config().getSimulator();
 			//generate config files for requested simulator
 			//if requested simulator is opendss
 			if(simulator.equalsIgnoreCase(DSSAllConfigurationHandler.CONFIGTARGET)){
+				numFederates = 42;
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
@@ -212,6 +214,8 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationConfigDir);
+			simulationContext.put("numFederates",numFederates);
+
 			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
 				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
