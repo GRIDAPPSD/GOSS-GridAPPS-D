@@ -174,7 +174,6 @@ public class ProcessNewSimulationRequest {
 			//generate config files for requested simulator
 			//if requested simulator is opendss
 			if(simulator.equalsIgnoreCase(DSSAllConfigurationHandler.CONFIGTARGET)){
-				numFederates = 42;
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
@@ -184,6 +183,7 @@ public class ProcessNewSimulationRequest {
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.TYPENAME)){
+				numFederates = 42;
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
