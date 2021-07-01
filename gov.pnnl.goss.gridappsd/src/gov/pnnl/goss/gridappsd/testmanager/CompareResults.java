@@ -137,7 +137,7 @@ import pnnl.goss.core.Client;
 			}
 		}
 		
-		private void publish(String timestamp, String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
+		public void publish(String timestamp, String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
 			TestResults temp = new TestResults();
 			temp.add(key, prop, expectedOutputObjstring, simOutputObjstring2, match);
 			temp.setIndexOne(Long.parseLong(timestamp));
@@ -145,7 +145,7 @@ import pnnl.goss.core.Client;
 			publishTestResults(testId, temp, testConfig.getStoreMatches());
 		}
 		
-		private void publish(String timestamp, String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
+		public void publish(String timestamp, String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
 			TestResults temp = new TestResults();
 			temp.add( obj, prop, expected, actual, diff_mrid, diff_type, match);
 			temp.setIndexOne(Long.parseLong(timestamp));
@@ -187,19 +187,77 @@ import pnnl.goss.core.Client;
 			return compareExpectedWithSimulationOutput(timestamp, expectedOutputMap, jsonObject);
 		}
 		 
-		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
+		/**
+		 * Compare expect with simulation input
+		 * Only 
+		 * @param timestamp1 actual time stamp
+		 * @param timestamp2 expected time stamp
+		 * @param simultaionInput
+		 * @param expectedInput
+		 * @param start_time
+		 * @param end_time
+		 * @return
+		 */
+		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject simultaionInput, JsonObject expectedInput, long start_time, long end_time) {
 			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
 			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
+			System.out.println("expectedInput");
+			System.out.println(expectedInput.toString().substring(0,160));
+			System.out.println("simultaionInput");
+			System.out.println(simultaionInput.toString().substring(0,160));
+			
+			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, simultaionInput);
+			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
+			System.out.println("simultaionInput forwardMap");
+			System.out.println("simultaionInput expectedForwardMap is null " + expectedForwardMap==null);
+			System.out.println("simultaionInput forwardMap is null " + forwardMap==null);
+			
+//			System.out.println(forwardMap.toString());
 			TestResults testResults = new TestResults();
 			if (expectedForwardMap == null){
-				System.out.println("no index for "+timestamp2 );
-				testResults.add("NA", "NA", "NA", "NA", false);
-				publish(timestamp1, "NA", "NA", "NA", "NA", false);
+				for (Entry<String, JsonElement> entry : forwardMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no expectedForwardMap");
+							JsonObject expectedOutputObj = forwardMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							publish(timestamp1, objectMRID, attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
+			if (forwardMap == null){			
+				for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no forwardMap");
+							JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
+				
+			if (expectedForwardMap == null || forwardMap == null){
 				return testResults;
 			}
+			
 //			if (expectedForwardMap == null) return new TestResults();
-			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, jsonObject);
-			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, jsonObject);
+//			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, simultaionInput);
+//			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
 			
 	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
@@ -318,21 +376,23 @@ import pnnl.goss.core.Client;
 							if( ! propSet.contains(prop))
 								continue;
 							
-							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
-							if (comparison){
+							Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+							if (comparisonProperty){
 								if (simOutputObj.has("hasMeasurementDifference")){
 									testResults.add(simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), true);
+											true);
 									publish(timestamp, simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), true);
+											true);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
@@ -345,17 +405,19 @@ import pnnl.goss.core.Client;
 //								"hasMeasurementDifference":"FORWARD","difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4","simulation_id":"1961648576","time":1587670650
 								if (simOutputObj.has("hasMeasurementDifference")){
 									testResults.add(simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString());
+											false);
 									publish(timestamp, simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), false);
+											false);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
 									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
@@ -364,6 +426,17 @@ import pnnl.goss.core.Client;
 						}
 					} else{
 						System.out.println("No property for "+ entry.getKey());
+						System.out.println("No property for "+ entry);
+						System.out.println("No property for "+ expectedOutputObj);
+//						String prop = entry.getKey();
+						for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+							String prop = simentry.getKey();
+	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+							if( ! propSet.contains(prop))
+								continue;
+							publish(timestamp, entry.getKey(), prop, simentry.getValue().getAsString(), "NA" , false);
+						}
 					}
 				}else
 					System.out.println("     Not object" + entry);
@@ -452,7 +525,9 @@ import pnnl.goss.core.Client;
 		}
 		
 		/**
-		 * Get the map of the expected inputs
+		 * Get the map of the expected forward inputs for the timestamp
+		 * @param timestamp
+		 * @param expectedOutputObj
 		 * @return
 		 */
 		public Map<String, JsonElement> getExpectedForwardInputMap(String timestamp, JsonObject expectedOutputObj) {
@@ -541,15 +616,29 @@ import pnnl.goss.core.Client;
 			return expectedOutputMap;
 		}
 		
+		/**
+		 * Build a map of all forward difference messages with object id as the key.
+		 * Example return map:
+		 * {_307E4291-5FEA-4388-B2E0-2B3D22FE8183={"hasMeasurementDifference":"FORWARD",
+		 * 										   "difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4",
+		 * 										   "attribute":"ShuntCompensator.sections",
+		 * 										   "value":0.0,"object":
+		 * 										   "_307E4291-5FEA-4388-B2E0-2B3D22FE8183"}}"
+		 * @param output
+		 * @return
+		 */
 		public Map<String, JsonElement> getForwardDifferenceMap(JsonObject output) {
 			JsonObject tempOutput = output;
 			if ( tempOutput.has("input") ) tempOutput = tempOutput.getAsJsonObject("input");
 			JsonObject tempObj = tempOutput.getAsJsonObject("message");
 			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+			
+			
 			if(tempObj.has("measurements")){
 				JsonArray temp = tempObj.getAsJsonArray("measurements");
 				for (JsonElement jsonElement : temp) {
 					if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+						System.out.println(jsonElement);
 						forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 					} 
 				}
@@ -565,6 +654,19 @@ import pnnl.goss.core.Client;
 			return forwardDifferenceMap;
 		}
 		
+		/**
+		 * Build a map of all reverse difference messages
+		 * Example return map:
+		 * {_307E4291-5FEA-4388-B2E0-2B3D22FE8183={"hasMeasurementDifference":"REVERSE",
+		 *                                         "difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4",
+		 *                                         "simulation_id":"1961648576",
+		 *                                         "time":1248156014,
+		 *                                         "attribute":"ShuntCompensator.sections",
+		 *                                         "value":0.0,
+		 *                                         "object":"_307E4291-5FEA-4388-B2E0-2B3D22FE8183"}}
+		 * @param output
+		 * @return
+		 */
 		public Map<String, JsonElement> getReverseDifferenceMap(JsonObject output) {
 			JsonObject tempOutput = output;
 			if ( tempOutput.has("input") ) tempOutput = tempOutput.getAsJsonObject("input");

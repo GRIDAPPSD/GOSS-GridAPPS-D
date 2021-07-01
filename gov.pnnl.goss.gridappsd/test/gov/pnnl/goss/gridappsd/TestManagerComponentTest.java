@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -252,7 +254,7 @@ public class TestManagerComponentTest {
 		JsonObject expectedObject = hc.buildExpectedFromTimeseries(measurements);
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 
-		TestResultSeries testResultSeries1 =hc.processWithAllTimes(expected_series, tc, res);
+		TestResultSeries testResultSeries1 =hc.processWithAllTimes(expected_series, tc, res, 1248156002, 1248156002);
 		assertEquals(testResultSeries1.getTotal(), 1);
 		
 		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
@@ -287,6 +289,22 @@ public class TestManagerComponentTest {
 	}
 	
 	@Test
+	public void testExpectedTimeWindow(){
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system", client);
+		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
+		expected_proven = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -5.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}},"
+				+ "                              \"input\": {\"1248156014\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1248156014, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}},"
+				+ "                                          \"1587670665\":         {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670665, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}}}}";
+		JsonObject expected_series = CompareResults.getSimulationJson(expected_proven).get("expectedResults").getAsJsonObject();
+		JsonObject expected_series_window1 = hc.getExpectedBetweenStartAndEnd(expected_series, 1248156002, 1248156002+1);
+		System.out.println(gson.toJson(expected_series_window1));
+		JsonObject expected_series_window2 = hc.getExpectedBetweenStartAndEnd(expected_series, 1248156014, 1248156014+10);
+		System.out.println(gson.toJson(expected_series_window2));
+	}
+	
+	@Test
 	public void testExpectedVersusResponse2(){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, "system", client);
 		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
@@ -307,7 +325,7 @@ public class TestManagerComponentTest {
 		System.out.println(data.substring(0, 100));
 		TestConfig tc = new TestConfig();
 		
-		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res);
+		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res, 1248156002, 1248156002);
 		System.out.println();
 		testResultSeries1.ppprint();
 		assertEquals(testResultSeries1.getTotal(), 5);
@@ -327,62 +345,62 @@ public class TestManagerComponentTest {
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		TestConfig tc = new TestConfig();
-		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res);
+		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res, 1248156002, 1248156002);
 		testResultSeries1.ppprint();
 		assertEquals(testResultSeries1.getTotal(), 0);
 	}	
 	
-	@Test
-	public void testTimeMap(){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, "system",client);
-		
-		SortedSet<Integer> inputKeys1 = new TreeSet<>();
-		SortedSet<Integer> inputKeys2 = new TreeSet<>();
-		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
-
-//		[1590527327, 1590527342, 1590527357]
-//				[0, 15, 27, 30]
-//		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
-//		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
-		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357);
-		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
-		
-		System.out.println("input keys");
-		System.out.println(inputKeys1.toString());
-		System.out.println(inputKeys2.toString());
-		HashMap<Integer,Integer> x = hc.getTimeMap(inputKeys1, inputKeys2);
-		System.out.println(x);
-		
-		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357); inputKeys1.add(1590527360);
-		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30); inputKeys2.add(33);
-		
-	
-		System.out.println("input keys");
-		System.out.println(inputKeys1.toString());
-		System.out.println(inputKeys2.toString());
-		x = hc.getTimeMap(inputKeys1, inputKeys2);
-		System.out.println(x);
-		
-		 
-		Integer first1 = inputKeys1.first();
-		Integer first2 = inputKeys2.first();
-		
-		int diff = 0;
-
-		Iterator<Integer> it2 = inputKeys2.iterator();
-
-		while (it2.hasNext()) {
-			Integer key2 = it2.next();
-			diff = key2-first2;
-			first1+=diff;
-			newKeys1.put(first1, key2);
-			first2 = key2;
-		}
-		System.out.println(newKeys1);
-//		java.lang.AssertionError: expected:<{1590527357=30, 1590527327=0, 1590527342=15, 1590527354=27, 1590527360=33}> 
-
-		assertEquals(newKeys1.get(1590527354).intValue(), 27);
-	}
+//	@Test
+//	public void testTimeMap(){
+//		HistoricalComparison hc = new HistoricalComparison(dataManager, "system",client);
+//		
+//		SortedSet<Integer> inputKeys1 = new TreeSet<>();
+//		SortedSet<Integer> inputKeys2 = new TreeSet<>();
+//		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
+//
+////		[1590527327, 1590527342, 1590527357]
+////				[0, 15, 27, 30]
+////		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
+////		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
+//		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357);
+//		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
+//		
+//		System.out.println("input keys");
+//		System.out.println(inputKeys1.toString());
+//		System.out.println(inputKeys2.toString());
+//		HashMap<Integer,Integer> x = hc.getTimeMap(inputKeys1, inputKeys2);
+//		System.out.println(x);
+//		
+//		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357); inputKeys1.add(1590527360);
+//		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30); inputKeys2.add(33);
+//		
+//	
+//		System.out.println("input keys");
+//		System.out.println(inputKeys1.toString());
+//		System.out.println(inputKeys2.toString());
+//		x = hc.getTimeMap(inputKeys1, inputKeys2);
+//		System.out.println(x);
+//		
+//		 
+//		Integer first1 = inputKeys1.first();
+//		Integer first2 = inputKeys2.first();
+//		
+//		int diff = 0;
+//
+//		Iterator<Integer> it2 = inputKeys2.iterator();
+//
+//		while (it2.hasNext()) {
+//			Integer key2 = it2.next();
+//			diff = key2-first2;
+//			first1+=diff;
+//			newKeys1.put(first1, key2);
+//			first2 = key2;
+//		}
+//		System.out.println(newKeys1);
+////		java.lang.AssertionError: expected:<{1590527357=30, 1590527327=0, 1590527342=15, 1590527354=27, 1590527360=33}> 
+//
+//		assertEquals(newKeys1.get(1590527354).intValue(), 27);
+//	}
 	
 	@Test
 	public void testInputCount(){
@@ -439,7 +457,7 @@ public class TestManagerComponentTest {
 		JsonArray temp = tempObj.getAsJsonArray("forward_differences");
 		for (JsonElement jsonElement : temp) {
 			jsonElement.getAsJsonObject().add("difference_mrid",tempObj.get("difference_mrid"));
-			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
+			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD")); 
 			forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 		}
 		assertEquals(forwardDifferenceMap.get("_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB").getAsJsonObject().get("value").getAsInt(),0);
@@ -449,12 +467,21 @@ public class TestManagerComponentTest {
 	
 	@Test
 	public void testConfig(){
-		String config=  "{\"testId\": \"12333\",\"appId\": \"sample_app\" }";
+		String config=  "{\"testId\": \"12333\",\"appId\": \"sample_app\" ,\"start_time\":1248156000, \"duration\":8}";
 //		config=  "{\"appId\": \"sample_app\" }";
 		TestConfig tc = TestConfig.parse(config);
 		System.out.println(tc.toString());
 		assertEquals(tc.getAppId(), "sample_app");
 		assertEquals(tc.getTestId(), "12333");
+		long start_time = tc.getStart_time();
+		int duration = tc.getDuration();
+		for (long i = start_time; i < start_time+duration; i += 10) {
+			long end_time= start_time+duration;
+			if (i+10< end_time){end_time = i + 10;}
+			System.out.println("start time " + i + "end time " + end_time);
+		}
+		
+		
 	}
 	
 }

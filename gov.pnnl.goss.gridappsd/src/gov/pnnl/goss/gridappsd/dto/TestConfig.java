@@ -64,6 +64,12 @@ public class TestConfig implements Serializable {
 	
 	private JsonObject expectedResults;
 	
+	private long start_time;
+	
+	private int duration = 60;
+	
+	private int interval = 60;
+	
 	private Boolean testInput = true;
 
 	private Boolean testOutput = true;
@@ -144,6 +150,29 @@ public class TestConfig implements Serializable {
 		this.appId = appId;
 	}
 	
+	public int getDuration() {
+		return duration;
+	}
+
+	public void setDuration(int duration) {
+		this.duration = duration;
+	}
+
+	public int getInterval() {
+		return interval;
+	}
+
+	public void setInterval(int interval) {
+		this.interval = interval;
+	}
+
+	public long getStart_time() {
+		return start_time;
+	}
+
+	public void setStart_time(long start_time) {
+		this.start_time = start_time;
+	}
 
 	public String getTestId() {
 		return testId;
