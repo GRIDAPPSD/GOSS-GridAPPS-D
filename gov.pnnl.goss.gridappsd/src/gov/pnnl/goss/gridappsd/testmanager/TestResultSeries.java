@@ -45,6 +45,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.gson.Gson;
 
 public class TestResultSeries implements Serializable{
@@ -83,6 +85,9 @@ public class TestResultSeries implements Serializable{
 	}
 	
 	public void ppprint(){
+		String temp = String.format("\t %37s %30s %10s %10s ", "object MRID", "attribute", "expected", "actuall" );
+		temp += String.format("%10s %37s","Type", "DiffMrid");
+		System.out.println(temp);
 		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
 			System.out.println(iterable_element.getKey());
 			System.out.println(iterable_element.getValue().toString());

@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.SortedSet;
+import java.util.Stack;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -450,7 +451,8 @@ public class TestManagerImpl implements TestManager {
 			
 			int inputCount=0;
 			int expecetedLast=0;
-			long lastTimeStamp=0l;
+//			long lastTimeStamp=0l;
+			long lastTimeStamp=testConfig.getStart_time();
 
 //			int first1=0;
 //			int first2=0;
@@ -490,90 +492,118 @@ public class TestManagerImpl implements TestManager {
 //				HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
 				
 				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-				System.out.println("Seconds since last input" + (Long.valueOf(simulationTimestamp) - lastTimeStamp));
+				System.out.println("Seconds since last input " + (Long.valueOf(simulationTimestamp) - lastTimeStamp));
 				JsonObject simJsonObjAtTime = new JsonObject();
 				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
-				
-				HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
-				String response = hc.timeSeriesQuery(expectedOrSimulationIdTwo, "1532971828475", lastTimeStamp+"", simulationTimestamp);
-				JsonObject expectedResults = hc.getExpectedFrom(response);
-				if(! expectedResults.has("input")){
-					System.out.println("No input for timeseries data");
-					//TODO build error
-					return;
-				}
-				SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
-				for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
-					inputKeys2.add(Integer.valueOf(time_entry.getKey()));
-				}
-				inputKeys2.add(Integer.valueOf(simulationTimestamp));
-				System.out.println("Input Keys");
-				System.out.println(inputKeys2.toString());
-				System.out.println(inputCount);
-		        TestResults testResults1 = new TestResults();
-				Map<String, JsonElement> expectedForwardMap = compareResults.getExpectedForwardInputMap(simulationTimestamp, simJsonObjAtTime);
-				System.out.println(expectedForwardMap);
-				if( inputKeys2.isEmpty() ){
-					System.out.println("No input for expected results");
-					//TODO build error
-					for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
-						if (entry.getValue().isJsonObject()) {
-							JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
-							String objectMRID = expectedOutputObj.get("object").getAsString();
-							String attr = expectedOutputObj.get("attribute").getAsString();
-							String value = expectedOutputObj.get("value").toString();
-							testResults1.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
-							compareResults.publish(simulationTimestamp.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
-						}					
+//				int duration = testConfig.getDuration();
+				int interval = testConfig.getInterval();
+//				for (long window_Start_time = lastTimeStamp; window_Start_time < Long.valueOf(simulationTimestamp); window_Start_time += interval) {
+//					long window_end_time= window_Start_time+duration;
+//					if (window_Start_time+interval< window_end_time){window_end_time = window_Start_time + interval;}
+//					// if first time no offset
+//					int offset=1;
+//					if(window_Start_time == lastTimeStamp){offset=0;}
+//					HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+//	//				String response = hc.timeSeriesQuery(expectedOrSimulationIdTwo, "1532971828475", lastTimeStamp+"", simulationTimestamp);
+//					System.out.println("start time " + window_Start_time + "end time " + window_end_time);
+				Stack<TimeInterval> timeIntervals = TimeInterval.getTimeIntervals(lastTimeStamp, Long.valueOf(simulationTimestamp), interval);
+				for (TimeInterval timeInterval : timeIntervals) {
+					System.out.println(timeInterval.toString());
+					HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+					String response = hc.timeSeriesQuery(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
+					
+					JsonObject expectedResults = hc.getExpectedFrom(response);
+					if(expectedResults == null ){
+						System.out.println("expectedResults is null ");
+						return;
 					}
-					return;
-				}
-//				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-//				if( ! firstSet){
-//					first1 = Integer.valueOf(simulationTimestamp);
-//					firstSet=true;
-//				}
-//				
-//				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
-//				System.out.println("size and inputCount");
-//				System.out.println(inputKeys2.size());
-//				System.out.println(inputCount);
-//				if(inputKeys2.size() <= inputCount){
-//					return;
-//				}
-				
-//				timeseries expected
-				for (Integer tempTimestamp : inputKeys2) {
+					if(! expectedResults.has("input")){
+						System.out.println("No input for timeseries data");
+						//TODO build error
+						return;
+					}
+					SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
+					for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+						inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+					}
+					if(Long.valueOf(simulationTimestamp)==timeInterval.end){
+						inputKeys2.add(Integer.valueOf(simulationTimestamp));
+					}
+//					if (! inputKeys2.isEmpty() && Integer.valueOf(simulationTimestamp)>window_end_time){
+//						inputKeys2.add(Integer.valueOf(simulationTimestamp));
+//					}else{
+//						System.out.println("No timeseries data and not at simulation time"+ simulationTimestamp);
+//						continue;
+//					}
+					System.out.println("Input Keys");
+					System.out.println(inputKeys2.toString());
+					System.out.println(inputCount);
+			        TestResults testResults1 = new TestResults();
+					Map<String, JsonElement> expectedForwardMap = compareResults.getExpectedForwardInputMap(simulationTimestamp, simJsonObjAtTime);
+					System.out.println(expectedForwardMap);
+					if( inputKeys2.isEmpty() ){
+						System.out.println("No input for expected results");
+						//TODO build error
+//						for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+//							if (entry.getValue().isJsonObject()) {
+//								JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+//								String objectMRID = expectedOutputObj.get("object").getAsString();
+//								String attr = expectedOutputObj.get("attribute").getAsString();
+//								String value = expectedOutputObj.get("value").toString();
+//								testResults1.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+//								compareResults.publish(simulationTimestamp.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+//							}					
+//						}
+//						return;
+					}
 					
-					String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-					expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
-					
-					// Is this needed ?
-	//				simJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputKeys2.toArray()[inputCount].toString());
-	//				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
-	
-	//				System.out.println("simulationTimestamp");
-	//				System.out.println(simulationTimestamp);
-	//				System.out.println("simJsonObjAtTime");
-	//				System.out.println(simJsonObjAtTime);
-	//				System.out.println(expectedResults);
-					TestResults testResults = compareResults.compareExpectedWithSimulationInput(tempTimestamp.toString(), 
-							tempTimestamp.toString(),
-							simJsonObjAtTime, 
-							expectedResults, 
-							testConfig.getStart_time(),
-							testConfig.getStart_time()+testConfig.getDuration());
-					testResultSeries.add(originalTimestamp,
-							tempTimestamp.toString(),
-	//						inputKeys2.toArray()[inputCount].toString(), 
-							testResults);
-	//				if (testResults != null) {
-	//					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
+	//				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+	//				if( ! firstSet){
+	//					first1 = Integer.valueOf(simulationTimestamp);
+	//					firstSet=true;
 	//				}
-					storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
-			}
-				inputCount++;
-				lastTimeStamp = Long.valueOf(simulationTimestamp) +1; 
+	//				
+	//				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
+	//				System.out.println("size and inputCount");
+	//				System.out.println(inputKeys2.size());
+	//				System.out.println(inputCount);
+	//				if(inputKeys2.size() <= inputCount){
+	//					return;
+	//				}
+					
+		//				timeseries expected
+						for (Integer tempTimestamp : inputKeys2) {
+							
+							String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+							expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
+							
+							// Is this needed ?
+			//				simJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputKeys2.toArray()[inputCount].toString());
+			//				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+			
+			//				System.out.println("simulationTimestamp");
+			//				System.out.println(simulationTimestamp);
+			//				System.out.println("simJsonObjAtTime");
+			//				System.out.println(simJsonObjAtTime);
+			//				System.out.println(expectedResults);
+							TestResults testResults = compareResults.compareExpectedWithSimulationInput(tempTimestamp.toString(), 
+									tempTimestamp.toString(),
+									simJsonObjAtTime, 
+									expectedResults, 
+									testConfig.getStart_time(),
+									testConfig.getStart_time()+testConfig.getDuration());
+							testResultSeries.add(originalTimestamp,
+									tempTimestamp.toString(),
+			//						inputKeys2.toArray()[inputCount].toString(), 
+									testResults);
+			//				if (testResults != null) {
+			//					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
+			//				}
+							storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+					}
+					inputCount++;
+					lastTimeStamp = Long.valueOf(simulationTimestamp); 
+				}
 			}
 		});
 	}
@@ -660,10 +690,11 @@ public class TestManagerImpl implements TestManager {
 							System.out.println("Case 2A Missing input command from timeseries data");
 							if (entry.getValue().isJsonObject()) {
 								JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+								String objectMRID = expectedOutputObj.get("object").getAsString();
 								String attr = expectedOutputObj.get("attribute").getAsString();
 								String value = expectedOutputObj.get("value").toString();
 								testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
-								compareResults.publish(element.toString(), element.toString(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+								compareResults.publish(element.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
 							}					
 						}
 //						JsonObject expectedOutputObj = expectedForwardMap.get(element.toString()).getAsJsonObject();

@@ -68,7 +68,7 @@ public class TestConfig implements Serializable {
 	
 	private int duration = 60;
 	
-	private int interval = 60;
+	private int interval = 10;
 	
 	private Boolean testInput = true;
 

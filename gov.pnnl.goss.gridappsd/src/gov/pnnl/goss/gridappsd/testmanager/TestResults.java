@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Class to keep track of the test result differences.
@@ -161,13 +162,11 @@ public class TestResults implements Serializable{
 		for (Entry<String, HashMap<String, TestResultDetails>> entry : objectPropComparison.entrySet()) {
 			HashMap<String, TestResultDetails> propMap = entry.getValue();
 			for (Entry<String, TestResultDetails> prop: propMap.entrySet()){
+				TestResultDetails testResultDetails = prop.getValue();
 //				temp+="\t"+entry.getKey() + "    " + prop.getKey()+ "    " + prop.getValue()[0] +"    " + prop.getValue()[1];
 //				temp += String.format("\t %37s %10s %.3f %.3f ", entry.getKey(), prop.getKey(), Double.parseDouble(prop.getValue().getExpected() ), Double.parseDouble(prop.getValue().getActual()));
-				temp += String.format("\t %37s %10s %10s %10s ", entry.getKey(), prop.getKey(), prop.getValue().getExpected(), prop.getValue().getActual());
-
-//				if(prop.getValue().length > 3)
-//					temp+="    " +prop.getValue()[2] +"    " + prop.getValue()[3];
-					temp += String.format("%10s %37s", prop.getValue().getDiffMrid(), prop.getValue().getDiffType());
+				temp += String.format("\t %37s %30s %10s %10s ", entry.getKey(), prop.getKey(), StringUtils.left(testResultDetails.getExpected(),10), StringUtils.left(testResultDetails.getActual(),10));
+				temp += String.format("%10s %37s", testResultDetails.getDiffType(), testResultDetails.getDiffMrid());
 				temp+="\n";
 			}
 		}

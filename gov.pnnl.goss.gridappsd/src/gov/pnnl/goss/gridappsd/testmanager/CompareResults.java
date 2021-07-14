@@ -52,7 +52,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.lang3.StringUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -85,6 +88,8 @@ import pnnl.goss.core.Client;
 		private Set<String> propSet = new HashSet<String>();
 
 		private TestConfig testConfig;
+		
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		
 //		public CompareResults(Client client){
 //			this.client = client;
@@ -202,15 +207,27 @@ import pnnl.goss.core.Client;
 			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
 			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
 			System.out.println("expectedInput");
-			System.out.println(expectedInput.toString().substring(0,160));
+			System.out.println(StringUtils.left(expectedInput.toString(),300));
 			System.out.println("simultaionInput");
-			System.out.println(simultaionInput.toString().substring(0,160));
-			
+			System.out.println(StringUtils.left(simultaionInput.toString(),300));
+
 			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, simultaionInput);
 			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
 			System.out.println("simultaionInput forwardMap");
-			System.out.println("simultaionInput expectedForwardMap is null " + expectedForwardMap==null);
-			System.out.println("simultaionInput forwardMap is null " + forwardMap==null);
+			System.out.println("simultaionInput expectedForwardMap is null " + new Boolean(expectedForwardMap==null).toString());
+			System.out.println("simultaionInput forwardMap is null " + new Boolean(forwardMap==null).toString());
+			if(expectedForwardMap!=null){
+				System.out.println("expectedForwardMap");
+				System.out.println(gson.toJson(expectedForwardMap));
+			}else{
+				System.out.println("No expectedForwardMap");
+			}
+			if(forwardMap!=null){
+				System.out.println("forwardMap");
+				System.out.println(gson.toJson(forwardMap));
+			}else{
+				System.out.println("No forwardMap");
+			}
 			
 //			System.out.println(forwardMap.toString());
 			TestResults testResults = new TestResults();

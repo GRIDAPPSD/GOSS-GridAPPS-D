@@ -1,13 +1,10 @@
 package gov.pnnl.goss.gridappsd.testmanager;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,7 +113,7 @@ public class HistoricalComparison {
 			
 			JsonObject expected_series_window = getExpectedBetweenStartAndEnd(expected_output_series, window_Start_time, window_end_time);
 			
-			TestResultSeries testResultSeries_temp = processWithAllTimes(expected_series_window, testConfig, responseStr, window_Start_time, window_end_time);
+			TestResultSeries testResultSeries_temp = processExpectedAndTimeseries(expected_series_window, testConfig, responseStr, window_Start_time, window_end_time);
 			for (Entry<Map<String,String>, TestResults> iterable_element : testResultSeries_temp.results.entrySet()) {
 				Map<String,String> tm = iterable_element.getKey(); 
 //				tm.forEach((key, value) -> testResultSeries.add(key, value, iterable_element.getValue() );
@@ -157,7 +154,7 @@ public class HistoricalComparison {
 				return new TestResultSeries();
 			}
 			
-			TestResultSeries testResultSeries_temp = processWithAllTimes("123", testConfig, responseStrOne, responseStrTwo);
+			TestResultSeries testResultSeries_temp = processTimeseriesAndTimeseries("123", testConfig, responseStrOne, responseStrTwo);
 			for (Entry<Map<String,String>, TestResults> iterable_element : testResultSeries_temp.results.entrySet()) {
 				Map<String,String> tm = iterable_element.getKey(); 
 				for (Entry<String, String> pair : tm.entrySet()) {
@@ -202,6 +199,45 @@ public class HistoricalComparison {
 		queryFilter.put("simulation_id", simulationId);
 		queryFilter.put("startTime", startTime);
 		queryFilter.put("endTime", endTime);
+		System.out.println(queryFilter);
+					
+		RequestTimeseriesData request = new RequestTimeseriesData();
+		request.setSimulationYear(0);
+		request.setQueryMeasurement("simulation");
+		request.setQueryFilter(queryFilter);
+
+		Serializable response = null;
+
+		try {
+			response = dataManager.processDataRequest(request, "timeseries",
+					simulationId, null,
+					username);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// TODO: Log error - excpetion
+		}
+//		System.out.println(response.toString());
+		return response.toString();
+	}
+	
+	/**
+	 * Query timeseries db for simulation ID
+	 * @param simulationId
+	 * @param hasMrid
+	 * @param startTime
+	 * @param endTime
+	 * @return
+	 */
+	public String timeSeriesQueryInput(String simulationId, String hasMrid,
+			String startTime, String endTime) {
+
+		// {"queryMeasurement":"simulation","queryFilter":{"simulation_id":"145774843"},"responseFormat":"JSON","queryType":"time-series","simulationYear":0}
+		HashMap<String, Object> queryFilter = new HashMap<String, Object>();
+		queryFilter.put("simulation_id", simulationId);
+		queryFilter.put("startTime", startTime);
+		queryFilter.put("endTime", endTime);
+		queryFilter.put("hasSimulationMessageType", "INPUT");
+		//"hasSimulationMessageType": "INPUT"
 		System.out.println(queryFilter);
 					
 		RequestTimeseriesData request = new RequestTimeseriesData();
@@ -293,45 +329,68 @@ public class HistoricalComparison {
 		return outputObject;
 	}
 
-	public TestResultSeries processWithAllTimes(String simulationId,TestConfig testConfig, String responseOne, String responseTwo) {
+	/**
+	 * 
+	 * @param simulationId
+	 * @param testConfig
+	 * @param responseOne
+	 * @param responseTwo
+	 * @return
+	 */
+	public TestResultSeries processTimeseriesAndTimeseries(String simulationId,TestConfig testConfig, String responseOne, String responseTwo) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults(client, testConfig);
-
-		JsonObject expectedObjectOne = getExpectedFrom(responseOne);
-		JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
 		
-		JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
-		JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
+			// TODO if procees times in loop
 
-//		int index = 0;
-		for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
-//			System.out.println(time_entry);
-			TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
-//			tr.pprint();
-			if (tr != null) {
-				testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+			JsonObject expectedObjectOne = getExpectedFrom(responseOne);
+			JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
+			
+			JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
+			JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
+			if(testConfig.getTestOutput()){	
+	//		int index = 0;	
+			for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
+	//			System.out.println(time_entry);
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
+	//			tr.pprint();
+				if (tr != null) {
+					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+				}
+	//			index++;
 			}
-//			index++;
+	//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		}
-//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
-		
 		
 		JsonObject simInputObject = expectedObjectOne.get("input").getAsJsonObject();
 		JsonObject expected_input_series = expectedObjectTwo.get("input").getAsJsonObject();
-		if(simInputObject.entrySet().isEmpty() || expected_input_series.entrySet().isEmpty()){
+		// TODO process missing inputs
+		if(simInputObject.entrySet().isEmpty() && expected_input_series.entrySet().isEmpty()){
 			System.out.println("Empty inputs");
 			return testResultSeries;
 		}else{
+			HashSet <String> combinedTimes = new HashSet<String>();
 			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				combinedTimes.add(time_entry.getKey());
+				System.out.println("processWithAllTimes two sim"+time_entry.getKey());
+			}
+			for (Entry<String, JsonElement> time_entry : expected_input_series.entrySet()) {
+				combinedTimes.add(time_entry.getKey());
+				System.out.println("processWithAllTimes two sim"+time_entry.getKey());
+			}
+//			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+			for (String time_entry : combinedTimes) {
 				System.out.println(time_entry);
-				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry.getKey().toString(),
-						time_entry.getKey().toString(), 
+				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry,
+						time_entry, 
 						simInputObject, 
 						expected_input_series, 
 						testConfig.getStart_time(), 
 						testConfig.getStart_time() + testConfig.getDuration());
+//				TestResults tr2 = compareResults.compareExpectedWithSimulationInput(time_entry, time_entry, simInputObject, expected_input_series, window_start_time, window_end_time);
+				
 				if (tr != null) {
-					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+					testResultSeries.add(time_entry, time_entry, tr);
 				}
 			}
 		}
@@ -370,7 +429,7 @@ public class HistoricalComparison {
 	 * @param window_end_time
 	 * @return
 	 */
-	public TestResultSeries processWithAllTimes(JsonObject expected_series, TestConfig testConfig, String response, long window_start_time, long window_end_time) {
+	public TestResultSeries processExpectedAndTimeseries(JsonObject expected_series, TestConfig testConfig, String response, long window_start_time, long window_end_time) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults(client, testConfig);
 //		System.out.println(response);
