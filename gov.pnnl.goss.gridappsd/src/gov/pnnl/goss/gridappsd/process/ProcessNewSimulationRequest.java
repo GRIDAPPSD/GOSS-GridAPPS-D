@@ -39,6 +39,19 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.process;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import com.google.gson.Gson;
+
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
@@ -48,10 +61,9 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
 import gov.pnnl.goss.gridappsd.configuration.DSSAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.AppInfo;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
@@ -62,21 +74,6 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import com.google.gson.Gson;
-
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.security.SecurityConfig;
 
@@ -148,7 +145,10 @@ public class ProcessNewSimulationRequest {
 			simContext.simulationId = simulationId;
 			simContext.simulationPort = simulationPort;
 			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
-			simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
+				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
+			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
+				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json";
 			simContext.simulationUser = username;
 			try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
@@ -169,6 +169,7 @@ public class ProcessNewSimulationRequest {
 				gldInterface = GridAppsDConstants.getGLDInterface(deps);
 			} 
 
+			int numFederates = 2;
 			String simulator = simRequest.getSimulation_config().getSimulator();
 			//generate config files for requested simulator
 			//if requested simulator is opendss
@@ -180,7 +181,19 @@ public class ProcessNewSimulationRequest {
 					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
 				}
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
-			} else { //otherwise use gridlabd
+			}
+			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.TYPENAME)){
+				numFederates = 42;
+				Properties simulationParams = generateSimulationParameters(simRequest);
+				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
+				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				if(gldInterface!=null){
+					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
+				}
+				configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
+				configurationManager.generateConfiguration(OchreAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
+			}
+			else { //otherwise use gridlabd
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
@@ -201,7 +214,12 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simulationPort);
 			simulationContext.put("simulationDir",simulationConfigDir);
-			simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+			simulationContext.put("numFederates",numFederates);
+
+			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
+				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
+				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json");
 			simulationContext.put("logLevel", logManager.getLogLevel());
 			simulationContext.put("username", securityConfig.getManagerUser());
 			simulationContext.put("password", securityConfig.getManagerPassword());
@@ -219,12 +237,14 @@ public class ProcessNewSimulationRequest {
 			List<String> connectServiceInstanceIds = new ArrayList<String>();
 			List<String> connectServiceIds = new ArrayList<String>();
 			List<String> connectedAppInstanceIds = new ArrayList<String>();
-			
+			logManager.info(ProcessStatus.RUNNING, simulationId, "Service configs "+simRequest.service_configs);
 			if (simRequest.service_configs == null) {
 				logManager.warn(ProcessStatus.RUNNING, simulationId, "No services found in request  ="+simRequest.getSimulation_config().getSimulator());
 			}
 			else{
 				for(ServiceConfig serviceConfig : simRequest.service_configs){
+					logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service"+serviceConfig.getId());
+
 					String serviceInstanceId = serviceManager.startServiceForSimultion(serviceConfig.getId(), null, simulationContext);
 					if(serviceInstanceId!=null){
 						connectServiceInstanceIds.add(serviceInstanceId);

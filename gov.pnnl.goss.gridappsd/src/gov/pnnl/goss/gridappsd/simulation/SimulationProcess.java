@@ -4,8 +4,10 @@ import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
 import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
@@ -18,10 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +39,7 @@ import com.google.gson.Gson;
 
 public class SimulationProcess extends Thread {
     private static Logger log = LoggerFactory.getLogger(SimulationProcess.class);
-
+    private static String gridlabdConstant = "GridLAB-D";
 
     boolean running = true;
 
@@ -63,10 +68,11 @@ public class SimulationProcess extends Thread {
     AppManager appManager;
     Client client;
     SecurityConfig securityConfig;
+    Map<String, Object> simulationContex;
 
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
             SimulationConfig simulationConfig, String simulationId, LogManager logManager,
-            AppManager appManager, Client client, SecurityConfig securityConfig){
+            AppManager appManager, Client client, SecurityConfig securityConfig, Map<String, Object> simulationContex){
         this.simContext = simContext;
         this.serviceManager = serviceManager;
         this.simulationConfig = simulationConfig;
@@ -75,6 +81,7 @@ public class SimulationProcess extends Thread {
         this.appManager = appManager;
         this.client = client;
         this.securityConfig = securityConfig;
+        this.simulationContex = simulationContex;
     }
 
 
@@ -103,21 +110,78 @@ public class SimulationProcess extends Thread {
             }
             //}
 
-            //Start GridLAB-D
-            logManager.info(ProcessStatus.RUNNING, simulationId, simContext.getSimulatorPath()+" "+simulationFile);
-            ProcessBuilder simulatorBuilder = new ProcessBuilder(simContext.getSimulatorPath(), simulationFile.getAbsolutePath());
+            //Start Simulator
+            ProcessBuilder simulatorBuilder = new ProcessBuilder();
+            List<String> commands = new ArrayList<String>();
+            
+            if(simulationConfig.getSimulator().equals(OchreAllConfigurationHandler.TYPENAME)){
+            	simContext.setNumFederates(42);
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Setting num federates ");
+
+            	//Start gridlabd
+//				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+				File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
+//            	commands.add(simContext.getSimulatorPath());
+				commands.add(gldSimulatorPath);
+//            	commands.add(simulationFile.getAbsolutePath());
+            	commands.add(gldStartupFile.getAbsolutePath());
+                ProcessBuilder gldSimulatorBuilder = new ProcessBuilder();
+                gldSimulatorBuilder.command(commands);
+                gldSimulatorBuilder.redirectErrorStream(true);
+                gldSimulatorBuilder.redirectOutput();
+	            //launch from directory containing simulation files
+                gldSimulatorBuilder.directory(simulationFile.getParentFile());
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting gridlabd simulator with command "+String.join(" ",commands));
+	            simulatorProcess = gldSimulatorBuilder.start();
+	            // Watch the process
+	            watch(simulatorProcess, "GLDSimulator-"+simulationId);
+            	
+            	//Start ochre
+            	commands = new ArrayList<String>();
+            	commands.add(simContext.getSimulatorPath());
+            	ServiceInfo serviceInfo = serviceManager.getService(simulationConfig.getSimulator());
+            	List<String> staticArgsList = serviceInfo.getStatic_args();
+        		for(String staticArg : staticArgsList) {
+        		    if(staticArg!=null){
+        		    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
+        				if(simulationContex!=null){
+        			    	if(staticArg.contains("(")){
+        				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+        				    	 for(String args : replaceArgs){
+        				    		 staticArg = staticArg.replace("("+args+")",simulationContex.get(args).toString());
+        				    	 }
+        			    	}
+        				}
+        		    	commands.add(staticArg);
+        		    }
+        		}
+            	simulatorBuilder.command(commands);
+	            logManager.info(ProcessStatus.RUNNING, simulationId, "Command for ochre ready "+String.join(" ",commands));
+
+            }
+            else if(simulationConfig.getSimulator().equals(gridlabdConstant)){
+            	commands.add(simContext.getSimulatorPath());
+            	commands.add(simulationFile.getAbsolutePath());
+            	simulatorBuilder.command(commands);
+            } else {
+            	log.warn("No known simulator: "+simulationConfig.getSimulator());
+            }
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
             //launch from directory containing simulation files
             simulatorBuilder.directory(simulationFile.getParentFile());
+            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting simulator with command "+String.join(" ",commands));
             simulatorProcess = simulatorBuilder.start();
+            logManager.info(ProcessStatus.RUNNING, simulationId, "Started simulator with command "+String.join(" ",commands));
+
             // Watch the process
             watch(simulatorProcess, "Simulator-"+simulationId);
 
 
             //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 
-            logManager.info(ProcessStatus.RUNNING, simulationId,  "GridLAB-D started");
+            logManager.info(ProcessStatus.RUNNING, simulationId,  simulationConfig.getSimulator()+" simulator started");
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
@@ -246,7 +310,7 @@ public class SimulationProcess extends Thread {
                 FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
                 //log.debug("FNCS output message: "+responseJson);
                 if("isInitialized".equals(responseJson.command)){
-                    log.debug("Bridge Initialized response: "+responseJson);
+                    log.info("Bridge Initialized response: "+responseJson);
                     if("True".equals(responseJson.response)){
                         //log.info("FNCS is initialized "+initializedTracker);
                         initializedTracker.isInited = true;

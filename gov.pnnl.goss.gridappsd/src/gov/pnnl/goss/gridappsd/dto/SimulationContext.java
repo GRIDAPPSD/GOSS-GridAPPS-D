@@ -18,6 +18,7 @@ public class SimulationContext implements Serializable {
 	public List<String> appInstanceIds;
 	public List<String> serviceInstanceIds;
 	public String simulationUser;
+	public int numFederates = 2;
 
 	public String getSimulationId() {
 		return simulationId;
@@ -101,6 +102,14 @@ public class SimulationContext implements Serializable {
 
 	public void setSimulationUser(String simulationUser) {
 		this.simulationUser = simulationUser;
+	}
+
+	public int getNumFederates() {
+		return numFederates;
+	}
+
+	public void setNumFederates(int numFederates) {
+		this.numFederates = numFederates;
 	}
 
 	
