@@ -201,7 +201,7 @@ public class ServiceInfo implements Serializable {
 	
 	public static void main(String[] args) throws IOException{
 		
-		File test = new File("test.config");
+		File test = new File("../services/ochre.config");
 		System.out.println(ServiceInfo.parse(new String(Files.readAllBytes(Paths.get(test.getAbsolutePath())))));
 	}
 	

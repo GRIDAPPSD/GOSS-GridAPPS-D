@@ -5,4 +5,4 @@ rm -rf gov.pnnl.goss/gridappsd/generated
 
 #copy built jar to docker
 echo "copying run.bnd.jar into container"
-docker cp gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar gridappsddocker_gridappsd_1:/gridappsd/lib/run.bnd.jar
+docker cp gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar gridappsd:/gridappsd/lib/run.bnd.jar
