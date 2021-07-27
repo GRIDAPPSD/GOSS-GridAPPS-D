@@ -437,7 +437,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			if(simulator.equals("GridLAB-D"))
 				startupFileWriter.println("      configure model_outputs.json;");
 			else if(simulator.equals("OCHRE"))
-				startupFileWriter.println("      configure ochre_helics_config.json;");
+				startupFileWriter.println("      configure gld_helics_config.json;");
 			startupFileWriter.println("}");
 
 		} else {
