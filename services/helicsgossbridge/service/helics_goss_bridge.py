@@ -744,7 +744,7 @@ class HelicsGossBridge(object):
                     + f'\ngoss_message = {goss_message}')
             helics_input_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_input")
             helics_input_message = {f"{self._simulation_id}" : {}}
-            helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
+            # helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
             forward_differences_list = test_goss_message_format["message"]["forward_differences"]
             reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
             fault_list = []
@@ -905,6 +905,7 @@ class HelicsGossBridge(object):
                     fault_val_dict["name"] = x.get("object", "")
                     fault_list.append(fault_val_dict)
             if len(fault_list) != 0:
+                helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
                 helics_input_message[f"{self._simulation_id}"]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
             goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
             log.info(f"Sending the following message to the simulator. {goss_message_converted}")
