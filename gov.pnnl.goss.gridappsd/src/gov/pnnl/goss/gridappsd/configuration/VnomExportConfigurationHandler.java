@@ -92,6 +92,13 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 	
 	public static final String TYPENAME = "Vnom Export";
 	public static final String SIMULATIONID = "simulation_id";
+	public static final String DIRECTORY = "directory";
+	public static final String MODELID = "model_id";
+	public static final String ZFRACTION = "z_fraction";
+	public static final String IFRACTION = "i_fraction";
+	public static final String PFRACTION = "p_fraction";
+	public static final String SCHEDULENAME = "schedule_name";
+	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 	
 	public VnomExportConfigurationHandler() {
 	}
@@ -118,29 +125,54 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 		
 		String simulationId = parameters.getProperty(SIMULATIONID);
 		
-		if(simulationId==null)
-			throw new Exception("Simulation Id not provided in request paramters.");
+		String modelId = null;
+		File simulationDir = null;
 		
-		SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+		if(simulationId!=null) {
 		
-		if(simulationContext==null)
-			throw new Exception("Simulation context not found for simulation_id = "+simulationId);
+			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+			
+			
+			parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
+			parameters.put("z_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction()));
+			parameters.put("p_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction()));
+			parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
+			parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
+			parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
+			parameters.put("directory",simulationContext.getSimulationDir());
+			parameters.put("simulation_start_time",simulationContext.getRequest().getSimulation_config().getStart_time());
+			parameters.put("simulation_duration",simulationContext.getRequest().getSimulation_config().getDuration());
+			
+			simulationDir = new File(simulationContext.getSimulationDir());
+			
 		
-		parameters.put("i_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getiFraction()));
-		parameters.put("z_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getzFraction()));
-		parameters.put("p_fraction", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getpFraction()));
-		parameters.put("load_scaling_factor", Double.toString(simulationContext.getRequest().getSimulation_config().getModel_creation_config().getLoadScalingFactor()));
-		parameters.put("schedule_name", simulationContext.getRequest().getSimulation_config().getModel_creation_config().getScheduleName());
-		parameters.put("model_id", simulationContext.getRequest().getPower_system_config().getLine_name());
-		parameters.put("directory",simulationContext.getSimulationDir());
-		parameters.put("simulation_start_time",simulationContext.getRequest().getSimulation_config().getStart_time());
-		parameters.put("simulation_duration",simulationContext.getRequest().getSimulation_config().getDuration());
 		
-		File simulationDir = new File(simulationContext.getSimulationDir());
+		
+		}
+		else {
+			modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+			
+			simulationId = processId;
+		
+			if(modelId==null) 
+				throw new Exception("Model Id or simulation Id not provided in request parameters.");
+			
+			simulationDir = new File(configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH),"models/"+modelId);
+			
+			parameters.put("i_fraction", GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0));
+			parameters.put("z_fraction", GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0));
+			parameters.put("p_fraction", GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0));
+			parameters.put("load_scaling_factor", GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1));
+			parameters.put("schedule_name", GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, ""));
+			parameters.put("model_id", modelId);
+			parameters.put("directory",simulationDir);		
+			
+		}
+		
+		
 		File commandFile = new File(simulationDir,"opendsscmdInput.txt");
 		File dssBaseFile = new File(simulationDir,"model_base.dss");
-		
-		
+			
 		for(Object key: parameters.keySet().toArray()){
 			log.debug(key.toString() + " = "+ parameters.getProperty(key.toString()));
 		}

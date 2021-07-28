@@ -365,6 +365,8 @@ public class ProcessNewSimulationRequest {
 			Gson  gson = new Gson();
 			params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
 		}
+		
+		params.put(GLDAllConfigurationHandler.SIMULATOR, requestSimulation.getSimulation_config().getSimulator());
 		return params;
 	}
 

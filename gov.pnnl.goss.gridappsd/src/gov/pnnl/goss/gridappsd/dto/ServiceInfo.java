@@ -57,6 +57,10 @@ public class ServiceInfo implements Serializable {
 		   PYTHON, JAVA, WEB, EXE
 		}
 	
+	public enum ServiceCategory {
+		SIMULATOR, COSIMULATOR, SERVICE
+	}
+	
 	
 	String id;
 	String description;
@@ -71,6 +75,8 @@ public class ServiceInfo implements Serializable {
 	List<String> service_dependencies;
 	boolean multiple_instances;
 	List<EnvironmentVariable> environmentVariables;
+	ServiceCategory category = ServiceCategory.SERVICE;
+	
 	
 
 	public String getId() {
@@ -170,6 +176,14 @@ public class ServiceInfo implements Serializable {
 	public void setEnvironmentVariables(List<EnvironmentVariable> environmentVariables) {
 		this.environmentVariables = environmentVariables;
 	}
+	
+	public ServiceCategory getCatagory() {
+		return category;
+	}
+
+	public void setCatagory(ServiceCategory catagory) {
+		this.category = catagory;
+	}
 
 	@Override
 	public String toString() {
@@ -187,7 +201,7 @@ public class ServiceInfo implements Serializable {
 	
 	public static void main(String[] args) throws IOException{
 		
-		File test = new File("test.config");
+		File test = new File("../services/ochre.config");
 		System.out.println(ServiceInfo.parse(new String(Files.readAllBytes(Paths.get(test.getAbsolutePath())))));
 	}
 	
