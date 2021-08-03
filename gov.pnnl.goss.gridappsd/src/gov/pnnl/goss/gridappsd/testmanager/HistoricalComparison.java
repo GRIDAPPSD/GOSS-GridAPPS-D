@@ -134,7 +134,7 @@ public class HistoricalComparison {
 	 * @param testConfig
 	 * @return
 	 */
-	public TestResultSeries compareSimulationWithSimulation(String simulationIdOne, String simulationIdTwo, TestConfig testConfig){
+	public TestResultSeries compareTimeseriesSimulationWithTimeseriesSimulation(String simulationIdOne, String simulationIdTwo, TestConfig testConfig){
 		TestResultSeries testResultSeries = new TestResultSeries();
 		long start_time = testConfig.getStart_time();
 		int duration = testConfig.getDuration();
@@ -237,13 +237,16 @@ public class HistoricalComparison {
 		queryFilter.put("startTime", startTime);
 		queryFilter.put("endTime", endTime);
 		queryFilter.put("hasSimulationMessageType", "INPUT");
+		// request	" {"queryMeasurement": "simulation",\n"queryFilter": {"startTime":1626293345, \n"endTime":1626293345,\n"simulation_id":"6220760",\n"hasSimulationMessageType": "INPUT"},\n"responseFormat": "JSON"}" (id=8778)	
+
 		//"hasSimulationMessageType": "INPUT"
-		System.out.println(queryFilter);
+//		System.out.println(queryFilter);
 					
 		RequestTimeseriesData request = new RequestTimeseriesData();
 		request.setSimulationYear(0);
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
+		System.out.println(request.toString());
 
 		Serializable response = null;
 
