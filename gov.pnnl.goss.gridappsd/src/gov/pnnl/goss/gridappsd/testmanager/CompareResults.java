@@ -207,7 +207,11 @@ import pnnl.goss.core.Client;
 			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
 			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
 			System.out.println("expectedInput");
-			System.out.println(StringUtils.left(expectedInput.toString(),300));
+			if(expectedInput!=null){
+				System.out.println(StringUtils.left(expectedInput.toString(),300));
+			}else{
+				System.out.println("No expectedInput");
+			}
 			System.out.println("simultaionInput");
 			System.out.println(StringUtils.left(simultaionInput.toString(),300));
 
@@ -549,6 +553,9 @@ import pnnl.goss.core.Client;
 		 */
 		public Map<String, JsonElement> getExpectedForwardInputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
+			if(expectedOutputObj == null){
+				return null;
+			}
 //			System.out.println("input map");
 //			System.out.println(expectedOutputObj.toString());
 			if (expectedOutputObj.isJsonObject()) {
@@ -558,7 +565,6 @@ import pnnl.goss.core.Client;
 				if(output.has(timestamp)){
 					expectedOutputMap = getForwardDifferenceMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					// TODO
 					System.out.println("CompareResults forward input no index for " + timestamp);
 					return null;
 				}
@@ -572,6 +578,9 @@ import pnnl.goss.core.Client;
 		 */
 		public Map<String, JsonElement> getExpectedReverseInputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
+			if(expectedOutputObj == null){
+				return null;
+			}
 			if (expectedOutputObj.isJsonObject()) {
 				JsonObject output = expectedOutputObj.getAsJsonObject();				
 				
