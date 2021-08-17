@@ -343,15 +343,13 @@ public class HistoricalComparison {
 	public TestResultSeries processTimeseriesAndTimeseries(String simulationId,TestConfig testConfig, String responseOne, String responseTwo) {
 		TestResultSeries testResultSeries = new TestResultSeries();
 		CompareResults compareResults = new CompareResults(client, testConfig);
-		
-			// TODO if procees times in loop
 
-			JsonObject expectedObjectOne = getExpectedFrom(responseOne);
-			JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
-			
-			JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
-			JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
-			if(testConfig.getTestOutput()){	
+		JsonObject expectedObjectOne = getExpectedFrom(responseOne);
+		JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
+		
+		JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
+		JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
+		if(testConfig.getTestOutput()){	
 	//		int index = 0;	
 			for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
 	//			System.out.println(time_entry);

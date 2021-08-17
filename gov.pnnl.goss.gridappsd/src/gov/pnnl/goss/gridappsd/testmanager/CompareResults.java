@@ -253,6 +253,24 @@ import pnnl.goss.core.Client;
 					}
 				}
 			}
+			if (expectedReverseMap == null){
+				for (Entry<String, JsonElement> entry : reverseMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no expectedReverseMap");
+							JsonObject expectedOutputObj = reverseMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							publish(timestamp1, objectMRID, attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+						}
+					}
+				}
+			}
 			if (forwardMap == null){			
 				for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
 					long time = Long.parseLong(timestamp1);
@@ -267,6 +285,24 @@ import pnnl.goss.core.Client;
 //							System.out.println("no index for "+ timestamp2);
 							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
 							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
+			if (reverseMap == null){			
+				for (Entry<String, JsonElement> entry : expectedReverseMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no forwardMap");
+							JsonObject expectedOutputObj = expectedReverseMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
 						}
 					}
 				}
@@ -396,7 +432,10 @@ import pnnl.goss.core.Client;
 	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 							if( ! propSet.contains(prop))
 								continue;
-							
+							String propOrAttr = prop;
+							if(simOutputObj.has("attribute")){
+								propOrAttr = simOutputObj.get("attribute").getAsString();
+							}
 							Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
 							if (comparisonProperty){
 								if (simOutputObj.has("hasMeasurementDifference")){
@@ -450,14 +489,38 @@ import pnnl.goss.core.Client;
 						System.out.println("No property for "+ entry);
 						System.out.println("No property for "+ expectedOutputObj);
 //						String prop = entry.getKey();
-						for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
-							String prop = simentry.getKey();
-	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
-	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
-							if( ! propSet.contains(prop))
-								continue;
-							publish(timestamp, entry.getKey(), prop, simentry.getValue().getAsString(), "NA" , false);
+//						publish(timestamp, entry.getKey(), prop, simentry.getValue().getAsString(), "NA" , false);
+						String prop = "value";
+						if(expectedOutputObj.has("hasMeasurementDifference") ){
+							testResults.add(expectedOutputObj.get("object").getAsString(),
+									expectedOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									"NA",
+									expectedOutputObj.get("difference_mrid").getAsString(),
+									expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+							publish(timestamp, expectedOutputObj.get("object").getAsString(),
+									expectedOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									"NA",
+									expectedOutputObj.get("difference_mrid").getAsString(),
+									expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+						}else{
+							testResults.add(entry.getKey(), expectedOutputObj.get("attribute").getAsString(), expectedOutputObj.get(prop).toString(), "NA", false);
+							publish(timestamp, entry.getKey(), expectedOutputObj.get("attribute").getAsString(), expectedOutputObj.get(prop).toString(), "NA", false);
 						}
+							
+						
+//						for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+//							String prop1 = simentry.getKey();
+//	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+//	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+//							if( ! propSet.contains(prop1))
+//								continue;
+//							publish(timestamp, entry.getKey(), prop1, simentry.getValue().getAsString(), "NA" , false);
+//						}
+						
 					}
 				}else
 					System.out.println("     Not object" + entry);

@@ -174,7 +174,7 @@ public class TestManagerComponentTest {
 //		Assert.assertEquals(o1, o2);
 	}
 	
-
+	@Test
 	public void proven(){
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -191,14 +191,15 @@ public class TestManagerComponentTest {
 //		ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
 //		dataManager.start();
 		DataManagerImpl dataM = new DataManagerImpl();
-		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
-		configManager.start();
+//		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
+//		configManager.start();
 		Response r = null;
-		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"145774843\"}, \"responseFormat\": \"JSON\"}";
+		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"1404197350\"}, \"responseFormat\": \"JSON\"}";
 		try {
-			r = dataM.processDataRequest(request1, "timeseries", "1598820656", "/tmp/gridappsd_tmp", "system");
+			r = dataM.processDataRequest(request1, "timeseries", "1598820656", null, "system");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
+			System.out.println("exeception");
 			e1.printStackTrace();
 		}
 		System.out.println(r);
@@ -210,7 +211,7 @@ public class TestManagerComponentTest {
 
 		RequestTimeseriesData request = new RequestTimeseriesData(); 
 		HashMap<String,Object> queryFilter = new HashMap <String,Object>();
-		queryFilter.put("hasSimulationId", "145774843");
+		queryFilter.put("hasSimulationId", "1404197350");
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 //		request.setSimulationId("1278337149");

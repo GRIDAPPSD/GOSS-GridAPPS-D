@@ -55,7 +55,7 @@ public class TestConfig implements Serializable {
 	private Random randomNum =  new Random();
 	
 	public enum TestType {
-		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries
+		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries,test_query
 	}
 
 	private List<Event> events;
