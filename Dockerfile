@@ -3,14 +3,6 @@ FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
 
-# Get the gridappsd-python from the proper repository
-RUN cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/gridappsd-python -b develop \
-  && cd gridappsd-python \
-  && pip3 install -r requirements.txt \
-  && pip3 install . \
-  && rm -rf /root/.cache/pip/wheels
-
 # Get the gridappsd-sensor-simulator from the proper repository
 RUN cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b develop  \
