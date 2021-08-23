@@ -90,7 +90,7 @@ RUN useradd -m gridappsd \
     && if [ -d /etc/sudoers.d ] ; then echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd ; fi \
     && echo "[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql" > /home/gridappsd/.my.cnf \
     && chown gridappsd:gridappsd /home/gridappsd/.my.cnf \
-    && chown -R gridappsd:gridappsd /gridappsd/services/gridappsd-ochre \
+    #&& chown -R gridappsd:gridappsd /gridappsd/services/gridappsd-ochre \
     && mkdir /gridappsd/log \
     && chown gridappsd:gridappsd /gridappsd/log
 
