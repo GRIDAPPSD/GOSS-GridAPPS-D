@@ -57,7 +57,8 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
         if: env.DOCKER_IMAGE_NAME != null
         run: |
-          TAG="${GITHUB_REF##*/}"
+          TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG//\//_}"
           ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
           ORG="${ORG:-gridappsd}"
           ORG="${ORG:+${ORG}/}"
@@ -79,7 +80,8 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
         if: env.DOCKER_IMAGE_NAME != null
         run: |
-          TAG="${GITHUB_REF##*/}"
+          TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG//\//_}"
           ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
           ORG="${ORG:-gridappsd}"
           ORG="${ORG:+${ORG}/}"
