@@ -936,7 +936,7 @@ class HelicsGossBridge(object):
             cim_output = {}
             if has_message:
                 t_now = datetime.utcnow()
-				current_time = int(time.mktime(t_now.timetuple()))
+                current_time = int(time.mktime(t_now.timetuple()))
                 cim_measurements_dict = {
                     "simulation_id": self._simulation_id,
                     "message" : {
