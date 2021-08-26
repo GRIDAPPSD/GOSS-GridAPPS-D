@@ -944,8 +944,8 @@ class HelicsGossBridge(object):
                         "measurements" : {}
                     }
                 }
-                helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
                 for x in range(pending_message_count):
+                    helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
                     helics_output = helics.helicsMessageGetString(helics_message)
                     helics_message_source = helics.helicsMessageGetSource(helics_message)
                     if "status" in helics_message_source:
