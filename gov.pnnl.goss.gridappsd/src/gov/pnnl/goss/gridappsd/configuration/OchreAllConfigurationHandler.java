@@ -89,6 +89,7 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 	public static final String CONFIG_FILENAME = "ochre_helics_config.json";
 	public static final String SIMULATIONBROKERHOST = "simulation_broker_host";
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
+	public static final String MODEL_ID = "model_id";
 
 	public OchreAllConfigurationHandler() {
 	}
@@ -138,7 +139,13 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SIMULATIONBROKERPORT+" parameter provided");
 			throw new Exception("Missing parameter "+SIMULATIONBROKERPORT);
 		}
-						
+		
+		String model_id = GridAppsDConstants.getStringProperty(parameters, MODEL_ID, null);
+		if(model_id==null || model_id.trim().length()==0){
+			logManager.error(ProcessStatus.ERROR,processId,"No "+MODEL_ID+" parameter provided");
+			throw new Exception("Missing parameter "+MODEL_ID);
+		}				
+		
 		try{
 			File tmpDir = new File(tempDataPath);
 			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/inputs/ "+tempDataPath);
@@ -150,13 +157,15 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
             							tempDataPath+" "+
             							CONFIG_FILENAME+" "+
             							simulationBrokerPort+" "+
-            							processId);
+            							processId+" "+
+            							model_id);
             logManager.info(ProcessStatus.RUNNING, processId, "python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
 					simulationBrokerHost+" "+ 
 					tempDataPath+" "+
 					CONFIG_FILENAME+" "+
 					simulationBrokerPort+" "+
-					processId);
+					processId+" "+
+					model_id);
 
 			RunCommandLine.runCommand("cp "+tempDataPath+"/inputs/gridlabd/IEEE-13/gld_helics_config.json "+tempDataPath);
 
