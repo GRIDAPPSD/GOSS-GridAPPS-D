@@ -10,6 +10,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -120,7 +121,13 @@ public class SimulationProcess extends Thread {
 
             	//Start gridlabd
 //				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
-				File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+	            //TODO: Change this hard coded startup files
+	            File gldStartupFile = null;
+	            RequestSimulation simRequest = (RequestSimulation)simContext.getRequest();
+	            if (simRequest.power_system_config.Line_name.contains("_13AD8E07-3BF9-A4E2-CB8F-C3722F837B62"))
+	            	gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+	            else
+	            	gldStartupFile = new File(simContext.getSimulationDir()+File.separator+"model_startup.glm");
 				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
 //            	commands.add(simContext.getSimulatorPath());
 				commands.add(gldSimulatorPath);
