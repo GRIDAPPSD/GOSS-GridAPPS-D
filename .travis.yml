@@ -25,8 +25,8 @@ services:
 # prepare the machine before any code
 # installation scripts
 before_install:
-  - './.travis/main.sh'
+#  - './.travis/main.sh'
   
 script:
-  - './gradlew export'
-  - './.travis/build-docker.sh'
+#  - './gradlew export'
+#  - './.travis/build-docker.sh'
