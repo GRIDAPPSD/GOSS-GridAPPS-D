@@ -58,6 +58,7 @@ jobs:
         if: env.DOCKER_IMAGE_NAME != null
         run: |
           TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG#refs/tags/}"
           TAG="${TAG//\//_}"
           ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
           ORG="${ORG:-gridappsd}"
@@ -81,6 +82,7 @@ jobs:
         if: env.DOCKER_IMAGE_NAME != null
         run: |
           TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG#refs/tags/}"
           TAG="${TAG//\//_}"
           ORG=`echo "${{ secrets.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
           ORG="${ORG:-gridappsd}"
