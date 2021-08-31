@@ -46,6 +46,7 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
@@ -54,6 +55,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	final String nsCIM = "http://iec.ch/TC57/CIM100#";
 	final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 	final String nsXSD = "http://www.w3.org/2001/XMLSchema#";
+	final String feederProperty = "http://iec.ch/TC57/CIM100#Feeder.NormalEnergizingSubstation";
 	final String RDF_TYPE = nsRDF+"type";
 	final String RDF_RESOURCE = "rdf:resource";
 	final String RDF_ID = "rdf:ID";
@@ -135,6 +137,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
 //		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://192.168.99.100:8889/bigdata/namespace/kb/sparql");
 		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:8889/bigdata/namespace/kb/sparql");
+		bg.logManager = new LogManagerImpl();
 
 		bg.endpointNSURL = "http://localhost:8889/bigdata/namespace/kb/sparql";
 		try {
@@ -145,7 +148,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON", "12345", "user"));
 			System.out.println(bg.queryModelNameList("12345", "user"));
 			long start = new Date().getTime();
-			String model = bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
+			String model = bg.queryModel("_5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "", "", "XML", "12345", "user");
+//			String model = bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
 //			String model = bg.queryModel("_503D6E20-F499-4CC7-8051-971E23D0BF79", "", "", "XML", "12345", "user");
 			
 			
@@ -287,10 +291,29 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@Override
 	public String queryModel(String modelId, String objectType, String filter, String resultFormat, String processId, String username) throws Exception {
 		String result = null;
-		ResultSet rs = queryModelResultSet(modelId, objectType, filter, processId, username, true);
+		
 		HashSet<String> alreadySeen = new HashSet<String>();
 		Queue<String> newIds = new PriorityQueue<String>();
 		List<BGResult> results = new ArrayList<BGResult>();
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
+		String baseUrl = getEndpointNS(null);
+		
+		//Add initial ids of incoming links
+		String intitialIdQuery = "CONSTRUCT {?s ?p ?o}  WHERE { { ?s ?p ?o . VALUES ?o { <"+getEndpointNS(modelId)+"> }}}";
+		newIds.add(getEndpointNS(modelId));
+		ResultSet rs = queryHandler.construct(intitialIdQuery);
+		while(rs.hasNext()){
+			QuerySolution qs = rs.nextSolution();
+			String subjectUri = qs.getResource(SUBJECT).getURI();
+			String propertyName = qs.getResource(PREDICATE).getURI();
+			if (!alreadySeen.contains(subjectUri) && !newIds.contains(subjectUri) && !RDF_TYPE.equals(propertyName) && subjectUri.startsWith(baseUrl)){
+				newIds.add(subjectUri);
+				
+
+			}
+		}
+		
+//		rs = queryModelResultSet(modelId, objectType, filter, processId, username, true);
 		
 		//Tracks which subjects have been seen already and follows links to pull information on those that haven't been included yet
 		while(rs.hasNext() || newIds.size()>0){
@@ -307,7 +330,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				} else {
 					Resource resource = qs.getResource(OBJECT);
 					value = resource.toString();
-					if(!alreadySeen.contains(value) && !newIds.contains(value)){
+					if(!alreadySeen.contains(value) && !newIds.contains(value) && value.startsWith(baseUrl) && !feederProperty.equals(propertyName)){
 						newIds.add(value);
 					}
 				}
@@ -320,23 +343,40 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				BGResult r = new BGResult(subject, propertyName, value);
 				results.add(r);
 			}
+
 			if(newIds.size()>0){
 				//build query with new ids
-				String newIdQuery = "CONSTRUCT {?s ?p ?o} WHERE { ";
-				
+				String newOutgoingIdQuery = "CONSTRUCT {?s ?p ?o} WHERE { ";
+				String newIncomingIdQuery = "CONSTRUCT {?s ?p ?o}  WHERE { ";
 				for(int i=0;i<100 && newIds.size()>0; i++){
 					String id = newIds.poll();
-					newIdQuery = newIdQuery+"{ ?s ?p ?o . VALUES ?s { <"+id+"> }}  UNION";
+					
+					newOutgoingIdQuery = newOutgoingIdQuery+"{ ?s ?p ?o . VALUES ?s { <"+id+"> }}  UNION";
+					newIncomingIdQuery = newIncomingIdQuery+"{ ?s ?p ?o . VALUES ?o { <"+id+"> }}  UNION";
 					if(!alreadySeen.contains(id)) {
 						alreadySeen.add(id);
 					}
 					
 				}
-				newIdQuery = newIdQuery.substring(0,newIdQuery.length()-6);
-				newIdQuery = newIdQuery+" }";
+				newOutgoingIdQuery = newOutgoingIdQuery.substring(0,newOutgoingIdQuery.length()-6);
+				newOutgoingIdQuery = newOutgoingIdQuery+" }";
+				newIncomingIdQuery = newIncomingIdQuery.substring(0,newIncomingIdQuery.length()-6);
+				newIncomingIdQuery = newIncomingIdQuery+" }";
+				
+				//Get ids for the incoming links
+				rs = queryHandler.construct(newIncomingIdQuery);
+				while(rs.hasNext()){
+					QuerySolution qs = rs.nextSolution();
+					String subjectUri = qs.getResource(SUBJECT).getURI();
+					String propertyName = qs.getResource(PREDICATE).getURI();
 
-				BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(getEndpointURL(modelId), logManager, processId, username);
-				rs = queryHandler.construct(newIdQuery);
+					if (!alreadySeen.contains(subjectUri) && !newIds.contains(subjectUri) && !RDF_TYPE.equals(propertyName) && !feederProperty.equals(propertyName) && subjectUri.startsWith(baseUrl)){
+						newIds.add(subjectUri);
+					}
+				}
+				
+
+				rs = queryHandler.construct(newOutgoingIdQuery);
 				
 				
 				
