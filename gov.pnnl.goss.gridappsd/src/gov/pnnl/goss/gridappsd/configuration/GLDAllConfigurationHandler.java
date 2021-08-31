@@ -117,6 +117,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String STARTTIME_FILTER = "startTime";
 	public static final String ENDTIME_FILTER = "endTime";
 	public static final String MODEL_STATE = "model_state";
+	public static final String SIMULATOR = "simulator";
 	public static final int TIMEFILTER_YEAR = 2013;
 
 //	public static final String CONFIGTARGET = "glm";
@@ -328,6 +329,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		
 		String gldInterface = GridAppsDConstants.getStringProperty(parameters, GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS);
+		String simulator = GridAppsDConstants.getStringProperty(parameters, SIMULATOR, null);
 		
 		String simulationBrokerHost = GridAppsDConstants.getStringProperty(parameters, SIMULATIONBROKERHOST, null);
 		if(simulationBrokerHost==null || simulationBrokerHost.trim().length()==0){
@@ -431,8 +433,14 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			startupFileWriter.println("object helics_msg {");
 			startupFileWriter.println("      name "+simulationID+";");
-			startupFileWriter.println("      message_type JSON;");
-			startupFileWriter.println("      configure model_outputs.json;");
+			if(simulator.equals("GridLAB-D")){
+				startupFileWriter.println("      message_type JSON;");
+				startupFileWriter.println("      configure model_outputs.json;");
+			}
+			else if(simulator.equals("OCHRE")){
+				startupFileWriter.println("      publish_period 3;");
+				startupFileWriter.println("      configure gld_helics_config.json;");
+			}
 			startupFileWriter.println("}");
 
 		} else {

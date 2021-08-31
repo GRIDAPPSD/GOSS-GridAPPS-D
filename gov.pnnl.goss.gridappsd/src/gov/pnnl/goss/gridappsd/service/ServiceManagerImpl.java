@@ -241,6 +241,9 @@ public class ServiceManagerImpl implements ServiceManager{
 		String simulationId = simulationContext.get("simulationId").toString();
 				
 		String instanceId = serviceId+"-"+new Date().getTime();
+		
+		logManager.info(ProcessStatus.RUNNING, simulationId, "Calling start service: "+instanceId);
+
 		// get execution path
 		ServiceInfo serviceInfo = services.get(serviceId);
 		if(serviceInfo==null){
@@ -330,7 +333,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
+				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 			} else if(serviceInfo.getType().equals(ServiceType.JAVA)){
@@ -341,7 +344,7 @@ public class ServiceManagerImpl implements ServiceManager{
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
 				processServiceBuilder.redirectOutput();
-				logManager.debug(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
+				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 	
 					
@@ -378,7 +381,8 @@ public class ServiceManagerImpl implements ServiceManager{
 		
 		//add to service instances map
 		serviceInstances.put(instanceId, serviceInstance);
-		
+		logManager.info(ProcessStatus.RUNNING, simulationId, "Started service: "+instanceId);
+
 		watch(serviceInstance, simulationId);
 		
 		return instanceId;

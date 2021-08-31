@@ -80,7 +80,7 @@ import pnnl.goss.core.server.ServerControl;
 public class SimulationManagerImpl implements SimulationManager{
 
 	private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
-	final static int MAX_INIT_ATTEMPTS = 50;
+	final static int MAX_INIT_ATTEMPTS = 120;
 
 	Client client = null;
 
@@ -141,7 +141,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			simContexts.put(simContext.getSimulationId(), simContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client, securityConfig);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
