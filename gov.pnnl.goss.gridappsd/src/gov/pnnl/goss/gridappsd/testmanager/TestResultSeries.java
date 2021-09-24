@@ -85,7 +85,7 @@ public class TestResultSeries implements Serializable{
 	}
 	
 	public void ppprint(){
-		String temp = String.format("\t %37s %30s %10s %10s ", "object MRID", "attribute", "expected", "actuall" );
+		String temp = String.format("\t %37s %30s %10s %10s ", "object MRID", "attribute", "expected", "actual" );
 		temp += String.format("%10s %37s","Type", "DiffMrid");
 		System.out.println(temp);
 		for (Entry<Map<String,String>, TestResults> iterable_element : results.entrySet()) {
