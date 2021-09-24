@@ -57,6 +57,7 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
@@ -140,6 +141,9 @@ public class TestManagerImpl implements TestManager {
 	
 	// Simulation ID, Status
 	private Hashtable<String, SimulationStatus> sim_status = new Hashtable<String, SimulationStatus>();
+	
+	// Simulation ID, Status
+	private Hashtable<String, SimulationStatus> timeseries_input_status = new Hashtable<String, SimulationStatus>();
 	
 	private Hashtable<String, Long> simLastOutputTime = new Hashtable<String, Long>();
 	private Hashtable<String, Long> simLastInputTime = new Hashtable<String, Long>();
@@ -485,6 +489,7 @@ public class TestManagerImpl implements TestManager {
 //			System.out.println(inputKeys2.toString());
 			public void onMessage(Serializable message) {
 				sim_status.put(simulationId, SimulationStatus.RUNNING);
+				timeseries_input_status.put(simulationId, SimulationStatus.RUNNING);
 				
 
 				TestResultSeries testResultSeries = new TestResultSeries();
@@ -634,10 +639,17 @@ public class TestManagerImpl implements TestManager {
 				}
 
 				// Check if finished
-				if(sim_status.get(simulationId) == SimulationStatus.FINISHED && simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration())){
-					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
-					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
-				}
+//				if(sim_status.get(simulationId) == SimulationStatus.FINISHED && simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration())){
+//					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+//					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+//				}else{
+//					System.out.println("Check if finished input");
+//					System.out.println("sim_status.get(simulationId) " + sim_status.get(simulationId));
+//					System.out.println("simulationTimeStampLong " + simulationTimeStampLong);
+//					System.out.println(testConfig.getStart_time()+testConfig.getDuration());
+//					System.out.println(simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration()));
+//				}
+				timeseries_input_status.put(simulationId, SimulationStatus.FINISHED);
 			}
 		});
 	}
@@ -652,6 +664,7 @@ public class TestManagerImpl implements TestManager {
 			SortedSet<Integer> inputTimeIndexes = null;
 
 			public void onMessage(Serializable message) {
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
 				// Get input time index keys for expected in time window
 				if(inputTimeIndexes==null){
 					inputTimeIndexes = new TreeSet<Integer>();
@@ -918,6 +931,17 @@ public class TestManagerImpl implements TestManager {
 					//TODO: Store results in timeseries store.
 				}
 				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+				// Check if finished
+//				if(sim_status.get(simulationId) == SimulationStatus.FINISHED && simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration())){
+//					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+//					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+//				}else{
+//					System.out.println("Check if finished output");
+//					System.out.println("sim_status.get(simulationId) " + sim_status.get(simulationId));
+//					System.out.println("simulationTimeStampLong " + simulationTimeStampLong);
+//					System.out.println(testConfig.getStart_time()+testConfig.getDuration());
+//					System.out.println(simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration()));
+//				}
 			}
 
 		});
@@ -940,6 +964,24 @@ public class TestManagerImpl implements TestManager {
 					sim_status.put(simulationId, SimulationStatus.FINISHED);
 					// publish finish
 					if(testConfig.getTestType() != TestType.simulation_vs_timeseries){
+						System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+						client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+					}
+					else{
+						int numberOfTries = 0; // wait 180 seconds total for it to finish
+						while (timeseries_input_status.get(simulationId) != SimulationStatus.FINISHED) {
+							System.out.println("Waiting for test to finish");
+							try {
+								TimeUnit.SECONDS.sleep(10);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							numberOfTries++;
+							if(numberOfTries > 18){
+								break;
+							}
+						}
 						System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
 						client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 					}
