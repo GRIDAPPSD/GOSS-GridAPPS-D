@@ -26,6 +26,7 @@ public class HistoricalComparison {
 	private String username;
 	private Client client;
 	private Logger log = LoggerFactory.getLogger(getClass());
+	protected boolean debug = false;
 	
 	public HistoricalComparison(DataManager dataManager, String username, Client client) {
 		this.dataManager = dataManager;
@@ -61,9 +62,11 @@ public class HistoricalComparison {
 			JsonObject expected_input_series = expected_series.get("output").getAsJsonObject();
 			for (Entry<String, JsonElement> time_entry : expected_input_series.entrySet()) {
 				long t_time = Long.parseLong(time_entry.getKey() );
-				System.out.println("getExpectedBetweenStartAndEnd " + start_time +  " " + end_time);
-				System.out.println(t_time);
-				System.out.println(t_time >= start_time && t_time < end_time);
+				if(debug){
+					System.out.println("getExpectedBetweenStartAndEnd " + start_time +  " " + end_time);
+					System.out.println(t_time);
+					System.out.println(t_time >= start_time && t_time < end_time);
+				}
 				if(t_time >= start_time && t_time < end_time){
 					outputs.add(time_entry.getKey(), time_entry.getValue());	
 				}
@@ -75,10 +78,12 @@ public class HistoricalComparison {
 			expected_output_series_window.add("input",inputs);
 			JsonObject expected_input_series = expected_series.get("input").getAsJsonObject();
 			for (Entry<String, JsonElement> time_entry : expected_input_series.entrySet()) {
-				long t_time = Long.parseLong(time_entry.getKey() );
-				System.out.println("getExpectedBetweenStartAndEnd " + start_time +  " " + end_time);
-				System.out.println(t_time);
-				System.out.println(t_time >= start_time && t_time < end_time);
+				long t_time = Long.parseLong(time_entry.getKey());
+				if(debug){
+					System.out.println("getExpectedBetweenStartAndEnd " + start_time +  " " + end_time);
+					System.out.println(t_time);
+					System.out.println(t_time >= start_time && t_time < end_time);
+				}
 				if(t_time >= start_time && t_time < end_time){
 					inputs.add(time_entry.getKey(), time_entry.getValue());	
 				}
@@ -102,7 +107,7 @@ public class HistoricalComparison {
 		for (long window_Start_time = start_time; window_Start_time < start_time+duration; window_Start_time += interval) {
 			long window_end_time= start_time+duration;
 			if (window_Start_time+interval< window_end_time){window_end_time = window_Start_time + interval;}
-			System.out.println("start time " + window_Start_time + "end time " + window_end_time);
+			if(debug){System.out.println("start time " + window_Start_time + "end time " + window_end_time);}
 		
 			String responseStr = timeSeriesQuery(simulationId, "1532971828475", ""+window_Start_time, ""+window_end_time);
 			if(! responseStr.contains("data")){
@@ -119,7 +124,7 @@ public class HistoricalComparison {
 //				tm.forEach((key, value) -> testResultSeries.add(key, value, iterable_element.getValue() );
 ////				testResultSeries.add(key, value, iterable_element.getValue());
 				for (Entry<String, String> pair : tm.entrySet()) {
-				    System.out.println(String.format("Key (name) is: %s, Value (age) is : %s", pair.getKey(), pair.getValue()));
+				    if(debug ) System.out.println(String.format("Key (name) is: %s, Value (age) is : %s", pair.getKey(), pair.getValue()));
 				    testResultSeries.add(pair.getKey(), pair.getValue(), iterable_element.getValue());
 				}
 			}
@@ -141,8 +146,10 @@ public class HistoricalComparison {
 		int interval = testConfig.getInterval();
 		for (long window_Start_time = start_time; window_Start_time < start_time+duration; window_Start_time += interval) {
 			long window_end_time= start_time+duration;
-			if (window_Start_time+interval< window_end_time){window_end_time = window_Start_time + interval;}
-			System.out.println("start time " + window_Start_time + "end time " + window_end_time);
+			if (window_Start_time+interval< window_end_time){
+				window_end_time = window_Start_time + interval;
+			}
+			if(debug){System.out.println("start time " + window_Start_time + "end time " + window_end_time);}
 			String responseStrOne = timeSeriesQuery(simulationIdOne, "1532971828475", ""+window_Start_time, ""+window_end_time);
 			String responseStrTwo = timeSeriesQuery(simulationIdTwo, "1532971828475", ""+window_Start_time, ""+window_end_time);
 			if(! responseStrOne.contains("data")){
@@ -246,7 +253,7 @@ public class HistoricalComparison {
 		request.setSimulationYear(0);
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
-		System.out.println(request.toString());
+		if(debug){System.out.println(request.toString());}
 
 		Serializable response = null;
 
@@ -348,19 +355,53 @@ public class HistoricalComparison {
 		JsonObject simOutputObjectOne = expectedObjectOne.get("output").getAsJsonObject();
 		
 		JsonObject expectedObjectTwo = getExpectedFrom(responseTwo);
-		JsonObject simOutputObjectTwo = expectedObjectTwo.get("output").getAsJsonObject();
+		JsonObject expected_output_series = expectedObjectTwo.get("output").getAsJsonObject();
 		if(testConfig.getTestOutput()){	
-	//		int index = 0;	
-			for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
-	//			System.out.println(time_entry);
-				TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), simOutputObjectTwo);
-	//			tr.pprint();
-				if (tr != null) {
-					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+			// TODO window
+			if(simOutputObjectOne.entrySet().isEmpty() && expected_output_series.entrySet().isEmpty()){
+				System.out.println("Empty inputs");
+				return testResultSeries;
+			}else{
+				HashSet <String> combinedTimes = new HashSet<String>();
+				for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
+					combinedTimes.add(time_entry.getKey());
+					System.out.println("processWithAllTimes two sim"+time_entry.getKey());
 				}
-	//			index++;
+				for (Entry<String, JsonElement> time_entry : expected_output_series.entrySet()) {
+					combinedTimes.add(time_entry.getKey());
+					System.out.println("processWithAllTimes two sim"+time_entry.getKey());
+				}
+//				for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+				for (String time_entry : combinedTimes) {
+					System.out.println(time_entry);
+					TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry,
+							time_entry, 
+							simOutputObjectOne, 
+							expected_output_series, 
+							testConfig.getStart_time(), 
+							testConfig.getStart_time() + testConfig.getDuration());
+//					TestResults tr2 = compareResults.compareExpectedWithSimulationInput(time_entry, time_entry, simInputObject, expected_input_series, window_start_time, window_end_time);
+					
+					if (tr != null) {
+						testResultSeries.add(time_entry, time_entry, tr);
+					}
+				}
 			}
-	//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+		
+			
+			
+			
+//	//		int index = 0;	
+//			for (Entry<String, JsonElement> time_entry : simOutputObjectOne.entrySet()) {
+//	//			System.out.println(time_entry);
+//				TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry.getKey(), time_entry.getValue().getAsJsonObject(), expected_output_series);
+//	//			tr.pprint();
+//				if (tr != null) {
+//					testResultSeries.add(time_entry.getKey(), time_entry.getKey(), tr);
+//				}
+//	//			index++;
+//			}
+//	//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
 		}
 		
 		JsonObject simInputObject = expectedObjectOne.get("input").getAsJsonObject();
@@ -439,7 +480,23 @@ public class HistoricalComparison {
 		if (expectedObject.has("output") && expected_series.has("output") ){
 			JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 			JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
+			HashSet <String> combinedTimes = new HashSet<String>();
+			for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
+				combinedTimes.add(time_entry.getKey());
+			}
+			for (Entry<String, JsonElement> time_entry : expected_output_series.entrySet()) {
+				combinedTimes.add(time_entry.getKey());
+			}
 			
+//			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+			for (String time_entry : combinedTimes) {
+				TestResults tr = compareResults.compareExpectedWithSimulationOutput(time_entry, time_entry, simOutputObject, expected_output_series, window_start_time, window_end_time);
+				if (tr != null) {
+					testResultSeries.add(time_entry, time_entry, tr);
+				}
+			}
+			
+			if(false){ // old why did I do this?  It was a problem with the attribute )"ShuntCompensator" versus "value,magnitude,angle" prop right?
 	//		int index = 0;
 			for (Entry<String, JsonElement> time_entry : simOutputObject.entrySet()) {
 	//			System.out.println(time_entry);
@@ -450,6 +507,7 @@ public class HistoricalComparison {
 	//			index++;
 			}
 	//		System.out.println("Index: " + index + " TestManager number of conflicts: "+ " total " + testResultSeries.getTotal());
+			}
 		} 
 		if (expectedObject.has("input") && expected_series.has("input") ){
 			JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
@@ -461,17 +519,13 @@ public class HistoricalComparison {
 			for (Entry<String, JsonElement> time_entry : expected_input_series.entrySet()) {
 				combinedTimes.add(time_entry.getKey());
 			}
-			
-//			for (Entry<String, JsonElement> time_entry : simInputObject.entrySet()) {
+
 			for (String time_entry : combinedTimes) {
-				System.out.println(time_entry);
 				TestResults tr = compareResults.compareExpectedWithSimulationInput(time_entry, time_entry, simInputObject, expected_input_series, window_start_time, window_end_time);
 				if (tr != null) {
 					testResultSeries.add(time_entry, time_entry, tr);
 				}
 			}
-			
-//			rebaseAndCompare(testResultSeries, compareResults, simInputObject, expected_input_series);
 		}
 		return testResultSeries;
 	}

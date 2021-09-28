@@ -74,6 +74,8 @@ public class TestConfig implements Serializable {
 
 	private Boolean testOutput = true;
 	
+	private Boolean testWithAllSimulationOutput = false;
+
 	private String compareWithSimId;
 	
 	private String compareWithSimIdTwo;
@@ -124,6 +126,14 @@ public class TestConfig implements Serializable {
 
 	public void setTestOutput(Boolean testOutput) {
 		this.testOutput = testOutput;
+	}
+	
+	public Boolean getTestWithAllSimulationOutput() {
+		return testWithAllSimulationOutput;
+	}
+
+	public void setTestWithAllSimulationOutput(Boolean testWithAllSimulationOutput) {
+		this.testWithAllSimulationOutput = testWithAllSimulationOutput;
 	}
 	
 	public String getCompareWithSimId() {
