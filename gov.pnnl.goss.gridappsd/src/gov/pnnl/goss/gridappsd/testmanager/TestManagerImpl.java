@@ -514,7 +514,6 @@ public class TestManagerImpl implements TestManager {
 				int interval = testConfig.getInterval();
 				Stack<TimeInterval> timeIntervals = TimeInterval.getTimeIntervals(lastTimeStamp, simulationTimeStampLong, interval);
 				for (TimeInterval timeInterval : timeIntervals) {
-					System.out.println(timeInterval.toString());
 					HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
 //					String response = hc.timeSeriesQuery(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
 					String response = hc.timeSeriesQueryInput(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
