@@ -349,7 +349,8 @@ public class TestManagerComponentTest {
 		System.out.println("Test Series");
 		testResultSeries1.ppprint();
 		
-		assertEquals(testResultSeries1.getTotal(), 5);
+//		assertEquals(testResultSeries1.getTotal(), 5);
+		assertEquals(testResultSeries1.getTotal(), 7);
 	}	
 	
 	@Test
