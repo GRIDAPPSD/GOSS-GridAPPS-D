@@ -239,25 +239,8 @@ import pnnl.goss.core.Client;
 //			System.out.println(forwardMap.toString());
 			TestResults testResults = new TestResults();
 			if(testConfig.getTestWithAllSimulationOutput()){  // This will generate a lot of data if true
-				if (expectedOutputMap == null){
-					for (Entry<String, JsonElement> entry : outputMap.entrySet()) {
-						long time = Long.parseLong(timestamp1);
-						if(time>=start_time && time < end_time){
-		//					System.out.println(entry);
-							if (entry.getValue().isJsonObject()) {
-								System.out.println("Case no expectedOutputMap");
-								JsonObject expectedOutputObj = outputMap.get(entry.getKey()).getAsJsonObject();
-								for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
-									String prop1 = simentry.getKey();
-									if( ! propSet.contains(prop1))
-										continue;
-									publish(timestamp1, entry.getKey(), prop1, "NA", simentry.getValue().getAsString(), false);
-									testResults.add(entry.getKey(), prop1, "NA",simentry.getValue().getAsString(), false);
-								}
-							}
-						}
-					}
-				}
+				checkIfExpectedOutputIsNull(timestamp1, start_time, end_time, expectedOutputMap, outputMap,
+						testResults);
 			}
 			if (outputMap == null){			
 				for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {
@@ -285,6 +268,30 @@ import pnnl.goss.core.Client;
 			compareExpectedAndSim(timestamp1, expectedOutputMap, testResults, outputMap);
 			
 			return testResults;
+		}
+
+		private void checkIfExpectedOutputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedOutputMap, Map<String, JsonElement> outputMap,
+				TestResults testResults) {
+			if (expectedOutputMap == null){
+				for (Entry<String, JsonElement> entry : outputMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no expectedOutputMap");
+							JsonObject expectedOutputObj = outputMap.get(entry.getKey()).getAsJsonObject();
+							for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+								String prop1 = simentry.getKey();
+								if( ! propSet.contains(prop1))
+									continue;
+								publish(timestamp1, entry.getKey(), prop1, "NA", simentry.getValue().getAsString(), false);
+								testResults.add(entry.getKey(), prop1, "NA",simentry.getValue().getAsString(), false);
+							}
+						}
+					}
+				}
+			}
 		}
 		 
 		/**

@@ -51,8 +51,11 @@ public class HistoricalComparison {
 	 * @param end_time
 	 * @return
 	 */
-	public JsonObject getExpectedBetweenStartAndEnd(JsonObject expected_series, long start_time, long end_time){
-		if(start_time == end_time) end_time++;
+	public JsonObject getExpectedBetweenStartAndEnd(JsonObject expected_series, long start_time, long original_end_time){
+		long end_time = original_end_time;
+		if(start_time == original_end_time){
+			end_time = original_end_time + 1;
+		}
 		JsonObject expected_output_series_window = deepCopy(expected_series, JsonObject.class);
 		
 		if (expected_series.has("output")){
