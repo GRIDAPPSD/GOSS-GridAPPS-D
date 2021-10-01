@@ -90,6 +90,10 @@ import pnnl.goss.core.Client;
 
 		private TestConfig testConfig;
 		
+		protected boolean debug = false;
+		
+		protected String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
+		
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		
 //		public CompareResults(Client client){
@@ -107,11 +111,7 @@ import pnnl.goss.core.Client;
 			propSet.add("angle");
 			propSet.add("magnitude");
 		}
-		
-		String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
-
-		protected boolean debug = false;
-		
+				
 		public static boolean equalsE3(double a, double b){
 		    return a == b ? true : Math.abs(a - b) <= EPSILON_e3;
 		}
@@ -220,8 +220,8 @@ import pnnl.goss.core.Client;
 			Map<String, JsonElement> outputMap = getExpectedOutputMap(timestamp1, simultaionOutput);
 			if(debug){
 				System.out.println("simultaionInput outputMap");
-				System.out.println("simultaionInput expectedOutputMap is null " + new Boolean(expectedOutputMap==null).toString());
-				System.out.println("simultaionInput outputMap is null " + new Boolean(outputMap==null).toString());
+				System.out.println("simultaionInput expectedOutputMap is null " + Boolean.valueOf(expectedOutputMap==null).toString());
+				System.out.println("simultaionInput outputMap is null " + Boolean.valueOf(outputMap==null).toString());
 				if(expectedOutputMap!=null){
 					System.out.println("expectedOutputMap");
 					System.out.println(StringUtils.left(gson.toJson(expectedOutputMap),600));
@@ -316,8 +316,8 @@ import pnnl.goss.core.Client;
 			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
 			if(debug){
 				System.out.println("simultaionInput forwardMap");
-				System.out.println("simultaionInput expectedForwardMap is null " + new Boolean(expectedForwardMap==null).toString());
-				System.out.println("simultaionInput forwardMap is null " + new Boolean(forwardMap==null).toString());
+				System.out.println("simultaionInput expectedForwardMap is null " + Boolean.valueOf(expectedForwardMap==null).toString());
+				System.out.println("simultaionInput forwardMap is null " + Boolean.valueOf(forwardMap==null).toString());
 				if(expectedForwardMap!=null){
 					System.out.println("expectedForwardMap");
 					System.out.println(StringUtils.left(gson.toJson(expectedForwardMap),600));
@@ -558,10 +558,10 @@ import pnnl.goss.core.Client;
 //						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 					if( ! propSet.contains(prop))
 						continue;
-					String propOrAttr = prop;
-					if(simOutputObj.has("attribute")){
-						propOrAttr = simOutputObj.get("attribute").getAsString();
-					}
+//					String propOrAttr = prop;
+//					if(simOutputObj.has("attribute")){
+//						propOrAttr = simOutputObj.get("attribute").getAsString();
+//					}
 					Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
 					// There is a match for that object and property
 					if (comparisonProperty){
@@ -699,10 +699,10 @@ import pnnl.goss.core.Client;
 	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 							if( ! propSet.contains(prop))
 								continue;
-							String propOrAttr = prop;
-							if(simOutputObj.has("attribute")){
-								propOrAttr = simOutputObj.get("attribute").getAsString();
-							}
+//							String propOrAttr = prop;
+//							if(simOutputObj.has("attribute")){
+//								propOrAttr = simOutputObj.get("attribute").getAsString();
+//							}
 							Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
 							// There is a match for that object and property
 							if (comparisonProperty){

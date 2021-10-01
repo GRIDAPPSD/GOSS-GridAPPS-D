@@ -1,14 +1,13 @@
 package gov.pnnl.goss.gridappsd;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -34,7 +33,6 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -305,6 +303,8 @@ public class TestManagerComponentTest {
 		System.out.println(gson.toJson(expected_series_window1));
 		JsonObject expected_series_window2 = hc.getExpectedBetweenStartAndEnd(expected_series, 1248156014, 1248156014+10);
 		System.out.println(gson.toJson(expected_series_window2));
+		assertTrue(expected_series_window2.get("input").getAsJsonObject().has("1248156014"));
+		assertFalse(expected_series_window2.get("input").getAsJsonObject().has("1587670665"));
 	}
 	
 	@Test
@@ -341,7 +341,7 @@ public class TestManagerComponentTest {
 				+ "]\"}"; 
  
 		JsonObject jsonObject = CompareResults.getSimulationJson(res); 
-		String data = jsonObject.get("data").getAsString();
+//		String data = jsonObject.get("data").getAsString();
 //		System.out.println(data.substring(0, 100));
 		TestConfig tc = new TestConfig();
 		

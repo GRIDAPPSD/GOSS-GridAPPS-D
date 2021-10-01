@@ -44,9 +44,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.google.gson.Gson;
 
 public class TestResultSeries implements Serializable{
