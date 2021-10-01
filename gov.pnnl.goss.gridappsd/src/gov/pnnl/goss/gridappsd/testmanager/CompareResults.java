@@ -242,6 +242,20 @@ import pnnl.goss.core.Client;
 				checkIfExpectedOutputIsNull(timestamp1, start_time, end_time, expectedOutputMap, outputMap,
 						testResults);
 			}
+			checkIfSimulationOutputIsNull(timestamp1, start_time, end_time, expectedOutputMap, outputMap, testResults);
+
+				
+			if (expectedOutputMap == null || outputMap == null){
+				return testResults;
+			}
+			compareExpectedAndSim(timestamp1, expectedOutputMap, testResults, outputMap);
+			
+			return testResults;
+		}
+
+		private void checkIfSimulationOutputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedOutputMap, Map<String, JsonElement> outputMap,
+				TestResults testResults) {
 			if (outputMap == null){			
 				for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {
 					long time = Long.parseLong(timestamp1);
@@ -260,14 +274,6 @@ import pnnl.goss.core.Client;
 					}
 				}
 			}
-
-				
-			if (expectedOutputMap == null || outputMap == null){
-				return testResults;
-			}
-			compareExpectedAndSim(timestamp1, expectedOutputMap, testResults, outputMap);
-			
-			return testResults;
 		}
 
 		private void checkIfExpectedOutputIsNull(String timestamp1, long start_time, long end_time,
