@@ -369,42 +369,10 @@ import pnnl.goss.core.Client;
 					testResults);
 			checkIfExpectedReverseInputIsNull(timestamp1, start_time, end_time, expectedReverseMap, reverseMap,
 					testResults);
-			if (forwardMap == null){			
-				for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
-					long time = Long.parseLong(timestamp1);
-					if(time>=start_time && time < end_time){
-	//					System.out.println(entry);
-						if (entry.getValue().isJsonObject()) {
-							if(debug){System.out.println("Case no forwardMap");}
-							JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
-							String objectMRID = expectedOutputObj.get("object").getAsString();
-							String attr = expectedOutputObj.get("attribute").getAsString();
-							String value = expectedOutputObj.get("value").toString();
-//							System.out.println("no index for "+ timestamp2);
-							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
-							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
-						}
-					}
-				}
-			}
-			if (reverseMap == null){			
-				for (Entry<String, JsonElement> entry : expectedReverseMap.entrySet()) {
-					long time = Long.parseLong(timestamp1);
-					if(time>=start_time && time < end_time){
-	//					System.out.println(entry);
-						if (entry.getValue().isJsonObject()) {
-							if(debug){System.out.println("Case no reverseMap");}
-							JsonObject expectedOutputObj = expectedReverseMap.get(entry.getKey()).getAsJsonObject();
-							String objectMRID = expectedOutputObj.get("object").getAsString();
-							String attr = expectedOutputObj.get("attribute").getAsString();
-							String value = expectedOutputObj.get("value").toString();
-//							System.out.println("no index for "+ timestamp2);
-							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
-							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
-						}
-					}
-				}
-			}
+			checkIfSimulationForwardInputIsNull(timestamp1, start_time, end_time, expectedForwardMap, forwardMap,
+					testResults);
+			checkIfSimulationReverseInputIsNull(timestamp1, start_time, end_time, expectedReverseMap, reverseMap,
+					testResults);
 				
 			if (expectedForwardMap == null || forwardMap == null){
 				return testResults;
@@ -428,6 +396,52 @@ import pnnl.goss.core.Client;
 			
 			return testResults;
 //			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+		}
+
+		protected void checkIfSimulationReverseInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedReverseMap, Map<String, JsonElement> reverseMap,
+				TestResults testResults) {
+			if (reverseMap == null){			
+				for (Entry<String, JsonElement> entry : expectedReverseMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							if(debug){System.out.println("Case no reverseMap");}
+							JsonObject expectedOutputObj = expectedReverseMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+						}
+					}
+				}
+			}
+		}
+
+		protected void checkIfSimulationForwardInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedForwardMap, Map<String, JsonElement> forwardMap,
+				TestResults testResults) {
+			if (forwardMap == null){			
+				for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							if(debug){System.out.println("Case no forwardMap");}
+							JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
 		}
 
 		protected void checkIfExpectedReverseInputIsNull(String timestamp1, long start_time, long end_time,
