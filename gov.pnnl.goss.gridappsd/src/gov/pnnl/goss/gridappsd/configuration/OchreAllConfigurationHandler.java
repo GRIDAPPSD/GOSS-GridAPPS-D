@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.configuration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -144,12 +145,13 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 		if(model_id==null || model_id.trim().length()==0){
 			logManager.error(ProcessStatus.ERROR,processId,"No "+MODEL_ID+" parameter provided");
 			throw new Exception("Missing parameter "+MODEL_ID);
-		}				
+		}
 		
 		try{
 			File tmpDir = new File(tempDataPath);
 			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/inputs/ "+tempDataPath);
 			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/agents/ "+tempDataPath);
+			
 			simulationBrokerHost = "localhost";
 			
             RunCommandLine.runCommand("python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
@@ -166,8 +168,6 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 					simulationBrokerPort+" "+
 					processId+" "+
 					model_id);
-
-			RunCommandLine.runCommand("cp "+tempDataPath+"/inputs/gridlabd/IEEE-13/gld_helics_config.json "+tempDataPath);
 
 		}catch(Exception e){
             log.warn("Could not create OCHRE HELICS config file");

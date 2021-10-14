@@ -120,7 +120,8 @@ public class SimulationProcess extends Thread {
 
             	//Start gridlabd
 //				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
-				File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+				//File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+	            File gldStartupFile = new File(simContext.simulationDir+File.separator+"model_startup.glm");
 				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
 //            	commands.add(simContext.getSimulatorPath());
 				commands.add(gldSimulatorPath);
