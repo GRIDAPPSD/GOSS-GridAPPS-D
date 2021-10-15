@@ -520,7 +520,6 @@ class HelicsGossBridge(object):
                 create_db_connection(archive_db_file)
             message = {}
             message['command'] = 'nextTimeStep'
-            measurement_message_count = 0
             simulation_run_time_start = time.perf_counter()
             for current_time in range(simulation_length):
                 if self._stop_simulation == True:
@@ -542,20 +541,6 @@ class HelicsGossBridge(object):
                     message['output'] = self._get_helics_bus_messages(self._measurement_filter)
                 else:
                     message['output'] = {}
-                response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
-
-                if message['output']!={}:
-                    measurement_message_count += 1
-                    log.debug(f"measurement message recieved at timestep {current_time}.")
-                    if not only_archive:
-                        self._gad_connection.send(simulation_output_topic, response_msg)
-                    if archive_db_file:
-                        ts = message['output']['message']['timestamp']
-                        meas = message['output']['message']['measurements']
-                        log.debug("Passing timestamp {ts} to write_db_archive".format(ts=ts))
-                        write_db_archive(ts, meas)
-                    if targz_file:
-                        targz_file.write((response_msg+"\n").encode('utf-8'))
                 if self._simulation_time == self._pause_simulation_at:
                     self._pause_simulation = True
                     log.info('The simulation has paused.')
@@ -591,19 +576,6 @@ class HelicsGossBridge(object):
                 message['output'] = self._get_helics_bus_messages(self._measurement_filter)
             else:
                 message['output'] = {}
-            response_msg = json.dumps(message['output'], indent=4, sort_keys=True)
-            if message['output']!={}:
-                measurement_message_count += 1
-                log.debug("measurement message received at end of simulation.")
-                if not only_archive:
-                    self._gad_connection.send(simulation_output_topic, response_msg)
-                if archive_db_file:
-                    ts = message['output']['message']['timestamp']
-                    meas = message['output']['message']['measurements']
-                    log.debug(f"Passing timestamp {ts} to write_db_archive")
-                    write_db_archive(ts, meas)
-                if targz_file:
-                    targz_file.write((response_msg+"\n").encode('utf-8'))
             if not self._stop_simulation:
                 if federate_state == 2:
                     helics.helicsFederateFinalize(self._helics_federate)
@@ -615,7 +587,6 @@ class HelicsGossBridge(object):
             self._gad_connection.send(self._simulation_manager_input_topic, json.dumps(message))
             log.info(f'Simulation {self._simulation_id} has finished.')
             self._gad_connection.send_simulation_status('COMPLETE', f'Simulation {self._simulation_id} has finished.', 'INFO')
-            log.debug(f"total measurement messages received {measurement_message_count}")
         except Exception as e:
             message_str = f'Error in run simulation {traceback.format_exc()}'
             log.error(message_str)
@@ -743,8 +714,8 @@ class HelicsGossBridge(object):
                     'goss_message is not a json formatted string of a python dictionary.'
                     + f'\ngoss_message = {goss_message}')
             helics_input_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_input")
-            helics_input_message = {f"{self._simulation_id}" : {}}
-            # helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
+            helics_input_message = {}
+            helics_input_message["external_event_handler"] = {}
             forward_differences_list = test_goss_message_format["message"]["forward_differences"]
             reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
             fault_list = []
@@ -775,84 +746,84 @@ class HelicsGossBridge(object):
                                     "object_property_list":object_property_list
                                 }
                                 raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
-                            if (object_name_prefix + object_name) not in helics_input_message[f"{self._simulation_id}"].keys():
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name] = {}
+                            if (object_name_prefix + object_name) not in helics_input_message.keys():
+                                helics_input_message[object_name_prefix + object_name] = {}
                             if cim_attribute == "RegulatingControl.mode":
                                 val = int(x.get("value"))
                                 if val == 0:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VOLT"
                                 if val == 1:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                                 elif val == 2:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VAR"
                                 elif val == 3:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
                                 else:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                                     log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
                                     self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
                             elif cim_attribute == "RegulatingControl.targetDeadband":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "RegulatingControl.targetValue":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "RotatingMachine.p":
                                 for y in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "RotatingMachine.q":
                                 for y in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "ShuntCompensator.aVRDelay":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "ShuntCompensator.sections":
                                 if int(x.get("value")) == 1:
                                     val = "CLOSED"
                                 else:
                                     val = "OPEN"
                                 for y in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
                             elif cim_attribute == "Switch.open":
                                 if int(x.get("value")) == 1:
                                     val = "OPEN"
                                 else:
                                     val = "CLOSED"
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = f"{val}"
                             elif cim_attribute == "TapChanger.initialDelay":
                                 for y in object_property_list:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.step":
                                 for y in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropCompensation":
                                 if int(x.get("value")) == 1:
                                     val = "LINE_DROP_COMP"
                                 else:
                                     val = "MANUAL"
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = f"{val}"
                             elif cim_attribute == "TapChanger.lineDropR":
                                 for y in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropX":
                                 for y in object_phases:
-                                  helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                  helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "PowerElectronicsConnection.p":
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
                             elif cim_attribute == "PowerElectronicsConnection.q":
-                                helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
                             elif cim_attribute == "EnergyConsumer.p":
                                 phase_count = len(object_phases)
                                 if "s1" in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
                                 if "s2" in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
                                 if "A" in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
                                 if "B" in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
                                 if "C" in object_phases:
-                                    helics_input_message[f"{self._simulation_id}"][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
                             
                             else:
                                 log.warning(f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.")
@@ -905,12 +876,13 @@ class HelicsGossBridge(object):
                     fault_val_dict["name"] = x.get("object", "")
                     fault_list.append(fault_val_dict)
             if len(fault_list) != 0:
-                helics_input_message[f"{self._simulation_id}"]["external_event_handler"] = {}
-                helics_input_message[f"{self._simulation_id}"]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
+                helics_input_message["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
+            if helics_input_message["external_event_handler"] == {}:
+                del helics_input_message["external_event_handler"]
             goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
             log.info(f"Sending the following message to the simulator. {goss_message_converted}")
             self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to the simulator. {goss_message_converted}","INFO")
-            if federate_state == 2 and helics_input_message[f"{self._simulation_id}"] != {}:
+            if federate_state == 2 and helics_input_message != {}:
                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
                 helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
@@ -955,139 +927,147 @@ class HelicsGossBridge(object):
                     + f'simulation_id = {self._simulation_id}')
             helics_output_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_output")
             has_message = helics.helicsEndpointHasMessage(helics_output_endpoint)
+            pending_message_count = helics.helicsEndpointPendingMessagesCount(helics_output_endpoint)
             if has_message:
-                message_str = 'helics_output has a message'
+                message_str = f'helics_output has {pending_message_count} messages'
             else:
                 message_str = 'helics_output has no messages'
             log.debug(message_str)
             self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
+            
             cim_output = {}
             if has_message:
                 t_now = datetime.utcnow()
+                current_time = int(time.mktime(t_now.timetuple()))
                 cim_measurements_dict = {
                     "simulation_id": self._simulation_id,
                     "message" : {
-                        "timestamp" : int(time.mktime(t_now.timetuple())),
+                        "timestamp" : current_time,
                         "measurements" : {}
                     }
                 }
-                helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
-                helics_output = helics.helicsMessageGetString(helics_message)
-                helics_output_dict = json.loads(helics_output)
-                
-                sim_dict = helics_output_dict.get(self._simulation_id, None)
-                if sim_dict != None:
-                    simulation_time = int(sim_dict.get("globals",{}).get("clock", 0))
-                    if simulation_time != 0:
-                        cim_measurements_dict["message"]["timestamp"] = simulation_time
-                    for x in self._object_property_to_measurement_id.keys():
-                        objectName = x
-                        gld_properties_dict = sim_dict.get(x,None)
-                        if gld_properties_dict == None:
-                            err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
-                            log.warning(err_msg)
-                            self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
-                        else:
-                            for y in self._object_property_to_measurement_id.get(x,[]):
-                                measurement = {}
-                                property_name = y["property"]
-                                propertyName = property_name
-                                if y["measurement_mrid"] not in measurement_filter:
-                                    measurement["measurement_mrid"] = y["measurement_mrid"]
-                                    phases = y["phases"]
-                                    conducting_equipment_type_str = y["conducting_equipment_type"]
-                                    prop_val_str = gld_properties_dict.get(property_name, None)
-                                    propertyValue = prop_val_str
-                                    objectType = conducting_equipment_type_str
-                                    if prop_val_str == None:
-                                        err_msg = f"{property_name} measurement for object {x} is missing from the simulator output."
-                                        log.warning(err_msg)
-                                        self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
-                                    else:
-                                        val_str = str(prop_val_str).split(" ")[0]
-                                        conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
-                                        if conducting_equipment_type == "LinearShuntCompensator":
-                                            if property_name in ["voltage_"+phases]:
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag
-                                                measurement["angle"] = ang_deg
-                                            elif property_name in ["shunt_"+phases]:
-                                                # Need voltage value and switch status to compute the reactive power
-                                                prop_val_str = gld_properties_dict.get("voltage_"+phases, None)
-                                                val_strVolt = str(prop_val_str).split(" ")[0]
-                                                valVolt = complex(val_strVolt)
-                                                (magV,ang_radV) = cmath.polar(valVolt)
-                                                prop_val_str = gld_properties_dict.get("switch"+phases, None)
-                                                val_str_switch = str(prop_val_str).split(" ")[0]
-                                                status = 1
-                                                if val_str_switch == "OPEN":
-                                                    status = 0
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag * magV * magV * status
-                                                measurement["angle"] = ang_deg
-                                            else:
-                                                if val_str == "OPEN":
-                                                    measurement["value"] = 0
-                                                else:
-                                                    measurement["value"] = 1
-                                        elif conducting_equipment_type == "PowerTransformer":
-                                            if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag
-                                                measurement["angle"] = ang_deg
-                                            else:
-                                                measurement["value"] = int(val_str)
-                                        elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
-                                            if property_name == "state_of_charge":
-                                                measurement["value"] = float(val_str)*100.0
-                                            else:
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag
-                                                measurement["angle"] = ang_deg
-                                        elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
-                                            if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag
-                                                measurement["angle"] = ang_deg
-                                            else:
-                                                if val_str == "OPEN":
-                                                    measurement["value"] = 0
-                                                else:
-                                                    measurement["value"] = 1
-                                        elif conducting_equipment_type == "RatioTapChanger":
-                                            if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
-                                                val = complex(val_str)
-                                                (mag,ang_rad) = cmath.polar(val)
-                                                ang_deg = math.degrees(ang_rad)
-                                                measurement["magnitude"] = mag
-                                                measurement["angle"] = ang_deg
-                                            else:
-                                                measurement["value"] = int(val_str)
+                for x in range(pending_message_count):
+                    helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
+                    helics_output = helics.helicsMessageGetString(helics_message)
+                    helics_message_source = helics.helicsMessageGetSource(helics_message)
+                    if "status" in helics_message_source:
+                        ochre_simulation_output_topic = f"/topic/goss.gridappsd.simulation.ochre.output.{self._simulation_id}"
+                        log.debug(f"ochre measurement message recieved at timestep {current_time}.")
+                        self._gad_connection.send(ochre_simulation_output_topic, helics_output)
+                    else:
+                        helics_output_dict = json.loads(helics_output)
+                        
+                        sim_dict = helics_output_dict.get(self._simulation_id, None)
+                        if sim_dict == None:
+                            sim_dict = helics_output_dict
+                        simulation_time = int(sim_dict.get("globals",{}).get("clock", 0))
+                        if simulation_time != 0:
+                            cim_measurements_dict["message"]["timestamp"] = simulation_time
+                        for x in self._object_property_to_measurement_id.keys():
+                            objectName = x
+                            gld_properties_dict = sim_dict.get(x,None)
+                            if gld_properties_dict == None:
+                                err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
+                                log.warning(err_msg)
+                                self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
+                            else:
+                                for y in self._object_property_to_measurement_id.get(x,[]):
+                                    measurement = {}
+                                    property_name = y["property"]
+                                    propertyName = property_name
+                                    if y["measurement_mrid"] not in measurement_filter:
+                                        measurement["measurement_mrid"] = y["measurement_mrid"]
+                                        phases = y["phases"]
+                                        conducting_equipment_type_str = y["conducting_equipment_type"]
+                                        prop_val_str = gld_properties_dict.get(property_name, None)
+                                        propertyValue = prop_val_str
+                                        objectType = conducting_equipment_type_str
+                                        if prop_val_str == None:
+                                            err_msg = f"{property_name} measurement for object {x} is missing from the simulator output."
+                                            log.warning(err_msg)
+                                            self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
                                         else:
-                                            log.warning(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
-                                            self._gad_connection.send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                            raise RuntimeError(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
-                                            # Should it raise runtime?
-                                        # change to be a dictionary rather than an array
-                                        cim_measurements_dict['message']["measurements"][measurement["measurement_mrid"]] = measurement
-                    cim_output = cim_measurements_dict
-                else:
-                    err_msg = "The message recieved from the simulator did not have the simulation id as a key in the json message."
-                    log.error(err_msg)
-                    self._gad_connection.send_simulation_status('ERROR', err_msg, 'ERROR')
-                    raise RuntimeError(err_msg)
+                                            val_str = str(prop_val_str).split(" ")[0]
+                                            conducting_equipment_type = str(conducting_equipment_type_str).split("_")[0]
+                                            if conducting_equipment_type == "LinearShuntCompensator":
+                                                if property_name in ["voltage_"+phases]:
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag
+                                                    measurement["angle"] = ang_deg
+                                                elif property_name in ["shunt_"+phases]:
+                                                    # Need voltage value and switch status to compute the reactive power
+                                                    prop_val_str = gld_properties_dict.get("voltage_"+phases, None)
+                                                    val_strVolt = str(prop_val_str).split(" ")[0]
+                                                    valVolt = complex(val_strVolt)
+                                                    (magV,ang_radV) = cmath.polar(valVolt)
+                                                    prop_val_str = gld_properties_dict.get("switch"+phases, None)
+                                                    val_str_switch = str(prop_val_str).split(" ")[0]
+                                                    status = 1
+                                                    if val_str_switch == "OPEN":
+                                                        status = 0
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag * magV * magV * status
+                                                    measurement["angle"] = ang_deg
+                                                else:
+                                                    if val_str == "OPEN":
+                                                        measurement["value"] = 0
+                                                    else:
+                                                        measurement["value"] = 1
+                                            elif conducting_equipment_type == "PowerTransformer":
+                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag
+                                                    measurement["angle"] = ang_deg
+                                                else:
+                                                    measurement["value"] = int(val_str)
+                                            elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
+                                                if property_name == "state_of_charge":
+                                                    measurement["value"] = float(val_str)*100.0
+                                                else:
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag
+                                                    measurement["angle"] = ang_deg
+                                            elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
+                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag
+                                                    measurement["angle"] = ang_deg
+                                                else:
+                                                    if val_str == "OPEN":
+                                                        measurement["value"] = 0
+                                                    else:
+                                                        measurement["value"] = 1
+                                            elif conducting_equipment_type == "RatioTapChanger":
+                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                                    val = complex(val_str)
+                                                    (mag,ang_rad) = cmath.polar(val)
+                                                    ang_deg = math.degrees(ang_rad)
+                                                    measurement["magnitude"] = mag
+                                                    measurement["angle"] = ang_deg
+                                                else:
+                                                    measurement["value"] = int(val_str)
+                                            else:
+                                                log.warning(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
+                                                self._gad_connection.send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
+                                                raise RuntimeError(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
+                                                # Should it raise runtime?
+                                            # change to be a dictionary rather than an array
+                                            cim_measurements_dict['message']["measurements"][measurement["measurement_mrid"]] = measurement
+                        cim_output = cim_measurements_dict
+                        log.debug(f"measurement message recieved at timestep {current_time}.")
+                        self._gad_connection.send(topics.simulation_output_topic(self._simulation_id), json.dumps(cim_output, indent=4, sort_keys=True))
             log.debug(f"Message from simulation processing time: {time.perf_counter() - get_helics_bus_messages_start}.")
-            return cim_output
+            return {}
         except ValueError as ve:
             raise RuntimeError(f"{str(ve)}.\nObject Name: {objectName}\nObject Type: {objectType}\nProperty Name: {propertyName}\n Property Value{propertyValue}")
         except Exception as e:
