@@ -433,14 +433,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			startupFileWriter.println("object helics_msg {");
 			startupFileWriter.println("      name "+simulationID+";");
-			if(simulator.equals("GridLAB-D")){
+			if(simulator.equalsIgnoreCase("gridlab-d"))
 				startupFileWriter.println("      message_type JSON;");
-				startupFileWriter.println("      configure model_outputs.json;");
-			}
-			else if(simulator.equals("OCHRE")){
-				startupFileWriter.println("      publish_period 3;");
-				startupFileWriter.println("      configure gld_helics_config.json;");
-			}
+			startupFileWriter.println("      publish_period 3;");
+			startupFileWriter.println("      configure model_outputs.json;");
 			startupFileWriter.println("}");
 
 		} else {

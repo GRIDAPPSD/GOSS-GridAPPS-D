@@ -106,12 +106,20 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 	
 	
-	public static final String HELICS_PREFIX = "{\"name\": \"PROCESS_ID\",\"log_level\": 3,"
-			+ "\"period\": 1.0,\"broker\": \"BROKER_LOCATION:BROKER_PORT\",\"endpoints\": [{\"name\": \"helics_input\","
-			+ "\"global\": false,\"type\": \"string\",	"
-			+ "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\"},"
-			+ "{\"name\": \"helics_output\",\"global\": false,\"type\": \"string\",	"
-			+ "\"destination\": \"HELICS_GOSS_Bridge_PROCESS_ID/helics_output\",	\"info\": \"";
+	public static final String HELICS_PREFIX = "{\"name\": \"PROCESS_ID\","
+											  + "\"log_level\": 3,"
+											  + "\"period\": 1.0,"
+											  + "\"broker\": \"BROKER_LOCATION:BROKER_PORT\","
+											  + "\"endpoints\": [{"
+											  + "				  \"name\": \"helics_input\","
+											  + "				  \"global\": false,\"type\": \"string\",	"
+											  + 				  "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\""
+											  + "				 },"
+											  + "				 {"
+											  + "				  \"name\": \"helics_output\","
+											  + "				  \"global\": false,"
+											  + "				  \"type\": \"string\",	"
+											  + "				  \"destination\": \"HELICS_GOSS_Bridge_PROCESS_ID/helics_output\",	\"info\": \"";
 	public static final String HELICS_SUFFIX = "\"}]}";
 
 	public GLDSimulationOutputConfigurationHandler() {
