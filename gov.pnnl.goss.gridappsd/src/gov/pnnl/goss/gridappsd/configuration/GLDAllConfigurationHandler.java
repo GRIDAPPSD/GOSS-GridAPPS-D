@@ -468,7 +468,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.println("     eventgen_object external_event_handler;");
 		startupFileWriter.println("     output_filename fault_check_output.txt;");
 		startupFileWriter.println("     strictly_radial FALSE;");
-		startupFileWriter.println("     grid_association TRUE;");
+		//TODO: Remove if condition and set grid_association to TRUE once issue with GridLAB-D is resolved
+		if(modelId.equals("_5DB4FA23-623B-4DBE-BA59-B99ECF44DABA"))
+			startupFileWriter.println("     grid_association FALSE;");
+		else
+			startupFileWriter.println("     grid_association TRUE");
 		startupFileWriter.println("}");
 		startupFileWriter.println("object eventgen {");
 		startupFileWriter.println("     name external_event_handler;");
