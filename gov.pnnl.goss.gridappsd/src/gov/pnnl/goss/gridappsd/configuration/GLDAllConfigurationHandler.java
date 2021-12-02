@@ -472,7 +472,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		if(modelId.equals("_5DB4FA23-623B-4DBE-BA59-B99ECF44DABA"))
 			startupFileWriter.println("     grid_association FALSE;");
 		else
-			startupFileWriter.println("     grid_association TRUE");
+			startupFileWriter.println("     grid_association TRUE;");
 		startupFileWriter.println("}");
 		startupFileWriter.println("object eventgen {");
 		startupFileWriter.println("     name external_event_handler;");
