@@ -187,7 +187,7 @@ public class SimulationProcess extends Thread {
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
-            client.subscribe(GridAppsDConstants.topic_COSIM_output, gossFncsResponseEvent);
+            client.subscribe("/topic/"+GridAppsDConstants.topic_COSIM_output, gossFncsResponseEvent);
             
             logManager.info(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation is initialized, currently "+isInitialized.isInited);
 
