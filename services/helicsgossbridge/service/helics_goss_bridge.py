@@ -115,7 +115,7 @@ class HelicsGossBridge(object):
     _helics_configuration = {}
     _helics_federate = None
     _is_initialized = False
-    _simulation_manager_input_topic = 'goss.gridappsd.cosim.output'
+    _simulation_manager_input_topic = '/topic/goss.gridappsd.cosim.output'
     _simulation_command_queue = Queue()
     _start_simulation = False
     _filter_all_commands = False
