@@ -1,10 +1,11 @@
 package gov.pnnl.goss.gridappsd;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedSet;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,7 +33,6 @@ import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.DataManagerImpl;
 import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
@@ -172,7 +174,7 @@ public class TestManagerComponentTest {
 //		Assert.assertEquals(o1, o2);
 	}
 	
-
+//	@Test
 	public void proven(){
 		try {
 			Mockito.when(clientFactory.create(Mockito.any(),  Mockito.any())).thenReturn(client);
@@ -189,14 +191,15 @@ public class TestManagerComponentTest {
 //		ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
 //		dataManager.start();
 		DataManagerImpl dataM = new DataManagerImpl();
-		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
-		configManager.start();
+//		ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
+//		configManager.start();
 		Response r = null;
-		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"145774843\"}, \"responseFormat\": \"JSON\"}";
+		String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"1404197350\"}, \"responseFormat\": \"JSON\"}";
 		try {
-			r = dataM.processDataRequest(request1, "timeseries", "1598820656", "/tmp/gridappsd_tmp", "system");
+			r = dataM.processDataRequest(request1, "timeseries", "1598820656", null, "system");
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
+			System.out.println("exeception");
 			e1.printStackTrace();
 		}
 		System.out.println(r);
@@ -208,7 +211,7 @@ public class TestManagerComponentTest {
 
 		RequestTimeseriesData request = new RequestTimeseriesData(); 
 		HashMap<String,Object> queryFilter = new HashMap <String,Object>();
-		queryFilter.put("hasSimulationId", "145774843");
+		queryFilter.put("hasSimulationId", "1404197350");
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);
 //		request.setSimulationId("1278337149");
@@ -252,7 +255,7 @@ public class TestManagerComponentTest {
 		JsonObject expectedObject = hc.buildExpectedFromTimeseries(measurements);
 		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
 
-		TestResultSeries testResultSeries1 =hc.processWithAllTimes(expected_series, tc, res);
+		TestResultSeries testResultSeries1 =hc.processExpectedAndTimeseries(expected_series, tc, res, 1248156002, 1248156002);
 		assertEquals(testResultSeries1.getTotal(), 1);
 		
 		JsonObject expected_output_series = expected_series.get("output").getAsJsonObject();
@@ -287,31 +290,113 @@ public class TestManagerComponentTest {
 	}
 	
 	@Test
-	public void testExpectedVersusResponse2(){
+	public void testExpectedTimeWindow(){
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
 		HistoricalComparison hc = new HistoricalComparison(dataManager, "system", client);
 		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
 		expected_proven = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -5.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}},"
 				+ "                              \"input\": {\"1248156014\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1248156014, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}},"
 				+ "                                          \"1587670665\":         {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670665, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}]}}}}}";
 		JsonObject expected_series = CompareResults.getSimulationJson(expected_proven).get("expectedResults").getAsJsonObject();
+		JsonObject expected_series_window1 = hc.getExpectedBetweenStartAndEnd(expected_series, 1248156002, 1248156002+1);
+		System.out.println(gson.toJson(expected_series_window1));
+		JsonObject expected_series_window2 = hc.getExpectedBetweenStartAndEnd(expected_series, 1248156014, 1248156014+10);
+		System.out.println(gson.toJson(expected_series_window2));
+		assertTrue(expected_series_window2.get("input").getAsJsonObject().has("1248156014"));
+		assertFalse(expected_series_window2.get("input").getAsJsonObject().has("1587670665"));
+	}
+	
+	@Test
+	public void testExpectedVersusResponse2(){
+		HistoricalComparison hc = new HistoricalComparison(dataManager, "system", client);
+//		String expected_proven = "{\"appId\": \"sample_app\", \"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -4.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}}, \"input\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\"}, {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670650, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\"}]}}}}}";
+		String expected_proven = "{\"expectedResults\": {\"output\": {\"1248156002\": {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1535574871, \"measurements\": [{\"measurement_mrid\": \"_0055de94-7d7e-4931-a884-cab596cc191b\", \"angle\": -5.066423674487563, \"magnitude\": 2361.0733024639117, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\", \"angle\": -122.80107769837849, \"magnitude\": 2520.2169329056983, \"simulation_id\": \"1961648576\", \"time\": 1248156002}, {\"measurement_mrid\": \"_0058123f-da11-4f7c-a429-e47e5949465f\", \"angle\": -122.70461031091335, \"magnitude\": 2522.818525429715, \"simulation_id\": \"1961648576\", \"time\": 1248156002}]}}},"
+				+ "                              \"input\": {\"1248156014\": "
+				+ "{\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1248156014, \"measurements\": "
+				+ "["
+				+ "{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, "
+				+ "{\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, "
+				+ "{\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_only_in_expected\"}, "
+				+ "{\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1248156014, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_only_in_expected\"}"
+
+				+ "]}},"
+				+ "                                          \"1587670665\":    "
+				+ "     {\"simulation_id\": \"559402036\", \"message\": {\"timestamp\": 1587670665, \"measurements\": "
+				+ "["
+				+ " {\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}, "
+				+ " {\"hasMeasurementDifference\": \"REVERSE\", \"difference_mrid\": \"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\", \"simulation_id\": \"1961648576\", \"time\": 1587670665, \"attribute\": \"ShuntCompensator.sections\", \"value\": 1.0, \"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\"}"
+				+ "]}}}}}";
+		JsonObject expected_series = CompareResults.getSimulationJson(expected_proven).get("expectedResults").getAsJsonObject();
 		
-		String res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002},"
+		String res = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0055de94-7d7e-4931-a884-cab596cc191b\\\", \\\"angle\\\": -2.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002},"
+				+ " {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002},"
+				+ " {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2622.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156005},"
 				+ " {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156014, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, "
 				+ " {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156014, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, "
+				+ " {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156016, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, "
+				+ " {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156016, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}, "
 				+ " {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"},"
 				+ " {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1587670665, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\\\"}"
-				+ "]\"}";
-
+				+ "]\"}"; 
+ 
 		JsonObject jsonObject = CompareResults.getSimulationJson(res); 
-		String data = jsonObject.get("data").getAsString();
-		System.out.println(data.substring(0, 100));
+//		String data = jsonObject.get("data").getAsString();
+//		System.out.println(data.substring(0, 100));
 		TestConfig tc = new TestConfig();
 		
-		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res);
-		System.out.println();
+		TestResultSeries testResultSeries1 = hc.processExpectedAndTimeseries(expected_series, tc, res, 1248156014, 1248156017);
+		System.out.println("Test Series");
 		testResultSeries1.ppprint();
-		assertEquals(testResultSeries1.getTotal(), 5);
+		
+//		assertEquals(testResultSeries1.getTotal(), 5);
+		assertEquals(testResultSeries1.getTotal(), 7);
 	}	
+	
+	@Test
+	public void testForwardMap(){
+		TestResults testResults = new TestResults();
+		TestConfig tc = new TestConfig();
+		CompareResults compareResults = new CompareResults(client, tc);
+		String timestamp1 = "1590773558";
+		String expectedForwardMapStr = "{\"_AEBA0D3C-1376-49DB-BC13-08F845A7448D\": {\"hasMeasurementDifference\": \"FORWARD\", \"difference_mrid\": \"cd2c011b-2d28-41e9-b715-f489378f00c7\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0.0, \"object\": \"_AEBA0D3C-1376-49DB-BC13-08F845A7448D\"}}";
+		String forwardMapStr = "{\"_940621CF-B916-4B51-AEE1-EE79FD2504E3\": {\"object\": \"_940621CF-B916-4B51-AEE1-EE79FD2504E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0, \"difference_mrid\": \"c30d2920-1c61-4a74-a798-d6066e8c2158\", \"hasMeasurementDifference\": \"FORWARD\"}}";
+		JsonObject expectedForwardMap = CompareResults.getSimulationJson(expectedForwardMapStr);
+		JsonObject forwardMap = CompareResults.getSimulationJson(forwardMapStr);
+		Map<String, JsonElement> expectedForwardDifferenceMap = new HashMap<String,JsonElement>();
+		Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+		expectedForwardDifferenceMap.put("_AEBA0D3C-1376-49DB-BC13-08F845A7448D", expectedForwardMap.get("_AEBA0D3C-1376-49DB-BC13-08F845A7448D"));
+		forwardDifferenceMap.put("_940621CF-B916-4B51-AEE1-EE79FD2504E3", forwardMap.get("_940621CF-B916-4B51-AEE1-EE79FD2504E3"));
+		
+
+		
+		compareResults.compareExpectedAndSim(timestamp1, expectedForwardDifferenceMap, testResults, forwardDifferenceMap);
+		System.out.println("Test Series");
+		testResults.pprint();
+		assertEquals(testResults.getNumberOfConflicts(),2);
+		
+//		assertEquals(testResults.getTotal(), 5);
+		
+//		{
+//		  "_AEBA0D3C-1376-49DB-BC13-08F845A7448D": {
+//		    "hasMeasurementDifference": "FORWARD",
+//		    "difference_mrid": "cd2c011b-2d28-41e9-b715-f489378f00c7",
+//		    "attribute": "ShuntCompensator.sections",
+//		    "value": 0.0,
+//		    "object": "_AEBA0D3C-1376-49DB-BC13-08F845A7448D"
+//		  }
+//		}
+//		forwardMap = 
+//		{
+//		  "_940621CF-B916-4B51-AEE1-EE79FD2504E3": {
+//		    "object": "_940621CF-B916-4B51-AEE1-EE79FD2504E3",
+//		    "attribute": "ShuntCompensator.sections",
+//		    "value": 0,
+//		    "difference_mrid": "c30d2920-1c61-4a74-a798-d6066e8c2158",
+//		    "hasMeasurementDifference": "FORWARD"
+//		  }}
+		  
+	}
 	
 	@Test
 	public void testExpectedVersusResponse3(){
@@ -327,65 +412,65 @@ public class TestManagerComponentTest {
 		String data = jsonObject.get("data").getAsString();
 		System.out.println(data.substring(0, 100));
 		TestConfig tc = new TestConfig();
-		TestResultSeries testResultSeries1 = hc.processWithAllTimes(expected_series, tc, res);
+		TestResultSeries testResultSeries1 = hc.processExpectedAndTimeseries(expected_series, tc, res, 1248156002, 1248156002);
 		testResultSeries1.ppprint();
 		assertEquals(testResultSeries1.getTotal(), 0);
 	}	
 	
-	@Test
-	public void testTimeMap(){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, "system",client);
-		
-		SortedSet<Integer> inputKeys1 = new TreeSet<>();
-		SortedSet<Integer> inputKeys2 = new TreeSet<>();
-		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
-
-//		[1590527327, 1590527342, 1590527357]
-//				[0, 15, 27, 30]
-//		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
-//		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
-		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357);
-		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
-		
-		System.out.println("input keys");
-		System.out.println(inputKeys1.toString());
-		System.out.println(inputKeys2.toString());
-		HashMap<Integer,Integer> x = hc.getTimeMap(inputKeys1, inputKeys2);
-		System.out.println(x);
-		
-		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357); inputKeys1.add(1590527360);
-		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30); inputKeys2.add(33);
-		
+//	@Test
+//	public void testTimeMap(){
+//		HistoricalComparison hc = new HistoricalComparison(dataManager, "system",client);
+//		
+//		SortedSet<Integer> inputKeys1 = new TreeSet<>();
+//		SortedSet<Integer> inputKeys2 = new TreeSet<>();
+//		HashMap<Integer,Integer> newKeys1 = new HashMap<Integer,Integer>();
+//
+////		[1590527327, 1590527342, 1590527357]
+////				[0, 15, 27, 30]
+////		inputKeys1.add(1590612488); inputKeys1.add(1590612503); inputKeys1.add(1590612518);
+////		inputKeys2.add(1590616253); inputKeys2.add(1590616268); inputKeys2.add(1590616283);
+//		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357);
+//		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30);
+//		
+//		System.out.println("input keys");
+//		System.out.println(inputKeys1.toString());
+//		System.out.println(inputKeys2.toString());
+//		HashMap<Integer,Integer> x = hc.getTimeMap(inputKeys1, inputKeys2);
+//		System.out.println(x);
+//		
+//		inputKeys1.add(1590527327); inputKeys1.add(1590527342); inputKeys1.add(1590527357); inputKeys1.add(1590527360);
+//		inputKeys2.add(0); inputKeys2.add(15); inputKeys2.add(27); inputKeys2.add(30); inputKeys2.add(33);
+//		
+//	
+//		System.out.println("input keys");
+//		System.out.println(inputKeys1.toString());
+//		System.out.println(inputKeys2.toString());
+//		x = hc.getTimeMap(inputKeys1, inputKeys2);
+//		System.out.println(x);
+//		
+//		 
+//		Integer first1 = inputKeys1.first();
+//		Integer first2 = inputKeys2.first();
+//		
+//		int diff = 0;
+//
+//		Iterator<Integer> it2 = inputKeys2.iterator();
+//
+//		while (it2.hasNext()) {
+//			Integer key2 = it2.next();
+//			diff = key2-first2;
+//			first1+=diff;
+//			newKeys1.put(first1, key2);
+//			first2 = key2;
+//		}
+//		System.out.println(newKeys1);
+////		java.lang.AssertionError: expected:<{1590527357=30, 1590527327=0, 1590527342=15, 1590527354=27, 1590527360=33}> 
+//
+//		assertEquals(newKeys1.get(1590527354).intValue(), 27);
+//	}
 	
-		System.out.println("input keys");
-		System.out.println(inputKeys1.toString());
-		System.out.println(inputKeys2.toString());
-		x = hc.getTimeMap(inputKeys1, inputKeys2);
-		System.out.println(x);
-		
-		 
-		Integer first1 = inputKeys1.first();
-		Integer first2 = inputKeys2.first();
-		
-		int diff = 0;
-
-		Iterator<Integer> it2 = inputKeys2.iterator();
-
-		while (it2.hasNext()) {
-			Integer key2 = it2.next();
-			diff = key2-first2;
-			first1+=diff;
-			newKeys1.put(first1, key2);
-			first2 = key2;
-		}
-		System.out.println(newKeys1);
-//		java.lang.AssertionError: expected:<{1590527357=30, 1590527327=0, 1590527342=15, 1590527354=27, 1590527360=33}> 
-
-		assertEquals(newKeys1.get(1590527354).intValue(), 27);
-	}
-	
 	@Test
-	public void testInputCount(){
+	public void testInputCount(){ 
 		TestManagerImpl testManager = new TestManagerImpl(clientFactory, logManager, logDataManager, dataManager, simulationManager);
 		
 		SortedSet<Integer> inputKeys2 = new TreeSet<>();
@@ -403,14 +488,19 @@ public class TestManagerComponentTest {
 	public void testTwoSimulationResponse(){	
 		HistoricalComparison hc = new HistoricalComparison(dataManager, "system", client);
 		String res1 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
-		String res2 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -5.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
+		String res2 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -5.066423674487563, \\\"magnitude\\\": 2365.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
 		TestConfig tc = new TestConfig();
-		TestResultSeries testResultSeries1 = hc.processWithAllTimes("123", tc, res1,res1);
+
+		TestResultSeries testResultSeries1 = hc.processTimeseriesAndTimeseries("123", tc, res1, res1);
 		assertEquals(testResultSeries1.getTotal(), 0);
 		
-		TestResultSeries testResultSeries2 = hc.processWithAllTimes("123",tc, res1, res2);
-		assertEquals(testResultSeries2.getTotal(), 3);
+		TestResultSeries testResultSeries2 = hc.processTimeseriesAndTimeseries("123",tc, res1, res2);
+		assertEquals(testResultSeries2.getTotal(), 4);
 		System.out.println(testResultSeries2.toJson(false));
+		
+		tc.setTestOutput(false);
+		TestResultSeries testResultSeries3 = hc.processTimeseriesAndTimeseries("123",tc, res1, res2);
+		assertEquals(testResultSeries3.getTotal(), 2);
 
 //		testManager.storeResults("appID","testID", "currentSimulationIdOne", "currentSimulationIdTwo", testResultSeries2);
 	}
@@ -421,7 +511,7 @@ public class TestManagerComponentTest {
 		String res1 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -4.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasMeasurementDifference\\\": \\\"FORWARD\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 0.0, \\\"object\\\": \\\"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\\\"}, {\\\"hasMeasurementDifference\\\": \\\"REVERSE\\\", \\\"hasSimulationMessageType\\\": \\\"INPUT\\\", \\\"difference_mrid\\\": \\\"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4\\\", \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002, \\\"attribute\\\": \\\"ShuntCompensator.sections\\\", \\\"value\\\": 1.0, \\\"object\\\": \\\"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\\\"}]\"}";
 		String res2 = "{\"data\":\"[{\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_84541f26-084d-4ea7-a254-ea43678d51f9\\\", \\\"angle\\\": -5.066423674487563, \\\"magnitude\\\": 2361.0733024639117, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_fff9a11e-d5d1-4824-a457-13d944ffcfdf\\\", \\\"angle\\\": -122.80107769837849, \\\"magnitude\\\": 2520.2169329056983, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}, {\\\"hasSimulationMessageType\\\": \\\"OUTPUT\\\", \\\"measurement_mrid\\\": \\\"_0058123f-da11-4f7c-a429-e47e5949465f\\\", \\\"angle\\\": -122.70461031091335, \\\"magnitude\\\": 2522.818525429715, \\\"simulation_id\\\": \\\"1961648576\\\", \\\"time\\\": 1248156002}]\"}";
 		TestConfig tc = new TestConfig();
-		TestResultSeries testResultSeries2 = hc.processWithAllTimes("123",tc, res1, res2);
+		TestResultSeries testResultSeries2 = hc.processTimeseriesAndTimeseries("123",tc, res1, res2);
 		assertEquals(testResultSeries2.getTotal(), 1);
 		System.out.println(testResultSeries2.toJson(false));
 
@@ -439,7 +529,7 @@ public class TestManagerComponentTest {
 		JsonArray temp = tempObj.getAsJsonArray("forward_differences");
 		for (JsonElement jsonElement : temp) {
 			jsonElement.getAsJsonObject().add("difference_mrid",tempObj.get("difference_mrid"));
-			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD"));
+			jsonElement.getAsJsonObject().add("hasMeasurementDifference",parser.parse("FORWARD")); 
 			forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 		}
 		assertEquals(forwardDifferenceMap.get("_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB").getAsJsonObject().get("value").getAsInt(),0);
@@ -449,12 +539,21 @@ public class TestManagerComponentTest {
 	
 	@Test
 	public void testConfig(){
-		String config=  "{\"testId\": \"12333\",\"appId\": \"sample_app\" }";
+		String config=  "{\"testId\": \"12333\",\"appId\": \"sample_app\" ,\"start_time\":1248156000, \"duration\":8}";
 //		config=  "{\"appId\": \"sample_app\" }";
 		TestConfig tc = TestConfig.parse(config);
 		System.out.println(tc.toString());
 		assertEquals(tc.getAppId(), "sample_app");
 		assertEquals(tc.getTestId(), "12333");
+		long start_time = tc.getStart_time();
+		int duration = tc.getDuration();
+		for (long i = start_time; i < start_time+duration; i += 10) {
+			long end_time= start_time+duration;
+			if (i+10< end_time){end_time = i + 10;}
+			System.out.println("start time " + i + "end time " + end_time);
+		}
+		
+		
 	}
 	
 }

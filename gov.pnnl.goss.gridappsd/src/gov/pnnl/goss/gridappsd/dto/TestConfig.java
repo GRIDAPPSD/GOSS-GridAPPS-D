@@ -55,7 +55,7 @@ public class TestConfig implements Serializable {
 	private Random randomNum =  new Random();
 	
 	public enum TestType {
-		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries
+		simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries,test_query
 	}
 
 	private List<Event> events;
@@ -64,10 +64,18 @@ public class TestConfig implements Serializable {
 	
 	private JsonObject expectedResults;
 	
+	private long start_time;
+	
+	private int duration = 60;
+	
+	private int interval = 10;
+	
 	private Boolean testInput = true;
 
 	private Boolean testOutput = true;
 	
+	private Boolean testWithAllSimulationOutput = false;
+
 	private String compareWithSimId;
 	
 	private String compareWithSimIdTwo;
@@ -120,6 +128,14 @@ public class TestConfig implements Serializable {
 		this.testOutput = testOutput;
 	}
 	
+	public Boolean getTestWithAllSimulationOutput() {
+		return testWithAllSimulationOutput;
+	}
+
+	public void setTestWithAllSimulationOutput(Boolean testWithAllSimulationOutput) {
+		this.testWithAllSimulationOutput = testWithAllSimulationOutput;
+	}
+	
 	public String getCompareWithSimId() {
 		return compareWithSimId;
 	}
@@ -144,6 +160,29 @@ public class TestConfig implements Serializable {
 		this.appId = appId;
 	}
 	
+	public int getDuration() {
+		return duration;
+	}
+
+	public void setDuration(int duration) {
+		this.duration = duration;
+	}
+
+	public int getInterval() {
+		return interval;
+	}
+
+	public void setInterval(int interval) {
+		this.interval = interval;
+	}
+
+	public long getStart_time() {
+		return start_time;
+	}
+
+	public void setStart_time(long start_time) {
+		this.start_time = start_time;
+	}
 
 	public String getTestId() {
 		return testId;

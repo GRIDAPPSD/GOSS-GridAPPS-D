@@ -49,12 +49,15 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.SortedSet;
+import java.util.Stack;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
@@ -136,7 +139,14 @@ public class TestManagerImpl implements TestManager {
 	    STARTED, RUNNING, FINISHED
 	}
 	
+	// Simulation ID, Status
 	private Hashtable<String, SimulationStatus> sim_status = new Hashtable<String, SimulationStatus>();
+	
+	// Simulation ID, Status
+	private Hashtable<String, SimulationStatus> timeseries_input_status = new Hashtable<String, SimulationStatus>();
+	
+	private Hashtable<String, Long> simLastOutputTime = new Hashtable<String, Long>();
+	private Hashtable<String, Long> simLastInputTime = new Hashtable<String, Long>();
 	
 	private Random randPort = new Random();
 	
@@ -151,6 +161,8 @@ public class TestManagerImpl implements TestManager {
 	Client client;
 	
 	Gson gson;
+	
+	protected boolean debug = false;
 	
 	String testOutputTopic = GridAppsDConstants.topic_simulationTestOutput;
 //	String testOutputTopic = "/topic/goss.gridappsd.simulation.test.output.";
@@ -198,10 +210,26 @@ public class TestManagerImpl implements TestManager {
 						RequestTestUpdate requestTest = RequestTestUpdate.parse(request.getData().toString());
 						TestConfig testConfig = TestConfig.parse(request.getData().toString());
 						if(testConfig != null){	
-							if (testConfig.getTestType() == TestType.expected_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
+							if (testConfig.getTestType() == TestType.test_query){
+								HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+//								String response = hc.timeSeriesQuery(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
+								String response = hc.timeSeriesQueryInput(testConfig.getCompareWithSimId(), "1532971828475", ""+testConfig.getStart_time(), ""+(testConfig.getStart_time()+testConfig.getDuration()));
+								if(debug){
+									System.out.println("QueryInput");
+									System.out.println(response);
+								}
+								JsonObject expectedResults = hc.getExpectedFrom(response);
+								if(expectedResults == null ){
+									if(debug){System.out.println("expectedResults is null");}
+								}else if(! expectedResults.has("input")){
+									if(debug){System.out.println("No input for timeseries data");}
+								}else{
+									publishResponse(request, expectedResults.toString());
+								}
+							}else if (testConfig.getTestType() == TestType.expected_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getExpectedResultObject() != null) {
 								compareTimeseriesSimulationWithExpected(testConfig, simulationId, testConfig.getCompareWithSimId(), testConfig.getExpectedResultObject(),request);
 							}else if (testConfig.getTestType() == TestType.timeseries_vs_timeseries && testConfig.getCompareWithSimId() != null && testConfig.getCompareWithSimIdTwo() != null) {
-								compareSimulations(testConfig, testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo(),request);
+								compareTimeseriesSimulations(testConfig, testConfig.getCompareWithSimId(),testConfig.getCompareWithSimIdTwo(),request);
 							}else{
 								publishResponse(request, "Missing parameter for testConfig simId");
 								logManager.error(ProcessStatus.RUNNING, null, "Missing parameter for testConfig "+ testConfig.toString());
@@ -255,7 +283,10 @@ public class TestManagerImpl implements TestManager {
 			logManager.warn(ProcessStatus.RUNNING, simulationId, "testConfig is null" );
 			return;
 		}
-
+		simLastOutputTime.put(simulationId,simulationContext.getRequest().getSimulation_config().getStart_time());
+		simLastInputTime.put(simulationId,simulationContext.getRequest().getSimulation_config().getStart_time());
+		testConfig.setStart_time(simulationContext.getRequest().getSimulation_config().getStart_time());
+		testConfig.setDuration(simulationContext.getRequest().getSimulation_config().getDuration());
 		if (testConfig.getEvents() != null && testConfig.getEvents().size() > 0) {
 			sendEventsToSimulation(testConfig.getEvents(), simulationId);
 		}
@@ -387,10 +418,10 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	@Override
-	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
+	public void compareTimeseriesSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request){
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
-		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, simulationIdTwo, testConfig);		
+		TestResultSeries testResultsSeries = hc.compareTimeseriesSimulationWithTimeseriesSimulation(simulationIdOne, simulationIdTwo, testConfig);		
 //		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
 		//publishResponse(request);
 		storeResults(testConfig, simulationIdOne, simulationIdTwo, testResultsSeries);
@@ -412,26 +443,27 @@ public class TestManagerImpl implements TestManager {
 	
 	@Override
 	public void compareRunningWithTimeseriesSimulation(TestConfig testConfig, String currentSimulationId, String simulationIdOne){
-		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+//		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
-		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
-		JsonObject expectedObject = hc.getExpectedFrom(response);
-		if(expectedObject == null){
-			logManager.error(ProcessStatus.ERROR, currentSimulationId, "Response from time sereis db is empty for simulation "+ simulationIdOne);
-			return;
-		}
-//		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
-//		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
-//		
-		compareRunningSimulationOutputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
-		compareRunningSimulationInputWithExpected(testConfig, currentSimulationId, expectedObject, simulationIdOne);
-//		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+		
+//		String response = hc.timeSeriesQuery(simulationIdOne, "1532971828475", null, null);
+//		JsonObject expectedObject = hc.getExpectedFrom(response);
+//		if(expectedObject == null){
+//			logManager.error(ProcessStatus.ERROR, currentSimulationId, "Response from time series db is empty for simulation "+ simulationIdOne);
+//			return;
+//		}
+	//		JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
+	//		JsonObject simInputObject = expectedObject.get("input").getAsJsonObject();
+	//		
+		    if(testConfig.getTestOutput()) compareRunningSimulationOutputWithTimeseries(testConfig, currentSimulationId, simulationIdOne);
+		    if(testConfig.getTestInput()) compareRunningSimulationInputWithTimeseries(testConfig, currentSimulationId, simulationIdOne);
+//			client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
 	
 	public void compareTimeseriesSimulationWithExpected(TestConfig testConfig, String currentSimulationId, String simulationIdOne, JsonObject expectedResultObject, DataResponse request){
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"start\"}");
 		HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
-		TestResultSeries testResultsSeries = hc.testProven(simulationIdOne, testConfig, expectedResultObject);
+		TestResultSeries testResultsSeries = hc.compareSimulationWithExpected(simulationIdOne, testConfig, expectedResultObject);
 //		publishTestResults(testConfig.getTestId(), testResultsSeries, testConfig.getStoreMatches());
 
 		publishResponse(request);
@@ -439,36 +471,212 @@ public class TestManagerImpl implements TestManager {
 		client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
 	}
 	
-	@Override
-	public void compareRunningSimulationInputWithExpected(TestConfig testConfig, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
+	
+	public void compareRunningSimulationInputWithTimeseries(TestConfig testConfig, String simulationId, String expectedOrSimulationIdTwo) {
 		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
 
 		new GossResponseEvent() {
 			
 			int inputCount=0;
 			int expecetedLast=0;
-
-//			int first1=0;
-//			int first2=0;
-//			Boolean firstSet = false;
-//			SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
-//			for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
-//				inputKeys2.add(Integer.valueOf(time_entry.getKey()));
-//			}
-
-//			System.out.println(inputKeys2.toString());
+			long lastTimeStamp=testConfig.getStart_time();
 			public void onMessage(Serializable message) {
 				sim_status.put(simulationId, SimulationStatus.RUNNING);
+				timeseries_input_status.put(simulationId, SimulationStatus.RUNNING);
+				
 				TestResultSeries testResultSeries = new TestResultSeries();
 				DataResponse event = (DataResponse) message;
-				String simOutputStr = event.getData().toString();
-				System.out.println(simOutputStr);
+				String simInputStr = event.getData().toString();
+				if(debug){
+					System.out.println("Sim Input String");
+					System.out.println(simInputStr); 
+				}
 //				if (simOutputStr.length() >= 200)
 //					simOutputStr = simOutputStr.substring(0, 200);
 				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
 //				 {"command": "update", "input": {"simulation_id": "797789794", "message": {"timestamp": 1588968302
 				CompareResults compareResults = new CompareResults(client, testConfig);
-				JsonObject simJsonObj = CompareResults.getSimulationJson(simOutputStr);
+				JsonObject simJsonObj = CompareResults.getSimulationJson(simInputStr);
+
+				simJsonObj = simJsonObj.get("input").getAsJsonObject();
+				
+				if ( ! simJsonObj.has("message")) {
+					logManager.error(ProcessStatus.ERROR, simulationId, "TestManager received empty message key in simulation input");
+					return;
+				}
+				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				Long simulationTimeStampLong = Long.valueOf(simulationTimestamp);
+				simLastInputTime.put(simulationId,simulationTimeStampLong);
+
+				System.out.println("Seconds since last input " + (simulationTimeStampLong - lastTimeStamp));
+				JsonObject simJsonObjAtTime = new JsonObject();
+				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
+				int interval = testConfig.getInterval();
+				Stack<TimeInterval> timeIntervals = TimeInterval.getTimeIntervals(lastTimeStamp, simulationTimeStampLong, interval);
+				for (TimeInterval timeInterval : timeIntervals) {
+					HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+//					String response = hc.timeSeriesQuery(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
+					String response = hc.timeSeriesQueryInput(testConfig.getCompareWithSimId(), "1532971828475", ""+timeInterval.start, ""+timeInterval.end);
+					if(debug){
+						System.out.println("QueryInput");
+						System.out.println(response);
+					}
+					
+					JsonObject expectedResults = hc.getExpectedFrom(response);
+					SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
+					if(expectedResults == null ){
+						if(debug){System.out.println("expectedResults is null ");}
+					}else if(! expectedResults.has("input")){
+						if(debug){System.out.println("No input for timeseries data");}
+					}else{
+						for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+							inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+						}
+					}
+					if(simulationTimeStampLong==timeInterval.end){
+						inputKeys2.add(Integer.valueOf(simulationTimestamp));
+					}
+//					if (! inputKeys2.isEmpty() && Integer.valueOf(simulationTimestamp)>window_end_time){
+//						inputKeys2.add(Integer.valueOf(simulationTimestamp));
+//					}else{
+//						System.out.println("No timeseries data and not at simulation time"+ simulationTimestamp);
+//						continue;
+//					}
+					if(debug){
+						System.out.println("Input Keys");
+						System.out.println(inputKeys2.toString());
+						System.out.println(inputCount);
+					}
+//			        TestResults testResults1 = new TestResults();
+//					Map<String, JsonElement> expectedForwardMap = compareResults.getExpectedForwardInputMap(simulationTimestamp, simJsonObjAtTime);
+//					System.out.println(expectedForwardMap);
+					if( inputKeys2.isEmpty() ){
+						if(debug){System.out.println("No input for expected results");}
+						//TODO build error
+//						for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+//							if (entry.getValue().isJsonObject()) {
+//								JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+//								String objectMRID = expectedOutputObj.get("object").getAsString();
+//								String attr = expectedOutputObj.get("attribute").getAsString();
+//								String value = expectedOutputObj.get("value").toString();
+//								testResults1.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+//								compareResults.publish(simulationTimestamp.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+//							}					
+//						}
+//						return;
+					}
+					
+	//				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+	//				if( ! firstSet){
+	//					first1 = Integer.valueOf(simulationTimestamp);
+	//					firstSet=true;
+	//				}
+	//				
+	//				inputCount= getNextCount(inputKeys2, Integer.valueOf(simulationTimestamp), first1, inputCount);
+	//				System.out.println("size and inputCount");
+	//				System.out.println(inputKeys2.size());
+	//				System.out.println(inputCount);
+	//				if(inputKeys2.size() <= inputCount){
+	//					return;
+	//				}
+					
+		//				timeseries expected
+						for (Integer tempTimestamp : inputKeys2) {
+							
+							String originalTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+							expecetedLast=Integer.valueOf(originalTimestamp) - expecetedLast;
+							
+							// Is this needed ?
+			//				simJsonObj.getAsJsonObject().get("message").getAsJsonObject().addProperty("timestamp",inputKeys2.toArray()[inputCount].toString());
+			//				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+			
+			//				System.out.println("simulationTimestamp");
+			//				System.out.println(simulationTimestamp);
+			//				System.out.println("simJsonObjAtTime");
+			//				System.out.println(simJsonObjAtTime);
+			//				System.out.println(expectedResults);
+							TestResults testResults = compareResults.compareExpectedWithSimulationInput(tempTimestamp.toString(), 
+									tempTimestamp.toString(),
+									simJsonObjAtTime, 
+									expectedResults, 
+									testConfig.getStart_time(),
+									testConfig.getStart_time()+testConfig.getDuration());
+							testResultSeries.add(originalTimestamp,
+									tempTimestamp.toString(),
+			//						inputKeys2.toArray()[inputCount].toString(), 
+									testResults);
+			//				if (testResults != null) {
+			//					client.publish(testOutputTopic+testConfig.getTestId(), testResultSeries.toJson(testConfig.getStoreMatches()));
+			//				}
+							storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+					}
+					inputCount++;
+					lastTimeStamp = simulationTimeStampLong; 
+				}
+
+				// Check if finished
+//				if(sim_status.get(simulationId) == SimulationStatus.FINISHED && simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration())){
+//					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+//					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+//				}else{
+//					System.out.println("Check if finished input");
+//					System.out.println("sim_status.get(simulationId) " + sim_status.get(simulationId));
+//					System.out.println("simulationTimeStampLong " + simulationTimeStampLong);
+//					System.out.println(testConfig.getStart_time()+testConfig.getDuration());
+//					System.out.println(simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration()));
+//				}
+				timeseries_input_status.put(simulationId, SimulationStatus.FINISHED);
+			}
+		});
+	}
+	
+	@Override
+	public void compareRunningSimulationInputWithExpected(TestConfig testConfig, String simulationId, JsonObject expectedResults, String expectedOrSimulationIdTwo) {
+		client.subscribe("/topic/"+GridAppsDConstants.topic_simulationInput + "." + simulationId,
+		new GossResponseEvent() {
+			
+			int inputCount=0;
+			int expecetedLast=0;
+			SortedSet<Integer> inputTimeIndexes = null;
+
+			public void onMessage(Serializable message) {
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
+				// Get input time index keys for expected in time window
+				if(inputTimeIndexes==null){
+					inputTimeIndexes = new TreeSet<Integer>();
+					for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+						Integer tTime = Integer.valueOf(time_entry.getKey());
+						if(tTime < testConfig.getStart_time()){
+							System.out.println("Time is before start "+ tTime);
+						}else if(tTime > (testConfig.getStart_time() + testConfig.getDuration())){
+							System.out.println("Time is after the simulation "+ tTime);
+						}else{
+							inputTimeIndexes.add(tTime);
+						}
+					}
+					if( inputTimeIndexes.isEmpty() ){
+						System.out.println("No input for expected results");
+						return;
+					}
+				}
+				if(debug){			
+					System.out.println("Input Keys");
+					System.out.println(inputTimeIndexes.toString());
+					System.out.println(inputCount);
+				}
+				
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
+				TestResultSeries testResultSeries = new TestResultSeries();
+				DataResponse event = (DataResponse) message;
+				String simInputStr = event.getData().toString();
+				System.out.println("Sim Input String");
+				System.out.println(simInputStr);
+//				if (simOutputStr.length() >= 200)
+//					simOutputStr = simOutputStr.substring(0, 200);
+				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
+//				 {"command": "update", "input": {"simulation_id": "797789794", "message": {"timestamp": 1588968302
+				CompareResults compareResults = new CompareResults(client, testConfig);
+				JsonObject simJsonObj = CompareResults.getSimulationJson(simInputStr);
 				simJsonObj = simJsonObj.get("input").getAsJsonObject();
 
 				if ( ! simJsonObj.has("message")) {
@@ -483,18 +691,59 @@ public class TestManagerImpl implements TestManager {
 //				JsonObject simInputObject = simJsonObj;
 //				JsonObject expected_input_series = expectedResults.get("input").getAsJsonObject();
 //				HashMap<Integer, Integer> newKeys1 = rebase_keys(simInputObject, expected_input_series);
-				SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
-				for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
-					inputKeys2.add(Integer.valueOf(time_entry.getKey()));
-				}
-				System.out.println("Input Keys");
-				System.out.println(inputKeys2.toString());
-				System.out.println(inputCount);
-				if( inputKeys2.isEmpty() ){
-					System.out.println("No input for expected results");
-					return;
-				}
+//				SortedSet<Integer> inputKeys2 = new TreeSet<Integer>();
+//				for (Entry<String, JsonElement> time_entry : expectedResults.get("input").getAsJsonObject().entrySet()) {
+//					inputKeys2.add(Integer.valueOf(time_entry.getKey()));
+//				}
+//				System.out.println("Input Keys");
+//				System.out.println(inputKeys2.toString());
+//				System.out.println(inputCount);
+//				if( inputKeys2.isEmpty() ){
+//					System.out.println("No input for expected results");
+//					return;
+//				}
+				// Case 2A Missing input command from timeseries data. The Simulation has input command but not timeseries data does not
 				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				for (Iterator<Integer> it = inputTimeIndexes.iterator(); it.hasNext();) {
+				    Integer inputTimeIndex = it.next();
+				    if (inputTimeIndex < Integer.valueOf(simulationTimestamp)) {
+				    	System.out.println(inputTimeIndex + " less than simulation time of " + simulationTimestamp);
+				        it.remove();
+				        TestResults testResults = new TestResults();
+						Map<String, JsonElement> expectedForwardMap = compareResults.getExpectedForwardInputMap(inputTimeIndex.toString(), expectedResults);
+//						System.out.println(expectedForwardMap);
+						for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+							System.out.println("Case 2A Missing input command from timeseries data");
+							if (entry.getValue().isJsonObject()) {
+								JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+								String objectMRID = expectedOutputObj.get("object").getAsString();
+								String attr = expectedOutputObj.get("attribute").getAsString();
+								String value = expectedOutputObj.get("value").toString();
+								testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+								compareResults.publish(inputTimeIndex.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							}					
+						}
+						Map<String, JsonElement> expectedReverseMap = compareResults.getExpectedReverseInputMap(inputTimeIndex.toString(), expectedResults);
+						System.out.println(expectedReverseMap);
+						for (Entry<String, JsonElement> entry : expectedReverseMap.entrySet()) {
+							System.out.println("Case 2A Missing input command from timeseries data");
+							if (entry.getValue().isJsonObject()) {
+								JsonObject expectedOutputObj = expectedReverseMap.get(entry.getKey()).getAsJsonObject();
+								String objectMRID = expectedOutputObj.get("object").getAsString();
+								String attr = expectedOutputObj.get("attribute").getAsString();
+								String value = expectedOutputObj.get("value").toString();
+								testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+								compareResults.publish(inputTimeIndex.toString(), objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							}					
+						}
+						
+//						JsonObject expectedOutputObj = expectedForwardMap.get(element.toString()).getAsJsonObject();
+//						String attr = expectedOutputObj.get("attribute").getAsString();
+//						String value = expectedOutputObj.get("value").toString();
+//				        compareResults.publish(element.toString(),element.toString(), attr, value, "NA", "difference_mrid", "FORWARD", false);
+				        // TODO publish as missing
+				    }
+				}
 //				if( ! firstSet){
 //					first1 = Integer.valueOf(simulationTimestamp);
 //					firstSet=true;
@@ -516,6 +765,7 @@ public class TestManagerImpl implements TestManager {
 //				simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
 				JsonObject simJsonObjAtTime = new JsonObject();
 				simJsonObjAtTime.add(simulationTimestamp, simJsonObj);
+				inputTimeIndexes.remove(Integer.valueOf(simulationTimestamp));
 //				System.out.println("simulationTimestamp");
 //				System.out.println(simulationTimestamp);
 //				System.out.println("simJsonObjAtTime");
@@ -523,8 +773,10 @@ public class TestManagerImpl implements TestManager {
 //				System.out.println(expectedResults);
 				TestResults testResults = compareResults.compareExpectedWithSimulationInput(simulationTimestamp, 
 						simulationTimestamp,
-//						inputKeys2.toArray()[inputCount].toString(),
-						simJsonObjAtTime, expectedResults);
+						simJsonObjAtTime, 
+						expectedResults, 
+						testConfig.getStart_time(),
+						testConfig.getStart_time()+testConfig.getDuration());
 				testResultSeries.add(originalTimestamp,
 						simulationTimestamp,
 //						inputKeys2.toArray()[inputCount].toString(), 
@@ -605,6 +857,75 @@ public class TestManagerImpl implements TestManager {
 	}
 	
 	
+	public void compareRunningSimulationOutputWithTimeseries(TestConfig testConfig, String simulationId, String expectedOrSimulationIdTwo) {
+		client.subscribe(GridAppsDConstants.topic_simulationOutput + "." + simulationId,
+		
+		new GossResponseEvent() {
+			Map<String,JsonObject> expectedAtTimeMap = new HashMap<String,JsonObject>();
+			public void onMessage(Serializable message) {
+				sim_status.put(simulationId, SimulationStatus.RUNNING);
+				TestResultSeries testResultSeries = new TestResultSeries();
+				DataResponse event = (DataResponse) message;
+				String simOutputStr = event.getData().toString();
+//				if (simOutputStr.length() >= 200)
+//					simOutputStr = simOutputStr.substring(0, 200);
+				//TODO: Log debug - "TestManager received message: " + simOutput + " on topic " + event.getDestination()
+
+				
+				CompareResults compareResults = new CompareResults(client, testConfig);
+				JsonObject simOutputJsonObj = CompareResults.getSimulationJson(simOutputStr);
+
+				if ( ! simOutputJsonObj.has("message")) {
+					logManager.error(ProcessStatus.RUNNING, simulationId, "TestManager received empty message key in simulation output");
+					return;
+				}
+				JsonObject expectedResults = null;
+				String simulationTimestamp = simOutputJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+//				String simulationTimestamp = simJsonObj.getAsJsonObject().get("message").getAsJsonObject().get("timestamp").getAsString();
+				Long simulationTimeStampLong = Long.valueOf(simulationTimestamp);
+				simLastOutputTime.put(simulationId,simulationTimeStampLong);
+				//TODO get data at time t + 10?
+				if(! expectedAtTimeMap.containsValue(simulationTimestamp)){
+					HistoricalComparison hc = new HistoricalComparison(dataManager, securityConfig.getManagerUser(),client);
+					String response = hc.timeSeriesQuery(expectedOrSimulationIdTwo, "1532971828475", simulationTimestamp, simulationTimestamp);
+					expectedResults = hc.getExpectedFrom(response);
+					if(expectedResults == null){
+						logManager.error(ProcessStatus.ERROR, simulationId, "Response from time sereis db is empty for simulation "+ expectedOrSimulationIdTwo);
+						return;
+					}
+					expectedAtTimeMap.put(simulationTimestamp, expectedResults);
+				}else{
+					expectedResults = expectedAtTimeMap.get(simulationTimestamp);
+				}
+				
+				TestResults testResults = compareResults.compareExpectedWithSimulationOutput(simulationTimestamp,
+						simOutputJsonObj, expectedResults);
+				testResultSeries.add(simulationTimestamp, simulationTimestamp, testResults);
+				if (testResults != null) {
+					String resultJson = testResultSeries.toJson(testConfig.getStoreMatches());
+//					if (resultJson != null && ! resultJson.isEmpty()){
+//						client.publish(testOutputTopic+testConfig.getTestId(), resultJson);
+//					}
+					//TODO: Store results in timeseries store.
+				}
+				storeResults(testConfig, simulationId, expectedOrSimulationIdTwo, testResultSeries);
+				// Check if finished
+//				if(sim_status.get(simulationId) == SimulationStatus.FINISHED && simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration())){
+//					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+//					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+//				}else{
+//					System.out.println("Check if finished output");
+//					System.out.println("sim_status.get(simulationId) " + sim_status.get(simulationId));
+//					System.out.println("simulationTimeStampLong " + simulationTimeStampLong);
+//					System.out.println(testConfig.getStart_time()+testConfig.getDuration());
+//					System.out.println(simulationTimeStampLong >= (testConfig.getStart_time()+testConfig.getDuration()));
+//				}
+			}
+
+		});
+	}
+	
+	
 	public void checkForStoppedSimulation(TestConfig testConfig, String simulationId) {
 		//BASE_SIMULATION_STATUS_TOPIC = "/topic/goss.gridappsd.simulation.log"
 		client.subscribe("/topic/"+GridAppsDConstants.topic_applicationLog + "." + simulationId,
@@ -620,11 +941,30 @@ public class TestManagerImpl implements TestManager {
 //	                print(message)
 					sim_status.put(simulationId, SimulationStatus.FINISHED);
 					// publish finish
-					System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
-					client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+					if(testConfig.getTestType() != TestType.simulation_vs_timeseries){
+						System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+						client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+					}
+					else{
+						int numberOfTries = 0; // wait 180 seconds total for it to finish
+						while (timeseries_input_status.get(simulationId) != SimulationStatus.FINISHED) {
+							System.out.println("Waiting for test to finish");
+							try {
+								TimeUnit.SECONDS.sleep(10);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							numberOfTries++;
+							if(numberOfTries > 18){
+								break;
+							}
+						}
+						System.out.println(testOutputTopic+testConfig.getTestId() + " " + "{\"status\":\"finish\"}");
+						client.publish(testOutputTopic+testConfig.getTestId(),"{\"status\":\"finish\"}");
+					}
 				}
 			}
-
 		});
 	}
 	

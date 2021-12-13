@@ -85,7 +85,7 @@ public interface TestManager {
 	 * @param simulationIdOne simulation id of currently running simulation
 	 * @param simulationIdTwo Simulation id of older simulation
 	 */
-	public void compareSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request);
+	public void compareTimeseriesSimulations(TestConfig testConfig, String simulationIdOne, String simulationIdTwo, DataResponse request);
 	
 	/**
 	 * @param testConfig

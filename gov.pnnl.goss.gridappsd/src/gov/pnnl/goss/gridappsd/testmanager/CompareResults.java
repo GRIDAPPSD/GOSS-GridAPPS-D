@@ -45,6 +45,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,7 +53,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.lang3.StringUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -86,6 +90,12 @@ import pnnl.goss.core.Client;
 
 		private TestConfig testConfig;
 		
+		protected boolean debug = false;
+		
+		protected String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
+		
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		
 //		public CompareResults(Client client){
 //			this.client = client;
 //			propSet.add("value");
@@ -101,9 +111,7 @@ import pnnl.goss.core.Client;
 			propSet.add("angle");
 			propSet.add("magnitude");
 		}
-		
-		String[] propsArray = new String[]{"connect_type", "Control", "control_level", "PT_phase", "band_center", "band_width", "dwell_time", "raise_taps", "lower_taps", "regulation"};
-		
+				
 		public static boolean equalsE3(double a, double b){
 		    return a == b ? true : Math.abs(a - b) <= EPSILON_e3;
 		}
@@ -131,13 +139,13 @@ import pnnl.goss.core.Client;
 //			System.out.println(storeMatches);
 //			System.out.println(tr);
 			if (! tr.isEmpty()){
-				System.out.println(tr);
+				if(debug){System.out.println(tr);}
 	//			System.out.println(testOutputTopic+id);
 				client.publish(testOutputTopic+id,tr);
 			}
 		}
 		
-		private void publish(String timestamp, String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
+		public void publish(String timestamp, String key, String prop, String expectedOutputObjstring, String simOutputObjstring2, boolean match) {
 			TestResults temp = new TestResults();
 			temp.add(key, prop, expectedOutputObjstring, simOutputObjstring2, match);
 			temp.setIndexOne(Long.parseLong(timestamp));
@@ -145,7 +153,7 @@ import pnnl.goss.core.Client;
 			publishTestResults(testId, temp, testConfig.getStoreMatches());
 		}
 		
-		private void publish(String timestamp, String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
+		public void publish(String timestamp, String obj, String prop, String expected, String actual, String diff_mrid, String diff_type, Boolean match) {
 			TestResults temp = new TestResults();
 			temp.add( obj, prop, expected, actual, diff_mrid, diff_type, match);
 			temp.setIndexOne(Long.parseLong(timestamp));
@@ -186,20 +194,193 @@ import pnnl.goss.core.Client;
 		
 			return compareExpectedWithSimulationOutput(timestamp, expectedOutputMap, jsonObject);
 		}
-		 
-		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject jsonObject, JsonObject expectedInput) {
-			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
-			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
+		
+		/**
+		 * Compare expected with simulation output
+		 * @param timestamp1 actual time stamp
+		 * @param timestamp2 expected time stamp
+		 * @param simultaionOutput
+		 * @param expectedOutput
+		 * @param start_time
+		 * @param end_time
+		 * @return
+		 */
+		public TestResults compareExpectedWithSimulationOutput(String timestamp1, String timestamp2, JsonObject simultaionOutput, JsonObject expectedOutput, long start_time, long end_time) {
+			Map<String, JsonElement> expectedOutputMap = getExpectedOutputMap(timestamp2, expectedOutput);
+			if(debug){
+				System.out.println("expectedOutput");
+				if(expectedOutput!=null){
+					System.out.println(StringUtils.left(expectedOutput.toString(),300));
+				}else{
+					System.out.println("No expectedOutput");
+				}
+				System.out.println("simultaionOutput");
+				System.out.println(StringUtils.left(simultaionOutput.toString(),300));
+			}
+			Map<String, JsonElement> outputMap = getExpectedOutputMap(timestamp1, simultaionOutput);
+			if(debug){
+				System.out.println("simultaionInput outputMap");
+				System.out.println("simultaionInput expectedOutputMap is null " + Boolean.valueOf(expectedOutputMap==null).toString());
+				System.out.println("simultaionInput outputMap is null " + Boolean.valueOf(outputMap==null).toString());
+				if(expectedOutputMap!=null){
+					System.out.println("expectedOutputMap");
+					System.out.println(StringUtils.left(gson.toJson(expectedOutputMap),600));
+				}else{
+					System.out.println("No expectedOutputMap");
+				}
+				if(outputMap!=null){
+					System.out.println("outputMap");
+					System.out.println(StringUtils.left(gson.toJson(outputMap),600));
+				}else{
+					System.out.println("No outputMap");
+				}
+			}
+			
+//			System.out.println(forwardMap.toString());
 			TestResults testResults = new TestResults();
-			if (expectedForwardMap == null){
-				System.out.println("no index for "+timestamp2 );
-				testResults.add("NA", "NA", "NA", "NA", false);
-				publish(timestamp1, "NA", "NA", "NA", "NA", false);
+			if(testConfig.getTestWithAllSimulationOutput()){  // This will generate a lot of data if true
+				checkIfExpectedOutputIsNull(timestamp1, start_time, end_time, expectedOutputMap, outputMap,
+						testResults);
+			}
+			checkIfSimulationOutputIsNull(timestamp1, start_time, end_time, expectedOutputMap, outputMap, testResults);
+
+				
+			if (expectedOutputMap == null || outputMap == null){
 				return testResults;
 			}
+			compareExpectedAndSim(timestamp1, expectedOutputMap, testResults, outputMap);
+			
+			return testResults;
+		}
+
+		/**
+		 * checkIfSimulationOutputIsNull and create a result message with NA for the expected value
+		 * @param timestamp1
+		 * @param start_time
+		 * @param end_time
+		 * @param expectedOutputMap
+		 * @param outputMap
+		 * @param testResults
+		 */
+		private void checkIfSimulationOutputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedOutputMap, Map<String, JsonElement> outputMap,
+				TestResults testResults) {
+			if (outputMap == null){			
+				for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no forwardMap");
+							JsonObject expectedOutputObj = expectedOutputMap.get(entry.getKey()).getAsJsonObject();
+							for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+								String prop1 = simentry.getKey();
+								if( ! propSet.contains(prop1))
+									continue;
+								publish(timestamp1, entry.getKey(), prop1, simentry.getValue().getAsString(), "NA", false);
+								testResults.add(entry.getKey(), prop1, simentry.getValue().getAsString(), "NA", false);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		/***
+		 * checkIfExpectedOutputIsNull and create a result message with NA for the actual value
+		 * @param timestamp1
+		 * @param start_time
+		 * @param end_time
+		 * @param expectedOutputMap
+		 * @param outputMap
+		 * @param testResults
+		 */
+		private void checkIfExpectedOutputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedOutputMap, Map<String, JsonElement> outputMap,
+				TestResults testResults) {
+			if (expectedOutputMap == null){
+				for (Entry<String, JsonElement> entry : outputMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no expectedOutputMap");
+							JsonObject expectedOutputObj = outputMap.get(entry.getKey()).getAsJsonObject();
+							for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+								String prop1 = simentry.getKey();
+								if( ! propSet.contains(prop1))
+									continue;
+								publish(timestamp1, entry.getKey(), prop1, "NA", simentry.getValue().getAsString(), false);
+								testResults.add(entry.getKey(), prop1, "NA",simentry.getValue().getAsString(), false);
+							}
+						}
+					}
+				}
+			}
+		}
+		 
+		/**
+		 * Compare expect with simulation input
+		 * Only 
+		 * @param timestamp1 actual time stamp
+		 * @param timestamp2 expected time stamp
+		 * @param simultaionInput
+		 * @param expectedInput
+		 * @param start_time
+		 * @param end_time
+		 * @return
+		 */
+		public TestResults compareExpectedWithSimulationInput(String timestamp1, String timestamp2, JsonObject simultaionInput, JsonObject expectedInput, long start_time, long end_time) {
+			Map<String, JsonElement> expectedForwardMap = getExpectedForwardInputMap(timestamp2, expectedInput);
+			Map<String, JsonElement> expectedReverseMap = getExpectedReverseInputMap(timestamp2, expectedInput);
+			if(debug){
+				System.out.println("expectedInput");
+				if(expectedInput!=null){
+					System.out.println(StringUtils.left(expectedInput.toString(),300));
+				}else{
+					System.out.println("No expectedInput");
+				}
+				System.out.println("simultaionInput");
+				System.out.println(StringUtils.left(simultaionInput.toString(),300));
+			}
+
+			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, simultaionInput);
+			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
+			if(debug){
+				System.out.println("simultaionInput forwardMap");
+				System.out.println("simultaionInput expectedForwardMap is null " + Boolean.valueOf(expectedForwardMap==null).toString());
+				System.out.println("simultaionInput forwardMap is null " + Boolean.valueOf(forwardMap==null).toString());
+				if(expectedForwardMap!=null){
+					System.out.println("expectedForwardMap");
+					System.out.println(StringUtils.left(gson.toJson(expectedForwardMap),600));
+				}else{
+					System.out.println("No expectedForwardMap");
+				}
+				if(forwardMap!=null){
+					System.out.println("forwardMap");
+					System.out.println(StringUtils.left(gson.toJson(forwardMap),600));
+				}else{
+					System.out.println("No forwardMap");
+				}
+			}
+			
+//			System.out.println(forwardMap.toString());
+			TestResults testResults = new TestResults();
+			checkIfExpectedForwardInputIsNull(timestamp1, start_time, end_time, expectedForwardMap, forwardMap,
+					testResults);
+			checkIfExpectedReverseInputIsNull(timestamp1, start_time, end_time, expectedReverseMap, reverseMap,
+					testResults);
+			checkIfSimulationForwardInputIsNull(timestamp1, start_time, end_time, expectedForwardMap, forwardMap,
+					testResults);
+			checkIfSimulationReverseInputIsNull(timestamp1, start_time, end_time, expectedReverseMap, reverseMap,
+					testResults);
+				
+			if (expectedForwardMap == null || forwardMap == null){
+				return testResults;
+			}
+			
 //			if (expectedForwardMap == null) return new TestResults();
-			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, jsonObject);
-			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, jsonObject);
+//			Map<String, JsonElement> forwardMap = getExpectedForwardInputMap(timestamp1, simultaionInput);
+//			Map<String, JsonElement> reverseMap = getExpectedReverseInputMap(timestamp1, simultaionInput);
 			
 	//		Map<String, List<String>> propMap = simOutProperties.getOutputObjects().stream()
 	//				.collect(Collectors.toMap(SimulationOutputObject::getName, e -> e.getProperties()));
@@ -215,6 +396,98 @@ import pnnl.goss.core.Client;
 			
 			return testResults;
 //			return compareExpectedWithSimulationOutput(expectedOutputMap, jsonObject);
+		}
+
+		protected void checkIfSimulationReverseInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedReverseMap, Map<String, JsonElement> reverseMap,
+				TestResults testResults) {
+			if (reverseMap == null){			
+				for (Entry<String, JsonElement> entry : expectedReverseMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							if(debug){System.out.println("Case no reverseMap");}
+							JsonObject expectedOutputObj = expectedReverseMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+						}
+					}
+				}
+			}
+		}
+
+		protected void checkIfSimulationForwardInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedForwardMap, Map<String, JsonElement> forwardMap,
+				TestResults testResults) {
+			if (forwardMap == null){			
+				for (Entry<String, JsonElement> entry : expectedForwardMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							if(debug){System.out.println("Case no forwardMap");}
+							JsonObject expectedOutputObj = expectedForwardMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							publish(timestamp1, objectMRID, attr, value, "NA", expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
+		}
+
+		protected void checkIfExpectedReverseInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedReverseMap, Map<String, JsonElement> reverseMap,
+				TestResults testResults) {
+			if (expectedReverseMap == null){
+				for (Entry<String, JsonElement> entry : reverseMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							if(debug){System.out.println("Case no expectedReverseMap");}
+							JsonObject expectedOutputObj = reverseMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+							publish(timestamp1, objectMRID, attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "REVERSE", false);
+						}
+					}
+				}
+			}
+		}
+
+		protected void checkIfExpectedForwardInputIsNull(String timestamp1, long start_time, long end_time,
+				Map<String, JsonElement> expectedForwardMap, Map<String, JsonElement> forwardMap,
+				TestResults testResults) {
+			if (expectedForwardMap == null){
+				for (Entry<String, JsonElement> entry : forwardMap.entrySet()) {
+					long time = Long.parseLong(timestamp1);
+					if(time>=start_time && time < end_time){
+	//					System.out.println(entry);
+						if (entry.getValue().isJsonObject()) {
+							System.out.println("Case no expectedForwardMap");
+							JsonObject expectedOutputObj = forwardMap.get(entry.getKey()).getAsJsonObject();
+							String objectMRID = expectedOutputObj.get("object").getAsString();
+							String attr = expectedOutputObj.get("attribute").getAsString();
+							String value = expectedOutputObj.get("value").toString();
+//							System.out.println("no index for "+ timestamp2);
+							testResults.add(entry.getKey(), attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+							publish(timestamp1, objectMRID, attr, "NA", value, expectedOutputObj.get("difference_mrid").getAsString(), "FORWARD", false);
+						}
+					}
+				}
+			}
 		}
 		
 	//	/**
@@ -302,7 +575,175 @@ import pnnl.goss.core.Client;
 	//		return testResults;
 		}
 		
+		/**
+		 * 
+		 * @param timestamp
+		 * @param expectedOutputMap
+		 * @param testResults
+		 * @param simOutputMap
+		 */
 		public void compareExpectedAndSim(String timestamp, Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+				Map<String, JsonElement> simOutputMap) {
+			// Get all keys
+			Set<String> allObjectKeys = new HashSet<String>();
+			allObjectKeys.addAll(expectedOutputMap.keySet());
+			allObjectKeys.addAll(simOutputMap.keySet());
+			for (Iterator<String> iterator = allObjectKeys.iterator(); iterator.hasNext();) {
+				String key = (String) iterator.next();
+//				System.out.println(key);
+				compareMaps(timestamp, expectedOutputMap, testResults, simOutputMap, key);
+			}
+//			System.out.println("Number of equals : " + countTrue + " Number of not equals : " + countFalse);
+		}
+
+		/**
+		 * 
+		 * @param timestamp
+		 * @param expectedOutputMap
+		 * @param testResults
+		 * @param simOutputMap
+		 * @param key
+		 */
+		private void compareMaps(String timestamp, Map<String, JsonElement> expectedOutputMap, TestResults testResults,
+				Map<String, JsonElement> simOutputMap, String key) {
+			if (expectedOutputMap.containsKey(key) && simOutputMap.containsKey(key)) {
+				JsonObject expectedOutputObj = expectedOutputMap.get(key).getAsJsonObject();
+//				if ( simOutputMap.containsKey(key) ){
+				JsonObject simOutputObj = simOutputMap.get(key).getAsJsonObject(); 
+				// Check each property of the object
+				for(Entry<String, JsonElement> simentry : simOutputMap.get(key).getAsJsonObject().entrySet()){
+					String prop = simentry.getKey();
+//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+					if( ! propSet.contains(prop))
+						continue;
+//					String propOrAttr = prop;
+//					if(simOutputObj.has("attribute")){
+//						propOrAttr = simOutputObj.get("attribute").getAsString();
+//					}
+					Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+					// There is a match for that object and property
+					if (comparisonProperty){
+						if (simOutputObj.has("hasMeasurementDifference")){
+							testResults.add(simOutputObj.get("object").getAsString(),
+									simOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									simOutputObj.get(prop).toString(),
+									simOutputObj.get("difference_mrid").getAsString(),
+									simOutputObj.get("hasMeasurementDifference").getAsString(),
+									true);
+							publish(timestamp, simOutputObj.get("object").getAsString(),
+									simOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									simOutputObj.get(prop).toString(),
+									simOutputObj.get("difference_mrid").getAsString(),
+									simOutputObj.get("hasMeasurementDifference").getAsString(),
+									true);
+						}else{
+							testResults.add(key, prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
+							publish(timestamp, key, prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
+						}
+					//	There is NOT a match for that object property
+					} else {
+//							System.out.println("\nFor "+entry.getKey() +":"+prop);
+//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
+//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
+//								"hasMeasurementDifference":"FORWARD","difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4","simulation_id":"1961648576","time":1587670650
+						if (simOutputObj.has("hasMeasurementDifference")){
+							testResults.add(simOutputObj.get("object").getAsString(),
+									simOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									simOutputObj.get(prop).toString(),
+									simOutputObj.get("difference_mrid").getAsString(),
+									simOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+							publish(timestamp, simOutputObj.get("object").getAsString(),
+									simOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									simOutputObj.get(prop).toString(),
+									simOutputObj.get("difference_mrid").getAsString(),
+									simOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+						}else{
+							testResults.add(key, prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
+							publish(timestamp, key, prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
+						}
+					}
+				}
+			}
+			if(! simOutputMap.containsKey(key)){
+				JsonObject expectedOutputObj = expectedOutputMap.get(key).getAsJsonObject();
+				if(debug){
+					System.out.println("No property for " + key +" "+ expectedOutputObj);
+				}
+				String prop = "value";
+				if(expectedOutputObj.has("hasMeasurementDifference") ){
+					if(debug){System.out.println("If compareExpectedAndSim no hasMeasurementDifference");}
+					testResults.add(expectedOutputObj.get("object").getAsString(),
+							expectedOutputObj.get("attribute").getAsString(), 
+							expectedOutputObj.get(prop).toString(),
+							"NA",
+							expectedOutputObj.get("difference_mrid").getAsString(),
+							expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+							false);
+					publish(timestamp, expectedOutputObj.get("object").getAsString(),
+							expectedOutputObj.get("attribute").getAsString(), 
+							expectedOutputObj.get(prop).toString(),
+							"NA",
+							expectedOutputObj.get("difference_mrid").getAsString(),
+							expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+							false);
+				}else{
+					if(debug){System.out.println("Else compareExpectedAndSim no hasMeasurementDifference");}
+					for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+						String prop1 = simentry.getKey();
+						if( ! propSet.contains(prop1))
+							continue;
+						publish(timestamp, key, prop1, simentry.getValue().getAsString(), "NA" , false);
+						testResults.add(key, prop1, simentry.getValue().getAsString(), "NA", false);
+					}
+				}					
+			}
+			if(! expectedOutputMap.containsKey(key)){
+				JsonObject expectedOutputObj = simOutputMap.get(key).getAsJsonObject();
+				if(debug){
+//					System.out.println("No property for "+ key);
+					System.out.println("No property for " + key +" "+ expectedOutputObj);
+				}
+				String prop = "value";
+				if(expectedOutputObj.has("hasMeasurementDifference") ){
+					if(debug){System.out.println("If compareExpectedAndSim no hasMeasurementDifference");}
+					testResults.add(expectedOutputObj.get("object").getAsString(),
+							expectedOutputObj.get("attribute").getAsString(), 
+							"NA",
+							expectedOutputObj.get(prop).toString(),
+							expectedOutputObj.get("difference_mrid").getAsString(),
+							expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+							false);
+					publish(timestamp, expectedOutputObj.get("object").getAsString(),
+							expectedOutputObj.get("attribute").getAsString(),
+							"NA",
+							expectedOutputObj.get(prop).toString(),
+							expectedOutputObj.get("difference_mrid").getAsString(),
+							expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+							false);
+				}else{
+					if(testConfig.getTestWithAllSimulationOutput()){
+						if(debug){System.out.println("Else compareExpectedAndSim no hasMeasurementDifference");}
+						for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+							String prop1 = simentry.getKey();
+							if( ! propSet.contains(prop1))
+								continue;
+							publish(timestamp, key, prop1, "NA",simentry.getValue().getAsString(), false);
+							testResults.add(key, prop1, "NA",simentry.getValue().getAsString(), false);
+						}
+					}
+				}					
+			}
+		}
+		
+		@Deprecated
+		public void compareExpectedAndSimOld(String timestamp, Map<String, JsonElement> expectedOutputMap, TestResults testResults,
 				Map<String, JsonElement> simOutputMap) {
 			for (Entry<String, JsonElement> entry : expectedOutputMap.entrySet()) {			
 //				System.out.println(entry);
@@ -317,45 +758,53 @@ import pnnl.goss.core.Client;
 	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
 							if( ! propSet.contains(prop))
 								continue;
-							
-							Boolean comparison = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
-							if (comparison){
+//							String propOrAttr = prop;
+//							if(simOutputObj.has("attribute")){
+//								propOrAttr = simOutputObj.get("attribute").getAsString();
+//							}
+							Boolean comparisonProperty = compareObjectProperties(simOutputObj, expectedOutputObj, prop);
+							// There is a match for that object and property
+							if (comparisonProperty){
 								if (simOutputObj.has("hasMeasurementDifference")){
 									testResults.add(simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), true);
+											true);
 									publish(timestamp, simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), true);
+											true);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), true);
 								}
-							}
-							else{
+							//	There is NOT a match for that object property
+							} else {
 	//							System.out.println("\nFor "+entry.getKey() +":"+prop);
 	//							System.out.println("    EXPECTED: "+ simOutputObj.get(prop) );
 	//							System.out.println("    GOT:      "+ expectedOutputObj.get(prop) );
 //								"hasMeasurementDifference":"FORWARD","difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4","simulation_id":"1961648576","time":1587670650
 								if (simOutputObj.has("hasMeasurementDifference")){
 									testResults.add(simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString());
+											false);
 									publish(timestamp, simOutputObj.get("object").getAsString(),
-											simOutputObj.get("hasMeasurementDifference").getAsString() + " " + prop, 
+											simOutputObj.get("attribute").getAsString(), 
 											expectedOutputObj.get(prop).toString(),
 											simOutputObj.get(prop).toString(),
+											simOutputObj.get("difference_mrid").getAsString(),
 											simOutputObj.get("hasMeasurementDifference").getAsString(),
-											simOutputObj.get("difference_mrid").getAsString(), false);
+											false);
 								}else{
 									testResults.add(entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
 									publish(timestamp, entry.getKey(), prop, expectedOutputObj.get(prop).toString(), simOutputObj.get(prop).toString(), false);
@@ -364,6 +813,53 @@ import pnnl.goss.core.Client;
 						}
 					} else{
 						System.out.println("No property for "+ entry.getKey());
+						System.out.println("No property for "+ entry);
+						System.out.println("No property for "+ expectedOutputObj);
+//						String prop = entry.getKey();
+//						publish(timestamp, entry.getKey(), prop, simentry.getValue().getAsString(), "NA" , false);
+						String prop = "value";
+						if(expectedOutputObj.has("hasMeasurementDifference") ){
+							System.out.println("If compareExpectedAndSim no hasMeasurementDifference");
+							testResults.add(expectedOutputObj.get("object").getAsString(),
+									expectedOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									"NA",
+									expectedOutputObj.get("difference_mrid").getAsString(),
+									expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+							publish(timestamp, expectedOutputObj.get("object").getAsString(),
+									expectedOutputObj.get("attribute").getAsString(), 
+									expectedOutputObj.get(prop).toString(),
+									"NA",
+									expectedOutputObj.get("difference_mrid").getAsString(),
+									expectedOutputObj.get("hasMeasurementDifference").getAsString(),
+									false);
+						}else{
+							System.out.println("Else compareExpectedAndSim no hasMeasurementDifference");
+							for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+								String prop1 = simentry.getKey();
+		//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+		//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+								if( ! propSet.contains(prop1))
+									continue;
+								publish(timestamp, entry.getKey(), prop1, simentry.getValue().getAsString(), "NA" , false);
+								testResults.add(entry.getKey(), prop1, simentry.getValue().getAsString(), "NA", false);
+							}
+							// old why did I do this?  It was a problem with the attribute )"ShuntCompensator" versus "value,magnitude,angle" prop right?
+//							testResults.add(entry.getKey(), expectedOutputObj.get("attribute").getAsString(), expectedOutputObj.get(prop).toString(), "NA", false);
+//							publish(timestamp, entry.getKey(), expectedOutputObj.get("attribute").getAsString(), expectedOutputObj.get(prop).toString(), "NA", false);
+						}
+							
+						
+//						for(Entry<String, JsonElement> simentry : expectedOutputObj.entrySet()){
+//							String prop1 = simentry.getKey();
+//	//						System.out.println("\nTesting "+entry.getKey() +":"+prop);
+//	//						System.out.println(simOutputObj.get(prop) +  "== "+  expectedOutputObj.get(prop));
+//							if( ! propSet.contains(prop1))
+//								continue;
+//							publish(timestamp, entry.getKey(), prop1, simentry.getValue().getAsString(), "NA" , false);
+//						}
+						
 					}
 				}else
 					System.out.println("     Not object" + entry);
@@ -444,7 +940,7 @@ import pnnl.goss.core.Client;
 				if(output.has(timestamp)){
 					expectedOutputMap = getOutputMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					System.out.println("CompareResults output no index for " + timestamp);
+					if(debug) System.out.println("CompareResults output no index for " + timestamp);
 					return null;
 				}
 			}
@@ -452,11 +948,16 @@ import pnnl.goss.core.Client;
 		}
 		
 		/**
-		 * Get the map of the expected inputs
+		 * Get the map of the expected forward inputs for the timestamp
+		 * @param timestamp
+		 * @param expectedOutputObj
 		 * @return
 		 */
 		public Map<String, JsonElement> getExpectedForwardInputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
+			if(expectedOutputObj == null){
+				return null;
+			}
 //			System.out.println("input map");
 //			System.out.println(expectedOutputObj.toString());
 			if (expectedOutputObj.isJsonObject()) {
@@ -466,7 +967,6 @@ import pnnl.goss.core.Client;
 				if(output.has(timestamp)){
 					expectedOutputMap = getForwardDifferenceMap(output.get(timestamp).getAsJsonObject());
 				}else{
-					// TODO
 					System.out.println("CompareResults forward input no index for " + timestamp);
 					return null;
 				}
@@ -480,6 +980,9 @@ import pnnl.goss.core.Client;
 		 */
 		public Map<String, JsonElement> getExpectedReverseInputMap(String timestamp, JsonObject expectedOutputObj) {
 			Map<String, JsonElement> expectedOutputMap = null;
+			if(expectedOutputObj == null){
+				return null;
+			}
 			if (expectedOutputObj.isJsonObject()) {
 				JsonObject output = expectedOutputObj.getAsJsonObject();				
 				
@@ -541,15 +1044,29 @@ import pnnl.goss.core.Client;
 			return expectedOutputMap;
 		}
 		
+		/**
+		 * Build a map of all forward difference messages with object id as the key.
+		 * Example return map:
+		 * {_307E4291-5FEA-4388-B2E0-2B3D22FE8183={"hasMeasurementDifference":"FORWARD",
+		 * 										   "difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4",
+		 * 										   "attribute":"ShuntCompensator.sections",
+		 * 										   "value":0.0,"object":
+		 * 										   "_307E4291-5FEA-4388-B2E0-2B3D22FE8183"}}"
+		 * @param output
+		 * @return
+		 */
 		public Map<String, JsonElement> getForwardDifferenceMap(JsonObject output) {
 			JsonObject tempOutput = output;
 			if ( tempOutput.has("input") ) tempOutput = tempOutput.getAsJsonObject("input");
 			JsonObject tempObj = tempOutput.getAsJsonObject("message");
 			Map<String, JsonElement> forwardDifferenceMap = new HashMap<String,JsonElement>();
+			
+			
 			if(tempObj.has("measurements")){
 				JsonArray temp = tempObj.getAsJsonArray("measurements");
 				for (JsonElement jsonElement : temp) {
 					if ( jsonElement.getAsJsonObject().get("hasMeasurementDifference").getAsString().equals("FORWARD")){
+//						System.out.println(jsonElement);
 						forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
 					} 
 				}
@@ -565,6 +1082,19 @@ import pnnl.goss.core.Client;
 			return forwardDifferenceMap;
 		}
 		
+		/**
+		 * Build a map of all reverse difference messages
+		 * Example return map:
+		 * {_307E4291-5FEA-4388-B2E0-2B3D22FE8183={"hasMeasurementDifference":"REVERSE",
+		 *                                         "difference_mrid":"1fae379c-d0e2-4c80-8f2c-c5d7a70ff4d4",
+		 *                                         "simulation_id":"1961648576",
+		 *                                         "time":1248156014,
+		 *                                         "attribute":"ShuntCompensator.sections",
+		 *                                         "value":0.0,
+		 *                                         "object":"_307E4291-5FEA-4388-B2E0-2B3D22FE8183"}}
+		 * @param output
+		 * @return
+		 */
 		public Map<String, JsonElement> getReverseDifferenceMap(JsonObject output) {
 			JsonObject tempOutput = output;
 			if ( tempOutput.has("input") ) tempOutput = tempOutput.getAsJsonObject("input");
@@ -685,16 +1215,6 @@ import pnnl.goss.core.Client;
 		 */
 		public Boolean compareObjectProperties(JsonObject simOutputObj, JsonObject expectedOutputObj, String prop) {
 			Boolean comparison = simOutputObj.get(prop).equals(expectedOutputObj.get(prop));
-	//		System.out.println("     " + prop +  " : " + simOutputObj.get(prop) + " == " +  expectedOutputObj.get(prop) + " is " + comparison);
-			// Test voltage, i.e. complex number
-//			if(prop.startsWith("voltage_") || prop.startsWith("power_in_") ){
-//				Complex c1 = cf.parse(simOutputObj.get(prop).getAsString());
-//				Complex c2 = cf.parse(expectedOutputObj.get(prop).getAsString());
-//	//			System.out.println("              Complex" + c1 + c2 + equals(c1,c2));
-//				comparison = equals(c1,c2);
-//				return comparison;
-//			}
-//			System.out.println(prop);
 			JsonPrimitive obj1 = simOutputObj.get(prop).getAsJsonPrimitive();
 			JsonPrimitive obj2 = expectedOutputObj.get(prop).getAsJsonPrimitive();
 			if (obj1.isNumber() && obj2.isNumber()){
