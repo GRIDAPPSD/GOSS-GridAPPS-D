@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -48,7 +47,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.felix.dm.annotation.api.Component;
@@ -59,16 +57,15 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.sparql.function.library.uuid;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import pnnl.goss.core.ClientFactory;
 
 @Component
@@ -1214,8 +1211,26 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		return queryResultSet(null, modelNameQuery, processId, username);
 	}
 	
-	public void insertAllMeasurements( String processId, String username, String baseDirectory) {
+	public void insertAllMeasurements( String processId, String username, String baseDirectory)  throws Exception{
 			//do insert measuremnt
+			File tempDataPathDir = null;
+			if(baseDirectory!=null){
+			} else {
+				String simulationConfigDir = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+				if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
+					logManager.error(ProcessStatus.ERROR, processId, "No temporary data location returned for request "+ processId);
+					throw new Exception("No temporary data location  returned for request "
+							+ processId);
+				}
+				if(!simulationConfigDir.endsWith(File.separator)){
+					simulationConfigDir = simulationConfigDir+File.separator;
+				}
+				simulationConfigDir = simulationConfigDir+processId+File.separator;
+				tempDataPathDir = new File(simulationConfigDir);
+				if(!tempDataPathDir.exists()){
+					tempDataPathDir.mkdirs();
+				}
+			}
 			// TODO Auto-generated method stub
 //	        list_all_measurements to generate lines/loads/machines/etc for all models  (models in config file in conf)
 //			listAllMeasurements(processId, username);
@@ -1224,7 +1239,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
 //	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
 			for (String modelName: models.keySet()){
-				insertMeasurements(modelName, models.get(modelName), processId, username, baseDirectory);
+				insertMeasurements(modelName, models.get(modelName), processId, username, tempDataPathDir.getAbsolutePath());
 			}
 			
 //			insertAllMeasurements(modelName,  processId, username);
