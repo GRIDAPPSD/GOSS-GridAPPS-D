@@ -127,19 +127,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		//queryHandler = new BlazegraphQueryHandler(endpoint);
 //		dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
 		
-		models.put("acep_psil", "_77966920-E1EC-EE8A-23EE-4EFD23B205BD");
-		models.put("eprij1", "_67AB291F-DCCD-31B7-B499-338206B9828F");
-		models.put("ieee13assets", "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F");
-		models.put("ieee13nodeckt", "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
-		models.put("ieee13ochre", "_13AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
-		models.put("ieee37", "_49003F52-A359-C2EA-10C4-F4ED3FD368CC");
-		models.put("ieee123", "_C1C3E687-6FFD-C753-582B-632A27E28507");
-		models.put("ieee123pv", "_E407CBB6-8C8D-9BC9-589C-AB83FBF0826D");
-		models.put("ieee8500", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3");
-		models.put("ieee8500enh", "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44");
-		models.put("r2_12_47_2", "_9CE150A8-8CC5-A0F9-B67E-BBD8C79D3095");
-		models.put("transactive", "_503D6E20-F499-4CC7-8051-971E23D0BF79");
-		models.put("final9500node", "_EE71F6C9-56F0-4167-A14E-7F4C71F10EAA");
 		
 		
 	}
@@ -193,6 +180,21 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			String model = bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
 //			String model = bg.queryModel("_503D6E20-F499-4CC7-8051-971E23D0BF79", "", "", "XML", "12345", "user");
 			
+			
+
+//			models.put("acep_psil", "_77966920-E1EC-EE8A-23EE-4EFD23B205BD");
+//			models.put("eprij1", "_67AB291F-DCCD-31B7-B499-338206B9828F");
+//			models.put("ieee13assets", "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F");
+//			models.put("ieee13nodeckt", "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
+//			models.put("ieee13ochre", "_13AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
+//			models.put("ieee37", "_49003F52-A359-C2EA-10C4-F4ED3FD368CC");
+//			models.put("ieee123", "_C1C3E687-6FFD-C753-582B-632A27E28507");
+//			models.put("ieee123pv", "_E407CBB6-8C8D-9BC9-589C-AB83FBF0826D");
+//			models.put("ieee8500", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3");
+//			models.put("ieee8500enh", "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44");
+//			models.put("r2_12_47_2", "_9CE150A8-8CC5-A0F9-B67E-BBD8C79D3095");
+//			models.put("transactive", "_503D6E20-F499-4CC7-8051-971E23D0BF79");
+//			models.put("final9500node", "_EE71F6C9-56F0-4167-A14E-7F4C71F10EAA");
 			
 			FileOutputStream fout = new FileOutputStream(new File("xml_new_full.xml"));
 			fout.write(model.getBytes());
@@ -1215,6 +1217,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			//do insert measuremnt
 			File tempDataPathDir = null;
 			if(baseDirectory!=null){
+				tempDataPathDir = new File(baseDirectory);
+				if(!tempDataPathDir.exists()){
+					tempDataPathDir.mkdirs();
+				}
 			} else {
 				String simulationConfigDir = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
 				if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
@@ -1231,6 +1237,17 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 					tempDataPathDir.mkdirs();
 				}
 			}
+			
+			
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				models.put(feederName, feederId);
+			}
+			
+			
 			// TODO Auto-generated method stub
 //	        list_all_measurements to generate lines/loads/machines/etc for all models  (models in config file in conf)
 //			listAllMeasurements(processId, username);
