@@ -32,8 +32,8 @@
 	cimhub.lib;version=0.2.4,\
 	httpclient,\
 	com.bigdata.rdf,\
-    proven-client;version=0.3,\
-    proven-message;version=0.4,\
+    proven-client;version=0.2.4,\
+    proven-message;version=0.5,\
 	com.nimbusds.nimbus-jose-jwt-dependencies
 		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
