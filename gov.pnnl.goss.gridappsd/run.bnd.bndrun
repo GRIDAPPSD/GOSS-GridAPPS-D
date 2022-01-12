@@ -79,8 +79,8 @@
 	cimhub.lib;version=0.2.4,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	com.bigdata.rdf,\
-	proven-message;version=0.4,\
-	proven-client;version=0.3,\
+	proven-message;version=0.5,\
+	proven-client;version=0.2.4,\
 	javax.ws.rs-api,\
 	org.apache.commons.codec,\
 	shacl,\
