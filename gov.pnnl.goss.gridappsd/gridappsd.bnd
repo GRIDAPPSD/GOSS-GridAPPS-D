@@ -13,7 +13,8 @@ Private-Package: \
 	gov.pnnl.goss.gridappsd.log,\
 	gov.pnnl.goss.gridappsd.app,\
 	gov.pnnl.goss.gridappsd.service,\
-	gov.pnnl.goss.gridappsd.testmanager
+	gov.pnnl.goss.gridappsd.testmanager,\
+	gov.pnnl.goss.gridappsd.distributed
 Export-Package: \
 	gov.pnnl.goss.gridappsd.dto,\
 	gov.pnnl.goss.gridappsd.api

@@ -53,6 +53,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ProcessManager;
 import gov.pnnl.goss.gridappsd.api.RoleManager;
@@ -106,6 +107,9 @@ public class ProcessManagerImpl implements ProcessManager {
 	@ServiceDependency
 	private volatile TestManager testManager;
 	
+	@ServiceDependency
+	private volatile FieldBusManager fieldBusManager;
+	
 //	@ServiceDependency
 //	private volatile RoleManager roleManager;
 
@@ -122,7 +126,8 @@ public class ProcessManagerImpl implements ProcessManager {
 			LogManager logManager,
 			AppManager appManager,
 			ProcessNewSimulationRequest newSimulationProcess,
-			TestManager testManager){
+			TestManager testManager,
+			FieldBusManager fieldBusManager){
 		this.clientFactory = clientFactory;
 		this.configurationManager = configurationManager;
 		this.simulationManager = simulationManager;
@@ -130,6 +135,7 @@ public class ProcessManagerImpl implements ProcessManager {
 		this.newSimulationProcess = newSimulationProcess;
 		this.logManager = logManager;
 		this.testManager = testManager;
+		this.fieldBusManager = fieldBusManager;
 	}
 
 
@@ -168,7 +174,7 @@ public class ProcessManagerImpl implements ProcessManager {
 
 
 			client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new ProcessEvent(this,
-					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig));
+					client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig, fieldBusManager));
 		}
 		catch(Exception e){
 			e.printStackTrace();

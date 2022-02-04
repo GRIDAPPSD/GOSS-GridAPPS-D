@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.RoleManager;
@@ -98,6 +99,8 @@ public class ProcessEventTests {
 	TestManager testManager;
 	@Mock
 	SecurityConfig securityConfig;
+	@Mock
+	FieldBusManager fieldBusManager;
 	
 	@Captor
 	ArgumentCaptor<String> argCaptor;
@@ -116,7 +119,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig, fieldBusManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line."+
@@ -147,7 +150,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig, fieldBusManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		
@@ -171,7 +174,7 @@ public class ProcessEventTests {
 		DataManager dataManager = new DataManagerImpl(clientFactory, logManager);
 		
 		ProcessEvent pe = new ProcessEvent(processManager, client, 
-				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig);
+				newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager, dataManager, testManager, securityConfig, fieldBusManager);
 		
 		PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 		
