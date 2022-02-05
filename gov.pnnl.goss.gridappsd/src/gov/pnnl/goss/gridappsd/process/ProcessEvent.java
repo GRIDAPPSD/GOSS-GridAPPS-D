@@ -42,6 +42,7 @@ package gov.pnnl.goss.gridappsd.process;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -81,6 +82,7 @@ import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.security.JWTAuthenticationToken;
 import pnnl.goss.core.security.SecurityConfig;
 
@@ -118,13 +120,15 @@ public class ProcessEvent implements GossResponseEvent {
 	DataManager dataManager;
 	TestManager testManager;
 	SecurityConfig securityConfig;
+	FieldBusManager fieldBusManager;
 
 
 	public ProcessEvent(ProcessManagerImpl processManager, 
 			Client client, ProcessNewSimulationRequest newSimulationProcess, 
 			ConfigurationManager configurationManager, SimulationManager simulationManager, 
 			AppManager appManager, LogManager logManager, ServiceManager serviceManager, 
-			DataManager dataManager, TestManager testManager, SecurityConfig securityConfig){
+			DataManager dataManager, TestManager testManager, SecurityConfig securityConfig,
+			FieldBusManager fieldBusManager){
 		this.client = client;
 		this.processManger = processManager;
 		this.newSimulationProcess = newSimulationProcess;
@@ -136,6 +140,7 @@ public class ProcessEvent implements GossResponseEvent {
 		this.dataManager = dataManager;
 		this.testManager = testManager;
 		this.securityConfig = securityConfig;
+		this.fieldBusManager = fieldBusManager;
 	}
 
 
@@ -328,7 +333,9 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 
-			} else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
+			} 
+			
+			else if(event.getDestination().contains(GridAppsDConstants.topic_requestPlatformStatus)){
 				
 				RequestPlatformStatus request = RequestPlatformStatus.parse(event.getData().toString());
 				 PlatformStatus platformStatus = new PlatformStatus();
@@ -348,6 +355,13 @@ public class ProcessEvent implements GossResponseEvent {
 				RoleList roleListResult = new RoleList();
 				roleListResult.setRoles(roles);
 				sendData(client, event.getReplyDestination(), roleListResult.toString(), processId, username, null);
+			} 
+			
+			else if(event.getDestination().contains(GridAppsDConstants.topic_requestField)){
+				
+				String data = fieldBusManager.handleRequest(event.getDestination(),event.getData()).toString();
+				sendData(client, event.getReplyDestination(), data, processId, username, RESPONSE_FORMAT.JSON.toString());
+				
 			}
 		}catch(Exception e ){
 			StringWriter sw = new StringWriter();
