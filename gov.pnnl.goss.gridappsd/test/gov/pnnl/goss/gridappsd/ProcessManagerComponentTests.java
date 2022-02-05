@@ -43,6 +43,7 @@ import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
 import static org.junit.Assert.assertNotNull;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.api.TestManager;
@@ -102,6 +103,9 @@ public class ProcessManagerComponentTests {
 
 	@Captor
 	ArgumentCaptor<LogMessage> argCaptorLogMessage;
+	
+	@Mock
+	FieldBusManager fieldBusManager;
 
 
 
@@ -232,7 +236,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory,
 											configurationManager, simulationManager,
-											 logManager, appManager, newSimulationProcess, testManager);
+											 logManager, appManager, newSimulationProcess, testManager, fieldBusManager);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
@@ -320,7 +324,7 @@ public class ProcessManagerComponentTests {
 
 		ProcessManagerImpl processManager = new ProcessManagerImpl( clientFactory,
 											configurationManager, simulationManager,
-											 logManager, appManager, newSimulationProcess, testManager);
+											 logManager, appManager, newSimulationProcess, testManager,fieldBusManager);
 		processManager.start();
 
 		Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());

@@ -72,6 +72,7 @@ public class GridAppsDConstants {
 	public static final String topic_requestSimulationStatus = topic_process_prefix+".request.status.simulation";
 	public static final String topic_requestPlatformStatus = topic_process_prefix+".request.status.platform";
 	public static final String topic_requestMyRoles = topic_process_prefix+".request.roles";
+	public static final String topic_requestField = topic_process_prefix+".request.field";
 
 	// Remote Application topics
 	public static final String topic_remoteapp_prefix = topic_prefix+".remoteapp";
@@ -87,6 +88,10 @@ public class GridAppsDConstants {
 	public static final String topic_responseData = topic_prefix+".response.data";
 	
 	public static final String topic_platformLog = topic_prefix+".platform.log";
+	
+	
+	//Field Request Topics
+	public static final String topic_requestFieldContext = topic_process_prefix+".request.field.context";
 	
 	//App Request Topics
 	public static final String topic_app_register = topic_requestApp+".register";
