@@ -45,6 +45,7 @@ Created on Mar 9, 2020
 import argparse
 import cmath
 from datetime import datetime
+from enum import IntEnum
 import gzip
 import inspect
 import json
@@ -104,6 +105,17 @@ log.setLevel(logging.DEBUG)
 #logging.config.dictConfig(logConfig)
 #log = logging.getLogger(__name__)
 
+class RegulatingControlModeKind(IntEnum):
+    voltage = 0
+    activePower = 1
+    reactivePower = 2
+    currentFlow = 3
+    admittance = 4
+    timeScheduled = 5
+    temperature = 6
+    powerFactor = 7
+    
+
 class HelicsGossBridge(object):
     '''
     ClassDocs
@@ -131,6 +143,16 @@ class HelicsGossBridge(object):
     _object_mrid_to_name = None
     _model_mrid = None
     _difference_attribute_map = {
+        "RegulatingControl.enabled" : {
+            "capacitor" : {
+                "property" : ["control"],
+                "prefix" : "cap_"
+            },
+            "regulator" : {
+                "property" : ["Control"],
+                "prefix" : "rcon_"
+            }
+        },
         "RegulatingControl.mode" : {
             "capacitor" : {
                 "property" : ["control"],
@@ -749,19 +771,24 @@ class HelicsGossBridge(object):
                             if (object_name_prefix + object_name) not in helics_input_message.keys():
                                 helics_input_message[object_name_prefix + object_name] = {}
                             if cim_attribute == "RegulatingControl.mode":
-                                val = int(x.get("value"))
-                                if val == 0:
+                                try:
+                                    val = RegulatingControlModeKind(int(x.get("value")))
+                                except:
+                                    val = RegulatingControlModeKind[x.get("value","").replace("RegulatingControlModeKind.","",1)]
+                                if val == RegulatingControlModeKind.voltage:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VOLT"
-                                if val == 1:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                elif val == 2:
+                                elif val == RegulatingControlModeKind.reactivePower:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VAR"
-                                elif val == 3:
+                                elif val == RegulatingControlModeKind.currentFlow:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
                                 else:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                    log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
-                                    self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+                                    log.warning(f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}")
+                                    self._gad_connection.send_simulation_status("RUNNING", f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}","WARN")
+                            elif cim_attribute == "RegulatingControl.enabled":
+                                val = x.get("value")
+                                if val == False:
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                             elif cim_attribute == "RegulatingControl.targetDeadband":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
                                     helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
