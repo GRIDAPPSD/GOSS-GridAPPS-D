@@ -11,7 +11,7 @@
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
  * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS â€œAS ISâ€� AND ANY 
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
  * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
@@ -178,6 +178,7 @@ public class TestConfig implements Serializable {
 	public static TestConfig parse(String jsonString){
 		Gson  gson = new Gson();
 		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
+		System.out.println(jsonString);
 //		if(obj.events==null || obj.events.size()==0 || obj.compareWithSimId ==null)
 //			throw new RuntimeException("Expected attribute events not found or is empty");
 		if(obj.appId==null)
