@@ -25,7 +25,6 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
-import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.field.Feeder;
 import gov.pnnl.goss.gridappsd.dto.field.RequestFieldContext;
 import gov.pnnl.goss.gridappsd.dto.field.Root;
@@ -68,6 +67,8 @@ public class FieldBusManagerImpl implements FieldBusManager{
 	Map<String,List<String>> messageBus_measIds_map = new HashMap<String, List<String>>();
 	Map<String,String> measId_messageBus_map = new HashMap<String, String>();
 	
+	//FileWriter writer = null;
+	
 	
 	public FieldBusManagerImpl(){
 		System.out.println("Creating FieldBusManager");
@@ -106,6 +107,7 @@ public class FieldBusManagerImpl implements FieldBusManager{
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			client = clientFactory.create(PROTOCOL.STOMP, credentials, true);
 			
+			// writer = new FileWriter(new File("/tmp/gridappsd_tmp/feeder_level_output.txt"), true);
 			this.publishDeviceOutput();
 			
 			
@@ -248,9 +250,15 @@ public class FieldBusManagerImpl implements FieldBusManager{
 			@Override
 			public void onMessage(Serializable response) {
 				
+				
+				
 				DataResponse event = (DataResponse) response;
 				String simulationId = event.getDestination().substring(event.getDestination().lastIndexOf(".")+1,event.getDestination().length());
+				System.out.println("Received output for sim id : +++++++++++++++++++++++++++++++"+simulationId);
 				String simOutputStr = event.getData().toString();
+				
+				System.out.println("Received output : +++++++++++++++++++++++++++++++"+simOutputStr.substring(0,50));
+				
 				
 				JsonObject simOutputJsonObj = null;
 				
@@ -268,22 +276,44 @@ public class FieldBusManagerImpl implements FieldBusManager{
 				Map<String, JsonElement> expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
 							.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
 				
+				
+				
+				try {
+					
+				
+				
 				for(String measurementMrid : expectedOutputMap.keySet()){
 					
 					String messageBusId = null;
 					if(measId_messageBus_map.get(measurementMrid) != null)
-						messageBusId = "goss.gridappsd.simulation.output."+simulationId+"."+measId_messageBus_map.get(measurementMrid);
+						messageBusId = "goss.gridappsd.field.simulation.output."+simulationId+"."+measId_messageBus_map.get(measurementMrid);
 					else 
-						messageBusId = "goss.gridappsd.simulation.output."+simulationId+"."+root.feeders.message_bus_id;
+						messageBusId = "goss.gridappsd.field.simulation.output."+simulationId+"."+root.feeders.message_bus_id;
+
 					
 					JsonObject obj = new JsonObject();
 					obj.add(measurementMrid, expectedOutputMap.get(measurementMrid));
 					
 					//System.out.println("Sending measurements to "+messageBusId);
 					//System.out.println(obj.toString().substring(0, 100));
+					System.out.println("Publishing message on  : +++++++++++++++++++++++++++++++"+messageBusId);
 					client.publish(messageBusId, obj.toString());
+					/*if(messageBusId.endsWith("_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62")){
+						writer.append(obj.toString());
+						writer.append("\n");
+					}*/
 				}
-
+				
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} 
+				/*try {
+					writer.close();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}*/
 				
 			}
 			
@@ -296,8 +326,20 @@ public class FieldBusManagerImpl implements FieldBusManager{
 	
 	
 	/*public static void main(String[] args){
-		new FieldBusManagerImpl().start();
-
+		FieldBusManagerImpl obj = new FieldBusManagerImpl();
+		
+		Credentials credentials = new UsernamePasswordCredentials("system","manager");
+		try {
+			obj.client = new ClientServiceFactory().create(PROTOCOL.STOMP, credentials, true);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		obj.client.publish("goss.gridappsd.simulation.output.2085282780._49AD8E07-3BF9-A4E2-CB8F-C3722F837B62.4.0", "{\"test\":\"test\"}");
+		
+		
 	}*/
 
 }
