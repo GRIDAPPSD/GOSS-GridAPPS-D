@@ -143,9 +143,8 @@ public class ServiceManagerImpl implements ServiceManager{
 			
 			@Override
 			public boolean accept(File pathname) {
-				if(pathname.isFile() && pathname.getName().endsWith(".config")){
+				if(pathname.isFile() && pathname.getName().endsWith(".config"))
 					return true;
-				}
 				else
 					return false;
 			}
@@ -337,7 +336,6 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.redirectOutput();
 				
 				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
-				System.out.println(String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 				

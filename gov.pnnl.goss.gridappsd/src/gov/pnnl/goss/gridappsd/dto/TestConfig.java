@@ -178,7 +178,6 @@ public class TestConfig implements Serializable {
 	public static TestConfig parse(String jsonString){
 		Gson  gson = new Gson();
 		TestConfig obj = gson.fromJson(jsonString, TestConfig.class);
-		System.out.println(jsonString);
 //		if(obj.events==null || obj.events.size()==0 || obj.compareWithSimId ==null)
 //			throw new RuntimeException("Expected attribute events not found or is empty");
 		if(obj.appId==null)
