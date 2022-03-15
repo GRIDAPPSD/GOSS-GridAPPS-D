@@ -106,8 +106,8 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 			Credentials credentials = new UsernamePasswordCredentials(
 					securityConfig.getManagerUser(), securityConfig.getManagerPassword());
 			client = clientFactory.create(PROTOCOL.STOMP,credentials,true);
-			connection = null;
-			//dataSources.getDataSourceByKey("gridappsd").getConnection();
+			connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+			dataSources.getDataSourceByKey("gridappsd").getConnection();
 			
 		} catch (SQLException e) { 
 			// TODO Auto-generated catch block
