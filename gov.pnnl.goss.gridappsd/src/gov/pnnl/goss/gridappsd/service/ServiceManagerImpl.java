@@ -138,14 +138,14 @@ public class ServiceManagerImpl implements ServiceManager{
 	protected void scanForServices(){
 		//Get directory for services from the config
 		File serviceConfigDir = getServiceConfigDirectory();
-		
 		//for each service found, parse the [service].config file to create serviceinfo object and add to services map
 		File[] serviceconfigFiles = serviceConfigDir.listFiles(new FileFilter() {
 			
 			@Override
 			public boolean accept(File pathname) {
-				if(pathname.isFile() && pathname.getName().endsWith(".config"))
+				if(pathname.isFile() && pathname.getName().endsWith(".config")){
 					return true;
+				}
 				else
 					return false;
 			}
@@ -259,7 +259,7 @@ public class ServiceManagerImpl implements ServiceManager{
 		}
 		
 		
-		if(serviceInfo.isLaunch_on_startup()){
+		if(simulationId!=null && serviceInfo.isLaunch_on_startup()){
 			logManager.warn(ProcessStatus.RUNNING, simulationId, serviceId + " service is already running and multiple instances are not allowed");
 			return null;
 		}
@@ -337,6 +337,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				processServiceBuilder.redirectOutput();
 				
 				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
+				System.out.println(String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
 				
