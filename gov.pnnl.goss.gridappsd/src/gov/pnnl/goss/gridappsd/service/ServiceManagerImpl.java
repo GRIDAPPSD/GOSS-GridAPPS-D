@@ -138,7 +138,6 @@ public class ServiceManagerImpl implements ServiceManager{
 	protected void scanForServices(){
 		//Get directory for services from the config
 		File serviceConfigDir = getServiceConfigDirectory();
-		
 		//for each service found, parse the [service].config file to create serviceinfo object and add to services map
 		File[] serviceconfigFiles = serviceConfigDir.listFiles(new FileFilter() {
 			
@@ -153,6 +152,9 @@ public class ServiceManagerImpl implements ServiceManager{
 		for(File serviceConfigFile: serviceconfigFiles){
 			ServiceInfo serviceInfo = parseServiceInfo(serviceConfigFile);
 			services.put(serviceInfo.getId(), serviceInfo);
+			if(serviceInfo.isLaunch_on_startup()){
+				startService(serviceInfo.getId(), null);
+			}
 		}
 	}
 	
@@ -238,7 +240,11 @@ public class ServiceManagerImpl implements ServiceManager{
 	@Override
 	public String startServiceForSimultion(String serviceId, HashMap<String, Object> runtimeOptions,  Map<String, Object> simulationContext) {
 		
-		String simulationId = simulationContext.get("simulationId").toString();
+		String simulationId = null;
+		
+		if(simulationContext!=null && simulationContext.get("simulationId")!=null){
+			simulationId = simulationContext.get("simulationId").toString();
+		}
 				
 		String instanceId = serviceId+"-"+new Date().getTime();
 		
@@ -249,6 +255,12 @@ public class ServiceManagerImpl implements ServiceManager{
 		if(serviceInfo==null){
 			//TODO: publish error on status topic
 			throw new RuntimeException("Service not found: "+serviceId);
+		}
+		
+		
+		if(simulationId!=null && serviceInfo.isLaunch_on_startup()){
+			logManager.warn(ProcessStatus.RUNNING, simulationId, serviceId + " service is already running and multiple instances are not allowed");
+			return null;
 		}
 		
 		// are multiple allowed? if not check to see if it is already running, if it is then send warning message
@@ -282,9 +294,10 @@ public class ServiceManagerImpl implements ServiceManager{
 	    	}
 	    	envVars.put(envVar.getEnvName(), value);
 	    }
-	    envVars.put("GRIDAPPSD_USER", simulationContext.get("username").toString());
-	    envVars.put("GRIDAPPSD_PASSWORD", simulationContext.get("password").toString());
-	    envVars.put("GRIDAPPSD_LOG_LEVEL", simulationContext.get("logLevel").toString());
+	    envVars.put("GRIDAPPSD_USER", securityConfig.getManagerUser());
+		envVars.put("GRIDAPPSD_PASSWORD", securityConfig.getManagerPassword());
+		envVars.put("GRIDAPPSD_LOG_LEVEL",logManager.getLogLevel().toString());
+	    
 	    
 		
 		//add executation command	        
