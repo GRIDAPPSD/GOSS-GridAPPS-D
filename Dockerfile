@@ -4,7 +4,8 @@ FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 ARG TIMESTAMP
 
 # Get the gridappsd-sensor-simulator from the proper repository
-RUN cd ${TEMP_DIR} \
+RUN if [ ! -d ${TEMP_DIR} ]; then mkdir ${TEMP_DIR}; fi \
+  && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b develop  \
   && cd gridappsd-sensor-simulator \
   && pip3 install -r requirements.txt \
@@ -12,34 +13,58 @@ RUN cd ${TEMP_DIR} \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-sensor-simulator \
   && cp /gridappsd/services/gridappsd-sensor-simulator/sensor_simulator.config /gridappsd/services/ \
-  && rm -rf /root/.cache/pip/wheels
+  && rm -rf /root/.cache/pip/wheels \
+  && cd \ 
+  && rm -rf ${TEMP_DIR}
 
 # Get the gridappsd-voltage-violation from the proper repository
-RUN cd ${TEMP_DIR} \
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-voltage-violation -b develop \
   && cd gridappsd-voltage-violation \
   && mkdir -p /gridappsd/services/gridappsd-voltage-violation \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-voltage-violation \
-  && cp /gridappsd/services/gridappsd-voltage-violation/voltage-violation.config /gridappsd/services/ 
+  && cp /gridappsd/services/gridappsd-voltage-violation/voltage-violation.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
 
 # Get the gridappsd-dnp3 from the proper repository
-RUN cd ${TEMP_DIR} \
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-dnp3 -b develop \
   && cd gridappsd-dnp3 \
   && mkdir -p /gridappsd/services/gridappsd-dnp3 \
   && rm .git -rf \ 
   && cp -r dnp3/* /gridappsd/services/gridappsd-dnp3 \
-  && cp /gridappsd/services/gridappsd-dnp3/dnp3.config /gridappsd/services/ 
+  && cp /gridappsd/services/gridappsd-dnp3/dnp3.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
 
 # Get the gridappsd-alarms from the proper repository
-RUN cd ${TEMP_DIR} \
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-alarms -b develop \
   && cd gridappsd-alarms \
   && mkdir -p /gridappsd/services/gridappsd-alarms \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-alarms \
-  && cp /gridappsd/services/gridappsd-alarms/gridappsd-alarms.config /gridappsd/services/ 
+  && cp /gridappsd/services/gridappsd-alarms/gridappsd-alarms.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
+
+# Get the topology-processor from the proper repository
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/topology-processor -b main \
+  && cd topology-processor/topology_processor \
+  && mkdir -p /gridappsd/services/gridappsd-topology-processor \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/services/gridappsd-topology-processor \
+  && cp /gridappsd/services/gridappsd-topology-processor/gridappsd-topology-processor.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
+
 
 # Copy initial applications and services into the container.
 # 
