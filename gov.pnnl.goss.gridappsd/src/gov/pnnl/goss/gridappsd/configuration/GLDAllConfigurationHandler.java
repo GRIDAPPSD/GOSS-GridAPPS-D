@@ -438,7 +438,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			startupFileWriter.println("      name "+simulationID+";");
 			if(simulator.equalsIgnoreCase("gridlab-d"))
 				startupFileWriter.println("      message_type JSON;");
-			startupFileWriter.println("      publish_period 3;");
+			if(run_realtime)
+				startupFileWriter.println("      publish_period 3;");
+			else
+				startupFileWriter.println("      publish_period 60;");
 			startupFileWriter.println("      configure model_outputs.json;");
 			startupFileWriter.println("}");
 
