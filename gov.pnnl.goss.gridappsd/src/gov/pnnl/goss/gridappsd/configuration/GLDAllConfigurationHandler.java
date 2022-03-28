@@ -119,6 +119,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String MODEL_STATE = "model_state";
 	public static final String SIMULATOR = "simulator";
 	public static final int TIMEFILTER_YEAR = 2013;
+	public static final String RUN_REALTIME = "run_realtime";
 
 //	public static final String CONFIGTARGET = "glm";
 	public static final String CONFIGTARGET = "both"; //will build files for both glm and dss
@@ -362,6 +363,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			throw new Exception("Missing parameter "+SIMULATIONID);
 		}
 		String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
+		
+		boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
 
 		double nominalv = 0;
 
@@ -452,7 +455,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		startupFileWriter.println("     parent "+simulationID+";");
 		startupFileWriter.println("     property message_type;");
 		startupFileWriter.println("     file "+simulationID+".csv;");
-		startupFileWriter.println("     interval 1;");
+		if(run_realtime)
+			startupFileWriter.println("     interval 1;");
+		else
+			startupFileWriter.println("     interval 60;");
 		startupFileWriter.println("}");
 		/*startupFileWriter.println("object multi_recorder {");
 				startupFileWriter.println("          parent "+simulationName+";");

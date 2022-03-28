@@ -367,6 +367,7 @@ public class ProcessNewSimulationRequest {
 		}
 		
 		params.put(GLDAllConfigurationHandler.SIMULATOR, requestSimulation.getSimulation_config().getSimulator());
+		params.put(GLDAllConfigurationHandler.RUN_REALTIME, requestSimulation.getSimulation_config().run_realtime);
 		return params;
 	}
 
