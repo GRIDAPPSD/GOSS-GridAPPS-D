@@ -1044,7 +1044,7 @@ class HelicsGossBridge(object):
                                                         measurement["value"] = 0
                                                     else:
                                                         measurement["value"] = 1
-                                            elif conducting_equipment_type == "PowerTransformer":
+                                            elif conducting_equipment_type in ["PowerTransformer","TransformerTank","ACLineSegment"]:
                                                 if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
@@ -1053,7 +1053,7 @@ class HelicsGossBridge(object):
                                                     measurement["angle"] = ang_deg
                                                 else:
                                                     measurement["value"] = int(val_str)
-                                            elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
+                                            elif conducting_equipment_type in ["EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
                                                 if property_name == "state_of_charge":
                                                     measurement["value"] = float(val_str)*100.0
                                                 else:
@@ -1180,7 +1180,7 @@ class HelicsGossBridge(object):
                             property_name = "voltage_" + phases;
                         else:
                             raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {measurement_type}.")
-                    elif "PowerTransformer" in conducting_equipment_type:
+                    elif conducting_equipment_type in ["PowerTransformer","TransformerTank"]:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
@@ -1191,7 +1191,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer and TransformerTank are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
                     elif "RatioTapChanger" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;

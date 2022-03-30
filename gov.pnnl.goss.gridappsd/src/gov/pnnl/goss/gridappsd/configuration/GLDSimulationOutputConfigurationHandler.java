@@ -341,7 +341,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			} else {
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurementType = %s.",measurementType));
 			}
-		} else if (conductingEquipmentType.contains("PowerTransformer")) {
+		} else if (conductingEquipmentType.contains("PowerTransformer") || conductingEquipmentType.contains("TransformerTank")) {
 			if(measurementType.equals("VA")) {
 				objectName = conductingEquipmentName;
 				propertyName = "power_in_" + phases;
@@ -352,7 +352,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				objectName = conductingEquipmentName;
 				propertyName = "current_in_" + phases;
 			} else {
-				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerTransformers are VA, PNV, and A.\nmeasurementType = %s.",measurementType));
+				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for PowerTransformers and TransformerTanks are VA, PNV, and A.\nmeasurementType = %s.",measurementType));
 			}
 		} else if (conductingEquipmentType.contains("RatioTapChanger")) {
 			if(measurementType.equals("VA")) {
