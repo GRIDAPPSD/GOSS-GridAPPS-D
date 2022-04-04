@@ -4,7 +4,7 @@ Copyright (c) 2008-2022, Electric Power Research Institute, Inc.
 Copyright (c) 2017-2022, Battelle Memorial Institute
 All rights reserved.
 
-opendsscmd version 1.7.0
+opendsscmd version 1.7.1
 ========================
 
 This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 9 of the Windows-only version. The major differences between opendsscmd and Windows-only OpenDSS are:
@@ -184,6 +184,9 @@ Change Log
        - updates for GMDM interoperability tests: orderedPhases, TapChanger, minQ, maxQ attributes
        - updates for round-trip testing of CIM Dynamics and transformer connections
        - improvements to ExpControl performance and static solutions
+
+1.7.1  - export CIM leakage impedance as Z (was X)
+       - distribute CIM load losses among short-circuit tests (was all on the first one)
 
 Open Issues
 ===========
