@@ -93,6 +93,12 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         provenQueryProducer.restProducer(provenQueryUri, null, null);
         provenWriteProducer.restProducer(provenWriteUri, null, null);
         
+        try {
+			this.subscribeAndStoreDataFromTopic("/topic/goss.gridappsd.*.output", null, null, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
 	}
 	
 	
