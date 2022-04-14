@@ -25,6 +25,8 @@ import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataAdvanced;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -106,7 +108,20 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 			return query((RequestTimeseriesData)requestContent);
 		}
 		else if(requestContent instanceof String){
-			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String)requestContent);
+			//First try to parse the query as the new format, if that fails try the old
+			RequestTimeseriesData timeSeriesRequest;
+			try{
+				timeSeriesRequest = RequestTimeseriesDataAdvanced.parse((String)requestContent);
+			}catch (Exception e) {
+				// TODO: handle exception
+				try{
+					timeSeriesRequest = RequestTimeseriesDataBasic.parse((String)requestContent);
+				}catch (Exception e2) {
+					throw new Exception("Failed to parse time series data request");
+				}
+			}
+			
+			
 			return query(timeSeriesRequest);
 		}
 		
