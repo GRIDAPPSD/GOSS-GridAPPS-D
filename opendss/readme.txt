@@ -4,7 +4,7 @@ Copyright (c) 2008-2022, Electric Power Research Institute, Inc.
 Copyright (c) 2017-2022, Battelle Memorial Institute
 All rights reserved.
 
-opendsscmd version 1.7.1
+opendsscmd version 1.7.2
 ========================
 
 This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 9 of the Windows-only version. The major differences between opendsscmd and Windows-only OpenDSS are:
@@ -188,6 +188,9 @@ Change Log
 1.7.1  - export CIM leakage impedance as Z (was X)
        - distribute CIM load losses among short-circuit tests (was all on the first one)
        - rename BatteryState to BatteryStateKind for CIM export
+
+1.7.2  - fixed some pointer errors and memory leaks (these affect the Windows version as well)
+       - change ConverterControlMode to ConverterControlModeKind in CIM export
 
 Open Issues
 ===========
