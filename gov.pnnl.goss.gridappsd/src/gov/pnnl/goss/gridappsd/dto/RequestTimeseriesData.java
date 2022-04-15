@@ -1,8 +1,6 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 
-//import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
-
 import java.io.Serializable;
 
 import com.google.gson.Gson;
@@ -12,7 +10,6 @@ public abstract class RequestTimeseriesData implements Serializable {
 	private static final long serialVersionUID = -820277813503252519L;
 	
 	String queryMeasurement;
-	//ResultFormat responseFormat = ResultFormat.JSON;
 	String responseFormat ="JSON";
 	private String queryType = "time-series";
 	int simulationYear;

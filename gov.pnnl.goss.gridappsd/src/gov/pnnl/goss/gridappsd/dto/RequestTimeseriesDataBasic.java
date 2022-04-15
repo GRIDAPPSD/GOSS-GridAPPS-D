@@ -15,18 +15,9 @@ import com.google.gson.JsonSyntaxException;
 
 public class RequestTimeseriesDataBasic extends RequestTimeseriesData {
 	
-	private static final long serialVersionUID = -820277813503252519L;
+	private static final long serialVersionUID = -820277813503252513L;
 	
-	String queryMeasurement;
 	Map<String,Object> queryFilter;
-	
-	public String getQueryMeasurement() {
-		return queryMeasurement;
-	}
-
-	public void setQueryMeasurement(String queryMeasurement) {
-		this.queryMeasurement = queryMeasurement;
-	}
 
 	public Map<String, Object> getQueryFilter() {
 		return queryFilter;
@@ -46,18 +37,25 @@ public class RequestTimeseriesDataBasic extends RequestTimeseriesData {
 	public static RequestTimeseriesDataBasic parse(String jsonString){
 		ObjectMapper objectMapper = new ObjectMapper();
 		RequestTimeseriesDataBasic obj = null;
+		String error = "";
 		try {
 			obj = objectMapper.readValue(jsonString, RequestTimeseriesDataBasic.class);
 		} catch (JsonParseException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		} catch (IOException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		}
-		if(obj.queryMeasurement.equals("simulation"))
-			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
-				throw new JsonSyntaxException("Expected filter simulation_id not found.");
+		if(obj==null){
+			throw new JsonSyntaxException("Request time series data request could not be parsed: "+error);
+		}
+//		if(obj!=null && obj.queryMeasurement.equals("simulation"))
+//			if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
+//				throw new JsonSyntaxException("Expected filter simulation_id not found.");
 		return obj;
 	}
 	

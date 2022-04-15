@@ -2,14 +2,9 @@ package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.IOException;
 
-//import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
-
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.activemq.console.filter.QueryFilter;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -19,58 +14,45 @@ import com.google.gson.JsonSyntaxException;
 
 public class RequestTimeseriesDataAdvanced extends RequestTimeseriesData {
 	
-	private static final long serialVersionUID = -820277813503252519L;
+	private static final long serialVersionUID = -820277813503252512L;
 	
-	String queryMeasurement;
-//	Map<String,Object> queryFilter;
-	List<Filter> queryFilter = new ArrayList<Filter>();
-
-	//ResultFormat responseFormat = ResultFormat.JSON;
+	List<Object> queryFilter = new ArrayList<Object>();
+ 
 	List<String> selectCriteria = new ArrayList<String>();
-	int last = -1;
-	int first = -1;
+	Integer last;
+	Integer first;
 
-	
-	public String getQueryMeasurement() {
-		return queryMeasurement;
-	}
-
-	public void setQueryMeasurement(String queryMeasurement) {
-		this.queryMeasurement = queryMeasurement;
-	}
-
-	
-
-
-	public List<Filter> getQueryFilter() {
+	public List<Object> getQueryFilter() {
 		return queryFilter;
 	}
 
-	public void setQueryFilter(List<Filter> advancedQueryFilter) {
+	public void setQueryFilter(List<Object> advancedQueryFilter) {
 		this.queryFilter = advancedQueryFilter;
 	}
+	
+	
 
 	public List<String> getSelectCriteria() {
 		return selectCriteria;
 	}
-
 	public void setSelectCriteria(List<String> selectCriteria) {
 		this.selectCriteria = selectCriteria;
 	}
+	
 
-	public int getLast() {
+	public Integer getLast() {
 		return last;
 	}
 
-	public void setLast(int last) {
+	public void setLast(Integer last) {
 		this.last = last;
 	}
 
-	public int getFirst() {
+	public Integer getFirst() {
 		return first;
 	}
 
-	public void setFirst(int first) {
+	public void setFirst(Integer first) {
 		this.first = first;
 	}
 
@@ -84,70 +66,30 @@ public class RequestTimeseriesDataAdvanced extends RequestTimeseriesData {
 	public static RequestTimeseriesDataAdvanced parse(String jsonString){
 		ObjectMapper objectMapper = new ObjectMapper();
 		RequestTimeseriesDataAdvanced obj = null;
+		String error = "";
 		try {
 			obj = objectMapper.readValue(jsonString, RequestTimeseriesDataAdvanced.class);
 		} catch (JsonParseException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		} catch (IOException e) {
 			e.printStackTrace();
+			error = e.getMessage();
 		}
-		if(obj.queryMeasurement.equals("simulation")){
+		if(obj==null){
+			throw new JsonSyntaxException("Request time series data request could not be parsed: "+error);
+		}
+		
+//		if(obj!=null && obj.queryMeasurement.equals("simulation")){
 			//if(obj.queryFilter==null || !obj.queryFilter.containsKey("simulation_id"))
 			//	throw new JsonSyntaxException("Expected filter simulation_id not found.");
 		//TODO iterate through and look for key = simulation_id
-		}
-			return obj;
+		return obj;
 	}
 	
 	
 	
-
-	private class Filter {
-		String key;
-		String eq;
-		String ge;
-		String le;
-		String gt;
-		String lt;
-		public String getKey() {
-			return key;
-		}
-		public void setKey(String key) {
-			this.key = key;
-		}
-		public String getEq() {
-			return eq;
-		}
-		public void setEq(String eq) {
-			this.eq = eq;
-		}
-		public String getGe() {
-			return ge;
-		}
-		public void setGe(String ge) {
-			this.ge = ge;
-		}
-		public String getLe() {
-			return le;
-		}
-		public void setLe(String le) {
-			this.le = le;
-		}
-		public String getGt() {
-			return gt;
-		}
-		public void setGt(String gt) {
-			this.gt = gt;
-		}
-		public String getLt() {
-			return lt;
-		}
-		public void setLt(String lt) {
-			this.lt = lt;
-		}
-		
-		
-	}	
 }
