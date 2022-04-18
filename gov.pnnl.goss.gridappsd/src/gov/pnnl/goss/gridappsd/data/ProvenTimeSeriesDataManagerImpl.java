@@ -75,6 +75,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	Gson  gson = new Gson();
 	String provenUri = null;
     String provenQueryUri = null;
+    String provenAdvancedQueryUri = null;
     String provenWriteUri = null;
 
 	ProvenProducer provenQueryProducer = new ProvenProducer();
@@ -92,6 +93,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
 		provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
         provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);	
+        provenAdvancedQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_ADVANCED_QUERY_PATH);	
         provenQueryProducer.restProducer(provenQueryUri, null, null);
         provenWriteProducer.restProducer(provenWriteUri, null, null);
         
@@ -131,7 +133,13 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		provenQueryProducer.restProducer(provenQueryUri, null, null);
+		if(requestTimeseriesData instanceof RequestTimeseriesDataAdvanced){
+		
+			provenQueryProducer.restProducer(provenAdvancedQueryUri, null, null);
+		} else {
+			provenQueryProducer.restProducer(provenQueryUri, null, null);
+
+		}
 		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
 		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
 		TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
