@@ -97,6 +97,12 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         provenQueryProducer.restProducer(provenQueryUri, null, null);
         provenWriteProducer.restProducer(provenWriteUri, null, null);
         
+        try {
+			this.subscribeAndStoreDataFromTopic("/topic/goss.gridappsd.*.output", null, null, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
 	}
 	
 	
@@ -194,8 +200,12 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override
             public void onMessage(Serializable message) {
-                DataResponse event = (DataResponse)message;
-                try{
+            	DataResponse event = (DataResponse)message;
+            	for(String str : event.getDestination().split(".")){
+            		System.out.println(str);
+            	}
+            	String appOrServiceid = event.getDestination().split("[.]")[2];
+            	try{
                 	provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
                 }catch(Exception e){
                     
