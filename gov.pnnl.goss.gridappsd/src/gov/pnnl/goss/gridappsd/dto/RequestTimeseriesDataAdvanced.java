@@ -1,10 +1,10 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -70,14 +70,11 @@ public class RequestTimeseriesDataAdvanced extends RequestTimeseriesData {
 		try {
 			obj = objectMapper.readValue(jsonString, RequestTimeseriesDataAdvanced.class);
 		} catch (JsonParseException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		} catch (JsonMappingException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		} catch (IOException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		}
 		if(obj==null){
 			throw new JsonSyntaxException("Request time series data request could not be parsed: "+error);

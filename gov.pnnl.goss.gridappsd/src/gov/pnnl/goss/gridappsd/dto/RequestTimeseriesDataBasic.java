@@ -1,11 +1,9 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.IOException;
-
-//import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager.ResultFormat;
-
-import java.io.Serializable;
 import java.util.Map;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -41,14 +39,11 @@ public class RequestTimeseriesDataBasic extends RequestTimeseriesData {
 		try {
 			obj = objectMapper.readValue(jsonString, RequestTimeseriesDataBasic.class);
 		} catch (JsonParseException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		} catch (JsonMappingException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		} catch (IOException e) {
-			e.printStackTrace();
-			error = e.getMessage();
+			error = ExceptionUtils.getStackTrace(e);
 		}
 		if(obj==null){
 			throw new JsonSyntaxException("Request time series data request could not be parsed: "+error);

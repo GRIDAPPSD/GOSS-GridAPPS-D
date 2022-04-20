@@ -139,15 +139,17 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		if(requestTimeseriesData instanceof RequestTimeseriesDataAdvanced){
+		ProvenResponse response = null;
 		
+		if(requestTimeseriesData instanceof RequestTimeseriesDataAdvanced){
 			provenQueryProducer.restProducer(provenAdvancedQueryUri, null, null);
-		} else {
+			provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+			response = provenQueryProducer.getAdvancedTsQuery(requestTimeseriesData.toString(), requestId);
+		}else {
 			provenQueryProducer.restProducer(provenQueryUri, null, null);
-
-		}
-		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+			provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+			response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+			}
 		TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
 		if(result.getData().size()==0)
 			return null;
