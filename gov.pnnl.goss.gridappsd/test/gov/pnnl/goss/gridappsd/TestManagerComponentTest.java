@@ -37,6 +37,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
 //import gov.pnnl.goss.gridappsd.dto.TestConfiguration;
 //import gov.pnnl.goss.gridappsd.dto.TestScript;
@@ -206,7 +207,7 @@ public class TestManagerComponentTest {
 
 		ProvenTimeSeriesDataManagerImpl provenTimeSeriesDataManager = new ProvenTimeSeriesDataManagerImpl();
 
-		RequestTimeseriesData request = new RequestTimeseriesData(); 
+		RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic(); 
 		HashMap<String,Object> queryFilter = new HashMap <String,Object>();
 		queryFilter.put("hasSimulationId", "145774843");
 		request.setQueryMeasurement("simulation");

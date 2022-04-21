@@ -49,6 +49,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
@@ -164,7 +165,7 @@ public class GLDZiploadScheduleConfigurationHandler extends
 			logManager.error(ProcessStatus.ERROR, simulationID,"Simulation ID not a valid  "+simulationID+", defaulting to "+simId);
 		}
 				
-		RequestTimeseriesData request = new RequestTimeseriesData();
+		RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic();
 		request.setQueryMeasurement(loadprofile);
 		request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
 		Map<String, Object> queryFilter = new HashMap<String, Object>();
