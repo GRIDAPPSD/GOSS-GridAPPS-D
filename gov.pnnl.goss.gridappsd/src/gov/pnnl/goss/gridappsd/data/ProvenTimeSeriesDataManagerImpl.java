@@ -13,6 +13,9 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -206,9 +209,22 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
             	for(String str : event.getDestination().split(".")){
             		System.out.println(str);
             	}
-            	String appOrServiceid = event.getDestination().split("[.]")[2];
+            	//String appOrServiceid = event.getDestination().split("[.]")[2];
             	try{
-                	provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
+            		//TODO: Remove if block once changes made in proven cluster to get measurement name from datatype
+            		if(appOrServiceid==null){
+            			JsonParser parser = new JsonParser();
+        				JsonElement data = parser.parse(event.getData().toString());
+        				if (data.isJsonObject()) {
+        					JsonObject dataObj = data.getAsJsonObject();
+        					String datatype = dataObj.get("datatype").getAsString();
+        					if(datatype!=null)
+        						provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype, instanceId, simulationId, new Date().getTime());
+        				}
+            		}
+            		else{
+            			provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
+            		}
                 }catch(Exception e){
                     
                     StringWriter sw = new StringWriter();
