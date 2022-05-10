@@ -66,6 +66,18 @@ RUN mkdir ${TEMP_DIR} \
   && cd \
   && rm -rf ${TEMP_DIR}
 
+# Get the gridappsd-toolbox from the proper repository
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-toolbox -b main \
+  && cd gridappsd-toolbox \
+  && mkdir -p /gridappsd/services/gridappsd-toolkit \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/services/gridappsd-toolkit \
+  && cp /gridappsd/services/gridappsd-toolkit/static-ybus/gridappsd-static-ybus-service.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-toolkit/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
 
 # Copy initial applications and services into the container.
 # 
