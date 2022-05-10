@@ -13,6 +13,9 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -25,6 +28,8 @@ import gov.pnnl.goss.gridappsd.api.TimeseriesDataManager;
 import gov.pnnl.goss.gridappsd.data.conversion.DataFormatConverter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataAdvanced;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
@@ -73,6 +78,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	Gson  gson = new Gson();
 	String provenUri = null;
     String provenQueryUri = null;
+    String provenAdvancedQueryUri = null;
     String provenWriteUri = null;
 
 	ProvenProducer provenQueryProducer = new ProvenProducer();
@@ -90,8 +96,15 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 		provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
 		provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
         provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);	
+        provenAdvancedQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_ADVANCED_QUERY_PATH);	
         provenQueryProducer.restProducer(provenQueryUri, null, null);
         provenWriteProducer.restProducer(provenWriteUri, null, null);
+        
+        try {
+			this.subscribeAndStoreDataFromTopic("/topic/goss.gridappsd.*.output", null, null, null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
         
 	}
 	
@@ -106,7 +119,20 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 			return query((RequestTimeseriesData)requestContent);
 		}
 		else if(requestContent instanceof String){
-			RequestTimeseriesData timeSeriesRequest = RequestTimeseriesData.parse((String)requestContent);
+			//First try to parse the query as the new format, if that fails try the old
+			RequestTimeseriesData timeSeriesRequest;
+			try{
+				timeSeriesRequest = RequestTimeseriesDataAdvanced.parse((String)requestContent);
+			}catch (Exception e) {
+				// TODO: handle exception
+				try{
+					timeSeriesRequest = RequestTimeseriesDataBasic.parse((String)requestContent);
+				}catch (Exception e2) {
+					throw new Exception("Failed to parse time series data request");
+				}
+			}
+			
+			
 			return query(timeSeriesRequest);
 		}
 		
@@ -116,9 +142,17 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 	@Override
 	public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
 		
-		provenQueryProducer.restProducer(provenQueryUri, null, null);
-		provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-		ProvenResponse response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+		ProvenResponse response = null;
+		
+		if(requestTimeseriesData instanceof RequestTimeseriesDataAdvanced){
+			provenQueryProducer.restProducer(provenAdvancedQueryUri, null, null);
+			provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+			response = provenQueryProducer.getAdvancedTsQuery(requestTimeseriesData.toString(), requestId);
+		}else {
+			provenQueryProducer.restProducer(provenQueryUri, null, null);
+			provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
+			response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+			}
 		TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
 		if(result.getData().size()==0)
 			return null;
@@ -171,9 +205,26 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override
             public void onMessage(Serializable message) {
-                DataResponse event = (DataResponse)message;
-                try{
-                	provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
+            	DataResponse event = (DataResponse)message;
+            	for(String str : event.getDestination().split(".")){
+            		System.out.println(str);
+            	}
+            	//String appOrServiceid = event.getDestination().split("[.]")[2];
+            	try{
+            		//TODO: Remove if block once changes made in proven cluster to get measurement name from datatype
+            		if(appOrServiceid==null){
+            			JsonParser parser = new JsonParser();
+        				JsonElement data = parser.parse(event.getData().toString());
+        				if (data.isJsonObject()) {
+        					JsonObject dataObj = data.getAsJsonObject();
+        					String datatype = dataObj.get("datatype").getAsString();
+        					if(datatype!=null)
+        						provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype, instanceId, simulationId, new Date().getTime());
+        				}
+            		}
+            		else{
+            			provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
+            		}
                 }catch(Exception e){
                     
                     StringWriter sw = new StringWriter();

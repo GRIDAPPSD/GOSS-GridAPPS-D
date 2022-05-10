@@ -17,6 +17,7 @@ import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
+import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.dto.TestConfig;
 import pnnl.goss.core.Client;
 
@@ -91,7 +92,7 @@ public class HistoricalComparison {
 		 queryFilter = new HashMap<String, Object>();
 		 queryFilter.put("simulation_id", simulationId);
 			
-		RequestTimeseriesData request = new RequestTimeseriesData();
+		 RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic();
 		request.setSimulationYear(0);
 		request.setQueryMeasurement("simulation");
 		request.setQueryFilter(queryFilter);

@@ -32,9 +32,13 @@
 	cimhub.lib;version=0.2.4,\
 	httpclient,\
 	com.bigdata.rdf,\
-    proven-client;version=0.2.4,\
-    proven-message;version=0.5,\
-	com.nimbusds.nimbus-jose-jwt-dependencies
+	org.glassfish.jersey.core.jersey-client;version=2.26,\
+	org.glassfish.jersey.core.jersey-common;version=2.26,\
+	org.glassfish.jersey.media.jersey-media-json-jackson;version=2.26.0,\
+	proven-client;version=0.2.5,\
+	proven-message;version=0.5,\
+	com.nimbusds.nimbus-jose-jwt-dependencies,\
+	
 		
 -plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
 	
