@@ -462,7 +462,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 				throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of measurementType is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurementType = %s.",measurementType));
 			}
 		} else {
-			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, RatioTapChanger, LoadBreakSwitch, EnergyConsumer, PowerElectronicsConnection, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
+			throw new JsonParseException(String.format("CimMeasurementsToGldPubs::parseMeasurement: The value of ConductingEquipment_type is not a recognized object type.\nValid types are ACLineSegment, LinearShuntCompesator, RatioTapChanger, LoadBreakSwitch, EnergyConsumer, PowerElectronicsConnection, TransformerTank, and PowerTransformer.\nConductingEquipment_type = %s.",conductingEquipmentType));
 
 		}
 		if(measurements.containsKey(objectName)) {
