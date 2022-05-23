@@ -45,6 +45,7 @@ Created on Mar 9, 2020
 import argparse
 import cmath
 from datetime import datetime
+from enum import IntEnum
 import gzip
 import inspect
 import json
@@ -104,6 +105,17 @@ log.setLevel(logging.DEBUG)
 #logging.config.dictConfig(logConfig)
 #log = logging.getLogger(__name__)
 
+class RegulatingControlModeKind(IntEnum):
+    voltage = 0
+    activePower = 1
+    reactivePower = 2
+    currentFlow = 3
+    admittance = 4
+    timeScheduled = 5
+    temperature = 6
+    powerFactor = 7
+    
+
 class HelicsGossBridge(object):
     '''
     ClassDocs
@@ -131,6 +143,16 @@ class HelicsGossBridge(object):
     _object_mrid_to_name = None
     _model_mrid = None
     _difference_attribute_map = {
+        "RegulatingControl.enabled" : {
+            "capacitor" : {
+                "property" : ["control"],
+                "prefix" : "cap_"
+            },
+            "regulator" : {
+                "property" : ["Control"],
+                "prefix" : "rcon_"
+            }
+        },
         "RegulatingControl.mode" : {
             "capacitor" : {
                 "property" : ["control"],
@@ -749,19 +771,24 @@ class HelicsGossBridge(object):
                             if (object_name_prefix + object_name) not in helics_input_message.keys():
                                 helics_input_message[object_name_prefix + object_name] = {}
                             if cim_attribute == "RegulatingControl.mode":
-                                val = int(x.get("value"))
-                                if val == 0:
+                                try:
+                                    val = RegulatingControlModeKind(int(x.get("value")))
+                                except:
+                                    val = RegulatingControlModeKind[x.get("value","").replace("RegulatingControlModeKind.","",1)]
+                                if val == RegulatingControlModeKind.voltage:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VOLT"
-                                if val == 1:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                elif val == 2:
+                                elif val == RegulatingControlModeKind.reactivePower:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VAR"
-                                elif val == 3:
+                                elif val == RegulatingControlModeKind.currentFlow:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
                                 else:
                                     helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                    log.warning("Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.")
-                                    self._gad_connection.send_simulation_status("RUNNING", "Unsupported capacitor control mode requested. The only supported control modes for capacitors are voltage, VAr, volt/VAr, and current. Setting control mode to MANUAL.","WARN")
+                                    log.warning(f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}")
+                                    self._gad_connection.send_simulation_status("RUNNING", f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}","WARN")
+                            elif cim_attribute == "RegulatingControl.enabled":
+                                val = x.get("value")
+                                if val == False:
+                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
                             elif cim_attribute == "RegulatingControl.targetDeadband":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
                                     helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
@@ -1017,7 +1044,7 @@ class HelicsGossBridge(object):
                                                         measurement["value"] = 0
                                                     else:
                                                         measurement["value"] = 1
-                                            elif conducting_equipment_type == "PowerTransformer":
+                                            elif conducting_equipment_type in ["PowerTransformer","TransformerTank","ACLineSegment"]:
                                                 if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
@@ -1026,7 +1053,7 @@ class HelicsGossBridge(object):
                                                     measurement["angle"] = ang_deg
                                                 else:
                                                     measurement["value"] = int(val_str)
-                                            elif conducting_equipment_type in ["ACLineSegment","EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
+                                            elif conducting_equipment_type in ["EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
                                                 if property_name == "state_of_charge":
                                                     measurement["value"] = float(val_str)*100.0
                                                 else:
@@ -1153,7 +1180,7 @@ class HelicsGossBridge(object):
                             property_name = "voltage_" + phases;
                         else:
                             raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {measurement_type}.")
-                    elif "PowerTransformer" in conducting_equipment_type:
+                    elif "PowerTransformer" in conducting_equipment_type or "TransformerTank" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
                             property_name = "power_in_" + phases;
@@ -1164,7 +1191,7 @@ class HelicsGossBridge(object):
                             object_name = conducting_equipment_name;
                             property_name = "current_in_" + phases;
                         else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
+                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer and TransformerTank are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
                     elif "RatioTapChanger" in conducting_equipment_type:
                         if measurement_type == "VA":
                             object_name = conducting_equipment_name;
