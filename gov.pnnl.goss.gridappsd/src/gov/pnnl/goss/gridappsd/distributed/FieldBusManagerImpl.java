@@ -373,13 +373,13 @@ class TopologyRequestProcess extends Thread {
 			int switch_area_index = 0;
 			for (SwitchArea switchArea : root.feeders.switch_areas) {
 				switchArea.message_bus_id = root.feeders.feeder_id + "." + switch_area_index;
-				switch_area_index++;
 				int secondary_area_index = 0;
 				for (SecondaryArea secondaryArea : switchArea.secondary_areas) {
 					secondaryArea.message_bus_id = root.feeders.feeder_id + "." + switch_area_index + "."
 							+ secondary_area_index;
 					secondary_area_index++;
 				}
+				switch_area_index++;
 			}
 
 			this.getFieldMeasurementIds(fieldModelMrid);
