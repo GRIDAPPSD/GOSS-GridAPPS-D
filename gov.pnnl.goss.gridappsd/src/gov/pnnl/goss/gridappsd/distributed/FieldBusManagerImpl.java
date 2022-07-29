@@ -161,7 +161,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 	public void getFieldMeasurementIds(String modelId) {
 
 		PowergridModelDataRequest request = new PowergridModelDataRequest();
-		request.modelId = fieldModelMrid;
+		request.modelId = modelId;
 		request.requestType = PowergridModelDataRequest.RequestType.QUERY_OBJECT_MEASUREMENTS.toString();
 		Response response = null;
 
@@ -169,7 +169,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
 			// Get Feeder level measurement ids
 			List<String> feederMeasurementList = new ArrayList<String>();
-			for (String equipmentId : root.feeders.addressable_equipment) {
+			for (String equipmentId : topology.root.feeders.addressable_equipment) {
 				request.objectId = equipmentId;
 				response = dataManager.processDataRequest(request, "powergridmodel", null, null,
 						securityConfig.getManagerUser());
@@ -179,16 +179,16 @@ public class FieldBusManagerImpl implements FieldBusManager {
 					for (int i = 0; i < array.length(); i++) {
 						JSONObject object = array.getJSONObject(i);
 						String measid = object.getString("measid");
-						measId_messageBus_map.put(measid, root.feeders.message_bus_id);
+						measId_messageBus_map.put(measid, topology.root.feeders.message_bus_id);
 						feederMeasurementList.add(measid);
 					}
 					
 				}
 			}
-			messageBus_measIds_map.put(root.feeders.message_bus_id, feederMeasurementList);
+			messageBus_measIds_map.put(topology.root.feeders.message_bus_id, feederMeasurementList);
 			
 			// Get switch level measurement ids
-			for (SwitchArea switchArea : root.feeders.switch_areas) {
+			for (SwitchArea switchArea : topology.root.feeders.switch_areas) {
 				List<String> switchAreaMeasurementList = new ArrayList<String>();
 				for (String equipmentId : switchArea.addressable_equipment) {
 					request.objectId = equipmentId;
