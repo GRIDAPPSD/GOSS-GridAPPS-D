@@ -119,6 +119,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String ENDTIME_FILTER = "endTime";
 	public static final String MODEL_STATE = "model_state";
 	public static final String SIMULATOR = "simulator";
+	public static final String SEPARATED_LOADS = "separated_loads";
 	public static final int TIMEFILTER_YEAR = 2013;
 
 //	public static final String CONFIGTARGET = "glm";
@@ -164,6 +165,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = true;
 		boolean bWantSched = false;
+		List<String> separateLoads = new ArrrayList<String>();
 
 		logManager.info(ProcessStatus.RUNNING,processId,"Generating all GridLAB-D configuration files using parameters: "+parameters);
 
@@ -244,11 +246,17 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean useClimate = true;//GridAppsDConstants.getBooleanProperty(parameters, USECLIMATE, false);
 		
 		boolean bHaveEventGen = true;
+		
+		String separatedLoadsFile = GridAppsDConstants.getStringProperty(parameters, SEPARATED_LOADS, null);
+		//TODO parse xlsx spreadsheet specified in separatedLoadsFile
+		//if(separatedLoadsFile!=null) {
+			
+		//}
 
 		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
 		CIMQuerySetter qs = new CIMQuerySetter();
-		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false, separatedLoads);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
