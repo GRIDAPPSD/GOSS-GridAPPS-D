@@ -164,11 +164,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
 		request.modelId = modelId;
 		request.requestType = PowergridModelDataRequest.RequestType.QUERY_OBJECT_MEASUREMENTS.toString();
 		Response response = null;
-		List<String> measurementList = new ArrayList<String>();
 
 		try {
 
 			// Get Feeder level measurement ids
+			List<String> feederMeasurementList = new ArrayList<String>();
 			for (String equipmentId : topology.root.feeders.addressable_equipment) {
 				request.objectId = equipmentId;
 				response = dataManager.processDataRequest(request, "powergridmodel", null, null,
@@ -176,20 +176,20 @@ public class FieldBusManagerImpl implements FieldBusManager {
 				if (response != null && (response instanceof DataResponse)) {
 					String str = ((DataResponse) response).getData().toString();
 					JSONArray array = new JSONArray(str);
-					measurementList.clear();
 					for (int i = 0; i < array.length(); i++) {
 						JSONObject object = array.getJSONObject(i);
 						String measid = object.getString("measid");
 						measId_messageBus_map.put(measid, topology.root.feeders.message_bus_id);
-						measurementList.add(measid);
+						feederMeasurementList.add(measid);
 					}
-					messageBus_measIds_map.put(topology.root.feeders.message_bus_id, measurementList);
+					
 				}
-
 			}
-
+			messageBus_measIds_map.put(topology.root.feeders.message_bus_id, feederMeasurementList);
+			
 			// Get switch level measurement ids
 			for (SwitchArea switchArea : topology.root.feeders.switch_areas) {
+				List<String> switchAreaMeasurementList = new ArrayList<String>();
 				for (String equipmentId : switchArea.addressable_equipment) {
 					request.objectId = equipmentId;
 					response = dataManager.processDataRequest(request, "powergridmodel", null, null,
@@ -197,36 +197,38 @@ public class FieldBusManagerImpl implements FieldBusManager {
 					if (response != null && (response instanceof DataResponse)) {
 						String str = ((DataResponse) response).getData().toString();
 						JSONArray array = new JSONArray(str);
-						measurementList.clear();
 						for (int i = 0; i < array.length(); i++) {
 							JSONObject object = array.getJSONObject(i);
 							String measid = object.getString("measid");
 							measId_messageBus_map.put(measid, switchArea.message_bus_id);
-							measurementList.add(measid);
+							switchAreaMeasurementList.add(measid);
 						}
-						messageBus_measIds_map.put(switchArea.message_bus_id, measurementList);
+						
 					}
+				}
+				
+				messageBus_measIds_map.put(switchArea.message_bus_id, switchAreaMeasurementList);
 
-					// Get Secondary level measurement ids
-					for (SecondaryArea secondaryArea : switchArea.secondary_areas) {
-						for (String equipmentid : secondaryArea.addressable_equipment) {
-							request.objectId = equipmentid;
-							response = dataManager.processDataRequest(request, "powergridmodel", null, null,
-									securityConfig.getManagerUser());
-							if (response != null && (response instanceof DataResponse)) {
-								String str = ((DataResponse) response).getData().toString();
-								JSONArray array = new JSONArray(str);
-								measurementList.clear();
-								for (int i = 0; i < array.length(); i++) {
-									JSONObject object = array.getJSONObject(i);
-									String measid = object.getString("measid");
-									measId_messageBus_map.put(measid, secondaryArea.message_bus_id);
-									measurementList.add(measid);
-								}
-								messageBus_measIds_map.put(secondaryArea.message_bus_id, measurementList);
+				// Get Secondary level measurement ids
+				for (SecondaryArea secondaryArea : switchArea.secondary_areas) {
+					List<String> secondaryAreaMeasurementList = new ArrayList<String>();
+					for (String equipmentId : secondaryArea.addressable_equipment) {
+						request.objectId = equipmentId;
+						response = dataManager.processDataRequest(request, "powergridmodel", null, null,
+								securityConfig.getManagerUser());
+						if (response != null && (response instanceof DataResponse)) {
+							String str = ((DataResponse) response).getData().toString();
+							JSONArray array = new JSONArray(str);
+							for (int i = 0; i < array.length(); i++) {
+								JSONObject object = array.getJSONObject(i);
+								String measid = object.getString("measid");
+								measId_messageBus_map.put(measid, secondaryArea.message_bus_id);
+								secondaryAreaMeasurementList.add(measid);
 							}
+							
 						}
 					}
+					messageBus_measIds_map.put(secondaryArea.message_bus_id, secondaryAreaMeasurementList);
 				}
 			}
 		} catch (Exception e) {
@@ -373,13 +375,13 @@ class TopologyRequestProcess extends Thread {
 			int switch_area_index = 0;
 			for (SwitchArea switchArea : root.feeders.switch_areas) {
 				switchArea.message_bus_id = root.feeders.feeder_id + "." + switch_area_index;
-				switch_area_index++;
 				int secondary_area_index = 0;
 				for (SecondaryArea secondaryArea : switchArea.secondary_areas) {
 					secondaryArea.message_bus_id = root.feeders.feeder_id + "." + switch_area_index + "."
 							+ secondary_area_index;
 					secondary_area_index++;
 				}
+				switch_area_index++;
 			}
 
 			this.getFieldMeasurementIds(fieldModelMrid);
