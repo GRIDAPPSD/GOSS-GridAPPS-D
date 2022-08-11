@@ -40,11 +40,16 @@
 package gov.pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -53,6 +58,13 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -520,5 +532,39 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	}
 	
+	private static List<String> getSaperatedLoadNames(String fileName) {
+		
+		List<String> loadNames = new ArrayList<String>();
+		boolean isHeader = true;
+		
+		try {
+			FileInputStream fis = new FileInputStream(fileName);
+			Workbook workbook = null;
+			if(fileName.toLowerCase().endsWith("xlsx")){
+				workbook = new XSSFWorkbook(fis);
+			}else if(fileName.toLowerCase().endsWith("xls")){
+				workbook = new HSSFWorkbook(fis);
+			}
+			
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			while (rowIterator.hasNext()) 
+	        {
+				
+				Row row = rowIterator.next();
+				if(!isHeader){
+					loadNames.add(row.getCell(5).getStringCellValue());
+					System.out.println(row.getCell(5).getStringCellValue());
+				}
+				isHeader=false;
+	        }
+			fis.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return loadNames;
+	}
 	
 }
