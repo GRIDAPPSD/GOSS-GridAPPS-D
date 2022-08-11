@@ -64,6 +64,7 @@ public class ModelCreationConfig implements Serializable{
 	public boolean randomize_zipload_fractions = false; // should randomize the zipload fraction values (eg. z, i, p_fractions)
 	public boolean use_houses = false;  
 	public ModelState model_state;
+	public String separated_loads_file; // option xslx file containing loads names that will be modeled separate from the main powerflow simulator.
 
 	
 	
@@ -158,6 +159,12 @@ public class ModelCreationConfig implements Serializable{
 	}
 	public void setModel_state(ModelState model_state) {
 		this.model_state = model_state;
+	}
+	public String getSeparateLoadsFile() {
+		return separated_loads_file;
+	}
+	public void setSeparateLoadsFile(String fileName) {
+		this.separated_loads_file = fileName;
 	}
 	
 	public static ModelCreationConfig parse(String jsonString){

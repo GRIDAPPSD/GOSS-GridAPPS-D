@@ -367,6 +367,11 @@ public class ProcessNewSimulationRequest {
 		}
 		
 		params.put(GLDAllConfigurationHandler.SIMULATOR, requestSimulation.getSimulation_config().getSimulator());
+		if(modelConfig.separated_loads_file!=null){
+			params.put(GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, modelConfig.separated_loads_file);
+		} else {
+			 params.put(GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, "");
+		}
 		return params;
 	}
 
