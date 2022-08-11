@@ -108,7 +108,9 @@
 	com.fasterxml.jackson.jaxrs.jackson-jaxrs-base,\
 	javax.ws.rs.jsr311-api,\
 	org.apache.servicemix.bundles.poi;version=3.17,\
-	org.apache.commons.commons-collections4;version=4.4
+	org.apache.commons.commons-collections4;version=4.4,\
+	javax.ws.rs-api
+
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
