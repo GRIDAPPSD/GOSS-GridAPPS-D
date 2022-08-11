@@ -107,13 +107,8 @@
 	org.apache.felix.http.servlet-api,\
 	com.fasterxml.jackson.jaxrs.jackson-jaxrs-base,\
 	javax.ws.rs.jsr311-api,\
-	javax.ws.rs-api,\
-	poi;version=5.2,\
-	poi-ooxml;version=5.2,\
-	poi-ooxml-full;version=5.2,\
-	xmlbeans;version=5.0,\
-	org.apache.commons.commons-collections4;version=4.4,\
-	org.apache.commons.commons-compress;version=1.21	
+	org.apache.servicemix.bundles.poi;version=3.17,\
+	org.apache.commons.commons-collections4;version=4.4
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
