@@ -67,15 +67,16 @@ RUN mkdir ${TEMP_DIR} \
   && rm -rf ${TEMP_DIR}
 
 # Get the gridappsd-toolbox from the proper repository
+# Get the gridappsd-toolbox from the proper repository
 RUN mkdir ${TEMP_DIR} \
   && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-toolbox -b main \
   && cd gridappsd-toolbox \
-  && mkdir -p /gridappsd/services/gridappsd-toolkit \
+  && mkdir -p /gridappsd/services/gridappsd-toolbox \
   && rm .git -rf \ 
-  && cp -r * /gridappsd/services/gridappsd-toolkit \
-  && cp /gridappsd/services/gridappsd-toolkit/static-ybus/gridappsd-static-ybus-service.config /gridappsd/services/ \
-  && cp /gridappsd/services/gridappsd-toolkit/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
+  && cp -r * /gridappsd/services/gridappsd-toolbox \
+  && cp /gridappsd/services/gridappsd-toolbox/static-ybus/gridappsd-static-ybus-service.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-toolbox/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
 
