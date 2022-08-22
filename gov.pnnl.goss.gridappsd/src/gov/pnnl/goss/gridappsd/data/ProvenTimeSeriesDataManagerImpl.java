@@ -217,9 +217,11 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         				JsonElement data = parser.parse(event.getData().toString());
         				if (data.isJsonObject()) {
         					JsonObject dataObj = data.getAsJsonObject();
-        					String datatype = dataObj.get("datatype").getAsString();
-        					if(datatype!=null)
-        						provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype, instanceId, simulationId, new Date().getTime());
+        					if(dataObj.get("datatype")!=null){
+        						String datatype = dataObj.get("datatype").getAsString();
+        						if(datatype!=null)
+        							provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype, instanceId, simulationId, new Date().getTime());
+        					}
         				}
             		}
             		else{
