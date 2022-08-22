@@ -1044,7 +1044,7 @@ class HelicsGossBridge(object):
                                                         measurement["value"] = 0
                                                     else:
                                                         measurement["value"] = 1
-                                            elif conducting_equipment_type in ["PowerTransformer","TransformerTank","ACLineSegment"]:
+                                            elif conducting_equipment_type in ["PowerTransformer","TransformerTank"]:
                                                 if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
@@ -1053,7 +1053,7 @@ class HelicsGossBridge(object):
                                                     measurement["angle"] = ang_deg
                                                 else:
                                                     measurement["value"] = int(val_str)
-                                            elif conducting_equipment_type in ["EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
+                                            elif conducting_equipment_type in ["ACLineSegment", "EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
                                                 if property_name == "state_of_charge":
                                                     measurement["value"] = float(val_str)*100.0
                                                 else:
