@@ -67,7 +67,6 @@ RUN mkdir ${TEMP_DIR} \
   && rm -rf ${TEMP_DIR}
 
 # Get the gridappsd-toolbox from the proper repository
-# Get the gridappsd-toolbox from the proper repository
 RUN mkdir ${TEMP_DIR} \
   && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-toolbox -b main \
