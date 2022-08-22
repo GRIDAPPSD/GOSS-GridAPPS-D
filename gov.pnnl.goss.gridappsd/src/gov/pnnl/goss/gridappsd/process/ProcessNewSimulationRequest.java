@@ -40,15 +40,23 @@
 package gov.pnnl.goss.gridappsd.process;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.google.gson.Gson;
 
@@ -138,6 +146,14 @@ public class ProcessNewSimulationRequest {
 			if(!tempDataPathDir.exists()){
 				tempDataPathDir.mkdirs();
 			}
+			
+			
+			Map<String,Object> simulationContext = new HashMap<String,Object>();
+			simulationContext.put("request",simRequest);
+			simulationContext.put("simulationId",simulationId);
+			simulationContext.put("simulationHost","127.0.0.1");
+			simulationContext.put("simulationPort",simulationPort);
+			simulationContext.put("simulationDir",simulationConfigDir);
 
 
 			SimulationContext simContext = new SimulationContext();
@@ -183,10 +199,21 @@ public class ProcessNewSimulationRequest {
 				configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 			}
 			else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.TYPENAME)){
-				numFederates = 42;
 				Properties simulationParams = generateSimulationParameters(simRequest);
 				simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 				simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, tempDataPathDir.getAbsolutePath());
+				
+				if(simRequest.simulation_config.model_creation_config.separated_loads_file!=null){
+					numFederates = getSeparatedLoadNames(simRequest.simulation_config.model_creation_config.separated_loads_file).size()+2;
+					simulationParams.put(GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, simRequest.simulation_config.model_creation_config.separated_loads_file);
+				}
+				else{
+					logManager.error(ProcessStatus.ERROR,simulationId,"No "+GLDAllConfigurationHandler.SEPARATED_LOADS_FILE+" parameter provided");
+					throw new Exception("Missing parameter "+GLDAllConfigurationHandler.SEPARATED_LOADS_FILE);
+				}
+				
+				
+				
 				if(gldInterface!=null){
 					simulationParams.put(GridAppsDConstants.GRIDLABD_INTERFACE, gldInterface);
 				}
@@ -208,14 +235,9 @@ public class ProcessNewSimulationRequest {
 
 			// Start Apps and Services
 
-			Map<String,Object> simulationContext = new HashMap<String,Object>();
-			simulationContext.put("request",simRequest);
-			simulationContext.put("simulationId",simulationId);
-			simulationContext.put("simulationHost","127.0.0.1");
-			simulationContext.put("simulationPort",simulationPort);
-			simulationContext.put("simulationDir",simulationConfigDir);
 			simulationContext.put("numFederates",numFederates);
-
+			simContext.numFederates = numFederates;
+			
 			if(simRequest.getSimulation_config().getSimulator().equals("GridLAB-D"))
 				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
@@ -373,6 +395,41 @@ public class ProcessNewSimulationRequest {
 			 params.put(GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, "");
 		}
 		return params;
+	}
+	
+	private List<String> getSeparatedLoadNames(String fileName) {
+		
+		List<String> loadNames = new ArrayList<String>();
+		boolean isHeader = true;
+		
+		try {
+			FileInputStream fis = new FileInputStream(fileName);
+			Workbook workbook = null;
+			if(fileName.toLowerCase().endsWith("xlsx")){
+				workbook = new XSSFWorkbook(fis);
+			}else if(fileName.toLowerCase().endsWith("xls")){
+				workbook = new HSSFWorkbook(fis);
+			}
+			
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			while (rowIterator.hasNext()) 
+	        {
+				
+				Row row = rowIterator.next();
+				if(!isHeader){
+					loadNames.add(row.getCell(5).getStringCellValue());
+					System.out.println(row.getCell(5).getStringCellValue());
+				}
+				isHeader=false;
+	        }
+			fis.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return loadNames;
 	}
 
 

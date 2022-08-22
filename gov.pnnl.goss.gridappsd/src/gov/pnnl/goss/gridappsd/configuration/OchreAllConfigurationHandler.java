@@ -147,6 +147,14 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
 			throw new Exception("Missing parameter "+MODEL_ID);
 		}
 		
+		String separated_loads_file = GridAppsDConstants.getStringProperty(parameters, GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, null);
+		if(separated_loads_file==null || separated_loads_file.trim().length()==0){
+			logManager.error(ProcessStatus.ERROR,processId,"No "+GLDAllConfigurationHandler.SEPARATED_LOADS_FILE+" parameter provided");
+			throw new Exception("Missing parameter "+GLDAllConfigurationHandler.SEPARATED_LOADS_FILE);
+		}
+		
+		
+		
 		try{
 			File tmpDir = new File(tempDataPath);
 			RunCommandLine.runCommand("cp -r /gridappsd/services/gridappsd-ochre/inputs/ "+tempDataPath);
@@ -160,14 +168,16 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
             							CONFIG_FILENAME+" "+
             							simulationBrokerPort+" "+
             							processId+" "+
-            							model_id);
+            							model_id+ " "+
+            							separated_loads_file);
             logManager.info(ProcessStatus.RUNNING, processId, "python /gridappsd/services/gridappsd-ochre/bin/make_config_file.py "+
 					simulationBrokerHost+" "+ 
 					tempDataPath+" "+
 					CONFIG_FILENAME+" "+
 					simulationBrokerPort+" "+
 					processId+" "+
-					model_id);
+					model_id+" "+
+					separated_loads_file);
 
 		}catch(Exception e){
             log.warn("Could not create OCHRE HELICS config file");
