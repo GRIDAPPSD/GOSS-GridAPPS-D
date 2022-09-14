@@ -62,9 +62,22 @@ RUN mkdir ${TEMP_DIR} \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-topology-processor \
   && cp /gridappsd/services/gridappsd-topology-processor/gridappsd-topology-service.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-topology-processor/gridappsd-topology-daemon.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
 
+# Get the gridappsd-toolbox from the proper repository
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-toolbox -b main \
+  && cd gridappsd-toolbox \
+  && mkdir -p /gridappsd/services/gridappsd-toolbox \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/services/gridappsd-toolbox \
+  && cp /gridappsd/services/gridappsd-toolbox/static-ybus/gridappsd-static-ybus-service.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-toolbox/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
 
 # Copy initial applications and services into the container.
 # 

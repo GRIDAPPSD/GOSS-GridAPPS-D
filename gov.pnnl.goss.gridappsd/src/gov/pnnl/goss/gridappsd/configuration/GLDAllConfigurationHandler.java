@@ -40,11 +40,16 @@
 package gov.pnnl.goss.gridappsd.configuration;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -53,6 +58,13 @@ import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +131,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public static final String ENDTIME_FILTER = "endTime";
 	public static final String MODEL_STATE = "model_state";
 	public static final String SIMULATOR = "simulator";
+	public static final String SEPARATED_LOADS_FILE = "separated_loads_file";
 	public static final int TIMEFILTER_YEAR = 2013;
 
 //	public static final String CONFIGTARGET = "glm";
@@ -164,6 +177,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
 		boolean bWantZip = true;
 		boolean bWantSched = false;
+		List<String> separateLoads = new ArrayList<String>();
 
 		logManager.info(ProcessStatus.RUNNING,processId,"Generating all GridLAB-D configuration files using parameters: "+parameters);
 
@@ -244,11 +258,21 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean useClimate = true;//GridAppsDConstants.getBooleanProperty(parameters, USECLIMATE, false);
 		
 		boolean bHaveEventGen = true;
+		
+		String separatedLoadsFile = GridAppsDConstants.getStringProperty(parameters, SEPARATED_LOADS_FILE, null);
+		String simulator = GridAppsDConstants.getStringProperty(parameters, SIMULATOR, null);
+		//TODO parse xlsx spreadsheet specified in separatedLoadsFile
+		if(separatedLoadsFile!=null && simulator.equalsIgnoreCase("ochre")) {
+			separateLoads = getSeparatedLoadNames(separatedLoadsFile);
+		} else if(separatedLoadsFile==null && simulator.equalsIgnoreCase("ochre")) {
+			logManager.error(ProcessStatus.ERROR,processId,"No "+SEPARATED_LOADS_FILE+" parameter provided");
+			throw new Exception("Missing parameter "+SEPARATED_LOADS_FILE);
+		}
 
 		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
 		CIMQuerySetter qs = new CIMQuerySetter();
-		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, -1, bHaveEventGen, modelState, false, separateLoads);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file
@@ -512,5 +536,39 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 	}
 	
+	private List<String> getSeparatedLoadNames(String fileName) {
+		
+		List<String> loadNames = new ArrayList<String>();
+		boolean isHeader = true;
+		
+		try {
+			FileInputStream fis = new FileInputStream(fileName);
+			Workbook workbook = null;
+			if(fileName.toLowerCase().endsWith("xlsx")){
+				workbook = new XSSFWorkbook(fis);
+			}else if(fileName.toLowerCase().endsWith("xls")){
+				workbook = new HSSFWorkbook(fis);
+			}
+			
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+			while (rowIterator.hasNext()) 
+	        {
+				
+				Row row = rowIterator.next();
+				if(!isHeader){
+					loadNames.add(row.getCell(5).getStringCellValue());
+					System.out.println(row.getCell(5).getStringCellValue());
+				}
+				isHeader=false;
+	        }
+			fis.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return loadNames;
+	}
 	
 }

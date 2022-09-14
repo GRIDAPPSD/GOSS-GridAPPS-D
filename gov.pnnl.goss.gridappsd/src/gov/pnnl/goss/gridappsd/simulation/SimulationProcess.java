@@ -116,9 +116,8 @@ public class SimulationProcess extends Thread {
             List<String> commands = new ArrayList<String>();
             
             if(simulationConfig.getSimulator().equals(OchreAllConfigurationHandler.TYPENAME)){
-            	simContext.setNumFederates(42);
-	            logManager.info(ProcessStatus.RUNNING, simulationId, "Setting num federates ");
-
+            	
+            	
             	//Start gridlabd
 //				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 				//File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
