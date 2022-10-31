@@ -395,11 +395,25 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		double nominalv = 0;
 
 		try{
-			String nominalVoltageQuery = "SELECT (MAX(xsd:float(?vnom)) AS ?vnomvoltage) WHERE {"
-					+ "?fdr c:IdentifiedObject.mRID '" + modelId + "'. "
-					+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr. "
-					+ "?s c:ConductingEquipment.BaseVoltage ?lev. " + "?lev c:BaseVoltage.nominalVoltage ?vnom."
-					+ "}";
+			//OLD vnom query that was not correct
+			//String nominalVoltageQuery = "SELECT (MAX(xsd:float(?vnom)) AS ?vnomvoltage) WHERE {"
+			//		+ "?fdr c:IdentifiedObject.mRID '" + modelId + "'. "
+			//		+ "?s c:ConnectivityNode.ConnectivityNodeContainer|c:Equipment.EquipmentContainer ?fdr. "
+			//		+ "?s c:ConductingEquipment.BaseVoltage ?lev. " + "?lev c:BaseVoltage.nominalVoltage ?vnom."
+			//		+ "}";
+			
+			
+			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"+		  
+			" ?fdr c:IdentifiedObject.mRID ?fdrid."+
+			" ?s c:Equipment.EquipmentContainer ?fdr."+
+			" {?s c:ConductingEquipment.BaseVoltage ?lev.}"+
+			"  UNION "+
+			" { ?end c:PowerTransformerEnd.PowerTransformer|c:TransformerTankEnd.TransformerTank ?s."+
+			"	 ?end c:TransformerEnd.BaseVoltage ?lev.}"+
+			" ?lev r:type c:BaseVoltage."+
+			" ?lev c:BaseVoltage.nominalVoltage ?vnom."+
+			"} ORDER BY ?vnom";
+			
 			// ORDER by DESC(?vnom)";
 			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
 			QuerySolution binding = rs.nextSolution();
