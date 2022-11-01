@@ -417,7 +417,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			// ORDER by DESC(?vnom)";
 			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
 			QuerySolution binding = rs.nextSolution();
-			Double vnom = binding.getLiteral("vnomvoltage").getDouble();
+			Double vnom = binding.getLiteral("vnom").getDouble();
 			nominalv = vnom / sqrt3;
 		}catch (Exception e) {
 			//send error and fail in vnom not found in model or bad format
