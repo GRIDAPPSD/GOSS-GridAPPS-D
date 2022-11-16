@@ -403,21 +403,30 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			//		+ "}";
 			
 			
-			String nominalVoltageQuery = "SELECT DISTINCT ?vnom WHERE {"+		  
-			" ?fdr c:IdentifiedObject.mRID ?fdrid."+
+			String nominalVoltageQuery = "SELECT  ?nomv  WHERE {" +
+			" ?s r:type c:EnergySource." +
 			" ?s c:Equipment.EquipmentContainer ?fdr."+
-			" {?s c:ConductingEquipment.BaseVoltage ?lev.}"+
-			"  UNION "+
-			" { ?end c:PowerTransformerEnd.PowerTransformer|c:TransformerTankEnd.TransformerTank ?s."+
-			"	 ?end c:TransformerEnd.BaseVoltage ?lev.}"+
-			" ?lev r:type c:BaseVoltage."+
-			" ?lev c:BaseVoltage.nominalVoltage ?vnom."+
-			"} ORDER BY ?vnom";
+			" ?fdr c:IdentifiedObject.mRID ?fdrid."+
+			" ?s c:IdentifiedObject.name ?name." +
+			" ?s c:ConductingEquipment.BaseVoltage ?bv."+
+			" ?bv c:BaseVoltage.nominalVoltage ?basev."+
+			" ?s c:EnergySource.nominalVoltage ?nomv." + 
+			" ?s c:EnergySource.voltageMagnitude ?vmag." + 
+			" ?s c:EnergySource.voltageAngle ?vang." + 
+			" ?s c:EnergySource.r ?r1." + 
+			" ?s c:EnergySource.x ?x1." + 
+			" ?s c:EnergySource.r0 ?r0." + 
+			" ?s c:EnergySource.x0 ?x0." + 
+			" ?t c:Terminal.ConductingEquipment ?s." +
+			" bind(strafter(str(?s),\"#\") as ?id)."+
+			" ?t c:Terminal.ConnectivityNode ?cn." + 
+			" ?cn c:IdentifiedObject.name ?bus" +
+			"}";
 			
 			// ORDER by DESC(?vnom)";
 			ResultSet rs = powergridModelManager.queryResultSet(modelId, nominalVoltageQuery, processId, username);
 			QuerySolution binding = rs.nextSolution();
-			Double vnom = binding.getLiteral("vnom").getDouble();
+			Double vnom = binding.getLiteral("nomv").getDouble();
 			nominalv = vnom / sqrt3;
 		}catch (Exception e) {
 			//send error and fail in vnom not found in model or bad format
