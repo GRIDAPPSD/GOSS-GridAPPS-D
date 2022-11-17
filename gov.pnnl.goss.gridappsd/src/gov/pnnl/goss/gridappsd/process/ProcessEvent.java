@@ -347,6 +347,8 @@ public class ProcessEvent implements GossResponseEvent {
 					platformStatus.setAppInstances(appManager.listRunningApps());
 				if(request.isServiceInstances())
 					platformStatus.setServiceInstances(serviceManager.listRunningServices());
+				if(request.isField())
+					platformStatus.setField(fieldBusManager.getFieldModelMrid());
 				client.publish(event.getReplyDestination(), platformStatus);
 				
 			} else if (event.getDestination().contains(GridAppsDConstants.topic_requestMyRoles)){

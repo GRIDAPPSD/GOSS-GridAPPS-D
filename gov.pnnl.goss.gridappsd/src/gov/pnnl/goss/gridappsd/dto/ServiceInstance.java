@@ -52,7 +52,7 @@ public class ServiceInstance implements Serializable{
 	ServiceInfo servcie_info;
 	HashMap<String, Object> runtime_options;
 	String simulation_id;
-	Process process;
+	transient Process process;
 	
 	
 	public ServiceInstance(String instance_id, ServiceInfo servcie_info, HashMap<String, Object> runtime_options, String simulation_id, Process process){
