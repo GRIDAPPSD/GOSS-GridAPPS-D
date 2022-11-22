@@ -3,6 +3,8 @@ package gov.pnnl.goss.gridappsd.dto.field;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import com.google.gson.Gson;
+
 public class SwitchArea implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -13,5 +15,11 @@ public class SwitchArea implements Serializable {
     public ArrayList<SecondaryArea> secondary_areas;	
     public ArrayList<String> connectivity_node;
     public String message_bus_id;
+    
+    @Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
 
 }
