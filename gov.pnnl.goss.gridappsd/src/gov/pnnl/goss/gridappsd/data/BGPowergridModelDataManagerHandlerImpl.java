@@ -70,6 +70,39 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 				//TODO send error
 			}
 			return dataManager.queryMeasurementDictByObject(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getObjectId(), processId, username);
+		} else if(PowergridModelDataRequest.RequestType.INSERT_ALL_HOUSES.toString().equals(pgDataRequest.requestType)){
+			
+			dataManager.insertAllHouses(processId, username);
+			return true;
+		} else if(PowergridModelDataRequest.RequestType.INSERT_HOUSES.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			dataManager.insertHouses(pgDataRequest.getModelName(), pgDataRequest.getModelId(), new Double(pgDataRequest.getScale()), processId, username);
+			return true;
+		} else if(PowergridModelDataRequest.RequestType.DROP_HOUSES.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			dataManager.dropHouses(pgDataRequest.getModelName(), pgDataRequest.getModelId(), processId, username);
+			return true;
+		} else if(PowergridModelDataRequest.RequestType.INSERT_ALL_MEASURMENTS.toString().equals(pgDataRequest.requestType)){
+			dataManager.insertAllMeasurements(processId, username);
+			return true;
+		} else if(PowergridModelDataRequest.RequestType.INSERT_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			dataManager.insertMeasurements(pgDataRequest.getModelName(), pgDataRequest.getModelId(), processId, username);
+		
+			return true;
+		}  else if(PowergridModelDataRequest.RequestType.DROP_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			if (pgDataRequest.getModelId()==null || !verifyResultFormat(pgDataRequest.getResultFormat())){
+				//TODO send error
+			}
+			dataManager.dropMeasurements(pgDataRequest.getModelName(), pgDataRequest.getModelId(), processId, username);
+		
+			return true;
 		}  else {
 			//TODO report error, request type not recognized
 			System.out.println("DOESNT RECOGNIZE REQUEST TYPE "+pgDataRequest.requestType);

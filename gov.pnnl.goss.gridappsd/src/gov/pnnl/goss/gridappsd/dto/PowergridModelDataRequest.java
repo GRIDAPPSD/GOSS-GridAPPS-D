@@ -9,7 +9,7 @@ public class PowergridModelDataRequest implements Serializable{
 	private static final long serialVersionUID = 8897993506912096791L;
 
 	public enum RequestType {
-	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO, QUERY_OBJECT_IDS, QUERY_OBJECT_DICT, QUERY_OBJECT_MEASUREMENTS
+	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO, QUERY_OBJECT_IDS, QUERY_OBJECT_DICT, QUERY_OBJECT_MEASUREMENTS, INSERT_MEASUREMENTS, INSERT_ALL_MEASURMENTS, DROP_MEASUREMENTS, INSERT_HOUSES, INSERT_ALL_HOUSES, DROP_HOUSES
 	}
 	public enum ResultFormat {
 	    JSON, XML, CSV 
@@ -32,6 +32,12 @@ public class PowergridModelDataRequest implements Serializable{
 	public String filter;
 	//for query model
 	public String objectType;
+	
+	
+	
+	public String directory;
+	public String scale;
+	public String modelName;
 
 	
 	
@@ -81,6 +87,28 @@ public class PowergridModelDataRequest implements Serializable{
 	public void setObjectType(String objectType) {
 		this.objectType = objectType;
 	}
+	
+	
+	public String getDirectory() {
+		return directory;
+	}
+	public void setDirectory(String directory) {
+		this.directory = directory;
+	}
+	public String getScale() {
+		return scale;
+	}
+	public void setScale(String scale) {
+		this.scale = scale;
+	}
+	public String getModelName() {
+		return modelName;
+	}
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+	
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();

@@ -47,6 +47,10 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetCloseable;
+import org.apache.jena.update.UpdateExecutionFactory;
+import org.apache.jena.update.UpdateFactory;
+import org.apache.jena.update.UpdateProcessor;
+import org.apache.jena.update.UpdateRequest;
 
 import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -93,7 +97,10 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	}
 	@Override
 	public ResultSetCloseable query(String szQuery, String szTag) { 
+//		System.out.println(szQuery);
+//		System.out.println(Q_PREFIX + szQuery);
 		Query query = QueryFactory.create (Q_PREFIX + szQuery);
+
 		logManager.debug(ProcessStatus.RUNNING, processID, "Executing query "+szQuery);
 
 		long start = new Date().getTime();
@@ -166,6 +173,22 @@ public class BlazegraphQueryHandler implements QueryHandler {
 	@Override
 	public String getFeederSelection() {
 		return this.mRID;
+	}
+	public void executeUpdateQuery(String szQuery) {
+		// TODO Auto-generated method stub
+		System.out.println("EXECUTING UPDATE "+szQuery);
+//		Query query = QueryFactory.create (Q_PREFIX + szQuery); 
+		UpdateRequest request = UpdateFactory.create(Q_PREFIX + szQuery);
+		logManager.debug(ProcessStatus.RUNNING, processID, "Executing query "+szQuery);
+
+		long start = new Date().getTime();
+
+		UpdateProcessor qe = UpdateExecutionFactory.createRemote(request,
+				endpoint);
+        qe.execute();
+
+		long end = new Date().getTime();
+		logManager.debug(ProcessStatus.RUNNING, processID, "Update Query execution took: "+(end-start)+"ms");
 	}
 	
 	
