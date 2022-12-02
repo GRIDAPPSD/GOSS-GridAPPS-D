@@ -39,10 +39,12 @@ public interface PowergridModelDataManager {
 	void insertMeasurements(String modelName, String modelId, String processId, String username) throws Exception;
 	void dropMeasurements(String modelId, String modelName, String processId, String username);
 	void insertAllMeasurements( String processId, String username) throws Exception;
-	
+	void dropAllMeasurements(String processId, String username) throws Exception;
+
 	void insertHouses(String modelName, String modelId, double scale, String processId, String username) throws Exception;
 	void dropHouses(String modelName, String modelId, String processId, String username);
 	void insertAllHouses(String processId, String username) throws Exception;
+	void dropAllHouses(String processId, String username) throws Exception;
 
 	
 	void putModel(String modelId, String model, String inputFormat, String processId, String username);

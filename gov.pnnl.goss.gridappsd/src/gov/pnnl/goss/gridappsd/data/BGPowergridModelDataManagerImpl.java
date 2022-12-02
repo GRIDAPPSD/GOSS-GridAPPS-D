@@ -1273,6 +1273,30 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
+	public void dropAllMeasurements( String processId, String username)  throws Exception{
+			
+			if(models==null || models.size()==0){
+				ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+				while( rs.hasNext()) {
+					QuerySolution qs = rs.nextSolution();
+					String feederName = qs.getLiteral(FEEDER_NAME).getString();
+					String feederId = qs.getLiteral(FEEDER_ID).getString();
+					models.put(feederName, feederId);
+				}
+			}
+			
+			
+//	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
+//	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
+			for (String modelName: models.keySet()){
+				dropMeasurements(modelName, models.get(modelName), processId, username);
+			}
+			
+			
+	}
+	
+	
+	@Override
 	public void insertMeasurements(String modelName, String modelId, String processId, String username) {
 		String baseDirectory = getBaseDirectory();
 
@@ -1999,18 +2023,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	
-	public void dropAllMeasurements(String processId, String username) {
-
-//      iterate through all model names and call list measurements, save to tmp directory
-//list_measurements(model_name)
-		for(String modelName: models.keySet()){
-			dropMeasurements(models.get(modelName), modelName, processId, username);
-			
-		}
-		
-		
-	}
-	
 	@Override
 	public void dropMeasurements(String modelId, String modelName, String processId, String username)  {
 		System.out.println("CALLING DROP MEAS "+modelName);
@@ -2110,36 +2122,29 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	@Override
+	public void dropAllHouses( String processId, String username) throws Exception{
+		
+		if(models==null || models.size()==0){
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				models.put(feederName, feederId);
+			}
+		}
+		System.out.println("models "+models);
+		double scale = 1.0;
+		for (String modelName: models.keySet()){
+			//TODO add back in
+			dropHouses(modelName, models.get(modelName), processId, username);
+			insertHouses(modelName, models.get(modelName), scale, processId, username);
+		}
+	}
+	
+	@Override
 	public void insertAllHouses( String processId, String username) throws Exception{
 
-		// TODO Auto-generated method stub
-//	    for each model name look up settings and call insert houses
-//
-//		File tempDataPathDir = null;
-//		if(baseDirectory!=null){
-//			tempDataPathDir = new File(baseDirectory);
-//			if(!tempDataPathDir.exists()){
-//				tempDataPathDir.mkdirs();
-//			}
-//		} else {
-//			String simulationConfigDir = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
-//			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
-//				logManager.error(ProcessStatus.ERROR, processId, "No temporary data location returned for request "+ processId);
-//				throw new Exception("No temporary data location  returned for request "
-//						+ processId);
-//			}
-//			if(!simulationConfigDir.endsWith(File.separator)){
-//				simulationConfigDir = simulationConfigDir+File.separator;
-//			}
-//			simulationConfigDir = simulationConfigDir+processId+File.separator;
-//			tempDataPathDir = new File(simulationConfigDir);
-//			if(!tempDataPathDir.exists()){
-//				tempDataPathDir.mkdirs();
-//			}
-//		}
-		
-		
-		
 		if(models==null || models.size()==0){
 			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
 			while( rs.hasNext()) {
