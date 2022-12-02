@@ -86,6 +86,9 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			}
 			dataManager.dropHouses(pgDataRequest.getModelName(), pgDataRequest.getModelId(), processId, username);
 			return true;
+		} else if(PowergridModelDataRequest.RequestType.DROP_ALL_HOUSES.toString().equals(pgDataRequest.requestType)){
+			dataManager.dropAllHouses(processId, username);
+			return true;
 		} else if(PowergridModelDataRequest.RequestType.INSERT_ALL_MEASURMENTS.toString().equals(pgDataRequest.requestType)){
 			dataManager.insertAllMeasurements(processId, username);
 			return true;
@@ -101,6 +104,10 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 				//TODO send error
 			}
 			dataManager.dropMeasurements(pgDataRequest.getModelName(), pgDataRequest.getModelId(), processId, username);
+		
+			return true;
+		}  else if(PowergridModelDataRequest.RequestType.DROP_ALL_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			dataManager.dropAllMeasurements(processId, username);
 		
 			return true;
 		}  else {
