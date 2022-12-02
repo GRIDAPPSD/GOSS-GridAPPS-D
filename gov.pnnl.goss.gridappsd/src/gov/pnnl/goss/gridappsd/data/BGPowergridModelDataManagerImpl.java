@@ -2134,11 +2134,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			}
 		}
 		System.out.println("models "+models);
-		double scale = 1.0;
 		for (String modelName: models.keySet()){
-			//TODO add back in
 			dropHouses(modelName, models.get(modelName), processId, username);
-			insertHouses(modelName, models.get(modelName), scale, processId, username);
 		}
 	}
 	
