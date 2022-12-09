@@ -78,6 +78,17 @@ RUN mkdir ${TEMP_DIR} \
   && cp /gridappsd/services/gridappsd-toolbox/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
+  
+# Get the CIMHub from the proper repository
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/CIMHub -b main \
+  && cd CIMHub \
+  && mkdir -p /gridappsd/CIMHub \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/CIMHub \
+  && cd \
+  && rm -rf ${TEMP_DIR}  
 
 # Copy initial applications and services into the container.
 # 
