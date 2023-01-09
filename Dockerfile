@@ -82,7 +82,7 @@ RUN mkdir ${TEMP_DIR} \
 # Get the CIMHub from the proper repository
 RUN mkdir ${TEMP_DIR} \
   && cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/CIMHub -b main \
+  && git clone https://github.com/GRIDAPPSD/CIMHub -b prefix \
   && cd CIMHub \
   && mkdir -p /gridappsd/CIMHub \
   && rm .git -rf \ 
