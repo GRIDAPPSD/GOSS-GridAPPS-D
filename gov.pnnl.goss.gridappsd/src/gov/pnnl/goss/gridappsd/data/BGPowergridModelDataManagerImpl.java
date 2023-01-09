@@ -2197,7 +2197,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				modelList.add(new PowergridModelInfo(feederId, feederName));
 			}
 		}
-		System.out.println("models "+models);
 		
 		if(modelList.size()==0){
 			modelList = getStaticModelList();
