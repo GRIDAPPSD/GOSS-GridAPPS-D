@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -64,6 +65,9 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelInfo;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelList;
 import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
@@ -111,7 +115,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
-	HashMap<String, String> models = new HashMap<String, String>();
+//	HashMap<String, String> models = new HashMap<String, String>();
 //	HashMap<String, String[]> phaseMapping = new HashMap<String, String[]>();
 	
 //	List<String> reservedModelNames = new ArrayList<String>();
@@ -176,7 +180,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			bg.listAllMeasurements("test", "test");
 			String baseDirectory = "E:\\tmp\\measurements\\";
 			//bg.insertAllMeasurements("test", "test", baseDirectory);
-			bg.insertAllHouses("test", "test");
+			List<PowergridModelInfo> modelList = new ArrayList<PowergridModelInfo>();
+			bg.insertAllHouses("test", "test", modelList);
+			
 			
 			
 			
@@ -1219,7 +1225,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	@Override
-	public void insertAllMeasurements( String processId, String username)  throws Exception{
+	public void insertAllMeasurements( String processId, String username, List<PowergridModelInfo> modelList)  throws Exception{
 		String baseDirectory = getBaseDirectory();
 			//do insert measuremnt
 			File tempDataPathDir = null;
@@ -1245,13 +1251,18 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				}
 			}
 			
-			if(models==null || models.size()==0){
+			if(modelList==null){
+				modelList = new ArrayList<PowergridModelInfo>();
+			}
+			
+			
+			if(modelList.size()==0){
 				ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
 				while( rs.hasNext()) {
 					QuerySolution qs = rs.nextSolution();
 					String feederName = qs.getLiteral(FEEDER_NAME).getString();
 					String feederId = qs.getLiteral(FEEDER_ID).getString();
-					models.put(feederName, feederId);
+					modelList.add(new PowergridModelInfo(feederId, feederName));
 				}
 			}
 			
@@ -1263,8 +1274,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			dropAllMeasurements(processId, username);
 //	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
 //	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
-			for (String modelName: models.keySet()){
-				insertMeasurements(modelName, models.get(modelName), processId, username);
+			for (PowergridModelInfo model: modelList){
+				insertMeasurements(model.getModelName(), model.getModelId(), processId, username);
 			}
 			
 //			insertAllMeasurements(modelName,  processId, username);
@@ -1273,31 +1284,36 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public void dropAllMeasurements( String processId, String username)  throws Exception{
+	public void dropAllMeasurements( String processId, String username, List<PowergridModelInfo> modelList)  throws Exception{
+		HashMap<String, PowergridModelInfo> models = new HashMap<String, PowergridModelInfo>();
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
 			
-			if(models==null || models.size()==0){
-				ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
-				while( rs.hasNext()) {
-					QuerySolution qs = rs.nextSolution();
-					String feederName = qs.getLiteral(FEEDER_NAME).getString();
-					String feederId = qs.getLiteral(FEEDER_ID).getString();
-					models.put(feederName, feederId);
-				}
+		
+		if(modelList.size()==0){
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				modelList.add(new PowergridModelInfo(feederId, feederName));
 			}
+		}
 			
 			
 //	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
 //	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
-			for (String modelName: models.keySet()){
-				dropMeasurements(modelName, models.get(modelName), processId, username);
-			}
+		for (PowergridModelInfo model: modelList){
+			dropMeasurements(model.getModelName(), model.getModelId(), processId, username);
+		}
 			
 			
 	}
 	
 	
 	@Override
-	public void insertMeasurements(String modelName, String modelId, String processId, String username) {
+	public void insertMeasurements(String modelId, String modelName, String processId, String username) {
 		String baseDirectory = getBaseDirectory();
 
 		int batchSize = 150;
@@ -1505,31 +1521,31 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		queryHandler.executeUpdateQuery(qstr);
 	}
 
-	protected List<String> listAllMeasurements(String processId, String username, String baseDirectory) {
-
-//        iterate through all model names and call list measurements, save to tmp directory
-//list_measurements(model_name)
-//		try{
-//		FileUtils.cleanDirectory(new File(baseDirectory)); 
-//		}catch (Exception e) {
-//			// TODO: handle exception
-//			e.printStackTrace();
+//	protected List<String> listAllMeasurements(String processId, String username, String baseDirectory) {
+//		HashMap<String, PowergridModelInfo> models = new HashMap<String, PowergridModelInfo>();
+////        iterate through all model names and call list measurements, save to tmp directory
+////list_measurements(model_name)
+////		try{
+////		FileUtils.cleanDirectory(new File(baseDirectory)); 
+////		}catch (Exception e) {
+////			// TODO: handle exception
+////			e.printStackTrace();
+////		}
+//		for(String modelName: models.keySet()){
+//			try{
+//				listMeasurements(models.get(modelName), modelName, baseDirectory, processId, username);
+//			}catch (FileNotFoundException e) {
+//				// TODO: handle exception
+//				e.printStackTrace();
+//			}catch (IOException e) {
+//				// TODO: handle exception
+//				e.printStackTrace();
+//			}
 //		}
-		for(String modelName: models.keySet()){
-			try{
-				listMeasurements(models.get(modelName), modelName, baseDirectory, processId, username);
-			}catch (FileNotFoundException e) {
-				// TODO: handle exception
-				e.printStackTrace();
-			}catch (IOException e) {
-				// TODO: handle exception
-				e.printStackTrace();
-			}
-		}
-		
-		
-		return null;
-	}
+//		
+//		
+//		return null;
+//	}
 
 	protected List<String> listMeasurements(String modelId, String modelName, String baseDirectory, String processId, String username) throws IOException {
 		System.out.println("CALLING LIST MEAS "+modelName);
@@ -2122,41 +2138,77 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	@Override
-	public void dropAllHouses( String processId, String username) throws Exception{
+	public void dropAllHouses( String processId, String username, List<PowergridModelInfo> modelList) throws Exception{
 		
-		if(models==null || models.size()==0){
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
+		if(modelList.size()==0){
 			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
 			while( rs.hasNext()) {
 				QuerySolution qs = rs.nextSolution();
 				String feederName = qs.getLiteral(FEEDER_NAME).getString();
 				String feederId = qs.getLiteral(FEEDER_ID).getString();
-				models.put(feederName, feederId);
+				modelList.add(new PowergridModelInfo(feederId, feederName));
 			}
 		}
-		System.out.println("models "+models);
-		for (String modelName: models.keySet()){
-			dropHouses(modelName, models.get(modelName), processId, username);
+		for (PowergridModelInfo model: modelList){
+			dropHouses(model.getModelId(), model.getModelName(), processId, username);
 		}
 	}
 	
+	
+	protected List<PowergridModelInfo> getStaticModelList(){
+		
+		String configDirStr = "services";
+		if(configManager!=null){
+			configDirStr = configManager.getConfigurationProperty(GridAppsDConstants.SERVICES_PATH);
+			if (configDirStr==null){
+				configDirStr = "services";
+			}
+		} 
+		
+		File f = new File(configDirStr+File.separator+"etc"+File.separator+"modelhouses.json");
+		try{
+			FileInputStream fin = new FileInputStream(f);
+			byte[] data = new byte[fin.available()];
+			fin.read(data);
+			String modelhousesStr = new String(data);
+			PowergridModelList req = PowergridModelList.parse(modelhousesStr);
+			return req.getModelList();
+		} catch (Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	
 	@Override
-	public void insertAllHouses( String processId, String username) throws Exception{
-
-		if(models==null || models.size()==0){
+	public void insertAllHouses( String processId, String username, List<PowergridModelInfo> modelList) throws Exception{
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
+		if(modelList.size()==0){
 			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
 			while( rs.hasNext()) {
 				QuerySolution qs = rs.nextSolution();
 				String feederName = qs.getLiteral(FEEDER_NAME).getString();
 				String feederId = qs.getLiteral(FEEDER_ID).getString();
-				models.put(feederName, feederId);
+				modelList.add(new PowergridModelInfo(feederId, feederName));
 			}
 		}
 		System.out.println("models "+models);
-		double scale = 1.0;
-		for (String modelName: models.keySet()){
+		
+		if(modelList.size()==0){
+			modelList = getStaticModelList();
+		}
+		
+		
+		
+		for (PowergridModelInfo model: modelList){
 			//TODO add back in
-			dropHouses(modelName, models.get(modelName), processId, username);
-			insertHouses(modelName, models.get(modelName), scale, processId, username);
+			dropHouses(model.getModelId(), model.getModelName(), processId, username);
+			insertHouses(model.getModelId(), model.getModelName(), model.getRegion(), model.getSeed(), model.getScale(), processId, username);
 		}
 		
 //	    delete_all_houses
@@ -2169,7 +2221,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	
 	
 	@Override
-	public void insertHouses(String modelName, String modelId, double scale, String processId, String username) throws Exception {
+	public void insertHouses(String modelId, String modelName, String region, double seed, double scale, String processId, String username) throws Exception {
 		//String baseDirectory = getBaseDirectory();
 
 		// We have to convert nominal voltages from three-phase phase-to-phase to phase
@@ -2203,301 +2255,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	
-	/*Method to get nominal voltages from each 'EnergyConsumer.'
-	  
-	  Query source is Powergrid-Models/blazegraph/queries.txt, and it was 
-	  modified from there.
-	  
-	  For now, we'll just get the 'bus' (which is really the object name in
-	  the GridLAB-D model) and nominal voltage. Nominal voltage is given
-	  as 3-phase phase-to-phase, even if we're talking about a split-phase.
-	  I suppose that's what you get when you apply a transmission standard
-	  to the secondary side of a distribution system...
-	  
-	  TODO: Later, we may want to act according to the load connection/phases */
-	protected Complex getEnergyConsumers(String modelId, HashMap<String, HashMap<String, Object>> ec, HashMap<Float, HashMap<String, Object>> no_houses, String processId, String username){
-		String qStr = "SELECT ?name ?mrid ?bus ?basev ?p ?q ?conn (group_concat(distinct ?phs;separator=\",\") as ?phases) "+
-			    "WHERE { "+
-			      "?s r:type c:EnergyConsumer. "+
-			      "VALUES ?fdrid { \""+modelId+"\" } "+
-			      "?s c:Equipment.EquipmentContainer ?fdr. "+
-			      "?fdr c:IdentifiedObject.mRID ?fdrid. " +
-			      "?s c:IdentifiedObject.name ?name. "+
-			      "?s c:IdentifiedObject.mRID ?mrid. "+
-			      "?s c:ConductingEquipment.BaseVoltage ?bv. "+
-			      "?bv c:BaseVoltage.nominalVoltage ?basev. "+
-			      "?s c:EnergyConsumer.p ?p."+
-			      "?s c:EnergyConsumer.q ?q."+
-			      "?s c:EnergyConsumer.phaseConnection ?connraw. "+
-			      "bind(strafter(str(?connraw),\"PhaseShuntConnectionKind.\") as ?conn) "+
-			      "OPTIONAL { "+
-			        "?ecp c:EnergyConsumerPhase.EnergyConsumer ?s. "+
-			        "?ecp c:EnergyConsumerPhase.phase ?phsraw. "+
-			        "bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phs) "+
-			      "} "+
-			      "?t c:Terminal.ConductingEquipment ?s. " +
-			      "?t c:Terminal.ConnectivityNode ?cn. " +
-			      "?cn c:IdentifiedObject.name ?bus "+
-			    "} "+
-			    "GROUP BY ?name ?mrid ?bus ?basev ?p ?q ?conn "+
-			    "ORDER by ?name ";
-//			  System.out.println(qStr);
-		
-		Complex totalRes = new Complex(0,0);  //totalRes = 0+0*1j
-//		System.out.println("Square root: " + j);
-//		double totalRes = 0+0 * j.getImaginary();
-		// Set and execute the query.
-		
-//		String processId = "NOT YET SET";
-//		String username = "NOT YET SET";
-		
-		
-		ResultSet ret = queryResultSet(modelId, qStr, processId, username);
-		while(ret.hasNext()){
-			 QuerySolution qs = ret.nextSolution();
-			 System.out.println("qs "+qs);
-			 // grab variables
-			 float v = qs.getLiteral("basev").getFloat(); // float(el['basev'].value)
-			 String phs = qs.getLiteral("phases").getString(); //el['phases'].value
-			 String name = qs.getLiteral("name").getString(); //name = el['name'].value
-			 String mrid = qs.getLiteral("mrid").getString(); //  mrid = el['mrid'].value
-			 float p = qs.getLiteral("p").getFloat(); //   p = float(el['p'].value)
-			 float q = qs.getLiteral("q").getFloat(); //   q = float(el['q'].value)
-
-			    // At this time, we're only adding houses to split-phase
-			    // loads. In the future we will likely want to support
-			    // three-phase loads.
-			    if (v == TRIPLEX_V && ((phs.contains("s1")) || (phs.contains("s2")))){
-			      // Triplex (split-phase) load.
-			      //ec.loc[name, ['p', 'q', 'magS', 'mrid']] = [p, q, math.sqrt((p^2 + q^2)), mrid]
-			    	HashMap<String, Object> subEC = new HashMap<String, Object>();
-			    	if(ec.containsKey(name)){
-			    		subEC = ec.get(name);
-			    	}
-			    	subEC.put("p", new Float(p));
-			    	subEC.put("q",  new Float(q));
-			    	subEC.put("magS", Math.sqrt((Math.pow(p, 2) + Math.pow(q, 2))));
-			    	subEC.put("mrid", mrid);
-			    	ec.put(name, subEC);
-			    		  
-			     // Increment counter of total residential power
-			    	totalRes.add(new Complex(p,q));  //totalRes += p + 1j*q
-			      
-			    }  else{
-			      // Track other voltages/phasing
-			    	HashMap<String, Object> subNH = new HashMap<String, Object>();
-			    	if(no_houses.containsKey(v)){
-			    		subNH = no_houses.get(v);
-			    	}
-//			      try{
-			        // Attempt to increment the count for this voltage level.
-			    	  Integer num = 1;
-			    	  Complex power = new Complex(p,q);  //no_houses[v]['power'] += p + q*1j
-			    	  if(subNH.containsKey("num")){
-			    		  num = ((Integer)subNH.get("num"))+1;
-			    		  power = (((Complex)subNH.get("power")).add(new Complex(p,q)));  //no_houses[v] = {'power': p + q*1j, 'num': 1}
-			    	  } 
-			    	  subNH.put("num", num);
-			    	  subNH.put("power", power);
-			    	no_houses.put(v, subNH); 
-//			        
-//			      }catch(Exeption e){
-//			        // Initialize a dictionary for this voltage level.
-//			        //no_houses[v] = {'power': p + q*1j, 'num': 1}
-//			      } finally{
-//			        // Increment the total power for this voltage.
-//			        no_houses[v]['power'] += p + q*1j
-//			      }
-			    }
-		}
-		// Update all the 'power' fields in no_houses to be strings.
-		// This is a cheap hack to ensure it's json serializable.
-		// for sub_dict in no_houses.values():
-		//  sub_dict['power'] = '{:.2f} VA'.format(abs(sub_dict['power']))
-		for(Float key: no_houses.keySet()){
-			HashMap<String, Object> sub_dict = no_houses.get(key);
-			Object power = sub_dict.get("power");
-			power = power.toString()+" VA";
-			sub_dict.put("power", power);
-			no_houses.put(key, sub_dict);
-		}
-		return totalRes;
-	}
 	
-	protected void generatedHousesForFeeder( HashMap<String, HashMap<String, Object>> ec, double magS, double scale){
-				
-		/*'Main' function for class. Generates houses for a given set of loads
-		        
-		        NOTE: The intention is that this function is called by the insertHouses
-		            module, and so the inputs are taken in a form they exist there.
-		        
-		        INPUTS:
-		        loadDf: pandas dataframe, indices are names of loads, and column 'magS'
-		            indicates apaprent power magnitude under peak conditions
-		        magS: total magnitude of all loads [MVA]
-		        scale:  scaling factor on the number of houses placed, to mitigate overloads
-		        
-		        OUTPUT:
-		        housingDict: dictionary with nodes/loads (index from loadDf) as keys.
-		            Each key maps to a two-element tuple - the first is a dataframe
-		            containing housing data and the second is the chosen housing type
-		            code (see eia_recs.housingData.TYPEHUQ). Using the code instead of
-		            the full name for efficiency.
-		            
-		        note: We may want to use a different datatype other than a dictionary.
-		            When we loop back over the items, this will be inefficient as 
-		            the key will have to be looked up every time.
-		        */
-		        // First, estimate how many houses we'll be placing.
-//				float magS = 0;
-//				float scale = 0;
-		        float guess = estimateTotalHouses(magS, scale);
-//		        print ('Estimating {:.2f} houses for {:.2f} kVA at {:.3f} VA/ft2'.format (guess, 0.001 * magS, VA_PER_SQFT/scale))
-		        
-		        // Create a pandas Series to be used for updating the distribution with
-		        // each housing type selection.
-//		        housing = self.data['TYPEHUQ'].copy(deep=True)
-//		        
-//		        self.housing = housing * guess
-//		        
-//		        // Track how many loads we handled.
-//		        int loadCount = 1;
-//		        self.houseCount = pd.Series(data=np.zeros(len(self.data['TYPEHUQ'])),
-//		                                    index=self.data['TYPEHUQ'].index)
-//		        // Initialize flag so we aren't throwing too many warnings.
-//		        self.warnFlag = False
-//		        
-//		        // Since the number of houses per load/node is variable, we're best
-//		        // suited to use a dictionary here.
-//		        housingDict = {}
-//		        
-//		        //Loop over each load and add houses.
-//		        for loadName, data in loadDf.iterrows():
-//		            
-//		            // Draw a housing type from the distribution and then draw square
-//		            // footages for each house that will be added to the load/xfmr.
-//		            housingType, floorArea = self.typeAndSQFTForLoad(data.loc['magS'], scale)
-//		            
-//		            // Number of houses is the length of the floorArea
-//		            n = len(floorArea)
-//		            
-//		            // Initialize a DataFrame for these houses. We'll be mapping 
-//		            // EIA RECS codes into the codes used for the house model in 
-//		            // PNNL's CIM extension.
-//		            houseDf = pd.DataFrame(data=floorArea, columns=['floorArea'])
-//		            
-//		            // Add cooling (AC) information:
-//		            coolingSystem, coolingSetpoint = self.drawAC(housingType, n)
-//		            houseDf['coolingSystem'] = coolingSystem
-//		            houseDf['coolingSetpoint'] = coolingSetpoint
-//		            // Using the above syntax because apparently assign returns a copy,
-//		            // which feels very inefficient...
-////		            '''
-////		            houseDf.assign(coolingSystem=coolingSystem,
-////		                           coolingSetpoint=coolingSetpoint)
-////		            '''
-//		            
-//		            // Add heating information:
-//		            heatingSystem, heatingSetpoint = self.drawHeating(coolingSystem,
-//		                                                              housingType, n)
-//		            houseDf['heatingSystem'] = heatingSystem
-//		            houseDf['heatingSetpoint'] = heatingSetpoint
-//		            
-//		            // Draw HVAC power system, using nan if there's neither electric 
-//		            // heating nor cooling
-//		            hvacPowerFactor = pd.Series(self.rand.uniform(low=HVAC_PF[0],
-//		                                        high=HVAC_PF[1], size=n))
-//		            // Use np.nan when both heating and cooling are absent.
-//		            hvacPowerFactor[(houseDf['coolingSystem'] == 'none') & \
-//		                            (houseDf['heatingSystem'] == 'none')] = np.nan
-//		            // Use unity(1) when there's no cooling, but heating is resistive.
-//		            hvacPowerFactor[((houseDf['coolingSystem'] == 'none') & \
-//		                            (houseDf['heatingSystem'] == 'resistance'))] = 1
-//		            houseDf['hvacPowerFactor'] = hvacPowerFactor
-//		            
-//		            // Draw number of stories.
-//		            houseDf['numberOfStories'] = self.drawNumStories(housingType, n)
-//		            
-//		            // Draw thermal integrity.
-//		            houseDf['thermalIntegrity'] = \
-//		                self.drawThermalIntegrity(housingType, n)
-//		            
-//		            // Lookup housing code and assign houseDf and code to dictionary.
-//		            hCode = TYPEHUQ_REV[housingType]
-//		            housingDict[loadName] = (houseDf, hCode)
-//		            
-//		            self.loadCount += 1
-//		            self.houseCount[housingType] += n
-		            
-		        // Print totals to the log. 
-//		        self.log.info(('{} loads were accounted for, totaling {} '
-//		                       + 'housing units').format(self.loadCount,
-//		                                                 self.houseCount.sum())
-//		                       )
-		        
-//		        # Print final distribution to the log.
-//		        self.log.info('Final housing breakdown:\n{}'.format(self.houseCount))
-		                        
-//		        # Done!
-//		        return housingDict
-				
-			}
-	
-	/*
-	 * Estimate total number of housing units that will be generated.
-        
-        This is used to help ensure we're doing a good job tracking the housing
-            type distribution.
-            
-        Rough flow:
-            1) Compute mean square footage by housing type
-            2) Use factor (VA_PER_SQFT/scale) to estimate peak power by housing type.
-            3) Given distribution of housing types and associated average
-                power, estimate how many housing units will be generated.
-        
-        INPUTS:
-        magS: Magnitude of apparent power for all the loads in the system.
-        scale:  scaling factor on the number of houses placed, to mitigate overloads
-        
-        OUTPUTS:
-        num: Estimate of total number of housing units that will be generated.
-	 */
-	protected float estimateTotalHouses(double magS, double scale){
-		float estimate = 0;
-		// Initialize pandas series for holding mean square footages.
-//TODO 		
-//        meanSqft = np.zeros(len(self.data['TYPEHUQ']))
-       int meanSqft = 0; 
-       int totalMean = 1;
-//TODO       
-//        // Loop over the housing types and compute the mean square footage.
-//        for (housingInd, housingType in enumerate(data['TYPEHUQ'].index)){
-//            // Grab bin_edges.
-//            bin_edges = np.array(data[housingType]['TOTSQFT_EN']['bin_edges']);
-//            
-//            // Bin centers are left edge + half of the distance between bins.
-//            // We're grabbing centers because the uniform distribution is used
-//            // to pick a value within a bin.
-//            bin_centers = bin_edges[0:-1] + ((bin_edges[1:] - bin_edges[0:-1]) / 2);
-//                
-//            // Mean square footage is the sum of the probabilities times the 
-//            // values.
-//            pmf = np.array(data[housingType]['TOTSQFT_EN']['pmf']);
-//            meanSqft[housingInd] = np.sum((bin_centers * pmf));
-//        }
-//        // Use our (maybe trash) constant to convert square footages to power.
-//        meanPower = meanSqft * VA_PER_SQFT / scale;
-//        
-//        // Compute the mean power for all housing types.
-//        totalMean = np.sum(meanPower * data['TYPEHUQ']);
-        
-        // Estimate the nubmer of houses.
-        estimate = new Float(magS / totalMean);
-		return estimate;
-	}
 	
 	@Override
-	public void dropHouses(String modelName, String modelId, String processId, String username) {
+	public void dropHouses(String modelId, String modelName, String processId, String username) {
 		// TODO Auto-generated method stub
 		System.out.println("CALLING DROP HOUSES "+modelName);
 		String qstr = "DELETE { "+
@@ -2547,60 +2308,6 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		
 	}
 	
-	
-	protected float estimateTotalHouses(float magS, float scale){
-		float num = 0;
-		/*Estimate total number of housing units that will be generated.
-        
-        This is used to help ensure we're doing a good job tracking the housing
-            type distribution.
-            
-        Rough flow:
-            1) Compute mean square footage by housing type
-            2) Use factor (VA_PER_SQFT/scale) to estimate peak power by housing type.
-            3) Given distribution of housing types and associated average
-                power, estimate how many housing units will be generated.
-        
-        INPUTS:
-        magS: Magnitude of apparent power for all the loads in the system.
-        scale:  scaling factor on the number of houses placed, to mitigate overloads
-        
-        OUTPUTS:
-        num: Estimate of total number of housing units that will be generated.
-        */
-        
-//        // Initialize pandas series for holding mean square footages.
-//        meanSqft = np.zeros(len(self.data['TYPEHUQ']))
-//        
-//        // Loop over the housing types and compute the mean square footage.
-//        for housingInd, housingType in enumerate(self.data['TYPEHUQ'].index):
-//        	// Grab bin_edges.
-//            bin_edges = np.array(\
-//                self.data[housingType]['TOTSQFT_EN']['bin_edges'])
-//            
-//            		// Bin centers are left edge + half of the distance between bins.
-//            		// We're grabbing centers because the uniform distribution is used
-//            		// to pick a value within a bin.
-//            bin_centers = bin_edges[0:-1] \
-//                + ((bin_edges[1:] - bin_edges[0:-1]) / 2)
-//                
-//                // Mean square footage is the sum of the probabilities times the 
-//                // values.
-//            pmf = np.array(self.data[housingType]['TOTSQFT_EN']['pmf'])
-//            meanSqft[housingInd] = np.sum((bin_centers * pmf))
-//            
-//            		// Use our (maybe trash) constant to convert square footages to power.
-//        meanPower = meanSqft * VA_PER_SQFT / scale
-//        
-//        		// Compute the mean power for all housing types.
-//        totalMean = np.sum(meanPower * self.data['TYPEHUQ'])
-//        
-//        		// Estimate the nubmer of houses.
-//        num = magS / totalMean
-        
-        		// Done!
-        return num;
-	}
 	
 //	@Override
 	public void insertDER(String modelNames, String processId, String username, String baseDirectory) {

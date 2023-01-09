@@ -1,6 +1,8 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -36,8 +38,10 @@ public class PowergridModelDataRequest implements Serializable{
 	
 	
 	public String directory;
-	public String scale;
 	public String modelName;
+	
+	public PowergridModelInfo model;
+	public List<PowergridModelInfo> modelList;
 
 	
 	
@@ -81,6 +85,25 @@ public class PowergridModelDataRequest implements Serializable{
 	
 	
 	
+	public List<PowergridModelInfo> getModelList() {
+		if(modelList==null){
+			return new ArrayList<PowergridModelInfo>();
+		}
+		return modelList;
+	}
+	public void setModelList(List<PowergridModelInfo> modelList) {
+		this.modelList = modelList;
+	}
+	public PowergridModelInfo getModel() {
+		if(model==null){
+			return new PowergridModelInfo();
+		}
+		return model;
+	}
+	public void setModel(PowergridModelInfo model) {
+		this.model = model;
+	}
+	
 	public String getObjectType() {
 		return objectType;
 	}
@@ -94,12 +117,6 @@ public class PowergridModelDataRequest implements Serializable{
 	}
 	public void setDirectory(String directory) {
 		this.directory = directory;
-	}
-	public String getScale() {
-		return scale;
-	}
-	public void setScale(String scale) {
-		this.scale = scale;
 	}
 	public String getModelName() {
 		return modelName;
