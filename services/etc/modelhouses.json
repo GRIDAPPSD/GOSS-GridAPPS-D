@@ -1,15 +1,15 @@
 {
 "modelList": [
-	{"modelID": "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "modelName":"ieee8500", "region":3,"scale":0.8,"seed":0},
-    {"modelID": "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44", "modelName":"ieee9500", "region":3,"scale":0.8,"seed":0},
-    {"modelID": "_E407CBB6-8C8D-9BC9-589C-AB83FBF0826D", "modelName":"ieee123pv", "region":5,"scale":1.0,"seed":0},
-    {"modelID": "_503D6E20-F499-4CC7-8051-971E23D0BF79", "modelName":"ieee123transactive", "region":3,"scale":1.0,"seed":0},
-    {"modelID": "_77966920-E1EC-EE8A-23EE-4EFD23B205BD", "modelName":"acep_psel", "region":3,"scale":1.0,"seed":0},
-    {"modelID": "_C1C3E687-6FFD-C753-582B-632A27E28507", "modelName":"ieee123", "region":5,"scale":1.0,"seed":0},
-    {"modelID": "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62", "modelName":"ieee13nodeckt", "region":5,"scale":1.0,"seed":0},
-    {"modelID": "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "modelName":"ieee13nodecktassets", "region":5,"scale":1.0,"seed":0},
-    {"modelID": "_67AB291F-DCCD-31B7-B499-338206B9828F", "modelName":"j1", "region":3,"scale":1.0,"seed":0},
-    {"modelID": "_9CE150A8-8CC5-A0F9-B67E-BBD8C79D3095", "modelName":"sourceckt", "region":3,"scale":1.0,"seed":0},
-    {"modelID": "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44", "modelName":"test9500new", "region":3,"scale":1.0,"seed":0}
+	{"modelId": "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "modelName":"ieee8500", "region":3,"scale":0.8,"seed":0},
+    {"modelId": "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44", "modelName":"ieee9500", "region":3,"scale":0.8,"seed":0},
+    {"modelId": "_E407CBB6-8C8D-9BC9-589C-AB83FBF0826D", "modelName":"ieee123pv", "region":5,"scale":1.0,"seed":0},
+    {"modelId": "_503D6E20-F499-4CC7-8051-971E23D0BF79", "modelName":"ieee123transactive", "region":3,"scale":1.0,"seed":0},
+    {"modelId": "_77966920-E1EC-EE8A-23EE-4EFD23B205BD", "modelName":"acep_psel", "region":3,"scale":1.0,"seed":0},
+    {"modelId": "_C1C3E687-6FFD-C753-582B-632A27E28507", "modelName":"ieee123", "region":5,"scale":1.0,"seed":0},
+    {"modelId": "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62", "modelName":"ieee13nodeckt", "region":5,"scale":1.0,"seed":0},
+    {"modelId": "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "modelName":"ieee13nodecktassets", "region":5,"scale":1.0,"seed":0},
+    {"modelId": "_67AB291F-DCCD-31B7-B499-338206B9828F", "modelName":"j1", "region":3,"scale":1.0,"seed":0},
+    {"modelId": "_9CE150A8-8CC5-A0F9-B67E-BBD8C79D3095", "modelName":"sourceckt", "region":3,"scale":1.0,"seed":0},
+    {"modelId": "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44", "modelName":"test9500new", "region":3,"scale":1.0,"seed":0}
 ]
 }

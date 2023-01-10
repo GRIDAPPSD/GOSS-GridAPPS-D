@@ -76,13 +76,13 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.INSERT_HOUSES.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
-				//TODO send error
+				return "{\"message\":\"No model provided\"}";
 			}
 			dataManager.insertHouses(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), pgDataRequest.getModel().getRegion(), pgDataRequest.getModel().getSeed(), pgDataRequest.getModel().getScale(), processId, username);
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.DROP_HOUSES.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
-				//TODO send error
+				return "{\"message\":\"No model provided\"}";
 			}
 			dataManager.dropHouses(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
 			return true;
@@ -94,14 +94,14 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.INSERT_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
-				//TODO send error
+				return "{\"message\":\"No model provided\"}";
 			}
 			dataManager.insertMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
 		
 			return true;
 		}  else if(PowergridModelDataRequest.RequestType.DROP_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
 			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
-				//TODO send error
+				return "{\"message\":\"No model provided\"}";
 			}
 			dataManager.dropMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
 		
