@@ -75,16 +75,26 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			dataManager.insertAllHouses(processId, username, pgDataRequest.getModelList());
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.INSERT_HOUSES.toString().equals(pgDataRequest.requestType)){
-			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
+			if ((pgDataRequest.getModelId()==null || pgDataRequest.getModelId().length()==0)  && (pgDataRequest.getModel().getModelId()==null || pgDataRequest.getModel().getModelId().length()==0)){
 				return "{\"message\":\"No model provided\"}";
 			}
-			dataManager.insertHouses(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), pgDataRequest.getModel().getRegion(), pgDataRequest.getModel().getSeed(), pgDataRequest.getModel().getScale(), processId, username);
+			
+			if((pgDataRequest.getModelId()!=null && pgDataRequest.getModelId().length()>0))
+				dataManager.insertHouses(pgDataRequest.getModelId(), pgDataRequest.getModelName(), "3", 0, 1.0, processId, username);
+			else{
+				dataManager.insertHouses(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), pgDataRequest.getModel().getRegion(), pgDataRequest.getModel().getSeed(), pgDataRequest.getModel().getScale(), processId, username);
+			}
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.DROP_HOUSES.toString().equals(pgDataRequest.requestType)){
-			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
+			if ((pgDataRequest.getModelId()==null || pgDataRequest.getModelId().length()==0)  && (pgDataRequest.getModel().getModelId()==null || pgDataRequest.getModel().getModelId().length()==0)){
 				return "{\"message\":\"No model provided\"}";
 			}
-			dataManager.dropHouses(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			
+			if((pgDataRequest.getModelId()!=null && pgDataRequest.getModelId().length()>0))
+				dataManager.dropHouses(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			else{
+				dataManager.dropHouses(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), processId, username);
+			}
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.DROP_ALL_HOUSES.toString().equals(pgDataRequest.requestType)){
 			dataManager.dropAllHouses(processId, username, pgDataRequest.getModelList());
@@ -93,17 +103,27 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 			dataManager.insertAllMeasurements(processId, username, pgDataRequest.getModelList());
 			return true;
 		} else if(PowergridModelDataRequest.RequestType.INSERT_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
-			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
+			if ((pgDataRequest.getModelId()==null || pgDataRequest.getModelId().length()==0)  && (pgDataRequest.getModel().getModelId()==null || pgDataRequest.getModel().getModelId().length()==0)){
 				return "{\"message\":\"No model provided\"}";
 			}
-			dataManager.insertMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			
+			if((pgDataRequest.getModelId()!=null && pgDataRequest.getModelId().length()>0))
+				dataManager.insertMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			else{
+				dataManager.insertMeasurements(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), processId, username);
+			}
 		
 			return true;
 		}  else if(PowergridModelDataRequest.RequestType.DROP_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
-			if (pgDataRequest.getModelId()==null  && pgDataRequest.getModel().getModelId()==null){
+			if ((pgDataRequest.getModelId()==null || pgDataRequest.getModelId().length()==0)  && (pgDataRequest.getModel().getModelId()==null || pgDataRequest.getModel().getModelId().length()==0)){
 				return "{\"message\":\"No model provided\"}";
 			}
-			dataManager.dropMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			
+			if((pgDataRequest.getModelId()!=null && pgDataRequest.getModelId().length()>0))
+				dataManager.dropMeasurements(pgDataRequest.getModelId(), pgDataRequest.getModelName(), processId, username);
+			else{
+				dataManager.dropMeasurements(pgDataRequest.getModel().getModelId(), pgDataRequest.getModel().getModelName(), processId, username);
+			}
 		
 			return true;
 		}  else if(PowergridModelDataRequest.RequestType.DROP_ALL_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
