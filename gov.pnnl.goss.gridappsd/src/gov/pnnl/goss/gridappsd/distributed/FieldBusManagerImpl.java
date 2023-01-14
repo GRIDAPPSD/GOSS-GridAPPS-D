@@ -77,7 +77,6 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
 	Client client;
 
-	List<Feeder> feederList = null;
 	Map<String, List<String>> messageBus_measIds_map = new HashMap<String, List<String>>();
 	Map<String, String> measId_messageBus_map = new HashMap<String, String>();
 
@@ -132,14 +131,6 @@ public class FieldBusManagerImpl implements FieldBusManager {
 		if (request_queue.endsWith("context")) {
 
 			RequestFieldContext requestFieldContext = RequestFieldContext.parse(request.toString());
-			// TODO: This block will be used if FieldBusManager is initialized
-			// with multiple feeders
-			/*
-			 * for(Feeder feeder : feederList){
-			 * if(feeder.feeder_id.equals(requestFieldContext.modelId))
-			 * responseFeeder = feeder; }
-			 */
-
 			if (requestFieldContext.areaId == null)
 				return topology.root.feeders;
 			else {

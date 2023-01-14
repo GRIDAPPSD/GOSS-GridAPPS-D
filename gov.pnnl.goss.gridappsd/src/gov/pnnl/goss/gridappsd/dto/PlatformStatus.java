@@ -11,6 +11,7 @@ public class PlatformStatus implements Serializable{
 	List<ServiceInfo> services;
 	List<AppInstance> appInstances;
 	List<ServiceInstance> serviceInstances;
+	String fieldModelMrid;
 	
 	
 	public PlatformStatus() {}
@@ -49,6 +50,10 @@ public class PlatformStatus implements Serializable{
 	}
 	public void setServiceInstances(List<ServiceInstance> serviceInstances) {
 		this.serviceInstances = serviceInstances;
+	}
+	public void setField(String fieldModelMrid) {
+		this.fieldModelMrid = fieldModelMrid;
+		
 	}
 	
 }
