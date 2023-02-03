@@ -1,5 +1,5 @@
 # Base requirements to work with the message bus and debugging
 # of python applications.
-remote_pdb==1.2.0
-durable-rules==0.33.125
+remote_pdb
+durable-rules
 gridappsd-python

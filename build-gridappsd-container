@@ -1,4 +1,4 @@
-docker pull gridappsd/gridappsd_base:master
+docker pull gridappsd/gridappsd_base:3.10
 
 ./gradlew clean
 rm -rf gov.pnnl.goss/gridappsd/generated
