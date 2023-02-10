@@ -57,7 +57,7 @@ RUN mkdir ${TEMP_DIR} \
 RUN mkdir ${TEMP_DIR} \
   && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/topology-processor -b main \
-  && cd topology-processor/topology_processor \
+  && cd topology-processor/ \
   && mkdir -p /gridappsd/services/gridappsd-topology-processor \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-topology-processor \
