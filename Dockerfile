@@ -61,8 +61,8 @@ RUN mkdir ${TEMP_DIR} \
   && mkdir -p /gridappsd/services/gridappsd-topology-processor \
   && rm .git -rf \ 
   && cp -r * /gridappsd/services/gridappsd-topology-processor \
-  && cp /gridappsd/services/gridappsd-topology-processor/gridappsd-topology-service.config /gridappsd/services/ \
-  && cp /gridappsd/services/gridappsd-topology-processor/gridappsd-topology-daemon.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-topology-processor/topology_processor/gridappsd-topology-service.config /gridappsd/services/ \
+  && cp /gridappsd/services/gridappsd-topology-processor/topology_processor/gridappsd-topology-daemon.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
 
