@@ -200,17 +200,17 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
 		//TODO write a query handler that uses the built in powergrid model data manager that talks to blazegraph internally
 		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
 		queryHandler.addFeederSelection(modelId);
-		
+		String fEarth = "carson";  //values "deri", "carson", or "fullcarson".  This only matters for OpenDSS, which uses "deri" by default.  However, "carson" gives the best match to GridLAB-D
 		CIMImporter cimImporter = new CIMImporter(); 
 		//If the simulation info is available also write to file
 		if(configFile!=null){
 			cimImporter.generateDSSFile(queryHandler, new PrintWriter(new FileWriter(configFile)), new PrintWriter(new FileWriter(idFile)), buscoords, guids, loadScale,
-					bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
+					bWantSched, null, bWantZip, zFraction, iFraction, pFraction, fEarth);
 			//config was written to base file, so return that
 			printFileToOutput(configFile, out);
 		} else {
 			PrintWriter idFileWriter = new PrintWriter(new StringWriter());
-			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction);
+			cimImporter.generateDSSFile(queryHandler, out, idFileWriter, buscoords, guids, loadScale, bWantSched, null, bWantZip, zFraction, iFraction, pFraction, fEarth);
 			idFileWriter.close();
 		}
 		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating DSS Base configuration file.");

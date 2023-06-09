@@ -270,11 +270,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			logManager.error(ProcessStatus.ERROR,processId,"No "+SEPARATED_LOADS_FILE+" parameter provided");
 			throw new Exception("Missing parameter "+SEPARATED_LOADS_FILE);
 		}
-
+		String fEarth = "carson";  //values "deri", "carson", or "fullcarson".  This only matters for OpenDSS, which uses "deri" by default.  However, "carson" gives the best match to GridLAB-D
 		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
 		CIMQuerySetter qs = new CIMQuerySetter();
-		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, -1, bHaveEventGen, modelState, false, separateLoads);
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, -1, bHaveEventGen, modelState, false, fEarth, separateLoads);
 		String tempDataPath = dir.getAbsolutePath();
 
 		//If use climate, then generate gridlabd weather data file

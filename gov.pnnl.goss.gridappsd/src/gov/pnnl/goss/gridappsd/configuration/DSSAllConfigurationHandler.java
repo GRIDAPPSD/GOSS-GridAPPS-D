@@ -57,6 +57,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import org.apache.felix.dm.annotation.api.Component;
@@ -227,11 +228,11 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		boolean bHaveEventGen = true;
 		
 		//TODO add climate
-		
+		String fEarth = "carson";  //values "deri", "carson", or "fullcarson".  This only matters for OpenDSS, which uses "deri" by default.  However, "carson" gives the best match to GridLAB-D
 		//cimhub utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
 		CIMQuerySetter qs = new CIMQuerySetter();
-		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false);
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false, fEarth);
 		
 		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all DSS configuration files.");
 		
