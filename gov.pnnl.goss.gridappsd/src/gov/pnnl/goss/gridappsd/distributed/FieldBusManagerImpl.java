@@ -134,7 +134,7 @@
 				if (requestFieldContext.areaId == null)
 					return topology.root.feeders;
 				else if(requestFieldContext.areaId.equals(topology.root.feeders.message_bus_id))
-+                                       return topology.root.feeders;
+                                       return topology.root.feeders;
 				else {
 					for (SwitchArea switchArea : topology.root.feeders.switch_areas) {
 						if (requestFieldContext.areaId.equals(switchArea.message_bus_id))
