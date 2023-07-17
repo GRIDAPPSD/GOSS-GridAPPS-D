@@ -11,9 +11,14 @@ if [ "$1" = "gridappsd" ]; then
     sudo pip install -q --disable-pip-version-check -r $reqfile
   done
 
-  # Run tail -f /dev/null to keep the container running and waiting for connection
-  echo "[Entrypoint] Waiting for connection"
-  tail -f /dev/null
+
+  if [ "${AUTOSTART:-0}" != "0" ]; then
+    /gridappsd/run-gridappsd.sh
+  else
+    # Run tail -f /dev/null to keep the container running and waiting for connection
+    echo "[Entrypoint] Waiting for connection"
+     tail -f /dev/null
+  fi
 elif [ "$1" = "version" -o "$1" = "-v" -o "$1" = "--version" ]; then
   echo -n "version: "
   cat /gridappsd/dockerbuildversion.txt
