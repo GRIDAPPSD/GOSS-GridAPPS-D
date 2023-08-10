@@ -229,11 +229,13 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
 		
 		//TODO add climate
 		String fEarth = "carson";  //values "deri", "carson", or "fullcarson".  This only matters for OpenDSS, which uses "deri" by default.  However, "carson" gives the best match to GridLAB-D
+		int iManualFile = 3;  //values 1 to reference manual pre-edits, 2 for post-edits, 3 for both edits in exported
+		boolean bUseProfiles = true;  //true to use players, schedules and shapes
 		//cimhub utility uses 
 		CIMImporter cimImporter = new CIMImporter(); 
 		CIMQuerySetter qs = new CIMQuerySetter();
-		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false, fEarth);
-		
+		cimImporter.start(queryHandler, qs, CONFIGTARGET, fRoot, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, modelState, false, fEarth, iManualFile, bUseProfiles);
+  
 		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all DSS configuration files.");
 		
 

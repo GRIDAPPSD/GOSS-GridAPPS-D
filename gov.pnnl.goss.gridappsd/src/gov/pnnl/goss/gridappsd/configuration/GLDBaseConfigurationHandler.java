@@ -177,7 +177,7 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		queryHandler.addFeederSelection(modelId);
 		
 		boolean useHouses = GridAppsDConstants.getBooleanProperty(parameters, USEHOUSES, false);
-		
+		boolean bUseProfiles = true;  //bUseProfiles true to use players, schedules and shapes 		  
 		boolean bHaveEventGen = true;
 		
 		CIMImporter cimImporter = new CIMImporter(); 
@@ -185,9 +185,9 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
 		
 		//If the simulation info is available also write to file
 		if(configFile!=null){
-			cimImporter.generateGLMFile(queryHandler, qs, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen);
+			cimImporter.generateGLMFile(queryHandler, qs, new PrintWriter(new FileWriter(configFile)), scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses, zFraction, iFraction, pFraction, bHaveEventGen, bUseProfiles);
 		} else {
-			cimImporter.generateGLMFile(queryHandler, qs, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses,zFraction, iFraction, pFraction, bHaveEventGen);
+			cimImporter.generateGLMFile(queryHandler, qs, out, scheduleName, loadScale, bWantSched, bWantZip, bWantRandomFractions, useHouses,zFraction, iFraction, pFraction, bHaveEventGen, bUseProfiles);
 		}
 		if(configFile!=null){
 			//config was written to file, so return that
