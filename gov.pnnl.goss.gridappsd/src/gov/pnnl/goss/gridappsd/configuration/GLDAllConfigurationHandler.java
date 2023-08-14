@@ -271,7 +271,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 			throw new Exception("Missing parameter "+SEPARATED_LOADS_FILE);
 		}
 		String fEarth = "carson";  //values "deri", "carson", or "fullcarson".  This only matters for OpenDSS, which uses "deri" by default.  However, "carson" gives the best match to GridLAB-D
-		int iManualFile = 3;  //values 1 to reference manual pre-edits, 2 for post-edits, 3 for both edits in exported
+		int iManualFile = 0;  //values 1 to reference manual pre-edits, 2 for post-edits, 3 for both edits in exported
 		boolean bUseProfiles = true;  //true to use players, schedules and shapes
 		//cimhub utility uses
 		CIMImporter cimImporter = new CIMImporter();
