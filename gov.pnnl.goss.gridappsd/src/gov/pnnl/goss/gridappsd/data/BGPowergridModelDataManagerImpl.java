@@ -1,17 +1,28 @@
 package gov.pnnl.goss.gridappsd.data;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -24,14 +35,21 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 //import org.openrdf.model.Statement;
 //import org.openrdf.query.GraphQueryResult;
 //import com.bigdata.rdf.sail.webapp.SD;
 //import com.bigdata.rdf.sail.webapp.client.RemoteRepositoryManager;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.math3.complex.Complex;
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
 import org.apache.felix.dm.annotation.api.Start;
@@ -46,8 +64,13 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelDataRequest;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelInfo;
+import gov.pnnl.goss.gridappsd.dto.PowergridModelList;
 import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.ClientFactory;
 
 @Component
@@ -73,6 +96,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	final String REGION_ID = "regionId";
 	
 	public static final String DATA_MANAGER_TYPE = "powergridmodel";
+	private static final float TRIPLEX_V = 0;
 	 
 
 	String endpointBaseURL;
@@ -91,6 +115,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	@ServiceDependency
 	private volatile ClientFactory clientFactory;
 	
+//	HashMap<String, String> models = new HashMap<String, String>();
+//	HashMap<String, String[]> phaseMapping = new HashMap<String, String[]>();
 	
 //	List<String> reservedModelNames = new ArrayList<String>();
 	
@@ -127,6 +153,10 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 	}
 	
 	
+	protected String getBaseDirectory(){
+		return "";
+	}
+	
 	//update with properties??
 	
 	public static void main(String[] args){
@@ -146,19 +176,43 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 			
 //			bg.queryObject("ieee13", "_211AEE43-D357-463C-95B9-184942ABE3E5", "JSON");
 //			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON", "12345", "user"));
-			System.out.println(bg.queryModelNameList("12345", "user"));
+//			System.out.println(bg.queryModelNameList("12345", "user"));
+//			bg.listAllMeasurements("test", "test");
+			String baseDirectory = "E:\\tmp\\measurements\\";
+			//bg.insertAllMeasurements("test", "test", baseDirectory);
+			List<PowergridModelInfo> modelList = new ArrayList<PowergridModelInfo>();
+			bg.insertAllHouses("test", "test", modelList);
+			
+			
+			
+			
 			long start = new Date().getTime();
 			String model = bg.queryModel("_5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "", "", "XML", "12345", "user");
 //			String model = bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
 //			String model = bg.queryModel("_503D6E20-F499-4CC7-8051-971E23D0BF79", "", "", "XML", "12345", "user");
 			
 			
+
+//			models.put("acep_psil", "_77966920-E1EC-EE8A-23EE-4EFD23B205BD");
+//			models.put("eprij1", "_67AB291F-DCCD-31B7-B499-338206B9828F");
+//			models.put("ieee13assets", "_5B816B93-7A5F-B64C-8460-47C17D6E4B0F");
+//			models.put("ieee13nodeckt", "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
+//			models.put("ieee13ochre", "_13AD8E07-3BF9-A4E2-CB8F-C3722F837B62");
+//			models.put("ieee37", "_49003F52-A359-C2EA-10C4-F4ED3FD368CC");
+//			models.put("ieee123", "_C1C3E687-6FFD-C753-582B-632A27E28507");
+//			models.put("ieee123pv", "_E407CBB6-8C8D-9BC9-589C-AB83FBF0826D");
+//			models.put("ieee8500", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3");
+//			models.put("ieee8500enh", "_AAE94E4A-2465-6F5E-37B1-3E72183A4E44");
+//			models.put("r2_12_47_2", "_9CE150A8-8CC5-A0F9-B67E-BBD8C79D3095");
+//			models.put("transactive", "_503D6E20-F499-4CC7-8051-971E23D0BF79");
+//			models.put("final9500node", "_EE71F6C9-56F0-4167-A14E-7F4C71F10EAA");
+			
 			FileOutputStream fout = new FileOutputStream(new File("xml_new_full.xml"));
 			fout.write(model.getBytes());
 			fout.flush();
 			fout.close();
 			long end = new Date().getTime();
-			System.out.println("Took "+((end-start)/1000));
+			System.out.println("Took "+((end-start)/1000)+" sec");
 //			System.out.println(bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user"));
 //			System.out.println(bg.queryModelNames("XML"));
 //			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
@@ -1168,6 +1222,1099 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 				+ " ?rgn c:IdentifiedObject.mRID ?"+REGION_ID+"."
 				+ "} ORDER by  ?"+FEEDER_NAME;
 		return queryResultSet(null, modelNameQuery, processId, username);
+	}
+	
+	@Override
+	public void insertAllMeasurements( String processId, String username, List<PowergridModelInfo> modelList)  throws Exception{
+		String baseDirectory = getBaseDirectory();
+			//do insert measuremnt
+			File tempDataPathDir = null;
+			if(baseDirectory!=null){
+				tempDataPathDir = new File(baseDirectory);
+				if(!tempDataPathDir.exists()){
+					tempDataPathDir.mkdirs();
+				}
+			} else {
+				String simulationConfigDir = configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+				if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
+					logManager.error(ProcessStatus.ERROR, processId, "No temporary data location returned for request "+ processId);
+					throw new Exception("No temporary data location  returned for request "
+							+ processId);
+				}
+				if(!simulationConfigDir.endsWith(File.separator)){
+					simulationConfigDir = simulationConfigDir+File.separator;
+				}
+				simulationConfigDir = simulationConfigDir+processId+File.separator;
+				tempDataPathDir = new File(simulationConfigDir);
+				if(!tempDataPathDir.exists()){
+					tempDataPathDir.mkdirs();
+				}
+			}
+			
+			if(modelList==null){
+				modelList = new ArrayList<PowergridModelInfo>();
+			}
+			
+			
+			if(modelList.size()==0){
+				ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+				while( rs.hasNext()) {
+					QuerySolution qs = rs.nextSolution();
+					String feederName = qs.getLiteral(FEEDER_NAME).getString();
+					String feederId = qs.getLiteral(FEEDER_ID).getString();
+					modelList.add(new PowergridModelInfo(feederId, feederName));
+				}
+			}
+			
+			
+			// TODO Auto-generated method stub
+//	        list_all_measurements to generate lines/loads/machines/etc for all models  (models in config file in conf)
+//			listAllMeasurements(processId, username);
+//	        drop all measurements
+//			dropAllMeasurements(processId, username);
+//	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
+//	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
+			for (PowergridModelInfo model: modelList){
+				insertMeasurements(model.getModelName(), model.getModelId(), processId, username);
+			}
+			
+//			insertAllMeasurements(modelName,  processId, username);
+			
+	}
+	
+	
+	@Override
+	public void dropAllMeasurements( String processId, String username, List<PowergridModelInfo> modelList)  throws Exception{
+		HashMap<String, PowergridModelInfo> models = new HashMap<String, PowergridModelInfo>();
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
+			
+		
+		if(modelList.size()==0){
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				modelList.add(new PowergridModelInfo(feederId, feederName));
+			}
+		}
+			
+			
+//	        iterate through list of models (acep, apriJ1, ieee123, ieee123pv, ieee13assets, ieee13ochre, ieee13node, ieee37, ieee8500, ieee9500, ieee8500enh, r2_12_47_2, transactive, final9500) 
+//	             and for lines, load, machines, node_v, special, switch_i, xfmr_pq do the stuff in InsertMeasurement.py
+		for (PowergridModelInfo model: modelList){
+			dropMeasurements(model.getModelName(), model.getModelId(), processId, username);
+		}
+			
+			
+	}
+	
+	
+	@Override
+	public void insertMeasurements(String modelId, String modelName, String processId, String username) {
+		String baseDirectory = getBaseDirectory();
+
+		int batchSize = 150;
+		System.out.println("INSERT FOR "+modelName);
+//insert_measurements (model_name)
+//list measurements for model
+//        delete measurement (model_name)
+//        call insert measurement for the model
+		try {
+			listMeasurements(modelId, modelName, baseDirectory, processId, username);
+			dropMeasurements(modelId, modelName, processId, username);
+
+			String[] fileTypes = new String[]{"_lines_pq.txt", "_loads.txt", "_machines.txt", "_node_v.txt", "_special.txt", "_xfmr_pq.txt"};
+			
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_lines_pq.txt  ./Meas/acep_msid.json
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_loads.txt     ./Meas/acep_msid.json
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_machines.txt  ./Meas/acep_msid.json
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_node_v.txt    ./Meas/acep_msid.json
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_special.txt   ./Meas/acep_msid.json
+//			python3 $CIMHUB_UTILS/InsertMeasurements.py cimhubconfig.json ./Meas/acep_psil_xfmr_pq.txt   ./Meas/acep_msid.json
+			File uuidFile = new File(baseDirectory+File.separator+modelName+"_msid.json");
+			System.out.println("UUID FILE "+uuidFile.getAbsolutePath());
+			HashMap<String, String> uuidDict = new HashMap<String, String>();
+			if(uuidFile.exists()){
+				JsonObject obj = (JsonObject)new JsonParser().parse(new FileReader(uuidFile));
+				for(Entry<String, JsonElement> entry: obj.entrySet()){
+					uuidDict.put(entry.getKey(), entry.getValue().getAsString());
+				}
+			}
+	        
+
+			
+			List<String> qTriples = new ArrayList<String>();
+			for(String fileType: fileTypes) {
+				File f = new File(baseDirectory+File.separator+modelName+fileType);
+				System.out.println("FILE EXISTS "+f.exists()+"   "+f.getAbsolutePath());
+				if(f.exists()) {
+					BufferedReader br = new BufferedReader(new FileReader(f));
+					String line;
+					while ((line = br.readLine()) != null) {
+						// process the line.
+						String[] splitStr = line.trim().split("\\s+");
+						String element0 = splitStr[0];
+						String element1 = splitStr[1];
+						
+						if("LinearShuntCompensator".equals(element0)){
+							String name = "LinearShuntCompensator_" + element1;
+							String key = name + ':' + splitStr[2] + ':' + splitStr[3];
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name, splitStr[4], splitStr[5], "PNV", splitStr[3]));
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name, splitStr[4], splitStr[5], "VA", splitStr[3]));
+							qTriples.add(createMeasurementString("Discrete", getMeasurementID (key + ":Pos", uuidDict), name, splitStr[4], splitStr[5], "Pos", splitStr[3]));
+							
+						} else if ("PowerTransformer".equals(element0) ){
+							if( "RatioTapChanger".equals(element1)){
+								String name = "RatioTapChanger_" + splitStr[2];
+								String key = name + ':' + splitStr[4] + ':' + splitStr[5];
+								qTriples.add(createMeasurementString("Discrete", getMeasurementID (key + ":Pos", uuidDict), name, splitStr[6], splitStr[7], "Pos", splitStr[5]));
+							} else if ("PowerTransformerEnd".equals(element1)){
+								String what = splitStr[2];
+								String name = "PowerTransformer_" + splitStr[3];
+								String key = name + ':' + splitStr[5] + ':' + splitStr[6];
+								
+								if(what.contains("v")){
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name+ "_Voltage", splitStr[7], splitStr[8], "PNV", splitStr[6]));
+								} else if(what.contains("s")){
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name+ "_Power", splitStr[7], splitStr[8], "VA", splitStr[6]));
+								} else if(what.contains("i")){
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":A", uuidDict), name+ "_Current", splitStr[7], splitStr[8], "A", splitStr[6]));
+								}
+							}
+						} else if ("EnergyConsumer".equals(element0)){
+							String name = "EnergyConsumer_" + element1;
+							String key = name + ':' + splitStr[2] + ':' + splitStr[3];
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name, splitStr[4], splitStr[5], "PNV", splitStr[3]));
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name, splitStr[4], splitStr[5], "VA", splitStr[3]));
+						} else if ("SynchronousMachine".equals(element0)) {
+							String name = "SynchronousMachine_" + element1;
+							String key = name + ':' + splitStr[2] + ':' + splitStr[3];
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name, splitStr[4], splitStr[5], "PNV", splitStr[3]));
+							qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name, splitStr[4], splitStr[5], "VA", splitStr[3]));
+						} else if ("PowerElectronicsConnection".equals(element0) ){
+							String phases = splitStr[5];
+							if("PhotovoltaicUnit".equals(element1)) {
+								String name = "PowerElectronicsConnection_PhotovoltaicUnit_" + splitStr[3];
+								String key = name + ':' + splitStr[4] + ':' + splitStr[5];
+								qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name, splitStr[6], splitStr[7], "PNV", phases));
+								qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name, splitStr[6], splitStr[7], "VA", phases));
+							} else if ("BatteryUnit".equals(element1)){
+								String name = "PowerElectronicsConnection_BatteryUnit_" + splitStr[3];
+								String key = name + ':' + splitStr[4] + ':' + splitStr[5];
+								if("SoC".equals(phases)){
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":SoC", uuidDict), name, splitStr[6], splitStr[7], "SoC", phases));
+								} else {
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name, splitStr[6], splitStr[7], "PNV", phases));
+									qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name, splitStr[6], splitStr[7], "VA", phases));
+								}
+								
+							}
+						} else if ("ACLineSegment".equals(element0) || "LoadBreakSwitch".equals(element0) || "Breaker".equals(element0) || "Recloser".equals(element0)) {
+							String name = element0 + "_" + splitStr[2];
+							String key = name + ':' + element1 + ':' + splitStr[5];
+							String trmid = "";
+							if(element1.contains("1")){
+								trmid = splitStr[7];
+							} else {
+								trmid = splitStr[8];
+							}
+							
+							if(element1.contains("v")){
+								qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":PNV", uuidDict), name+ "_Voltage", splitStr[6], trmid, "PNV", splitStr[5]));
+							} else if(element1.contains("s")){
+								qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":VA", uuidDict), name+ "_Power", splitStr[6], trmid, "VA", splitStr[5]));
+							} else if(element1.contains("i")){
+								qTriples.add(createMeasurementString("Analog", getMeasurementID (key + ":A", uuidDict), name+ "_Current", splitStr[6], trmid, "A", splitStr[5]));
+							}
+						} else {
+							System.out.println("Don't know what to do with "+element0);
+						}
+						
+						if(qTriples.size()>batchSize){
+							postMeasurements(qTriples, modelId, processId, username);
+							qTriples = new ArrayList<String>();
+						}
+						
+						
+					} //while lines.next()
+					br.close();
+					
+					System.out.println("TRIPLES SIZE "+qTriples.size());
+					if(qTriples.size()>0) {
+						postMeasurements(qTriples, modelId, processId, username);
+						qTriples = new ArrayList<String>();
+					}
+
+					// write uuidDict back to file
+					JsonObject obj = new JsonObject();
+					List<String> keyNames = new ArrayList<String>();
+					keyNames.addAll(uuidDict.keySet());
+					Collections.sort(keyNames);
+					for(String key: keyNames){
+						obj.add(key, new JsonPrimitive(uuidDict.get(key)));
+					}
+					Gson gson = new GsonBuilder().setPrettyPrinting().create(); 
+					FileWriter fw = new FileWriter(uuidFile);
+					gson.toJson(obj, fw);
+					fw.flush();
+					fw.close();
+					
+					
+					
+				} else {   //if file.exists()
+					//TODO throw error/warning
+					System.err.println("File does not exist "+f.getName());
+				}
+			}  // for filetypes
+
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	protected String getMeasurementID(String key, HashMap<String, String> uuidDict){
+		if(uuidDict.containsKey(key)){
+			return uuidDict.get(key);
+		} else {
+			String idNew = UUID.randomUUID().toString();
+			//if not measid starts with _ then prepend it, this is here for consistency. 
+			  // otherwise the mrids are uploaded without the initial _
+			if(!idNew.startsWith("_")){
+				idNew = "_"+idNew;
+			}
+			uuidDict.put(key, idNew);
+			return idNew;
+		}
+	}
+	protected String createMeasurementString(String meascls, String measid, String eqname, String eqid, String trmid, String meastype, String phases) {
+		//if not measid starts with _ then prepend it, this is here for consistency. otherwise the mrids are uploaded without the initial _
+		if (!measid.startsWith("_")){
+			measid = "_"+measid;
+		}
+		String resource = "<" + getEndpointURL(measid) + "#" + measid + "> ";
+		String equipment = "<" + getEndpointURL(measid) + "#" + eqid + "> ";
+		String terminal = "<" + getEndpointURL(measid) + "#" + trmid + "> ";
+		String result = resource + " a c:" + meascls + ". "+ 
+				resource + " c:IdentifiedObject.mRID \"" + measid + "\". "+
+				resource + " c:IdentifiedObject.name \"" + eqname + "\". "+
+				resource + " c:Measurement.PowerSystemResource " + equipment + ". "+
+				resource + " c:Measurement.Terminal " + terminal + ". "+
+				resource + " c:Measurement.phases <" + nsCIM + "PhaseCode." + phases + ">. "+
+				resource + " c:Measurement.measurementType \"" + meastype + "\".";
+		
+		
+//		System.out.println(result);
+		return result;
+	}
+	protected void postMeasurements(List<String> triples, String modelId, String processId, String username){
+		String endpoint = getEndpointURL(modelId);
+		BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, processId, username);
+		String qstr = "INSERT DATA { " + String.join(" ",triples) +" }";
+//		System.out.println(qstr);
+//		System.out.println(QueryHandler.Q_PREFIX);
+		queryHandler.executeUpdateQuery(qstr);
+	}
+
+//	protected List<String> listAllMeasurements(String processId, String username, String baseDirectory) {
+//		HashMap<String, PowergridModelInfo> models = new HashMap<String, PowergridModelInfo>();
+////        iterate through all model names and call list measurements, save to tmp directory
+////list_measurements(model_name)
+////		try{
+////		FileUtils.cleanDirectory(new File(baseDirectory)); 
+////		}catch (Exception e) {
+////			// TODO: handle exception
+////			e.printStackTrace();
+////		}
+//		for(String modelName: models.keySet()){
+//			try{
+//				listMeasurements(models.get(modelName), modelName, baseDirectory, processId, username);
+//			}catch (FileNotFoundException e) {
+//				// TODO: handle exception
+//				e.printStackTrace();
+//			}catch (IOException e) {
+//				// TODO: handle exception
+//				e.printStackTrace();
+//			}
+//		}
+//		
+//		
+//		return null;
+//	}
+
+	protected List<String> listMeasurements(String modelId, String modelName, String baseDirectory, String processId, String username) throws IOException {
+		System.out.println("CALLING LIST MEAS "+modelName);
+
+		//TODO What about phase ABCN?  does it go to A,B,C,N? or []
+		//How are the msid.json files created?
+		
+		//Delete the existing measurement files for this model
+		File dir = new File(baseDirectory);
+		FileFilter fileFilter = new WildcardFileFilter(modelName+"_*.txt");
+		File[] files = dir.listFiles(fileFilter);
+		for (File file: files) {
+		   file.delete();
+		}
+		
+		FileOutputStream op = new FileOutputStream(baseDirectory+File.separator+modelName+"_special.txt");
+		FileOutputStream np = new FileOutputStream(baseDirectory+File.separator+modelName+"_node_v.txt");
+		
+		
+		// start by listing all the buses
+		HashMap<String, HashMap<String, Boolean>> busPhases = new HashMap<String, HashMap<String, Boolean>>();
+		String qstr = "SELECT ?bus WHERE { VALUES ?fdrid {\"" + modelId + "\"}"+
+				"?fdr c:IdentifiedObject.mRID ?fdrid."+
+				"?s c:ConnectivityNode.ConnectivityNodeContainer ?fdr."+
+				"?s r:type c:ConnectivityNode."+
+				"?s c:IdentifiedObject.name ?bus."+
+				"}"+
+				"ORDER by ?bus";
+		ResultSet ret = queryResultSet(modelId, qstr, processId, username);
+		while(ret.hasNext()){
+			QuerySolution qs = ret.nextSolution();
+			String busName = qs.getLiteral("bus").toString();
+			HashMap<String, Boolean> busValues = new HashMap<String, Boolean>();
+			busValues = createBusValues();
+			busPhases.put(busName, busValues);
+			//busphases[b['bus'].value] = {'A':False, 'B':False, 'C':False, 's1': False, 's2': False}
+		}
+		
+		// capacitors
+		qstr = "SELECT ?name ?bus ?phases ?eqid ?trmid WHERE { VALUES ?fdrid {\""+modelId+"\"}"+
+				"?s c:Equipment.EquipmentContainer ?fdr."+
+				"?fdr c:IdentifiedObject.mRID ?fdrid."+ 
+				"?s r:type c:LinearShuntCompensator."+
+				"?s c:IdentifiedObject.name ?name. "+
+				"?s c:IdentifiedObject.mRID ?eqid. "+
+				"?t c:Terminal.ConductingEquipment ?s. "+
+				"?t c:IdentifiedObject.mRID ?trmid. "+
+				"?t c:Terminal.ConnectivityNode ?cn. "+
+				"?cn c:IdentifiedObject.name ?bus. "+
+				"OPTIONAL {?scp c:ShuntCompensatorPhase.ShuntCompensator ?s. "+
+				"?scp c:ShuntCompensatorPhase.phase ?phsraw. "+
+				"  bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phases) } }";
+		
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		//#print ('\nLinearShuntCompensator binding keys are:',ret.variables)
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = qs.getLiteral("bus").toString();
+//		  bus = b['bus'].value
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = getLiteral(qs, "phases");
+			 }
+			 if(busName.equals("684")){
+				 System.out.println("PHASES "+phases);
+			 }
+			 String[] phaseList = mapPhases(phases);
+			 HashMap<String, Boolean> busValues;
+			 if(busPhases.containsKey(busName)){
+				 busValues = busPhases.get(busName);
+			 } else {
+				 busValues = createBusValues();
+				 busPhases.put(busName, busValues);
+			 }
+			 for(String phase: phaseList){
+				 busValues.put(phase, true);
+				 op.write(new String("LinearShuntCompensator "+qs.getLiteral("name").toString()+" "+busName+" "+phase+" "+qs.getLiteral("eqid").toString()+" "+qs.getLiteral("trmid").toString()+"\r\n").getBytes());
+				//print ('LinearShuntCompensator',b['name'].value,bus,phs,b['eqid'].value,b['trmid'].value,file=op)
+			 }
+		 }
+		 
+		 
+		 // regulators
+		 qstr = "SELECT ?name ?wnum ?bus (group_concat(distinct ?phs;separator=\"\") as ?phases) ?eqid ?trmid WHERE { "+
+				 "SELECT ?name ?wnum ?bus ?phs ?eqid ?trmid WHERE { VALUES ?fdrid {\""+modelId+"\"}"+
+				 "?s c:Equipment.EquipmentContainer ?fdr. "+
+				 "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				 "?rtc r:type c:RatioTapChanger. "+
+				 "?rtc c:IdentifiedObject.name ?rname. "+
+				 "?rtc c:IdentifiedObject.mRID ?rtcid. "+
+				 "?rtc c:RatioTapChanger.TransformerEnd ?end. "+
+				 "?end c:TransformerEnd.endNumber ?wnum. "+
+				 "?end c:TransformerEnd.Terminal ?trm. "+
+				 "?trm c:IdentifiedObject.mRID ?trmid. "+
+				 "?trm c:Terminal.ConnectivityNode ?cn. "+
+				 "?cn c:IdentifiedObject.name ?bus. "+
+				 "OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw. "+
+				 " bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phs)} "+
+				 "?end c:TransformerTankEnd.TransformerTank ?tank. "+
+				 "?tank c:TransformerTank.PowerTransformer ?s. "+
+				 "?s c:IdentifiedObject.name ?name. "+
+				 "?s c:IdentifiedObject.mRID ?eqid. "+
+				 "?tank c:IdentifiedObject.name ?tname. "+
+				 "} ORDER BY ?name ?phs "+
+				 "} "+
+				 "GROUP BY ?name ?wnum ?bus ?eqid ?trmid "+
+				 "ORDER BY ?name";
+		 
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = qs.getLiteral("phases").toString();
+			 }
+			 String busName = getLiteral(qs, "bus");
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String("PowerTransformer RatioTapChanger "+qs.getLiteral("name").toString()+" "+qs.getLiteral("wnum").toString()+" "+busName+" "+phase+" "+qs.getLiteral("eqid").toString()+" "+qs.getLiteral("trmid").toString()+"\r\n").getBytes());
+
+			 }
+		 }
+
+		 // Storage
+		 qstr = "SELECT ?name ?uname ?bus (group_concat(distinct ?phs;separator=\"\") as ?phases) ?eqid ?trmid WHERE {"+
+		   "SELECT ?name ?uname ?bus ?phs ?eqid ?trmid WHERE { VALUES ?fdrid {\""+modelId+"\"}"+
+				 "?s c:Equipment.EquipmentContainer ?fdr. "+
+				 "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+		  "?s r:type c:PowerElectronicsConnection. "+
+		  "?s c:IdentifiedObject.name ?name. "+
+		  "?s c:IdentifiedObject.mRID ?eqid. "+
+		  "?peu r:type c:BatteryUnit. "+
+		  "?peu c:IdentifiedObject.name ?uname. "+
+		  "?s c:PowerElectronicsConnection.PowerElectronicsUnit ?peu. "+
+		  "?t1 c:Terminal.ConductingEquipment ?s. "+
+		  "?t1 c:IdentifiedObject.mRID ?trmid. "+
+		  "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+		  "?t1 c:Terminal.ConnectivityNode ?cn1. "+
+		  "?cn1 c:IdentifiedObject.name ?bus. "+
+		  "OPTIONAL {?pep c:PowerElectronicsConnectionPhase.PowerElectronicsConnection ?s. "+
+		  "?pep c:PowerElectronicsConnectionPhase.phase ?phsraw. "+
+		  " bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phs) } } ORDER BY ?name ?phs "+
+		  "} GROUP BY ?name ?uname ?bus ?eqid ?trmid "+
+		  "ORDER BY ?name";
+		 
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = qs.getLiteral("bus").toString();
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = qs.getLiteral("phases").toString();
+			 }
+			 String[] phaseList = mapPhases(phases);
+			 op.write(new String("PowerElectronicsConnection BatteryUnit "+qs.getLiteral("name").toString()+" "+qs.getLiteral("uname").toString()+" "+busName+" SoC "+qs.getLiteral("eqid").toString()+" "+qs.getLiteral("trmid").toString()+"\r\n").getBytes());
+			 for(String phase: phaseList){
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName)){
+					 busValues = busPhases.get(busName);
+				 } else {
+					 busValues = createBusValues();
+					 busPhases.put(busName, busValues);
+				 }
+				 busValues.put(phase, true);
+				 
+				 op.write(new String("PowerElectronicsConnection BatteryUnit "+qs.getLiteral("name").toString()+" "+qs.getLiteral("uname").toString()+" "+busName+" "+phase+" "+qs.getLiteral("eqid").toString()+" "+qs.getLiteral("trmid").toString()+"\r\n").getBytes());
+			 }
+		 }
+
+		 //Solar
+		 qstr = "SELECT ?name ?uname ?bus (group_concat(distinct ?phs;separator=\"\") as ?phases) ?eqid ?trmid WHERE {"+
+		   "SELECT ?name ?uname ?bus ?phs ?eqid ?trmid WHERE {VALUES ?fdrid {\""+modelId+"\"}"+
+				 "?s c:Equipment.EquipmentContainer ?fdr. "+
+				 "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+		  "?s r:type c:PowerElectronicsConnection. "+
+		  "?s c:IdentifiedObject.name ?name. "+
+		  "?s c:IdentifiedObject.mRID ?eqid. "+ 
+		  "?peu r:type c:PhotovoltaicUnit. "+
+		  "?peu c:IdentifiedObject.name ?uname. "+
+		  "?s c:PowerElectronicsConnection.PowerElectronicsUnit ?peu. "+
+		  "?t1 c:Terminal.ConductingEquipment ?s. "+
+		  "?t1 c:IdentifiedObject.mRID ?trmid.  "+
+		  "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+		  "?t1 c:Terminal.ConnectivityNode ?cn1.  "+
+		  "?cn1 c:IdentifiedObject.name ?bus. "+
+		  "OPTIONAL {?pep c:PowerElectronicsConnectionPhase.PowerElectronicsConnection ?s. "+
+		  "?pep c:PowerElectronicsConnectionPhase.phase ?phsraw. "+
+		   "bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phs) } } ORDER BY ?name ?phs "+
+		  "} GROUP BY ?name ?uname ?bus ?eqid ?trmid "+
+		  "ORDER BY ?name";
+		 
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = qs.getLiteral("bus").toString();
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = qs.getLiteral("phases").toString();
+			 }
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName)){
+					 busValues = busPhases.get(busName);
+				 } else {
+					 busValues = createBusValues();
+					 busPhases.put(busName, busValues);
+				 }
+				 busValues.put(phase, true);
+				 
+				 op.write(new String("PowerElectronicsConnection PhotovoltaicUnit "+qs.getLiteral("name").toString()+" "+qs.getLiteral("uname").toString()+" "+busName+" "+phase+" "+qs.getLiteral("eqid").toString()+" "+qs.getLiteral("trmid").toString()+"\r\n").getBytes());
+
+			 }
+		 }
+		 op.close();
+		 //LoadBreakSwitches, Breakers and Reclosers
+		 op = new FileOutputStream(baseDirectory+File.separator+modelName+"_switch_i.txt");
+
+		 qstr = "SELECT ?cimtype ?name ?bus1 ?bus2 (group_concat(distinct ?phs1;separator=\"\") as ?phases) ?eqid ?trm1id ?trm2id WHERE {"+
+				  "SELECT ?cimtype ?name ?bus1 ?bus2 ?phs1 ?eqid ?trm1id ?trm2id WHERE { VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				 "VALUES ?cimraw {c:LoadBreakSwitch c:Recloser c:Breaker} "+
+				 "?s r:type ?cimraw. "+
+				 " bind(strafter(str(?cimraw),\"#\") as ?cimtype) "+
+				 "?s c:IdentifiedObject.name ?name. "+
+				 "?s c:IdentifiedObject.mRID ?eqid.  "+
+				 "?t1 c:Terminal.ConductingEquipment ?s. "+
+				 "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+				 "?t1 c:IdentifiedObject.mRID ?trm1id.  "+
+				 "?t1 c:Terminal.ConnectivityNode ?cn1.  "+
+				 "?cn1 c:IdentifiedObject.name ?bus1. "+
+				 "?t2 c:Terminal.ConductingEquipment ?s. "+
+				 "?t2 c:ACDCTerminal.sequenceNumber \"2\". "+
+				 "?t2 c:IdentifiedObject.mRID ?trm2id.  "+
+				 "?t2 c:Terminal.ConnectivityNode ?cn2.  "+
+				 "?cn2 c:IdentifiedObject.name ?bus2. "+
+				 "OPTIONAL {?scp c:SwitchPhase.Switch ?s. "+
+				 "?scp c:SwitchPhase.phaseSide1 ?phs1raw. "+
+				 " bind(strafter(str(?phs1raw),\"SinglePhaseKind.\") as ?phs1) } } ORDER BY ?name ?phs1 "+
+				 "} GROUP BY ?cimtype ?name ?bus1 ?bus2 ?eqid ?trm1id ?trm2id "+
+				 "ORDER BY ?cimtype ?name";
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName1 = getLiteral(qs,"bus1");
+			 String busName2 = getLiteral(qs,"bus2");
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = getLiteral(qs,"phases");
+			 }
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String(getLiteral(qs,"cimtype")+" i1 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+				 
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName1)){
+					 busValues = busPhases.get(busName1);
+					 if(!busValues.get(phase)){
+						 np.write(new String(getLiteral(qs,"cimtype")+" v1 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE1 NOT FOUND "+busName1);
+				 }
+				 if(busPhases.containsKey(busName2)){
+					 busValues = busPhases.get(busName2);
+					 if(!busValues.get(phase)){
+						 np.write(new String(getLiteral(qs,"cimtype")+" v2 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE2 NOT FOUND "+busName1);
+				 }
+
+			 }
+		 }		
+		 op.close();
+		 //ACLineSegments
+		 op = new FileOutputStream(baseDirectory+File.separator+modelName+"_lines_pq.txt");
+		 qstr = "SELECT ?name ?bus1 ?bus2 (group_concat(distinct ?phs;separator=\"\") as ?phases) ?eqid ?trm1id ?trm2id WHERE { "+
+				  "SELECT ?name ?bus1 ?bus2 ?phs ?eqid ?trm1id ?trm2id WHERE {VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				  "?s r:type c:ACLineSegment. "+
+				  "?s c:IdentifiedObject.name ?name. "+
+				  "?s c:IdentifiedObject.mRID ?eqid.  "+
+				  "?t1 c:Terminal.ConductingEquipment ?s. "+
+				  "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+				  "?t1 c:IdentifiedObject.mRID ?trm1id.  "+
+				  "?t1 c:Terminal.ConnectivityNode ?cn1.  "+
+				  "?cn1 c:IdentifiedObject.name ?bus1. "+
+				  "?t2 c:Terminal.ConductingEquipment ?s. "+
+				  "?t2 c:ACDCTerminal.sequenceNumber \"2\". "+
+				  "?t2 c:IdentifiedObject.mRID ?trm2id.  "+
+				  "?t2 c:Terminal.ConnectivityNode ?cn2.  "+
+				  "?cn2 c:IdentifiedObject.name ?bus2. "+
+				  "OPTIONAL {?acp c:ACLineSegmentPhase.ACLineSegment ?s. "+
+				  "?acp c:ACLineSegmentPhase.phase ?phsraw. "+
+				  " bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phs) } } ORDER BY ?name ?phs "+
+				  "} GROUP BY ?name ?bus1 ?bus2 ?eqid ?trm1id ?trm2id "+
+				  "ORDER BY ?name";
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName1 = getLiteral(qs,"bus1");
+			 String busName2 = getLiteral(qs,"bus2");
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = getLiteral(qs,"phases");
+			 }
+			 
+			 String[] phaseList = mapPhases(phases);
+			 if(phaseList==null){
+				 System.out.println("NO MAPPING FOR "+phases);
+			 }
+			 for(String phase: phaseList){
+				 op.write(new String("ACLineSegment s1 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+				 
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName1)){
+					 busValues = busPhases.get(busName1);
+					 if(!busValues.get(phase)){
+						 np.write(new String("ACLineSegment v1 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE1 NOT FOUND "+busName1);
+				 }
+				 if(busPhases.containsKey(busName2)){
+					 busValues = busPhases.get(busName2);
+					 if(!busValues.get(phase)){
+						 np.write(new String("ACLineSegment v2 "+getLiteral(qs,"name")+" "+busName1+" "+busName2+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trm1id")+" "+getLiteral(qs,"trm2id")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE2 NOT FOUND "+busName1);
+				 }
+
+			 }
+		 }	
+		 op.close();
+		 
+		 
+		 // EnergyConsumer
+		 op = new FileOutputStream(baseDirectory+File.separator+modelName+"_loads.txt");
+		 qstr = "SELECT ?name ?bus (group_concat(distinct ?phs;separator=\"\") as ?phases) ?eqid ?trmid WHERE { "+
+				  "SELECT ?name ?bus ?phs ?eqid ?trmid WHERE {VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				  "?s r:type c:EnergyConsumer. "+
+				  "?s c:IdentifiedObject.name ?name. "+
+				  "?s c:IdentifiedObject.mRID ?eqid.  "+
+				  "?t1 c:Terminal.ConductingEquipment ?s. "+
+				  "?t1 c:IdentifiedObject.mRID ?trmid.  "+
+				  "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+				  "?t1 c:Terminal.ConnectivityNode ?cn1.  "+
+				  "?cn1 c:IdentifiedObject.name ?bus. "+
+				  "OPTIONAL {?acp c:EnergyConsumerPhase.EnergyConsumer ?s. "+
+				  "?acp c:EnergyConsumerPhase.phase ?phsraw. "+
+				  " bind(strafter(str(?phsraw),\"SinglePhaseKind.\") as ?phs) } } ORDER BY ?name ?phs "+
+				  "} GROUP BY ?name ?bus ?eqid ?trmid "+
+				  "ORDER BY ?name ";
+		 
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = getLiteral(qs,"bus");
+			 String phases = "ABC";
+			 if (qs.contains("phases")){ // was OPTIONAL in the query
+				 phases = getLiteral(qs,"phases");
+			 }
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String("EnergyConsumer "+getLiteral(qs,"name")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+			 }
+		 }
+		 op.close();
+		 
+		 
+		 // Synchronous Machines
+		 op = new FileOutputStream(baseDirectory+File.separator+modelName+"_machines.txt");
+
+		 qstr = "SELECT ?name ?bus ?eqid ?trmid WHERE { VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				  "?s r:type c:SynchronousMachine. "+
+				  "?s c:IdentifiedObject.name ?name. "+
+				  "?s c:IdentifiedObject.mRID ?eqid.  "+
+				  "?t1 c:Terminal.ConductingEquipment ?s. "+
+				  "?t1 c:IdentifiedObject.mRID ?trmid.  "+
+				  "?t1 c:ACDCTerminal.sequenceNumber \"1\". "+
+				  "?t1 c:Terminal.ConnectivityNode ?cn1.  "+
+				  "?cn1 c:IdentifiedObject.name ?bus. "+
+				  "} "+
+				  "ORDER BY ?name";
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = getLiteral(qs,"bus");
+			 String phases = "ABC";
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String("SynchronousMachine "+getLiteral(qs,"name")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+			 }
+		 }
+		 op.close();
+
+
+		 // PowerTransformer, no tanks
+		 op = new FileOutputStream(baseDirectory+File.separator+modelName+"_xfmr_pq.txt");
+
+		 qstr = "SELECT ?name ?wnum ?bus ?eqid ?trmid WHERE {VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				  "?s r:type c:PowerTransformer. "+
+				  "?s c:IdentifiedObject.name ?name. "+
+				  "?s c:IdentifiedObject.mRID ?eqid. "+
+				  "?end c:PowerTransformerEnd.PowerTransformer ?s. "+
+				  "?end c:TransformerEnd.Terminal ?trm. "+
+				  "?end c:TransformerEnd.endNumber ?wnum. "+
+				  "?trm c:IdentifiedObject.mRID ?trmid.  "+
+				  "?trm c:Terminal.ConnectivityNode ?cn.  "+
+				  "?cn c:IdentifiedObject.name ?bus. "+
+				  "} "+
+				  "ORDER BY ?name ?wnum";
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = getLiteral(qs,"bus");
+			 String phases = "ABC";
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String("PowerTransformer PowerTransformerEnd s1 "+getLiteral(qs,"name")+" "+getLiteral(qs,"wnum")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName)){
+					 busValues = busPhases.get(busName);
+					 if(!busValues.get(phase)){
+						 np.write(new String("PowerTransformer PowerTransformerEnd v1 "+getLiteral(qs,"name")+" "+getLiteral(qs,"wnum")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE NOT FOUND "+busName);
+				 }
+			 }
+		 }
+		 
+		 // PowerTransformer, with tanks
+		 qstr = "SELECT ?name ?wnum ?bus ?phases ?eqid ?trmid WHERE {VALUES ?fdrid {\""+modelId+"\"}"+
+				  "?s c:Equipment.EquipmentContainer ?fdr. "+
+				  "?fdr c:IdentifiedObject.mRID ?fdrid. "+
+				  "?s r:type c:PowerTransformer. "+
+				  "?s c:IdentifiedObject.name ?name. "+
+				  "?s c:IdentifiedObject.mRID ?eqid. "+
+				  "?tank c:TransformerTank.PowerTransformer ?s. "+
+				  "?end c:TransformerTankEnd.TransformerTank ?tank. "+
+				  "?end c:TransformerEnd.Terminal ?trm. "+
+				  "?end c:TransformerEnd.endNumber ?wnum. "+
+				  "?trm c:IdentifiedObject.mRID ?trmid.  "+
+				  "?trm c:Terminal.ConnectivityNode ?cn.  "+
+				  "?cn c:IdentifiedObject.name ?bus. "+
+				  "OPTIONAL {?end c:TransformerTankEnd.phases ?phsraw. "+
+				  " bind(strafter(str(?phsraw),\"PhaseCode.\") as ?phases)} "+
+				  "} "+
+				  "ORDER BY ?name ?wnum ?phs";
+		 ret = queryResultSet(modelId, qstr, processId, username);
+		 while(ret.hasNext()){
+			 QuerySolution qs = ret.nextSolution();
+			 String busName = getLiteral(qs,"bus");
+			 String phases = getLiteral(qs,"phases");
+			 String[] phaseList = mapPhases(phases);
+			 for(String phase: phaseList){
+				 op.write(new String("PowerTransformer TransformerTankEnd s1 "+getLiteral(qs,"name")+" "+getLiteral(qs,"wnum")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+				 HashMap<String, Boolean> busValues;
+				 if(busPhases.containsKey(busName)){
+					 busValues = busPhases.get(busName);
+					 if(!busValues.get(phase)){
+						 np.write(new String("PowerTransformer TransformerTankEnd v1 "+getLiteral(qs,"name")+" "+getLiteral(qs,"wnum")+" "+busName+" "+phase+" "+getLiteral(qs,"eqid")+" "+getLiteral(qs,"trmid")+"\r\n").getBytes());
+						 busValues.put(phase, true);
+					 }
+				 } else {
+					 System.out.println("BUS PHASE NOT FOUND "+busName);
+				 }
+			 }
+		 }
+
+		 op.close();
+		 np.close();
+		 
+		return null;
+	}
+	
+	
+	@Override
+	public void dropMeasurements(String modelId, String modelName, String processId, String username)  {
+		System.out.println("CALLING DROP MEAS "+modelName);
+		String qstr = "DELETE { "+
+				"?m a ?class. "+
+				"?m c:IdentifiedObject.mRID ?uuid. "+
+				"?m c:IdentifiedObject.name ?name. "+
+				"?m c:Measurement.PowerSystemResource ?psr. "+
+				"?m c:Measurement.Terminal ?trm. "+
+				"?m c:Measurement.phases ?phases. "+
+				"?m c:Measurement.measurementType ?type. "+
+				"} WHERE { "+
+				"VALUES ?fdrid {\""+modelId+"\"} "+
+				"VALUES ?class {c:Analog c:Discrete} "+
+				"?fdr c:IdentifiedObject.mRID ?fdrid.  "+
+				"?eq c:Equipment.EquipmentContainer ?fdr. "+
+				"?trm c:Terminal.ConductingEquipment ?eq. "+
+				"?m a ?class. "+
+				"?m c:IdentifiedObject.mRID ?uuid. "+
+				"?m c:IdentifiedObject.name ?name. "+
+				"?m c:Measurement.PowerSystemResource ?psr. "+
+				"?m c:Measurement.Terminal ?trm. "+
+				"?m c:Measurement.phases ?phases. "+
+				"?m c:Measurement.measurementType ?type. "+
+				"}";
+		 try {
+//			String ret = query(modelId, qstr, "JSON", processId, username);
+//			System.out.println(ret);
+			 String endpoint = getEndpointURL(modelId);
+				BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, processId, username);
+//			  queryHandler.query(qstr, null);
+//			  queryHandler.construct(qstr);
+				queryHandler.executeUpdateQuery(qstr);
+			  
+			  
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
+	}
+
+	
+	private String getLiteral(QuerySolution qs, String name){
+		try{
+			return qs.getLiteral(name).toString();
+		}catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			System.out.println("ERROR GETTING "+name+" "+qs.getLiteral(name));
+			return "";
+		}
+	}
+	private HashMap<String, Boolean> createBusValues(){
+		HashMap<String, Boolean> busValues = new HashMap<String, Boolean>();
+		busValues.put("A", false);
+		busValues.put("B", false);
+		busValues.put("C", false);
+		busValues.put("s1", false);
+		busValues.put("s2", false);
+		return busValues;
+	}
+	private String[] mapPhases(String phases) {
+		if (phases==null || phases.trim().length() < 1)
+		    return new String[]{"A", "B", "C"};
+		
+		//Some of the phases come in different orders, fix this so that they are in alphabetical order
+		if (!(phases.contains("s1") || phases.contains("s2"))){
+	        char tempArray[] = phases.toCharArray();
+	        Arrays.sort(tempArray);
+	        phases =  new String(tempArray);
+		}
+		if (phases.contains("ABC"))
+			return new String[]{"A", "B", "C"};
+		if (phases.contains("AB"))
+			return new String[]{"A", "B"};
+		if (phases.contains("AC"))
+			return new String[]{"A", "C"};
+		if(phases.contains("BC"))
+			return new String[]{"B", "C"};
+		if (phases.contains("A"))
+			return new String[]{"A"};
+		if (phases.contains("B"))
+			return new String[]{"B"};
+		if (phases.contains("C"))
+			return new String[]{"C"};
+		if (phases.contains("s12"))
+			return new String[]{"s12"};
+		if (phases.contains("s1s2"))
+			return new String[]{"s1", "s2"};
+		if (phases.contains("s1"))
+			return new String[]{"s1"};
+		if (phases.contains("s2"))
+			return new String[]{"s2"};
+		return new String[]{};
+	}
+	
+	@Override
+	public void dropAllHouses( String processId, String username, List<PowergridModelInfo> modelList) throws Exception{
+		
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
+		if(modelList.size()==0){
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				modelList.add(new PowergridModelInfo(feederId, feederName));
+			}
+		}
+		for (PowergridModelInfo model: modelList){
+			dropHouses(model.getModelId(), model.getModelName(), processId, username);
+		}
+	}
+	
+	
+	protected List<PowergridModelInfo> getStaticModelList(){
+		
+		String configDirStr = "services";
+		if(configManager!=null){
+			configDirStr = configManager.getConfigurationProperty(GridAppsDConstants.SERVICES_PATH);
+			if (configDirStr==null){
+				configDirStr = "services";
+			}
+		} 
+		
+		File f = new File(configDirStr+File.separator+"etc"+File.separator+"modelhouses.json");
+		try{
+			FileInputStream fin = new FileInputStream(f);
+			byte[] data = new byte[fin.available()];
+			fin.read(data);
+			String modelhousesStr = new String(data);
+			PowergridModelList req = PowergridModelList.parse(modelhousesStr);
+			return req.getModelList();
+		} catch (Exception e){
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	
+	@Override
+	public void insertAllHouses( String processId, String username, List<PowergridModelInfo> modelList) throws Exception{
+		if(modelList==null){
+			modelList = new ArrayList<PowergridModelInfo>();
+		}
+		if(modelList.size()==0){
+			ResultSet rs = queryModelNamesAndIdsResultSet(processId, username);
+			while( rs.hasNext()) {
+				QuerySolution qs = rs.nextSolution();
+				String feederName = qs.getLiteral(FEEDER_NAME).getString();
+				String feederId = qs.getLiteral(FEEDER_ID).getString();
+				modelList.add(new PowergridModelInfo(feederId, feederName));
+			}
+		}
+		
+		if(modelList.size()==0){
+			modelList = getStaticModelList();
+		}
+		
+		
+		
+		for (PowergridModelInfo model: modelList){
+			//TODO add back in
+			dropHouses(model.getModelId(), model.getModelName(), processId, username);
+			insertHouses(model.getModelId(), model.getModelName(), model.getRegion(), model.getSeed(), model.getScale(), processId, username);
+		}
+		
+//	    delete_all_houses
+//	                  for each model name call delete_houses
+//	    delete_houses(model_name)
+//	    insert  houses (eeder mRID, region, seed value, file of persistent mRIDs, scaling factor on load)
+//
+
+	}
+	
+	
+	@Override
+	public void insertHouses(String modelId, String modelName, String region, double seed, double scale, String processId, String username) throws Exception {
+		//String baseDirectory = getBaseDirectory();
+
+		// We have to convert nominal voltages from three-phase phase-to-phase to phase
+		// to ground. At the time of writing, even 240V loads use sqrt(3)...
+		
+		//Call python script to generate houses
+		
+		
+		//# arguments are feeder mRID, region, seed value, file of persistent mRIDs, scaling factor on load before assigning houses
+		//python $CIMHUB_UTILS/DropHouses.py cimhubconfig.json _4F76A5F9-271D-9EB8-5E31-AA362D86F2C3 3
+		//python $CIMHUB_UTILS/InsertHouses.py cimhubconfig.json _4F76A5F9-271D-9EB8-5E31-AA362D86F2C3 3 0 ./houses/ieee8500_house_uuids.json    0.8
+
+		//System.out.println("ABOUT TO DROP HOUSES FOR "+modelName+"  - "+modelId);
+		//RunCommandLine.runCommand("python /gridappsd/CIMHub/utils/DropHouses.py "+
+		//		 	"/gridappsd/CIMHub/cimhubconfig.json "+
+		//		 	modelId);
+		//System.out.println("DROPPED HOUSES");			
+		String house_dir = "/gridappsd/CIMHub/houses/";
+		File house_uuids_dir = new File(house_dir);
+		house_uuids_dir.mkdirs();
+		System.out.println("ABOUT TO INSERT HOUSES FOR "+modelName+"  - "+modelId);
+		RunCommandLine.runCommand("python /gridappsd/CIMHub/utils/InsertHouses.py "+
+				 	"/gridappsd/CIMHub/cimhubconfig.json "+
+				 	modelId+" "+
+				 	"3 "+
+				 	"0 "+
+				 	house_dir+modelName+"_house_uuids.json "+
+				 	scale);
+		System.out.println("INSERTED HOUSES");			
+
+		
+	}
+	
+	
+	
+	@Override
+	public void dropHouses(String modelId, String modelName, String processId, String username) {
+		// TODO Auto-generated method stub
+		System.out.println("CALLING DROP HOUSES "+modelName);
+		String qstr = "DELETE { "+
+				"?h a ?class. "+
+						  " ?h c:IdentifiedObject.mRID ?uuid. "+
+						  " ?h c:IdentifiedObject.name ?name. "+
+						  " ?h c:House.floorArea ?floorArea. "+
+						  " ?h c:House.numberOfStories ?numberOfStories. "+
+						  " ?h c:House.coolingSetpoint ?coolingSetpoint. "+
+						  " ?h c:House.heatingSetpoint ?heatingSetpoint. "+
+						  " ?h c:House.hvacPowerFactor ?hvacPowerFactor. "+
+						  " ?h c:House.coolingSystem ?coolingSystemRaw. "+
+						  " ?h c:House.heatingSystem ?heatingSystemRaw. "+
+						  " ?h c:House.thermalIntegrity ?thermalIntegrityRaw. "+
+						  " ?h c:House.EnergyConsumer ?econ. "+
+						 "} WHERE { "+
+						  " VALUES ?fdrid {\""+modelId+"\"} "+
+						  " VALUES ?class {c:House} "+
+						 " ?fdr c:IdentifiedObject.mRID ?fdrid.  "+
+						 " ?econ c:Equipment.EquipmentContainer ?fdr. "+
+						 " ?h a ?class. "+
+						 " ?h c:IdentifiedObject.mRID ?uuid. "+
+						 " ?h c:IdentifiedObject.name ?name. "+
+						 " ?h c:House.floorArea ?floorArea. "+
+						 " ?h c:House.numberOfStories ?numberOfStories. "+
+						 " OPTIONAL{?h c:House.coolingSetpoint ?coolingSetpoint.} "+
+						 " OPTIONAL{?h c:House.heatingSetpoint ?heatingSetpoint.} "+
+						 " OPTIONAL{?h c:House.hvacPowerFactor ?hvacPowerFactor.} "+
+						 " ?h c:House.coolingSystem ?coolingSystemRaw. "+
+						 " ?h c:House.heatingSystem ?heatingSystemRaw. "+
+						 " ?h c:House.thermalIntegrity ?thermalIntegrityRaw. "+
+						 " ?h c:House.EnergyConsumer ?econ. "+
+						 "}";
+		 try {
+//			String ret = query(modelId, qstr, "JSON", processId, username);
+//			System.out.println(ret);
+			 String endpoint = getEndpointURL(modelId);
+			 BlazegraphQueryHandler queryHandler = new BlazegraphQueryHandler(endpoint, logManager, processId, username);
+//			  queryHandler.query(qstr, null);
+//			  queryHandler.construct(qstr);
+			 queryHandler.executeUpdateQuery(qstr);
+				
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
+//	@Override
+	public void insertDER(String modelNames, String processId, String username, String baseDirectory) {
+		// TODO Auto-generated method stub
+//        list_measurements(?) for model
+//        delete measurements (model_name)
+//        call insertder for <model_name>_der.txt
+
 	}
 	
 

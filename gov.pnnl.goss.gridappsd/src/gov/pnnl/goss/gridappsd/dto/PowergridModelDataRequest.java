@@ -1,6 +1,8 @@
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -9,7 +11,7 @@ public class PowergridModelDataRequest implements Serializable{
 	private static final long serialVersionUID = 8897993506912096791L;
 
 	public enum RequestType {
-	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO, QUERY_OBJECT_IDS, QUERY_OBJECT_DICT, QUERY_OBJECT_MEASUREMENTS
+	    QUERY, QUERY_OBJECT, QUERY_OBJECT_TYPES, QUERY_MODEL, QUERY_MODEL_NAMES, QUERY_MODEL_INFO, QUERY_OBJECT_IDS, QUERY_OBJECT_DICT, QUERY_OBJECT_MEASUREMENTS, INSERT_MEASUREMENTS, INSERT_ALL_MEASURMENTS, DROP_MEASUREMENTS, DROP_ALL_MEASUREMENTS, INSERT_HOUSES, INSERT_ALL_HOUSES, DROP_HOUSES, DROP_ALL_HOUSES
 	}
 	public enum ResultFormat {
 	    JSON, XML, CSV 
@@ -32,6 +34,14 @@ public class PowergridModelDataRequest implements Serializable{
 	public String filter;
 	//for query model
 	public String objectType;
+	
+	
+	
+	public String directory;
+	public String modelName;
+	
+	public PowergridModelInfo model;
+	public List<PowergridModelInfo> modelList;
 
 	
 	
@@ -75,12 +85,47 @@ public class PowergridModelDataRequest implements Serializable{
 	
 	
 	
+	public List<PowergridModelInfo> getModelList() {
+		if(modelList==null){
+			return new ArrayList<PowergridModelInfo>();
+		}
+		return modelList;
+	}
+	public void setModelList(List<PowergridModelInfo> modelList) {
+		this.modelList = modelList;
+	}
+	public PowergridModelInfo getModel() {
+		if(model==null){
+			return new PowergridModelInfo();
+		}
+		return model;
+	}
+	public void setModel(PowergridModelInfo model) {
+		this.model = model;
+	}
+	
 	public String getObjectType() {
 		return objectType;
 	}
 	public void setObjectType(String objectType) {
 		this.objectType = objectType;
 	}
+	
+	
+	public String getDirectory() {
+		return directory;
+	}
+	public void setDirectory(String directory) {
+		this.directory = directory;
+	}
+	public String getModelName() {
+		return modelName;
+	}
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+	
+	
 	@Override
 	public String toString() {
 		Gson  gson = new Gson();

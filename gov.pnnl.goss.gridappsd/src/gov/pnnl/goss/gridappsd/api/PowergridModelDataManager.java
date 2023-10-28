@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.apache.jena.query.ResultSet;
 
+import gov.pnnl.goss.gridappsd.dto.PowergridModelInfo;
+
 public interface PowergridModelDataManager {
 	public enum ResultFormat {
 	    JSON, XML, CSV
@@ -36,6 +38,16 @@ public interface PowergridModelDataManager {
 	String queryMeasurementDictByObject(String resultFormat, String modelId, String objectType, String objectId, String processId, String username) throws Exception ;
 	ResultSet queryMeasurementDictByObjectResultSet(String modelId, String objectType, String objectId, String processId, String username);
 	
+	void insertMeasurements(String modelId, String modelName, String processId, String username) throws Exception;
+	void dropMeasurements(String modelId, String modelName, String processId, String username);
+	void insertAllMeasurements( String processId, String username, List<PowergridModelInfo> modelList) throws Exception;
+	void dropAllMeasurements(String processId, String username, List<PowergridModelInfo> modelList) throws Exception;
+
+	void insertHouses(String modelId, String modelName, String region, double seed, double scale, String processId, String username) throws Exception;
+	void dropHouses(String modelId, String modelName, String processId, String username);
+	void insertAllHouses(String processId, String username, List<PowergridModelInfo> modelList) throws Exception;
+	void dropAllHouses(String processId, String username, List<PowergridModelInfo> modelList) throws Exception;
+
 	
 	void putModel(String modelId, String model, String inputFormat, String processId, String username);
 	
