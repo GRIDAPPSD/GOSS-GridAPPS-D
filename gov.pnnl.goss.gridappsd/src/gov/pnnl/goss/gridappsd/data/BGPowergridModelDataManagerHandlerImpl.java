@@ -70,6 +70,13 @@ public class BGPowergridModelDataManagerHandlerImpl implements DataManagerHandle
 				//TODO send error
 			}
 			return dataManager.queryMeasurementDictByObject(pgDataRequest.getResultFormat(), pgDataRequest.getModelId(), pgDataRequest.getObjectType(), pgDataRequest.getObjectId(), processId, username);
+		} else if(PowergridModelDataRequest.RequestType.INSERT_ALL_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			//TODO configmgr.get base directory
+			dataManager.insertAllMeasurements(processId, username, null);
+			return "";
+		} else if(PowergridModelDataRequest.RequestType.DROP_ALL_MEASUREMENTS.toString().equals(pgDataRequest.requestType)){
+			dataManager.dropAllMeasurements(processId, username);
+			return "";
 		}  else {
 			//TODO report error, request type not recognized
 			System.out.println("DOESNT RECOGNIZE REQUEST TYPE "+pgDataRequest.requestType);
