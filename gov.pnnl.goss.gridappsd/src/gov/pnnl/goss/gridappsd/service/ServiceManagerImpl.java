@@ -417,8 +417,6 @@ public class ServiceManagerImpl implements ServiceManager{
 			if(instance.getService_info().getId().equals(serviceId)){
 				if(simulationId!=null && instance.getSimulation_id().equals(simulationId))
 					result.add(instance);
-				else
-					result.add(instance);
 			}
 		}
 		return result;

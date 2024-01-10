@@ -414,7 +414,7 @@ class HelicsGossBridge(object):
                 message['response'] = str(self._is_initialized)
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
-                self._gad_connection.send(self._simulation_manager_input_topic , json.dumps(message))
+                self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id , json.dumps(message))
             elif json_msg.get('command', '') == 'update':
                 json_msg['input']["time_received"] = time.perf_counter()
                 message['command'] = 'update'
@@ -606,7 +606,7 @@ class HelicsGossBridge(object):
             log.debug(f"Simulation finished in {time.perf_counter() - simulation_run_time_start} seconds.")
             message['command'] = 'simulationFinished'
             del message['output']
-            self._gad_connection.send(self._simulation_manager_input_topic, json.dumps(message))
+            self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id, json.dumps(message))
             log.info(f'Simulation {self._simulation_id} has finished.')
             self._gad_connection.send_simulation_status('COMPLETE', f'Simulation {self._simulation_id} has finished.', 'INFO')
         except Exception as e:
@@ -630,7 +630,7 @@ class HelicsGossBridge(object):
             self._gad_connection = GridAPPSD(self._simulation_id)
             log.debug("Successfully registered with the GridAPPS-D platform.")
             self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
-            self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input", self.on_message)
+            self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input."+self._simulation_id, self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
             
