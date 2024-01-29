@@ -1,7 +1,67 @@
-docker pull gridappsd/gridappsd_base:master
+#!/usr/bin/env python3
 
-./gradlew clean
-rm -rf gov.pnnl.goss/gridappsd/generated
-./gradlew export
+"""
+Script for building the gridappsd container.
 
-docker build --no-cache --network=host -t gridappsd:local .
+This script pulls the gridappsd_base docker image, cleans the project, exports the project, and builds the gridappsd container.
+
+Usage:
+    python build-gridappsd-container <base_version> [--output_version <output_version>]
+
+Arguments:
+    base_version (str): The version of the gridappsd_base docker image.
+    output_version (str, optional): The output tag version for local development. Default is "local".
+
+Example:
+    python build-gridappsd-container.py 2.3.0 --output_version 2.3.1
+
+"""
+
+import argparse
+import subprocess
+import shutil
+
+
+def execute(cmd: str | list[str]):
+    """
+    Executes a command in the shell and prints the output.
+
+    Args:
+        cmd (str | list[str]): The command to execute. If a string, it will be split into a list of arguments.
+
+    Raises:
+        subprocess.CalledProcessError: If the command returns a non-zero exit code.
+
+    """
+    if isinstance(cmd, str):
+        cmd = cmd.split(" ")
+    
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True) as p:
+        for line in iter(p.stdout.readline, ""):
+            if line.strip():
+                print(line.strip())
+        
+    p.wait()
+    if p.returncode:
+        raise subprocess.CalledProcessError(p.returncode, cmd=" ".join(cmd))
+            
+            
+
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("base_version",
+                        help="The gridappsd_base docker image version")
+    parser.add_argument("--output_version", default="local",
+                        help="The output tag version for local development")
+
+    opts = parser.parse_args()
+
+    base_version = opts.base_version
+
+    execute(f"docker pull gridappsd/gridappsd_base:{opts.base_version}")
+    execute("./gradlew clean")
+    shutil.rmtree("gov.pnnl.goss/gridappsd/generated", ignore_errors=True)
+    execute("./gradlew export")
+    execute(f"docker build --build-arg GRIDAPPSD_BASE_VERSION=:{opts.base_version} --no-cache --network=host -t gridappsd:{opts.output_version} .")
