@@ -1,4 +1,4 @@
-ARG GRIDAPPSD_BASE_VERSION=:master
+ARG GRIDAPPSD_BASE_VERSION=:develop
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
@@ -111,7 +111,7 @@ RUN chmod +x /usr/local/bin/opendsscmd && \
 # before executing this script.
 COPY ./gov.pnnl.goss.gridappsd/generated/distributions/executable/run.bnd.jar /gridappsd/lib/run.bnd.jar
 
-RUN pip install -r /gridappsd/requirements.txt && \
+RUN pip install --pre -r /gridappsd/requirements.txt && \
   pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
   rm -rf /root/.cache/pip/wheels
 
