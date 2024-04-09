@@ -794,10 +794,6 @@ class HelicsGossBridge(object):
                         object_property_list = ((self._difference_attribute_map.get(x.get("attribute", ""),
                                                                                     {})).get(object_type,
                                                                                              {})).get("property")
-                        phase_in_property = ((self._difference_attribute_map.get(x.get("attribute", ""),
-                                                                                 {})).get(object_type,
-                                                                                          {})).get("phase_sensitive",
-                                                                                                   False)
                         if cim_attribute != "Ochre.command":
                             if object_name == None or object_phases == None or object_total_phases == None \
                                     or object_type == None or object_name_prefix == None or cim_attribute == None \
