@@ -287,7 +287,6 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 				ConfigurationRequest configRequest = null;
-				System.out.println("*******************"+request.toString());
 				if(request instanceof ConfigurationRequest){
 					configRequest = ((ConfigurationRequest)request);
 				} else{
