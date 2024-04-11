@@ -77,6 +77,9 @@ import java.util.List;
 
 import javax.jms.Destination;
 
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataError;
 import pnnl.goss.core.DataResponse;
@@ -284,6 +287,7 @@ public class ProcessEvent implements GossResponseEvent {
 				}
 
 				ConfigurationRequest configRequest = null;
+				System.out.println("*******************"+request.toString());
 				if(request instanceof ConfigurationRequest){
 					configRequest = ((ConfigurationRequest)request);
 				} else{
@@ -383,6 +387,13 @@ public class ProcessEvent implements GossResponseEvent {
              }
 			
 			if(responseFormat == null || responseFormat.equals("JSON")) {
+				try{
+					new JSONObject(data.toString());
+				}
+				catch(JSONException e){
+					data = data.toString().replace("\"", "\\\"");
+					data = "\""+data+"\"";
+				}
 				String r = "{\"data\":"+data+",\"responseComplete\":true,\"id\":\""+processId+"\"}";
 				client.publish(replyDestination, r);
 			}
