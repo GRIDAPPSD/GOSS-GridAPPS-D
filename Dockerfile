@@ -78,6 +78,18 @@ RUN mkdir ${TEMP_DIR} \
   && cp /gridappsd/services/gridappsd-toolbox/dynamic-ybus/gridappsd-dynamic-ybus-service.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
+  
+# Get the gridapspd-distributed-ybus-service from the proper repository
+RUN mkdir ${TEMP_DIR} \
+  && cd ${TEMP_DIR} \
+  && git clone https://github.com/GRIDAPPSD/gridappsd-distributed-static-ybus-service.git -b main \
+  && cd gridappsd-distributed-static-ybus-service \
+  && mkdir -p /gridappsd/services/gridappsd-distributed-static-ybus-service \
+  && rm .git -rf \ 
+  && cp -r * /gridappsd/services/gridappsd-distributed-static-ybus-service \
+  && cp /gridappsd/services/gridappsd-distributed-static-ybus-service/gridappsd-distributed-static-ybus-service.config /gridappsd/services/ \
+  && cd \
+  && rm -rf ${TEMP_DIR}
 
 # Copy initial applications and services into the container.
 # 
