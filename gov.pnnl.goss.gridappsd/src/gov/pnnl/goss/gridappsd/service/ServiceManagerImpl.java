@@ -318,8 +318,8 @@ public class ServiceManagerImpl implements ServiceManager{
 				}
 				else{
 					if(staticArg.contains("(field_model_mrid")){
-				    	 staticArg = staticArg.replace("(field_model_mrid)",this.getFieldModelMrid());
-			    	}
+				    		staticArg = staticArg.replace("(field_model_mrid)",this.getFieldModelMrid());
+			    		}
 				}
 		    	commands.add(staticArg);
 		    }
