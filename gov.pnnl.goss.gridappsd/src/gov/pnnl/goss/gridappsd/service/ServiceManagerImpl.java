@@ -316,6 +316,11 @@ public class ServiceManagerImpl implements ServiceManager{
 				    	 }
 			    	}
 				}
+				else{
+					if(staticArg.contains("(field_model_mrid")){
+				    		staticArg = staticArg.replace("(field_model_mrid)",this.getFieldModelMrid());
+			    		}
+				}
 		    	commands.add(staticArg);
 		    }
 		}
@@ -482,6 +487,15 @@ public class ServiceManagerImpl implements ServiceManager{
 	            }
 	        }
 	    }.start();
+	}
+	
+	public String getFieldModelMrid() {
+		if (this.configurationProperties != null) {
+			Object value = this.configurationProperties.get("field.model.mrid");
+			if (value != null)
+				return value.toString();
+		}
+		return null;
 	}
 	
 	
