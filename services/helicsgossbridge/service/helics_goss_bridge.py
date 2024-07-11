@@ -242,7 +242,7 @@ class HelicsGossBridge(object):
         "TapChanger.step" : {
             "regulator" : {
                 "property" : ["tap_{}"],
-                "prefix" : "reg_"
+                "prefix" : "xf_"
             }
         },
         "TapChanger.lineDropCompensation" : {
@@ -727,7 +727,7 @@ class HelicsGossBridge(object):
             elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
                 prefix = "sw_"
             elif object_type == "RatioTapChanger":
-                prefix = "reg_"
+                prefix = "xf_"
         else:
             object_base_name = stored_object.get("name","")
             prefix = stored_object.get("prefix","")
@@ -1440,7 +1440,7 @@ class HelicsGossBridge(object):
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
                             "type" : "regulator",
-                            "prefix" : "reg_"
+                            "prefix" : "xf_"
                         }
                 for y in switches:
                     self._object_mrid_to_name[y.get("mRID")] = {
