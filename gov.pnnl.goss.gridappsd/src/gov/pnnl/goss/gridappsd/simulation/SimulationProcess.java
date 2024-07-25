@@ -186,7 +186,7 @@ public class SimulationProcess extends Thread {
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
-            client.subscribe("/topic/"+GridAppsDConstants.topic_COSIM_output, gossFncsResponseEvent);
+            client.subscribe("/topic/"+GridAppsDConstants.topic_COSIM_output+"."+simulationId, gossFncsResponseEvent);
             
             logManager.info(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation is initialized, currently "+isInitialized.isInited);
 
@@ -196,7 +196,7 @@ public class SimulationProcess extends Thread {
                 //TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
                 //This call would return true/false for initialization and simulation output of time step 0.
                 
-                client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\": \"isInitialized\"}");
+                client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, "{\"command\": \"isInitialized\"}");
                 initAttempts++;
                 Thread.sleep(1000);
 
@@ -217,7 +217,7 @@ public class SimulationProcess extends Thread {
             }
 
             //call to stop the simulation
-            client.publish(GridAppsDConstants.topic_COSIM_input, "{\"command\":  \"stop\"}");
+            client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, "{\"command\":  \"stop\"}");
             logManager.info(ProcessStatus.COMPLETE, simulationId,  "Simulation "+simulationId+" complete");
         }
         catch(Exception e){
@@ -251,7 +251,7 @@ public class SimulationProcess extends Thread {
         // Send the start simulation command to the fncsgossbridge so that it runs it's time loop to move the fncs simulation forward
         logManager.debug(ProcessStatus.RUNNING, simulationId, "Sending start simulation to bridge.");
         String message = "{\"command\": \"StartSimulation\"}";
-        client.publish(GridAppsDConstants.topic_COSIM_input, message);
+        client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, message);
     }
 
     private void watch(final Process process, String processName) {

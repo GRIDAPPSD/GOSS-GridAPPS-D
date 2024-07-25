@@ -3,3 +3,4 @@
 remote_pdb
 durable-rules
 gridappsd-python
+gridappsd-field-bus
