@@ -76,7 +76,7 @@
 	httpcore,\
 	httpclient,\
 	xml-apis,\
-	cimhub.lib;version=1.0.1,\
+	cimhub.lib;version=2.0.1,\
 	org.eclipse.jetty.aggregate.jetty-all-server;version=7.6.9,\
 	com.bigdata.rdf,\
 	proven-message;version=0.5,\
