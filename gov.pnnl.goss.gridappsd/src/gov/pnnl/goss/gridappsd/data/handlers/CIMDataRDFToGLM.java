@@ -1100,7 +1100,7 @@ public class CIMDataRDFToGLM {
 		}
 		buf.append ("}\n");
 
-		buf.append ("object regulator {\n  name \"reg_" + name + "\";\n");
+		buf.append ("object regulator {\n  name \"xf_" + name + "\";\n");
 		buf.append ("  from \"" + bus1 + "\";\n");
 		buf.append ("  to \"" + bus2 + "\";\n");
 		buf.append ("  phases " + phs + ";\n");
