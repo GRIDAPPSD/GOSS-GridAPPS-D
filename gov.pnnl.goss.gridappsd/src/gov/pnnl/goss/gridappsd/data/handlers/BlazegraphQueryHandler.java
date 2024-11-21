@@ -47,6 +47,10 @@ import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetCloseable;
+import org.apache.jena.sparql.modify.UpdateProcessRemote;
+import org.apache.jena.update.UpdateExecutionFactory;
+import org.apache.jena.update.UpdateFactory;
+import org.apache.jena.update.UpdateRequest;
 
 import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.LogManager;
@@ -123,6 +127,19 @@ public class BlazegraphQueryHandler implements QueryHandler {
 		ResultSetCloseable rs=  ResultSetCloseable.closeableResultSet(qexec);
 		return rs;
 	}
+	
+	
+	public void executeUpdateQuery(String szQuery){
+		logManager.debug(ProcessStatus.RUNNING, processID, "Executing update query "+szQuery);
+		long start = new Date().getTime();
+		UpdateRequest query = UpdateFactory.create(Q_PREFIX + szQuery);
+	    UpdateProcessRemote riStore = (UpdateProcessRemote) UpdateExecutionFactory.createRemote(query, getEndpoint());
+	    riStore.execute();
+	    long end = new Date().getTime();
+		logManager.debug(ProcessStatus.RUNNING, processID, "Query execution took: "+(end-start)+"ms");
+	}
+	
+	
 	@Override
 	public ResultSet construct(String szQuery) { 
 		Query query = QueryFactory.create (Q_PREFIX + szQuery); 
