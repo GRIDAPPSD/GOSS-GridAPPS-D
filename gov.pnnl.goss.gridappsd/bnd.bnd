@@ -29,7 +29,7 @@
 	osgi.enroute.base.api,\
 	org.mockito.mockito-all,\
 	httpcore,\
-	cimhub.lib;version=2.0.0,\
+	cimhub.lib;version=2.0.3,\
 	httpclient,\
 	com.bigdata.rdf,\
 	org.glassfish.jersey.core.jersey-client;version=2.26,\
