@@ -242,7 +242,7 @@ class HelicsGossBridge(object):
         "TapChanger.step" : {
             "regulator" : {
                 "property" : ["tap_{}"],
-                "prefix" : "reg_"
+                "prefix" : "xf_"
             }
         },
         "TapChanger.lineDropCompensation" : {
@@ -533,6 +533,10 @@ class HelicsGossBridge(object):
             
     def run_simulation(self):
         simulation_output_topic = topics.simulation_output_topic(self._simulation_id)
+        message_str = 'Running simulation for simulation_request:' \
+                      f'{json.dumps(self._simulation_request, indent=4, sort_keys=True)}'
+        log.debug(message_str)
+        self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
         run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime",1)
         simulation_length = self._simulation_request.get("simulation_config",{}).get("duration",0)
         simulation_start = self._simulation_request.get("simulation_config",{}).get("start_time",0)
@@ -723,7 +727,7 @@ class HelicsGossBridge(object):
             elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
                 prefix = "sw_"
             elif object_type == "RatioTapChanger":
-                prefix = "reg_"
+                prefix = "xf_"
         else:
             object_base_name = stored_object.get("name","")
             prefix = stored_object.get("prefix","")
@@ -1178,11 +1182,11 @@ class HelicsGossBridge(object):
                         log.debug(f"measurement message recieved at timestep {current_time}.")
                         self._gad_connection.send(topics.simulation_output_topic(self._simulation_id),
                                                   json.dumps(cim_output, indent=4, sort_keys=True))
-            if pause_after_measurements:
-                self._pause_simulation = True
-                debugStr = "Simulation paused automatically after publishing measurements."
-                log.debug(debugStr)
-                self._gad_connection.send_simulation_status('PAUSED', debugStr, 'INFO')
+                if pause_after_measurements:
+                    self._pause_simulation = True
+                    debugStr = "Simulation paused automatically after publishing measurements."
+                    log.debug(debugStr)
+                    self._gad_connection.send_simulation_status('PAUSED', debugStr, 'INFO')
             log.debug("Message from simulation processing time: "
                       f"{time.perf_counter() - get_helics_bus_messages_start}.")
             return {}
@@ -1436,7 +1440,7 @@ class HelicsGossBridge(object):
                             "phases" : object_phases[z],
                             "total_phases" : "".join(object_phases),
                             "type" : "regulator",
-                            "prefix" : "reg_"
+                            "prefix" : "xf_"
                         }
                 for y in switches:
                     self._object_mrid_to_name[y.get("mRID")] = {
