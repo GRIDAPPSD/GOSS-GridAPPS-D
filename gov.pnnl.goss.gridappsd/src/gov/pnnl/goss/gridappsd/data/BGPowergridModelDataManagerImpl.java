@@ -135,11 +135,11 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //				" ?pxf c:IdentifiedObject.name ?key"+
 //				"} GROUP BY ?key ORDER BY ?key";
 //		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:9999/blazegraph/namespace/kb/sparql");
-//		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://192.168.99.100:8889/bigdata/namespace/kb/sparql");
-		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://localhost:8889/bigdata/namespace/kb/sparql");
+//		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("http://192.168.99.100:8889/bigdata/namespace/kb/sparql");		
+		BGPowergridModelDataManagerImpl bg = new BGPowergridModelDataManagerImpl("urn:uuid");
 		bg.logManager = new LogManagerImpl();
 
-		bg.endpointNSURL = "http://localhost:8889/bigdata/namespace/kb/sparql";
+		bg.endpointNSURL = "urn:uuid";
 		try {
 //			String query = "select ?s ?p ?o where {?s r:type c:ConnectivityNode. ?s ?p ?o}";
 //			System.out.println(bg.query("ieee13", query, "JSON"));
@@ -978,7 +978,7 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
 	private String getEndpointNS(String modelId){
 		if(modelId!=null) {
-			return endpointNSURL+"#"+modelId;
+			return endpointNSURL+modelId;
 		}
 		return endpointNSURL;
 	}

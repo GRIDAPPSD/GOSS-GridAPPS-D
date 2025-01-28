@@ -66,6 +66,9 @@ public class SimulationConfig  implements Serializable {
 	
 	//Slow simulator down to realtime if true.  If false it will run as fast as the simulator allows
 	public boolean run_realtime = true;
+
+	//instruct simulation to pause automatically after publishing measurements if true.
+	public boolean pause_after_measurements = false;
 	
 
 	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
