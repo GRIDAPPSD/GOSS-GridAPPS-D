@@ -8,7 +8,7 @@ public class Root implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	public Feeder feeders;
+	public DistributionArea DistributionArea;
 	
 	@Override
 	public String toString() {

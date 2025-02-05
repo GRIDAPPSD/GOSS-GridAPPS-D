@@ -239,7 +239,7 @@ public class LogManagerImpl implements LogManager {
 	
 	public void setProcessType(String processId, String process_type) {
 		String source = Thread.currentThread().getStackTrace()[2].getClassName();
-		this.log(ProcessStatus.RUNNING, processId,  "New process id generated with new process type", LogLevel.INFO, source, process_type);
+		this.log(ProcessStatus.RUNNING, processId,  "New process id generated with new process type: "+process_type, LogLevel.INFO, source, process_type);
 	}
 	
 	public void logMessageFromSource(ProcessStatus processStatus, String processId, String message, String source, LogLevel logLevel) {
