@@ -237,18 +237,6 @@ public class FieldBusManagerImpl implements FieldBusManager {
 		return null;
 	}
 	
-	public static void main(String args[]){
-		
-		 Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		try (FileReader reader = new FileReader("C:\\Users\\shar064\\git\\goss-gridapps-d\\gov.pnnl.goss.gridappsd\\src\\gov\\pnnl\\goss\\gridappsd\\distributed\\temp_topo.json")) {
-           Root root = gson.fromJson(reader, Root.class);
-           System.out.println(root);
-		
-	 } catch (IOException e) {
-        e.printStackTrace();
-    }
-	}
-
 }
 
 class TopologyRequest implements Serializable {
