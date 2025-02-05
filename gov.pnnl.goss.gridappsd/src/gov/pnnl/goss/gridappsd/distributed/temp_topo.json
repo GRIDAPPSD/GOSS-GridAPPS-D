@@ -1,0 +1,1108 @@
+{
+    "DistributionArea": {
+        "@id": "94dfdc1c-8b80-4e90-96e1-504305eddcc2",
+        "@type": "DistributionArea",
+        "Substations": [
+            {
+                "@id": "6c62c905-6fc7-653d-9f1e-1340f974a587",
+                "@type": "Substation",
+                "NormalEnergizedFeeder": [
+                    {
+                        "@id": "49ad8e07-3bf9-a4e2-cb8f-c3722f837b62",
+                        "@type": "Feeder",
+                        "FeederArea": {
+                            "@id": "b6373777-16cb-45d7-9bf0-6f51d91cf949",
+                            "@type": "FeederArea",
+                            "BoundaryTerminals": [
+                                {
+                                    "@id": "1d81c7fe-e88f-41e3-a900-476ca6476ccd",
+                                    "@type": "Terminal"
+                                }
+                            ],
+                            "AddressableEquipment": [
+                                {
+                                    "@id": "52de9189-20dc-4c73-bdee-e960fe1f9493",
+                                    "@type": "Breaker"
+                                },
+                                {
+                                    "@id": "ce5d0651-676b-4af3-8d67-41bf1b33e30c",
+                                    "@type": "Recloser"
+                                },
+                                {
+                                    "@id": "2858b6c2-0886-4269-884c-06fa8b887319",
+                                    "@type": "LoadBreakSwitch"
+                                },
+                                {
+                                    "@id": "517413cb-6977-46fa-8911-c82332e42884",
+                                    "@type": "LoadBreakSwitch"
+                                }
+                            ],
+                            "UnaddressableEquipment": [
+                                {
+                                    "@id": "259e820f-b4af-4e1a-8271-687534edaecc",
+                                    "@type": "PowerTransformer"
+                                },
+                                {
+                                    "@id": "8b452737-ca3d-4c10-a99d-6865506437c8",
+                                    "@type": "EnergySource"
+                                }
+                            ],
+                            "Measurements": [
+                                {
+                                    "@id": "82e8ffd0-c3de-4de4-bc74-3282cfbf9fe8",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "8b1e2c29-fda0-4e76-bbb1-3d45d9b2eb5a",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "a8577536-37c0-4428-911e-eac81e1ecc26",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "c4c61a7e-4cbc-4dcf-b717-a16fd5f80c49",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "d0438251-b57c-4a20-947b-62577457f17a",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "e95c23ce-8c3d-4473-a410-b7bb9acd39d2",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "f34c8f9c-7b35-4cdd-851b-e52eb4d55702",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "fcf41b3b-7ff2-44ae-90ba-c2a2e3cb52ba",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "fd4b2264-73eb-4aa0-9146-94e9e36d256b",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "369a8372-f095-4bca-be14-c88392d0d75c",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "3a79780a-cd7c-46c0-ab6d-a7ef85a05138",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "46a54ab5-bc32-4bed-8432-5c322e25c945",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "f396638c-63ca-4532-8df6-8a182d800647",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "cbb63b9c-ce44-443d-a56b-162c2b0222c9",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "eeae8bd7-c748-4a8f-b1e0-a30e979d58de",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "02efc0b9-5784-4b28-9547-9394a377947d",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "8b230dfe-3188-43b1-8e93-8839ad6c13f7",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "93b441c7-6626-4a50-af02-27e2cdb847bf",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "9a379d4c-b434-4743-bd8f-87add6d7df92",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "ffb8967e-61fd-461e-9ffe-21795440a52e",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "1b70f895-30eb-43d0-9e62-2d4bd4f34677",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "73959d90-d823-48b8-be07-72ba0247e67a",
+                                    "@type": "Analog"
+                                },
+                                {
+                                    "@id": "777cdb29-c06c-458b-9915-6b2b8875c43a",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "f6eae109-55d6-4b41-b2a5-39f3e7ba60fe",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "05272dc9-5f3a-4583-839b-f5acb49557bb",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "20fccd4b-15a6-4c6d-9970-0d870f503cdb",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "db91a191-bf02-4b08-9cde-54857c223d2e",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "ef2fa8e2-74cc-44b0-85ee-b8186e6cee54",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "3e7ee924-ff6e-4640-8c09-38d76d447cd6",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "e1d8c475-0c39-4a09-a630-2921a5760c1d",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "34b95861-e956-498e-91f5-0b18a1c1a829",
+                                    "@type": "Discrete"
+                                },
+                                {
+                                    "@id": "6452744d-b9bd-4cda-9430-16cacd630101",
+                                    "@type": "Discrete"
+                                }
+                            ],
+                            "SwitchAreas": [
+                                {
+                                    "@id": "1f39b37f-2a84-4f56-b557-3a72cb840434",
+                                    "@type": "SwitchArea",
+                                    "   ": {
+                                        "@id": "b6373777-16cb-45d7-9bf0-6f51d91cf949",
+                                        "@type": "FeederArea"
+                                    },
+                                    "BoundaryTerminals": [
+                                        {
+                                            "@id": "02ae202b-d91b-4ead-8ec9-3b87bdd67c8b",
+                                            "@type": "Terminal"
+                                        }
+                                    ],
+                                    "AddressableEquipment": [
+                                        {
+                                            "@id": "9d725810-bfd6-44c6-961a-2bc027f6fc95",
+                                            "@type": "LinearShuntCompensator"
+                                        }
+                                    ],
+                                    "UnaddressableEquipment": [
+                                        {
+                                            "@id": "8e180773-2a9b-4136-bc9a-132a52c8e276",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "60b55036-dd71-40ce-adda-97b8ce7447dc",
+                                            "@type": "EnergyConsumer"
+                                        }
+                                    ],
+                                    "Measurements": [
+                                        {
+                                            "@id": "d127a618-3b2b-446b-bcfb-d4d7915b12a5",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "e2e3422a-3e62-479f-8b51-0fc82057dc8e",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4432cf95-a30d-4279-819a-5777c6c312f9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "72465dbb-4758-4644-b5aa-1540a886b5c2",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "eedf7515-8ba7-45bb-86a8-d9ef79e07df1",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "652acf42-6529-4908-a816-a34ffb87e529",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "d3ece9e2-bda4-4ad8-8223-80a02b02539a",
+                                            "@type": "Discrete"
+                                        }
+                                    ],
+                                    "SecondaryAreas": []
+                                },
+                                {
+                                    "@id": "2cff1e26-8f8f-42b5-b054-87f28523d303",
+                                    "@type": "SwitchArea",
+                                    "FeederArea": {
+                                        "@id": "b6373777-16cb-45d7-9bf0-6f51d91cf949",
+                                        "@type": "FeederArea"
+                                    },
+                                    "BoundaryTerminals": [
+                                        {
+                                            "@id": "af475341-bbe8-4c30-a30e-b6ebe9768322",
+                                            "@type": "Terminal"
+                                        },
+                                        {
+                                            "@id": "ebaef4a4-5d80-4fad-a133-aa18607f3c31",
+                                            "@type": "Terminal"
+                                        },
+                                        {
+                                            "@id": "2847e06b-c8ed-41e6-b515-c61c9e8eb4b4",
+                                            "@type": "Terminal"
+                                        }
+                                    ],
+                                    "AddressableEquipment": [],
+                                    "UnaddressableEquipment": [
+                                        {
+                                            "@id": "a04cdfb1-e951-4fc4-8882-0323cd70ae3c",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "fbe26b35-13ab-457d-9795-df58b28e309d",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "0bbd0ea3-f665-465b-86fd-fc8b8466ad53",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "1c6781a2-5b9d-4525-8a9b-f9b32c4c4ac0",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "43ef8365-f932-409b-a51e-fbed3f6dffaa",
+                                            "@type": "Fuse"
+                                        },
+                                        {
+                                            "@id": "67b57539-590b-4158-9cbb-9dba2fe6c1f0",
+                                            "@type": "PowerTransformer"
+                                        },
+                                        {
+                                            "@id": "b6363f07-b1bc-420b-aa4c-a34bb8f05827",
+                                            "@type": "TransformerTank"
+                                        },
+                                        {
+                                            "@id": "e2e0fc64-8d45-4c55-bdb9-eab827a46fbc",
+                                            "@type": "TransformerTank"
+                                        },
+                                        {
+                                            "@id": "44fc5a86-a099-45b8-b847-f685c5027afb",
+                                            "@type": "TransformerTank"
+                                        },
+                                        {
+                                            "@id": "0bc9183a-9067-4e06-aa5b-48dc2ab30c80",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "47e52220-4596-4af0-9724-0167b72a4db8",
+                                            "@type": "EnergyConsumer"
+                                        }
+                                    ],
+                                    "Measurements": [
+                                        {
+                                            "@id": "b019274b-13e5-4c02-ab6d-471979c70d12",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b5d54a83-8b4f-4675-9696-1a6d8ced1d1d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "d70108e9-7c81-4aa8-9c1d-4a31b5b0cd2b",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "f63a8e39-4f96-475a-83c2-f1adf5441159",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "fe86bf21-a8d0-42b6-bdf9-25f5fc9e86cb",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "109d00c5-2761-4e47-a457-f5fa85dc675f",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "ab7a45ed-b5df-4325-9b18-f1d2a34d38f9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "115ca27f-33e8-4c4c-8153-32130e124f8d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "52e4c07c-0611-49cc-aef4-828ead9ab1db",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "58eaa5e7-2925-422c-82af-10af887dbb2c",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "aeeecdbd-f3a3-4fbc-8121-5d49a9ee1618",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "f262d228-9aad-4a9f-92ae-4c2724cc79a9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "88d2e119-c66b-44e7-9c17-dfcab78bdbae",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "8d9076fe-1e13-451c-9ea8-174a223410cc",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "969f1712-c9de-4a75-bf8d-be709a6bfb0b",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "ad788795-dc28-4970-90b5-7353051e2696",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b73159f8-e0a4-4ae0-9dbb-3059abcebec9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c2066cf7-db10-4845-bdd2-6a606c7de442",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c804f152-0199-4ae8-afa0-58a787418fb9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "26c9b6dc-0e87-48d1-b04a-1df7b1f39f42",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "355be257-d82d-46f7-b1b7-e3f8bb4e9540",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "df506013-60da-494a-85b5-620186bc2957",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "dfdb9316-00bc-405f-a3b6-8588daca01f6",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "f492cad5-b73f-42fe-8e6b-e5aee620490a",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "05b41397-3e81-4e79-823e-12ebf27b01c3",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "2b709394-8363-48a4-b60f-7402f72ed1b8",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "614614d5-e3b5-4c6d-afa8-49284cc6f078",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "84b2add4-3e00-4e3a-a675-91d74b5c290d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "8da3ced2-9617-440c-a52b-c17446698dce",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b32803dc-cdc1-43ad-aaf0-4f7d48c8ba57",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "168e7a07-437b-49ef-a15c-2906fbb02a51",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "17c5ee46-b62b-44f2-bba1-3d1c641764ec",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "3da671b6-108d-4662-8d11-1bc65a802d44",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "879c772c-677c-4db6-b315-877a28e6983c",
+                                            "@type": "Discrete"
+                                        },
+                                        {
+                                            "@id": "dce620f5-f839-43fc-828f-dee6f124693c",
+                                            "@type": "Discrete"
+                                        },
+                                        {
+                                            "@id": "200abcf2-a088-4821-a0b8-b039f6f7b9ac",
+                                            "@type": "Discrete"
+                                        }
+                                    ],
+                                    "SecondaryAreas": [
+                                        {
+                                            "@id": "91aac04c-8d87-4385-a3a2-b768aeaddfd2",
+                                            "@type": "SecondaryArea",
+                                            "SwitchArea": {
+                                                "@id": "2cff1e26-8f8f-42b5-b054-87f28523d303",
+                                                "@type": "SwitchArea"
+                                            },
+                                            "BoundaryTerminals": [
+                                                {
+                                                    "@id": "e1763fe3-82c2-4434-9424-72df850d982e",
+                                                    "@type": "Terminal"
+                                                }
+                                            ],
+                                            "AddressableEquipment": [
+                                                {
+                                                    "@id": "a9e8758b-5486-4798-8fba-9ae639abfc38",
+                                                    "@type": "PowerElectronicsConnection"
+                                                },
+                                                {
+                                                    "@id": "d2e930a7-b136-4aca-a996-8db5c60aadf3",
+                                                    "@type": "PowerElectronicsConnection"
+                                                },
+                                                {
+                                                    "@id": "7b671984-4c56-4ff1-9733-b4b6fca5f2aa",
+                                                    "@type": "PowerElectronicsConnection"
+                                                },
+                                                {
+                                                    "@id": "15eee173-cc90-4888-b9b8-43916d56890c",
+                                                    "@type": "PhotovoltaicUnit"
+                                                },
+                                                {
+                                                    "@id": "9e931f3b-0d9d-4cbe-b771-9400202b20e8",
+                                                    "@type": "BatteryUnit"
+                                                },
+                                                {
+                                                    "@id": "c85c27e8-5ed0-4b7e-aa46-99f5843f8653",
+                                                    "@type": "BatteryUnit"
+                                                }
+                                            ],
+                                            "UnaddressableEquipment": [
+                                                {
+                                                    "@id": "1e6b5c97-c4e8-4ced-b9a5-6e69f389da93",
+                                                    "@type": "PowerTransformer"
+                                                },
+                                                {
+                                                    "@id": "b21c5599-1d00-4fcf-904b-58d9d4cac49a",
+                                                    "@type": "EnergyConsumer"
+                                                },
+                                                {
+                                                    "@id": "c39149de-3451-4d33-b4c2-b1e6c6fc9aab",
+                                                    "@type": "EnergyConsumer"
+                                                },
+                                                {
+                                                    "@id": "3b2021a7-4bfc-418d-9c20-bd6838e52cf8",
+                                                    "@type": "EnergyConsumer"
+                                                }
+                                            ],
+                                            "Measurements": [
+                                                {
+                                                    "@id": "aea8886c-b1ac-4884-9115-561ac17566bf",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "0516ccdc-691a-4b17-ba64-e07adf6928b4",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "1270017e-6c59-401f-b0ce-4f79562763e7",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "2ff84f2d-d02f-490f-83f0-1e0ca4c03756",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "53bec9fa-805c-41e8-89fa-c83a21a7fa11",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "66a395e6-d22d-4c23-bc9f-c77e649f4a7b",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "6a9aef4a-80f2-483b-909f-e90924a017ef",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "6f7b381e-8cda-404a-a854-5121f1eed37e",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "7cd8ece4-a560-4708-bc33-0897939e5ae9",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "c4da4a8d-fa3b-44b0-81ab-c3edb18aaa47",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "0842cc33-f0ed-4ef0-9e16-8941f52fd723",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "7cd80c5c-c46a-44d1-b6b0-b65bc554be7b",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "8c66e2bd-6bc4-4497-9b26-60bf1552cd29",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "ddb629a0-00bd-4a4d-81c0-5462a9a52c18",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "f5383c28-be14-452e-a43e-8435903c2d19",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "5c17be42-d64e-40ce-89c8-c19163ec7807",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "6ef673b3-78e5-4d9f-868d-e79ee410dd7c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "71f09adb-57f2-4fbb-87af-f38193595670",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "7965fff5-a56a-478b-bdac-08c95b26d829",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "4fbe846e-3d85-48d0-b1bd-ea7eb2d072e6",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "74e67ad3-5fe0-4401-a97a-586f9117c067",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "28eeb5a5-7486-42c1-8ac4-59c085fa6c1c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "2d81c192-9c5c-45e7-8d05-1a98270ef7ed",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "82b2cb05-25ab-4675-87e9-61db0d2aeadf",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "93b0816a-5215-4bc1-99f1-c5d7fa56cae6",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "a84c34a6-7575-4295-9322-eb5b2170553a",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "b1fd2c5a-8615-4886-8609-dd5cd89c845c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "2f5a15a4-029f-4cdd-8178-5a52a3cc4b30",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "549acf31-beb2-4b60-a386-c676804a6ab4",
+                                                    "@type": "Analog"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "@id": "30c3c4ce-a7b6-4f7b-b2bc-3d771ed09b2b",
+                                    "@type": "SwitchArea",
+                                    "FeederArea": {
+                                        "@id": "b6373777-16cb-45d7-9bf0-6f51d91cf949",
+                                        "@type": "FeederArea"
+                                    },
+                                    "BoundaryTerminals": [
+                                        {
+                                            "@id": "169cb0d6-0002-457f-9594-7feb09da102d",
+                                            "@type": "Terminal"
+                                        }
+                                    ],
+                                    "AddressableEquipment": [
+                                        {
+                                            "@id": "a9de8829-58cb-4750-b2a2-672846a89753",
+                                            "@type": "LinearShuntCompensator"
+                                        }
+                                    ],
+                                    "UnaddressableEquipment": [
+                                        {
+                                            "@id": "7060d0bb-b30d-4932-8fa1-40820a0fc4d0",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "8ca46f28-84c0-4fe2-b228-ec4080777865",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "8e34333c-2bb8-4631-b072-383f1ca38f60",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "9caaf741-be1e-4893-8044-1e507b7ddc38",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "3fffb3f7-a7af-49e1-acee-449fc73d3cd6",
+                                            "@type": "EnergyConsumer"
+                                        }
+                                    ],
+                                    "Measurements": [
+                                        {
+                                            "@id": "b8c013b8-52b3-4ddf-8e2f-0fba5c527ea5",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "d6ba3119-3677-44e9-9ba0-00c04bd3a8c2",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "95552db9-b1ce-497e-8ed6-99407f6c3850",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b6e4a02f-bdc2-4854-aaa6-7fd5902ef251",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c961a4c8-1c55-48f1-a6a5-e6c7b57f0490",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "0eeea6f7-7639-4d9c-994f-962a8299fa49",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "7c2d2647-f28d-4351-8c66-6028c2e33a4a",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "7ce335eb-2d87-4edd-bf28-e28c2ae513e0",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "89b66f1a-95ae-4073-857d-7991574e1141",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "ada2d513-f9c6-4d43-93b8-868c05c8e069",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "fe4d1873-ae69-495c-981f-031e21104313",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "47d2a930-a875-4be3-9c69-6e02a236c859",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "f5947bbc-2b4f-40da-8e3c-f527443370e8",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "1c14071d-dd8e-42ab-b68e-2b0af8f84564",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "9f78ecf9-aceb-4d84-b37c-e4566367157e",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c1174dfa-8366-4a62-9256-4db1d0bd4b4f",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "0b1987c4-0a9f-4293-88c8-2200a4e219df",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "2a46ecbe-a8f2-4a0c-8647-8dc118479aef",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4862691c-b0ee-4efa-846d-a5c2e16d1a80",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "6da674b1-3153-4c1c-911f-bf39afdd4bc9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c98a6fde-b04b-402a-858b-34cfb750ee91",
+                                            "@type": "Discrete"
+                                        },
+                                        {
+                                            "@id": "de1a5896-babc-4c33-862b-32d56d1fcc7d",
+                                            "@type": "Discrete"
+                                        },
+                                        {
+                                            "@id": "41f1824f-e2a0-4a43-8589-c2bd221abbf7",
+                                            "@type": "Discrete"
+                                        }
+                                    ],
+                                    "SecondaryAreas": []
+                                },
+                                {
+                                    "@id": "4021f7cf-340c-45e3-841f-e7b5fe8b93be",
+                                    "@type": "SwitchArea",
+                                    "FeederArea": {
+                                        "@id": "b6373777-16cb-45d7-9bf0-6f51d91cf949",
+                                        "@type": "FeederArea"
+                                    },
+                                    "BoundaryTerminals": [
+                                        {
+                                            "@id": "8c674f14-d9ff-4b1c-b246-1235022cd4c2",
+                                            "@type": "Terminal"
+                                        },
+                                        {
+                                            "@id": "8f517dfe-d985-4d24-8339-96fa2a789e88",
+                                            "@type": "Terminal"
+                                        },
+                                        {
+                                            "@id": "dd4717b2-5fcd-4e67-9bc8-dd307b80afea",
+                                            "@type": "Terminal"
+                                        },
+                                        {
+                                            "@id": "f1d6c919-22fa-4e94-81b1-36823f5a9ff5",
+                                            "@type": "Terminal"
+                                        }
+                                    ],
+                                    "AddressableEquipment": [],
+                                    "UnaddressableEquipment": [
+                                        {
+                                            "@id": "abf53597-a808-422a-b7ee-552f24d83a5f",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "abf877d7-dac2-4bf0-ab58-9a8a02e92eb3",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "d34b0d01-b082-4081-a3cc-b68b9b8313a4",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "45395c84-f20a-4f5a-977f-b80348256421",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "4c04f838-62aa-475e-aefa-a63b7c889c13",
+                                            "@type": "ACLineSegment"
+                                        },
+                                        {
+                                            "@id": "91a37b4c-c38b-4269-8467-f40870934386",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "e26d83a0-d29d-41ef-9528-02c882ffcc0d",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "e503bbf8-3c82-4df7-b6e9-2488ecfcc847",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "572bcfc9-e1d6-4419-9a33-edd284806af3",
+                                            "@type": "EnergyConsumer"
+                                        },
+                                        {
+                                            "@id": "70188ff4-04f0-48d2-8706-698d1fd086e6",
+                                            "@type": "EnergyConsumer"
+                                        }
+                                    ],
+                                    "Measurements": [
+                                        {
+                                            "@id": "8ed531f6-9907-492c-9d14-7ee917d3072c",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "9089eb23-f5f9-4353-889b-a82c8bd45dc4",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "0b297ba2-bf2b-4454-ae8f-a1e9cc25759d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "2ccd1e33-b45d-4db8-9717-bf0ecb55746a",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "370bb344-03b5-482a-8289-ee29cdf640fe",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "66aca279-695e-4a14-970e-45e6255d581b",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b16f1395-724e-4366-b8b8-1fef7b052fde",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "c50bf5d0-f87f-4e20-8530-bd7bf7c50541",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "33c84e59-3f50-4a25-8de2-c876d773c2ad",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4f465f2e-2502-4f3e-be07-7399ee0be2d1",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "66c97827-7608-42e4-8fb8-51338bc2d732",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "68a7f147-f011-4985-9a81-8436547bbd9a",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4d796703-5d07-4139-b5fd-f251220f090d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "500d88f4-8382-4b08-a165-21440ee4ca53",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "cf71f461-327f-43ce-81ec-fac6efa1b0e9",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "6fcc6d1d-676d-4cc6-959c-d08208ac8c43",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4932290b-3167-4bac-bc38-4627cfc1decf",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "61cf7907-b5a9-49cf-8e14-09dd4b8094a2",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "b7fbfdf7-a680-4f86-a8e4-4c677d6ba849",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "be8ff12a-17b8-4c9a-af5d-641473fecf9f",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "e3804dcb-eb5e-45ed-8dec-50bbeffc6ced",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "121d9b10-be78-4918-886c-62c6f2fa34a5",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "1d613aee-418f-4d84-bd7f-8e497db97e99",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "2904fcf4-abca-4baf-a85e-8bea13318d92",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "58a2c82d-b917-422c-87a4-348b0bfac3bb",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "7516b699-9774-40ff-83f4-dccec9e9b540",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "bec29782-8d4a-4741-b4cf-dbe22a735d45",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4d9930a3-3672-4455-a726-edc0fb3d261a",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "3e2b9cba-39a2-4165-ae81-8b85a7dd4365",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "5c82848f-be1a-4193-add3-079151c386e3",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "741139fc-9ee0-4c40-842e-72ae3619edaa",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "761a819a-7017-4fb3-b40b-c0d0bc5fa30d",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "86e4c8c3-bcd9-493e-8d30-f3f7162518b7",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "e8953e49-e623-462d-86df-bd525529ffe4",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "326e554f-ee59-43ce-8c51-a89be9933bcb",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "4426f574-61fc-4763-8fef-9de790e73530",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "620e019a-6bdd-48ca-a9c3-fdc50fd0892e",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "7b008161-443c-447e-8b17-f81edf31192f",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "1cf88413-ee80-426c-b40c-2e2a82eaa598",
+                                            "@type": "Analog"
+                                        },
+                                        {
+                                            "@id": "53c6b98f-cdb9-4824-bf5b-4b541e7583be",
+                                            "@type": "Analog"
+                                        }
+                                    ],
+                                    "SecondaryAreas": [
+                                        {
+                                            "@id": "4396f6fc-5231-4af1-a2a6-d5b9e0836983",
+                                            "@type": "SecondaryArea",
+                                            "SwitchArea": {
+                                                "@id": "4021f7cf-340c-45e3-841f-e7b5fe8b93be",
+                                                "@type": "SwitchArea"
+                                            },
+                                            "BoundaryTerminals": [
+                                                {
+                                                    "@id": "8e29ba3d-9523-446f-bd9f-989d8182a723",
+                                                    "@type": "Terminal"
+                                                },
+                                                {
+                                                    "@id": "9d06670e-f8ad-46a1-9854-bba7adaf1cf0",
+                                                    "@type": "Terminal"
+                                                }
+                                            ],
+                                            "AddressableEquipment": [
+                                                {
+                                                    "@id": "cec0fc3a-0fd1-4f1c-9c51-7d9bef4d8222",
+                                                    "@type": "PowerElectronicsConnection"
+                                                },
+                                                {
+                                                    "@id": "682ab7a9-4fbf-4204-bde1-27eab3425da0",
+                                                    "@type": "PowerElectronicsConnection"
+                                                },
+                                                {
+                                                    "@id": "1e58be0e-7d37-46a5-a8a2-04b56c78e50a",
+                                                    "@type": "PhotovoltaicUnit"
+                                                },
+                                                {
+                                                    "@id": "d26d2d54-a267-4fc0-b86f-5fc93983784c",
+                                                    "@type": "BatteryUnit"
+                                                }
+                                            ],
+                                            "UnaddressableEquipment": [
+                                                {
+                                                    "@id": "7ff12cef-1c4d-4cd2-8fcc-662530a7ba33",
+                                                    "@type": "PowerTransformer"
+                                                },
+                                                {
+                                                    "@id": "17a934c7-1510-481f-bad7-189058957ff1",
+                                                    "@type": "TransformerTank"
+                                                },
+                                                {
+                                                    "@id": "32f02d2b-ee6e-4d3f-8486-1b5caef70204",
+                                                    "@type": "EnergyConsumer"
+                                                }
+                                            ],
+                                            "Measurements": [
+                                                {
+                                                    "@id": "8ea3201e-1d7f-43cf-ba28-c8b6475c7ee3",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "f6793558-24be-4264-b1db-61a93ddc6a85",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "305225b4-8f72-4c45-b7b9-4ee31204806c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "4d27261d-5da5-4d4c-89cf-f2dacbfc3f0b",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "a943d0d6-1025-48ca-92c7-cb29ca6cf82c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "8f9e477c-8353-4b9a-b917-1436adc08df3",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "aefd3f67-5cff-455c-9e92-ca060411ca17",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "aed35e1b-8dea-4dec-be7f-440bb6d91f9c",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "5a9f8205-39d2-455f-ada1-ae585a4523b5",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "6761fbc5-f5b2-4a96-b218-1633ddb93659",
+                                                    "@type": "Analog"
+                                                },
+                                                {
+                                                    "@id": "6a7ad690-8027-4389-9369-e3ece839648e",
+                                                    "@type": "Analog"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
