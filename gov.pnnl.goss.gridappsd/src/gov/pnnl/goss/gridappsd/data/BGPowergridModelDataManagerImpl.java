@@ -733,7 +733,12 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		HashMap<String, JsonObject> resultObjects = new HashMap<String, JsonObject>();
 		while( rs.hasNext()) {
 			QuerySolution qs = rs.nextSolution();
-			String subject = qs.getResource(SUBJECT).getLocalName();
+			String subject = qs.getResource(SUBJECT).toString();
+			if(!subject.contains("urn:uuid")){
+				subject = qs.getResource(SUBJECT).getLocalName();
+			} else {
+				subject = subject.substring(subject.lastIndexOf(':')+1);
+			}
 			JsonObject obj = new JsonObject();
 			if(resultObjects.containsKey(subject)){
 				obj = resultObjects.get(subject);
