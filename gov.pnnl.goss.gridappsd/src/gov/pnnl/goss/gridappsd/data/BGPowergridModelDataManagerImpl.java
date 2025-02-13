@@ -148,9 +148,9 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryObjectTypes("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "JSON", "12345", "user"));
 			System.out.println(bg.queryModelNameList("12345", "user"));
 			long start = new Date().getTime();
-			String model = bg.queryModel("_5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "", "", "XML", "12345", "user");
-//			String model = bg.queryModel("_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
-//			String model = bg.queryModel("_503D6E20-F499-4CC7-8051-971E23D0BF79", "", "", "XML", "12345", "user");
+			String model = bg.queryModel("5B816B93-7A5F-B64C-8460-47C17D6E4B0F", "", "", "XML", "12345", "user");
+//			String model = bg.queryModel("4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "", "", "XML", "12345", "user");
+//			String model = bg.queryModel("503D6E20-F499-4CC7-8051-971E23D0BF79", "", "", "XML", "12345", "user");
 			
 			
 			FileOutputStream fout = new FileOutputStream(new File("xml_new_full.xml"));
@@ -163,23 +163,23 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 //			System.out.println(bg.queryModelNames("XML"));
 //			System.out.println(bg.queryModelNamesAndIds("XML", "12345", "user"));
 			
-//			System.out.println(bg.queryObjectIds("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
+//			System.out.println(bg.queryObjectIds("JSON", "4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LoadBreakSwitch", "12345", "user"));
 			//test with both object id and type
-//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
 			//test with only object id
-//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "C1C3E687-6FFD-C753-582B-632A27E28507", null, "_EF2FF8C1-A6A6-4771-ADDD-A371AD929D5B", "12345", "user"));    //ieee123
 			//test with only object type
-//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "C1C3E687-6FFD-C753-582B-632A27E28507", "LinearShuntCompensator", null, "12345", "user"));    //ieee123
 			//test with neither object or type, should fail
 //			try{
-//			System.out.println(bg.queryObjectDictByType("JSON", "_C1C3E687-6FFD-C753-582B-632A27E28507", null, null, "12345", "user"));    //ieee123
+//			System.out.println(bg.queryObjectDictByType("JSON", "C1C3E687-6FFD-C753-582B-632A27E28507", null, null, "12345", "user"));    //ieee123
 //			}catch (Exception e) {
 //				System.out.println("Expected error "+e.getMessage());
 //				// TODO: handle exception
 //			}
-			//			System.out.println(bg.queryObjectDictByType("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
-//			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3",  null, "_7A02B3B0-2746-EB24-45A5-C3FBA8ACB88E", "12345", "user"));
-//			System.out.println(bg.queryMeasurementDictByObject("JSON", "_4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));
+			//			System.out.println(bg.queryObjectDictByType("JSON", "4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));   //ieee8500
+//			System.out.println(bg.queryMeasurementDictByObject("JSON", "4F76A5F9-271D-9EB8-5E31-AA362D86F2C3",  null, "_7A02B3B0-2746-EB24-45A5-C3FBA8ACB88E", "12345", "user"));
+//			System.out.println(bg.queryMeasurementDictByObject("JSON", "4F76A5F9-271D-9EB8-5E31-AA362D86F2C3", "LinearShuntCompensator", null, "12345", "user"));
 
 			//			System.out.println
 		} catch (Exception e) {
@@ -733,7 +733,12 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 		HashMap<String, JsonObject> resultObjects = new HashMap<String, JsonObject>();
 		while( rs.hasNext()) {
 			QuerySolution qs = rs.nextSolution();
-			String subject = qs.getResource(SUBJECT).getLocalName();
+			String subject = qs.getResource(SUBJECT).toString();
+			if(!subject.contains("urn:uuid")){
+				subject = qs.getResource(SUBJECT).getLocalName();
+			} else {
+				subject = subject.substring(subject.lastIndexOf(':')+1);
+			}
 			JsonObject obj = new JsonObject();
 			if(resultObjects.containsKey(subject)){
 				obj = resultObjects.get(subject);
