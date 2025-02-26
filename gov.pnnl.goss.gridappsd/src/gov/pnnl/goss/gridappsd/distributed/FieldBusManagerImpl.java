@@ -126,19 +126,19 @@ public class FieldBusManagerImpl implements FieldBusManager {
 				return topology.root.DistributionArea;
 			else{
 				for (Substation substation : topology.root.DistributionArea.Substations){
-					if (requestField.areaId.equals(substation.message_bus_id))
+					if (requestField.areaId.equalsIgnoreCase(substation.message_bus_id))
 						return substation;
 					
 					for(NormalEnergizedFeeder feeder : substation.NormalEnergizedFeeder){
-						if (requestField.areaId.equals(feeder.message_bus_id))
+						if (requestField.areaId.equalsIgnoreCase(feeder.message_bus_id))
 							return feeder.FeederArea;
 						
 						for(SwitchArea switchArea : feeder.FeederArea.SwitchAreas){
-							if (requestField.areaId.equals(switchArea.message_bus_id))
+							if (requestField.areaId.equalsIgnoreCase(switchArea.message_bus_id))
 								return switchArea;
 							
 							for(SecondaryArea secondaryArea : switchArea.SecondaryAreas){
-								if (requestField.areaId.equals(secondaryArea.message_bus_id))
+								if (requestField.areaId.equalsIgnoreCase(secondaryArea.message_bus_id))
 									return secondaryArea;
 							}
 						}
