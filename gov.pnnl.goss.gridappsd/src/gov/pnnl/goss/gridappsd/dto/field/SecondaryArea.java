@@ -23,7 +23,7 @@ public class SecondaryArea implements Serializable {
 	public ArrayList<FieldObject> UnaddressableEquipment;
 	public ArrayList<FieldObject> Measurements;
 
-	public String message_bus_id;
+	//public String message_bus_id;
 
 	@Override
 	public String toString() {

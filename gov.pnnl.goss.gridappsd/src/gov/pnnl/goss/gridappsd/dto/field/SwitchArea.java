@@ -24,7 +24,7 @@ public class SwitchArea implements Serializable {
 	public ArrayList<FieldObject> Measurements;
 	public ArrayList<SecondaryArea> SecondaryAreas;	
     
-	public String message_bus_id;
+	//public String message_bus_id;
     
     @Override
 	public String toString() {

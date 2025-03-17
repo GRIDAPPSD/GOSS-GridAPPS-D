@@ -18,7 +18,7 @@ public class Substation implements Serializable {
 	
 	public ArrayList<NormalEnergizedFeeder> NormalEnergizedFeeder;
 	
-	public String message_bus_id;
+	//public String message_bus_id;
 	
 	@Override
 	public String toString() {

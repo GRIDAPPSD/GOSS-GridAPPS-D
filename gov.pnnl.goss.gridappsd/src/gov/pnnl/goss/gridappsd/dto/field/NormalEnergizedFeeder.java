@@ -17,7 +17,7 @@ public class NormalEnergizedFeeder implements Serializable {
 	
 	public FeederArea FeederArea;
 	
-	public String message_bus_id;
+	//public String message_bus_id;
 	
 	@Override
 	public String toString() {

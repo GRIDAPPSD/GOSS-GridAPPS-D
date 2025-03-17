@@ -126,19 +126,19 @@ public class FieldBusManagerImpl implements FieldBusManager {
 				return topology.root.DistributionArea;
 			else{
 				for (Substation substation : topology.root.DistributionArea.Substations){
-					if (requestField.areaId.equalsIgnoreCase(substation.message_bus_id))
+					if (requestField.areaId.equalsIgnoreCase(substation.id))
 						return substation;
 					
 					for(NormalEnergizedFeeder feeder : substation.NormalEnergizedFeeder){
-						if (requestField.areaId.equalsIgnoreCase(feeder.message_bus_id))
+						if (requestField.areaId.equalsIgnoreCase(feeder.id))
 							return feeder.FeederArea;
 						
 						for(SwitchArea switchArea : feeder.FeederArea.SwitchAreas){
-							if (requestField.areaId.equalsIgnoreCase(switchArea.message_bus_id))
+							if (requestField.areaId.equalsIgnoreCase(switchArea.id))
 								return switchArea;
 							
 							for(SecondaryArea secondaryArea : switchArea.SecondaryAreas){
-								if (requestField.areaId.equalsIgnoreCase(secondaryArea.message_bus_id))
+								if (requestField.areaId.equalsIgnoreCase(secondaryArea.id))
 									return secondaryArea;
 							}
 						}
@@ -202,7 +202,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 									+ topology.measId_messageBus_map.get(measurementMrid);
 						} else {
 							messageBusId = "goss.gridappsd.field.simulation.output." + simulationId + "."
-									+ topology.root.DistributionArea.Substations.get(0).NormalEnergizedFeeder.get(0).message_bus_id;
+									+ topology.root.DistributionArea.Substations.get(0).NormalEnergizedFeeder.get(0).id;
 						}
 
 						JsonObject obj = new JsonObject();
@@ -300,11 +300,11 @@ class TopologyRequestProcess extends Thread {
 			 * Exception("No Feeder available to create field message bus"); }
 			 */
 			
-			NormalEnergizedFeeder feeder = root.DistributionArea.Substations.get(0).NormalEnergizedFeeder.get(0);
+			//NormalEnergizedFeeder feeder = root.DistributionArea.Substations.get(0).NormalEnergizedFeeder.get(0);
 			
 			
-			feeder.message_bus_id = feeder.id;
-			
+			/*feeder.message_bus_id = feeder.id;
+		
 			int switch_area_index = 0;
 			for (SwitchArea switchArea : feeder.FeederArea.SwitchAreas) {
 				switchArea.message_bus_id = feeder.id + "." + switch_area_index;
@@ -315,7 +315,7 @@ class TopologyRequestProcess extends Thread {
 					secondary_area_index++;
 				}
 				switch_area_index++;
-			}
+			}*/
 
 			this.getFieldMeasurementIds(fieldModelMrid);
 
@@ -331,13 +331,13 @@ class TopologyRequestProcess extends Thread {
 			for (Substation substation : root.DistributionArea.Substations){
 				
 				for(NormalEnergizedFeeder feeder : substation.NormalEnergizedFeeder){
-					messageBus_measIds_map.put(feeder.message_bus_id, feeder.FeederArea.Measurements);
+					messageBus_measIds_map.put(feeder.id, feeder.FeederArea.Measurements);
 					
 					for(SwitchArea switchArea : feeder.FeederArea.SwitchAreas){
-						messageBus_measIds_map.put(switchArea.message_bus_id, switchArea.Measurements);
+						messageBus_measIds_map.put(switchArea.id, switchArea.Measurements);
 						
 						for(SecondaryArea secondaryArea : switchArea.SecondaryAreas){
-							messageBus_measIds_map.put(secondaryArea.message_bus_id, secondaryArea.Measurements);
+							messageBus_measIds_map.put(secondaryArea.id, secondaryArea.Measurements);
 						}
 					}
 				}
