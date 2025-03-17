@@ -56,13 +56,12 @@ RUN mkdir ${TEMP_DIR} \
 # Get the topology-processor from the proper repository
 RUN mkdir ${TEMP_DIR} \
   && cd ${TEMP_DIR} \
-  && git clone https://github.com/GRIDAPPSD/topology-processor -b main \
-  && cd topology-processor/ \
-  && mkdir -p /gridappsd/services/gridappsd-topology-processor \
+  && git clone https://github.com/GRIDAPPSD/topology-processor -b main gridappsd-topology-background-service\
+  && cd gridappsd-topology-background-service/ \
+  && mkdir -p /gridappsd/services/gridappsd-topology-background-service \
   && rm .git -rf \ 
-  && cp -r * /gridappsd/services/gridappsd-topology-processor \
-  && cp /gridappsd/services/gridappsd-topology-processor/topology_processor/gridappsd-topology-service.config /gridappsd/services/ \
-  && cp /gridappsd/services/gridappsd-topology-processor/topology_processor/gridappsd-topology-daemon.config /gridappsd/services/ \
+  && cp -r * /gridappsd/services/gridappsd-topology-background-service \
+  && cp /gridappsd/services/gridappsd-topology-background-service/topo_background.config /gridappsd/services/ \
   && cd \
   && rm -rf ${TEMP_DIR}
 
