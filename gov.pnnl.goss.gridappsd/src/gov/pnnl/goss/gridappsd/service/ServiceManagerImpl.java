@@ -338,7 +338,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
-				processServiceBuilder.redirectOutput();
+				processServiceBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 				
 				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
@@ -350,7 +350,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
-				processServiceBuilder.redirectOutput();
+				processServiceBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 				
@@ -361,7 +361,7 @@ public class ServiceManagerImpl implements ServiceManager{
 				if(serviceDirectory.exists())
 					processServiceBuilder.directory(serviceDirectory);
 				processServiceBuilder.redirectErrorStream(true);
-				processServiceBuilder.redirectOutput();
+				processServiceBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 				logManager.info(ProcessStatus.RUNNING, simulationId, "Starting service with command "+ String.join(" ",commands));
 				process = processServiceBuilder.start();
 	
