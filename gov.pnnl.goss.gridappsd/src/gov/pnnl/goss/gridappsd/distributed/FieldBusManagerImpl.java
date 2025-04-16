@@ -164,6 +164,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
 				
 			return obj.toString();  
 		}
+		else if(requestField.request_type.equals("start_publishing")){
+			for (Substation substation : topology.root.DistributionArea.Substations){
+				client.publish("/topic/goss.gridappsd.field"+substation.id, requestField.toString());
+			}
+		}
 		
 		return null;
 	}
