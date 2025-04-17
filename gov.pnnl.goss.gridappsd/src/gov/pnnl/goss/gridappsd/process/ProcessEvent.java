@@ -364,6 +364,14 @@ public class ProcessEvent implements GossResponseEvent {
 			
 			else if(event.getDestination().contains(GridAppsDConstants.topic_requestField)){
 				
+				
+				if(fieldBusManager==null)
+					logManager.error(ProcessStatus.ERROR, processId, "fieldBusManager is null ");
+				if(event==null)
+					logManager.error(ProcessStatus.ERROR, processId, "event is null ");
+				if(event.getData()==null)
+					logManager.error(ProcessStatus.ERROR, processId, "event.getData() is null ");
+					
 				String data = fieldBusManager.handleRequest(event.getDestination(),event.getData()).toString();
 				sendData(client, event.getReplyDestination(), data, processId, username, RESPONSE_FORMAT.JSON.toString());
 				
