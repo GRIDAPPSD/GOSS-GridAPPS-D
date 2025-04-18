@@ -120,9 +120,6 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
 		RequestField requestField = RequestField.parse(request.toString());
 		
-		logManager.info(ProcessStatus.RUNNING, "12345",requestField.toString());
-		
-		
 		if (requestField.request_type.equals("get_context")) {
 
 			if (requestField.areaId == null)
