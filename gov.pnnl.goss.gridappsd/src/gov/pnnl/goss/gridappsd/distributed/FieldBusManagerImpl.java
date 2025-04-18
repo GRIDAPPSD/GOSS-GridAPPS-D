@@ -120,6 +120,9 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
 		RequestField requestField = RequestField.parse(request.toString());
 		
+		logManager.info(ProcessStatus.RUNNING, "12345",requestField.toString());
+		
+		
 		if (requestField.request_type.equals("get_context")) {
 
 			if (requestField.areaId == null)
@@ -165,9 +168,13 @@ public class FieldBusManagerImpl implements FieldBusManager {
 			return obj.toString();  
 		}
 		else if(requestField.request_type.equals("start_publishing")){
+			
 			for (Substation substation : topology.root.DistributionArea.Substations){
-				client.publish("/topic/goss.gridappsd.field"+substation.id, requestField.toString());
+				String topic = "goss.gridappsd.field."+(substation.id).trim().toUpperCase(); 
+				client.publish(topic, requestField.toString());
 			}
+			
+			return "Publishing Started";
 		}
 		
 		return null;
