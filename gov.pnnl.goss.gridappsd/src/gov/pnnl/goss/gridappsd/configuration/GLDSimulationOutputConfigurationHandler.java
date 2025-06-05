@@ -106,21 +106,25 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
 	
 	
-	public static final String HELICS_PREFIX = "{\"name\": \"PROCESS_ID\","
-											  + "\"log_level\": 3,"
-											  + "\"period\": 1.0,"
-											  + "\"broker\": \"BROKER_LOCATION:BROKER_PORT\","
-											  + "\"endpoints\": [{"
-											  + "				  \"name\": \"helics_input\","
-											  + "				  \"global\": false,\"type\": \"string\",	"
-											  + 				  "\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\""
-											  + "				 },"
-											  + "				 {"
-											  + "				  \"name\": \"helics_output\","
-											  + "				  \"global\": false,"
-											  + "				  \"type\": \"string\",	"
-											  + "				  \"destination\": \"HELICS_GOSS_Bridge_PROCESS_ID/helics_output\",	\"info\": \"";
-	public static final String HELICS_SUFFIX = "\"}]}";
+	public static final String HELICS_PREFIX = "{\n"
+											  + "\t\"name\": \"PROCESS_ID\",\n"
+											  + "\t\"log_level\": \"DATA\",\n"
+											  + "\t\"period\": 1.0,\n"
+											  + "\t\"broker\": \"BROKER_LOCATION:BROKER_PORT\",\n"
+											  + "\t\"endpoints\": [\n"
+											  + "\t\t{\n"
+											  + "\t\t\t\"name\": \"helics_input\",\n"
+											  + "\t\t\t\"global\": false,\n"
+											  + "\t\t\t\"type\": \"string\",\n"
+											  + "\t\t\t\"info\": \"This is the endpoint which recieves CIM commands from the HELICS GOSS bridge.\"\n"
+											  + "\t\t},\n"
+											  + "\t\t{\n"
+											  + "\t\t\t\"name\": \"helics_output\",\n"
+											  + "\t\t\t\"global\": false,\n"
+											  + "\t\t\t\"type\": \"string\",\n"
+											  + "\t\t\t\"destination\": \"HELICS_GOSS_Bridge_PROCESS_ID/helics_output\",\n"
+											  + "\t\t\t\"info\": ";
+	public static final String HELICS_SUFFIX = "\t\t}\n\t]\n}";
 
 	public GLDSimulationOutputConfigurationHandler() {
 	}
@@ -246,8 +250,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			String HELICS_PREFIX1 = HELICS_PREFIX.replaceAll("BROKER_LOCATION", brokerLocation);
 			String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort);
 			result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId)
-					+result.replaceAll("\"", "\\\\\"").replaceAll("\n","")+
-					HELICS_SUFFIX;
+					+ result.replaceAll("    ", "\t\t\t\t\t").replaceAll("  ", "\t\t\t\t").replaceAll("}", "\t\t\t}\n") + HELICS_SUFFIX;
 		}
 
 		if(configFile!=null){

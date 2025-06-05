@@ -678,7 +678,8 @@ class HelicsGossBridge(object):
             self._helics_configuration = {
                 "name": f"HELICS_GOSS_Bridge_{self._simulation_id}",
                 "period": 1.0,
-                "log_level": 7,
+                "coreinit": f"-logfile HELICS_GOSS_Bridge_{self._simulation_id}.log",
+                "log_level": "DATA",
                 "broker": f"127.0.0.1:{self._broker_port}",
                 "endpoints": [
                     {
@@ -978,7 +979,7 @@ class HelicsGossBridge(object):
             log.info(infoStr)
             self._gad_connection.send_simulation_status("RUNNING", infoStr, "INFO")
             if federate_state == 2 and helics_input_message != {}:
-                helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
+                helics_msg = helics.helicsEndpointCreateMessage(helics_input_endpoint)
                 helics.helicsMessageSetString(helics_msg, goss_message_converted)
                 helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
             publish_to_helics_bus_finish = time.perf_counter()
@@ -1018,6 +1019,7 @@ class HelicsGossBridge(object):
         objectName = ""
         objectType = ""
         propertyValue = ""
+        phases = ""
         get_helics_bus_messages_start = time.perf_counter()
         try:
             helics_message = None
@@ -1027,7 +1029,7 @@ class HelicsGossBridge(object):
                     + f'simulation_id = {self._simulation_id}')
             helics_output_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_output")
             has_message = helics.helicsEndpointHasMessage(helics_output_endpoint)
-            pending_message_count = helics.helicsEndpointPendingMessagesCount(helics_output_endpoint)
+            pending_message_count = helics.helicsEndpointPendingMessageCount(helics_output_endpoint)
             if has_message:
                 message_str = f'helics_output has {pending_message_count} messages'
             else:
@@ -1047,7 +1049,7 @@ class HelicsGossBridge(object):
                     }
                 }
                 for x in range(pending_message_count):
-                    helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
+                    helics_message = helics.helicsEndpointGetMessage(helics_output_endpoint)
                     helics_output = helics.helicsMessageGetString(helics_message)
                     helics_message_source = helics.helicsMessageGetSource(helics_message)
                     if "status" in helics_message_source:
@@ -1192,7 +1194,7 @@ class HelicsGossBridge(object):
             return {}
         except ValueError as ve:
             raise RuntimeError(f"{str(ve)}.\nObject Name: {objectName}\nObject Type: {objectType}\nProperty Name: "
-                               f"{propertyName}\n Property Value{propertyValue}")
+                               f"{propertyName}\nProperty Value: {propertyValue}\nCIM Measurement Phases: {phases}")
         except Exception as e:
             message_str = f'Error on get HELICS Bus Messages for {self._simulation_id} {traceback.format_exc()}'
             log.error(message_str)
