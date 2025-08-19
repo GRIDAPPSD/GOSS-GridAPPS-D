@@ -45,6 +45,8 @@ import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.ScheduledCommandEvent;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -59,7 +61,7 @@ public class RequestSimulation implements Serializable {
 		   NEW, PAUSE, RESUME, STOP
 		}
 	
-	public PowerSystemConfig power_system_config;
+	public List<PowerSystemConfig> power_system_configs;
 
 	public SimulationConfig simulation_config;
 	
@@ -77,17 +79,17 @@ public class RequestSimulation implements Serializable {
 		
 	}
 	
-	public RequestSimulation(PowerSystemConfig power_system_config, SimulationConfig simulation_config){
-		this.power_system_config = power_system_config;
+	public RequestSimulation(List<PowerSystemConfig> power_system_configs, SimulationConfig simulation_config){
+		this.power_system_configs = power_system_configs;
 		this.simulation_config = simulation_config;
 	}
 
-	public PowerSystemConfig getPower_system_config() {
-		return power_system_config;
+	public List<PowerSystemConfig> getPower_system_config() {
+		return power_system_configs;
 	}
 
-	public void setPower_system_config(PowerSystemConfig power_system_config) {
-		this.power_system_config = power_system_config;
+	public void setPower_system_config(List<PowerSystemConfig> power_system_configs) {
+		this.power_system_configs = power_system_configs;
 	}
 
 	public SimulationConfig getSimulation_config() {
@@ -148,7 +150,7 @@ public class RequestSimulation implements Serializable {
         gsonBuilder.setPrettyPrinting();
         Gson gson = gsonBuilder.create();
         RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
-		if(obj.power_system_config==null)
+		if(obj.power_system_configs==null)
 			throw new JsonSyntaxException("Expected attribute power_system_config not found");
 		if(obj.test_config!=null){
 			for(Event event : obj.getTest_config().getEvents()){
@@ -160,4 +162,48 @@ public class RequestSimulation implements Serializable {
 		}
 		return obj;
 	}
+
+	public static void main(String[] args) {
+        // Create PowerSystemConfig instances
+        PowerSystemConfig powerSystemConfig1 = new PowerSystemConfig();
+        powerSystemConfig1.setGeographicalRegion_name("Region1");
+        powerSystemConfig1.setSubGeographicalRegion_name("SubRegion1");
+        powerSystemConfig1.setLine_name("Line1");
+
+        PowerSystemConfig powerSystemConfig2 = new PowerSystemConfig();
+        powerSystemConfig2.setGeographicalRegion_name("Region2");
+        powerSystemConfig2.setSubGeographicalRegion_name("SubRegion2");
+        powerSystemConfig2.setLine_name("Line2");
+
+        // Add PowerSystemConfig instances to a list
+        List<PowerSystemConfig> powerSystemConfigs = new ArrayList<>();
+        powerSystemConfigs.add(powerSystemConfig1);
+        powerSystemConfigs.add(powerSystemConfig2);
+
+        // Create the first SimulatorConfig instance
+        SimulatorConfig simulatorConfig1 = new SimulatorConfig();
+        simulatorConfig1.setSimulator("GridLAB-D");
+        
+        // Create the second SimulatorConfig instance
+        SimulatorConfig simulatorConfig2 = new SimulatorConfig();
+        simulatorConfig2.setSimulator("GridLAB-D");
+        
+        // Create SimulationConfig and attach both SimulatorConfig objects
+        SimulationConfig simulationConfig = new SimulationConfig();
+        simulationConfig.addSimulatorConfig(simulatorConfig1); // Add the first SimulatorConfig
+        simulationConfig.addSimulatorConfig(simulatorConfig2); // Add the second SimulatorConfig
+        simulationConfig.setDuration(7200); // Total duration (2 hours)
+
+        // Create the RequestSimulation object
+        RequestSimulation requestSimulation = new RequestSimulation();
+        requestSimulation.setPower_system_config(powerSystemConfigs);
+        requestSimulation.setSimulation_config(simulationConfig); // Attach the SimulationConfig with both SimulatorConfig objects
+        requestSimulation.setSimulation_request_type(RequestSimulation.SimulationRequestType.NEW);
+        requestSimulation.setSimulation_id("simulation-id-12345");
+
+        // Print the RequestSimulation object as JSON
+        System.out.println("RequestSimulation:");
+        System.out.println(requestSimulation.toString());
+    }
 }
+

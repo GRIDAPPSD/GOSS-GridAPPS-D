@@ -68,4 +68,6 @@ public interface SimulationManager {
 
 	void resumeSimulation(String simulationId);
 
+	int assignSimulationPort(String simulationId) throws Exception;
+
 }
