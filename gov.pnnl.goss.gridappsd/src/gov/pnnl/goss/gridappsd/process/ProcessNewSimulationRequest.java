@@ -51,7 +51,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
@@ -79,7 +78,6 @@ import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.ServiceConfig;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutput;
 import gov.pnnl.goss.gridappsd.dto.SimulationOutputObject;
@@ -118,8 +116,6 @@ public class ProcessNewSimulationRequest {
 
 		try {
 
-			File tempDataPathDir =null;
-
 			//1. check if simulation request is valid
 			logManager.info(ProcessStatus.RUNNING, simulationId, "Parsed simulation request: " + simRequest);
 			if (simRequest == null || simRequest.getPower_system_config() == null
@@ -130,23 +126,28 @@ public class ProcessNewSimulationRequest {
 
 			//2. Create simulation working folders for each model in power system config as /tmp/simulationId/modelId
 			logManager.info(ProcessStatus.RUNNING, simulationId,"Creating simulation working folders for simulation Id "+simulationId);	
-			String simulationConfigDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
-			if (simulationConfigDir == null || simulationConfigDir.trim().length()==0) {
+			String tmpWorkingDir = configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH);
+			if (tmpWorkingDir == null || tmpWorkingDir.trim().length()==0) {
 				logManager.error(ProcessStatus.ERROR, simulationId, "GRIDAPPSD_TEMP_PATH not configured correectly ");
 				throw new Exception("GRIDAPPSD_TEMP_PATH not configured correectly");
 			}
-			if(!simulationConfigDir.endsWith(File.separator)){
-				simulationConfigDir = simulationConfigDir+File.separator;
+			if(!tmpWorkingDir.endsWith(File.separator)){
+				tmpWorkingDir = tmpWorkingDir+File.separator;
+			}
+			
+			//Create simulation working directory
+			File simulationWorkingDir = new File(tmpWorkingDir+simulationId);
+			if(!simulationWorkingDir.exists()){
+				simulationWorkingDir.mkdirs();
 			}
 
-			for(int i=0; i<simRequest.power_system_configs.size(); i++){
-				PowerSystemConfig powerSystemConfig = simRequest.power_system_configs.get(i);
-				SimulatorConfig simulatorConfig = simRequest.simulation_config.simulator_configs.get(i);
-				simulationConfigDir = simulationConfigDir+simulationId+File.separator+powerSystemConfig.getLine_name()+File.separator;
-				tempDataPathDir = new File(simulationConfigDir);
-				simulatorConfig.simulation_work_dir = tempDataPathDir.getAbsolutePath();
-				if(!tempDataPathDir.exists()){
-					tempDataPathDir.mkdirs();
+			//Create model working directories for each model in request
+			for(PowerSystemConfig powerSystemConfig : simRequest.power_system_configs){
+				SimulatorConfig simulatorConfig = powerSystemConfig.simulator_config;
+				File modelWorkingDir = new File(simulationWorkingDir,powerSystemConfig.getLine_name());
+				simulatorConfig.simulation_work_dir = modelWorkingDir.getAbsolutePath();
+				if(!modelWorkingDir.exists()){
+					modelWorkingDir.mkdirs();
 				}
 			}
 			
@@ -161,20 +162,20 @@ public class ProcessNewSimulationRequest {
 			simulationContext.put("simulationId",simulationId);
 			simulationContext.put("simulationHost","127.0.0.1");
 			simulationContext.put("simulationPort",simRequest.simulation_config.simulation_broker_port);
-			simulationContext.put("simulationDir",simulationConfigDir);
+			simulationContext.put("simulationDir",simulationWorkingDir);
 
 
 			SimulationContext simContext = new SimulationContext();
 			simContext.setRequest(simRequest);
 			simContext.simulationId = simulationId;
 			simContext.simulationPort = simRequest.simulation_config.simulation_broker_port;
-			simContext.simulationDir = tempDataPathDir.getAbsolutePath();
-			if(simRequest.getSimulation_config().getSimulator_configs().getSimulator().equals("GridLAB-D"))
+			simContext.simulationDir = simulationWorkingDir.getAbsolutePath();
+			/*if(simRequest.getSimulation_config().getSimulator_configs().getSimulator().equals("GridLAB-D"))
 				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm";
 			else if(simRequest.getSimulation_config().getSimulator().equals("OCHRE"))
-				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json";
+				simContext.startupFile = tempDataPathDir.getAbsolutePath()+File.separator+"ochre_helics_config.json";*/
 			simContext.simulationUser = username;
-			try{
+			/*(try{
 				simContext.simulatorPath = serviceManager.getService(simRequest.getSimulation_config().getSimulator()).getExecution_path();
 			}catch(NullPointerException e){
 				if(serviceManager.getService(simRequest.getSimulation_config().getSimulator()) == null){
@@ -183,7 +184,7 @@ public class ProcessNewSimulationRequest {
 					logManager.error(ProcessStatus.ERROR, simulationId,"Cannot find execution path for service ="+simRequest.getSimulation_config().getSimulator());
 				}
 				e.printStackTrace();
-			}
+			}*/
 
 			//5. Check GridLAB-D interface to use fncs or helics
 			String gldInterface = null;
@@ -194,18 +195,21 @@ public class ProcessNewSimulationRequest {
 			}
 			
 			//6. Generate configuration files for the requested simulator
-			logManager.info(ProcessStatus.RUNNING, simulationId,"Creating simulation and power grid model files for simulation Id "+simulationId);
+			
 
 			int numFederates = simRequest.power_system_configs.size()+1;
 
-			for(SimulatorConfig simulatorConfig : simRequest.simulation_config.simulator_configs){
+			for(PowerSystemConfig powerSystemConfig : simRequest.power_system_configs){
+				
+				logManager.info(ProcessStatus.RUNNING, simulationId,"Creating simulation and power grid model files for simulation Id "+simulationId+" and model id "+powerSystemConfig.Line_name);
+				SimulatorConfig simulatorConfig = powerSystemConfig.simulator_config;
 				
 				String simulator = simulatorConfig.getSimulator();
 
 				//generate config files for requested simulator
 				//if requested simulator is opendss
 				if(simulator.equalsIgnoreCase(DSSAllConfigurationHandler.CONFIGTARGET)){
-					Properties simulationParams = generateSimulationParameters(simRequest);
+					Properties simulationParams = generateSimulationParameters(simRequest, powerSystemConfig);
 					simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 					simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, simulatorConfig.getSimulation_work_dir());
 					if(gldInterface!=null){
@@ -214,7 +218,7 @@ public class ProcessNewSimulationRequest {
 					configurationManager.generateConfiguration(DSSAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 				}
 				else if(simulator.equalsIgnoreCase(OchreAllConfigurationHandler.TYPENAME)){
-					Properties simulationParams = generateSimulationParameters(simRequest);
+					Properties simulationParams = generateSimulationParameters(simRequest, powerSystemConfig);
 					simulationParams.put(DSSAllConfigurationHandler.SIMULATIONID, simulationId);
 					simulationParams.put(DSSAllConfigurationHandler.DIRECTORY, simulatorConfig.getSimulation_work_dir());
 					
@@ -236,7 +240,7 @@ public class ProcessNewSimulationRequest {
 					configurationManager.generateConfiguration(OchreAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 				}
 				else { //otherwise use gridlabd
-					Properties simulationParams = generateSimulationParameters(simRequest);
+					Properties simulationParams = generateSimulationParameters(simRequest, powerSystemConfig);
 					simulationParams.put(GLDAllConfigurationHandler.SIMULATIONID, simulationId);
 					simulationParams.put(GLDAllConfigurationHandler.DIRECTORY, simulatorConfig.getSimulation_work_dir());
 					if(gldInterface!=null){
@@ -245,10 +249,8 @@ public class ProcessNewSimulationRequest {
 					configurationManager.generateConfiguration(GLDAllConfigurationHandler.TYPENAME, simulationParams, new PrintWriter(new StringWriter()), simulationId, username);
 				}
 				
-				logManager.debug(ProcessStatus.RUNNING, simulationId, "Simulation and power grid model files generated for simulation Id ");
-
-
-
+				logManager.debug(ProcessStatus.RUNNING, simulationId, "Simulation and power grid model files generated for simulation Id for model id "+powerSystemConfig.Line_name);
+		
 			}
 
 			
@@ -340,13 +342,15 @@ public class ProcessNewSimulationRequest {
 			simContext.serviceInstanceIds = connectServiceInstanceIds;
 			simContext.appInstanceIds = connectedAppInstanceIds;
 			
-
-			ServiceInfo simulationServiceInfo = serviceManager.getService(simRequest.getSimulation_config().simulator);
-			List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
-			for(String service : serviceDependencies) {
-				String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
-				if(serviceInstanceId!=null)
-					simContext.addServiceInstanceIds(serviceInstanceId);
+			
+			for(PowerSystemConfig powerSystemConfig: simRequest.power_system_configs){
+				ServiceInfo simulationServiceInfo = serviceManager.getService(powerSystemConfig.simulator_config.simulator);
+				List<String> serviceDependencies = simulationServiceInfo.getService_dependencies();
+				for(String service : serviceDependencies) {
+					String serviceInstanceId = serviceManager.startServiceForSimultion(service, null, simulationContext);
+					if(serviceInstanceId!=null)
+						simContext.addServiceInstanceIds(serviceInstanceId);
+				}
 			}
 			
 			dataManager.processDataRequest(simContext, "timeseries", simulationId, null, username);
@@ -355,9 +359,11 @@ public class ProcessNewSimulationRequest {
 			testManager.handleTestRequest(simRequest.getTest_config(), simContext);
 			
 			// start simulation
-			logManager.debug(ProcessStatus.RUNNING, simulationId,"Starting simulation for id " + simulationId);
-			simulationManager.startSimulation(simulationId, simRequest.getSimulation_config(),simContext, simulationContext);
-			logManager.info(ProcessStatus.RUNNING, simulationId,"Started simulation for id " + simulationId);
+			for(PowerSystemConfig powerSystemConfig : simRequest.power_system_configs){
+				logManager.debug(ProcessStatus.RUNNING, simulationId,"Starting simulation for simulation id " + simulationId+" and model id "+powerSystemConfig.Line_name);
+				simulationManager.startSimulation(simulationId, simRequest.getSimulation_config(),simContext, simulationContext, powerSystemConfig);
+				logManager.info(ProcessStatus.RUNNING, simulationId,"Started simulation for id " + simulationId+" and model id "+powerSystemConfig.Line_name);
+			}
 			
 
 		} catch (Exception e) {
@@ -372,13 +378,13 @@ public class ProcessNewSimulationRequest {
 	}
 
 
-	Properties generateSimulationParameters(RequestSimulation requestSimulation){
+	Properties generateSimulationParameters(RequestSimulation requestSimulation, PowerSystemConfig powerSystemConfig){
 		Properties params = new Properties();
 
 		//TODO where to get feeder id?
-		params.put(GLDAllConfigurationHandler.MODELID, requestSimulation.power_system_config.Line_name);
+		params.put(GLDAllConfigurationHandler.MODELID, powerSystemConfig.Line_name);
 
-		ModelCreationConfig modelConfig = requestSimulation.getSimulation_config().model_creation_config;
+		ModelCreationConfig modelConfig = powerSystemConfig.simulator_config.model_creation_config;
 		double zFraction = modelConfig.z_fraction;
 		double iFraction = modelConfig.i_fraction;
 		double pFraction = modelConfig.p_fraction;
@@ -398,7 +404,7 @@ public class ProcessNewSimulationRequest {
 			 params.put(GLDAllConfigurationHandler.SCHEDULENAME, "");
 		}
 		params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
-		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, requestSimulation.getSimulation_config().power_flow_solver_method);
+		params.put(GLDAllConfigurationHandler.SOLVERMETHOD, powerSystemConfig.simulator_config.power_flow_solver_method);
 
 		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST, requestSimulation.getSimulation_config().getSimulation_broker_location());
 		params.put(GLDAllConfigurationHandler.SIMULATIONBROKERPORT, new Integer(requestSimulation.getSimulation_config().getSimulation_broker_port()).toString());
@@ -411,7 +417,7 @@ public class ProcessNewSimulationRequest {
 			params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
 		}
 		
-		params.put(GLDAllConfigurationHandler.SIMULATOR, requestSimulation.getSimulation_config().getSimulator());
+		params.put(GLDAllConfigurationHandler.SIMULATOR, powerSystemConfig.simulator_config.simulator);
 		params.put(GLDAllConfigurationHandler.RUN_REALTIME, requestSimulation.getSimulation_config().run_realtime);
 		
 		if(modelConfig.separated_loads_file!=null){

@@ -41,6 +41,7 @@ package gov.pnnl.goss.gridappsd.api;
 
 import java.util.Map;
 
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
@@ -58,7 +59,7 @@ public interface SimulationManager {
 	 * @param simulationFile
 	 * @param simulationConfig	Map<String, Object> simulationContext
 	 */
-	void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext);
+	void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig);
 	
 	SimulationContext getSimulationContextForId(String simulationId);
 

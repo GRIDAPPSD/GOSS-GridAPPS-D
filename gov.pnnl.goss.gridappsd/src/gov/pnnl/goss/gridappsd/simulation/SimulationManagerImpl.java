@@ -62,6 +62,7 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
@@ -137,7 +138,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext){
+	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig){
 		//TODO: remove simulationContext parameter after refactoring service manager
 
 			try {
@@ -149,7 +150,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			simContexts.put(simContext.getSimulationId(), simContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext, powerSystemConfig);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}

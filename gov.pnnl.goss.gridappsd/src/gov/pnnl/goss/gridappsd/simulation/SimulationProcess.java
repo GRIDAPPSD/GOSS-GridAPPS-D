@@ -1,28 +1,11 @@
 package gov.pnnl.goss.gridappsd.simulation;
 
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
-import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -31,12 +14,25 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.configuration.GLDAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.configuration.OchreAllConfigurationHandler;
+import gov.pnnl.goss.gridappsd.dto.FncsBridgeResponse;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.security.SecurityConfig;
-
-import com.google.gson.Gson;
 
 public class SimulationProcess extends Thread {
     private static Logger log = LoggerFactory.getLogger(SimulationProcess.class);
@@ -70,10 +66,12 @@ public class SimulationProcess extends Thread {
     Client client;
     SecurityConfig securityConfig;
     Map<String, Object> simulationContex;
+    PowerSystemConfig powerSystemConfig;
 
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
             SimulationConfig simulationConfig, String simulationId, LogManager logManager,
-            AppManager appManager, Client client, SecurityConfig securityConfig, Map<String, Object> simulationContex){
+            AppManager appManager, Client client, SecurityConfig securityConfig, 
+            Map<String, Object> simulationContex, PowerSystemConfig powerSystemConfig){
         this.simContext = simContext;
         this.serviceManager = serviceManager;
         this.simulationConfig = simulationConfig;
@@ -83,6 +81,7 @@ public class SimulationProcess extends Thread {
         this.client = client;
         this.securityConfig = securityConfig;
         this.simulationContex = simulationContex;
+        this.powerSystemConfig = powerSystemConfig;
     }
 
 
@@ -94,8 +93,17 @@ public class SimulationProcess extends Thread {
         InitializedTracker isInitialized = new InitializedTracker();
         SimulationTracker isFinished = new SimulationTracker();
         try{
-
-            File simulationFile = new File(simContext.getStartupFile());
+        	
+        	String simulator = powerSystemConfig.simulator_config.simulator;
+        	String simulatorPath = serviceManager.getService(powerSystemConfig.simulator_config.getSimulator()).getExecution_path();
+        	String simulatorWorkingDir = powerSystemConfig.simulator_config.getSimulation_work_dir();
+        	
+        	File simulationFile = null;
+        	if(simulator.equals("GridLAB-D"))
+        		simulationFile = new File(simulatorWorkingDir+File.separator+"model_startup.glm");
+        	else if(simulator.equals("OCHRE"))
+        		simulationFile = new File(simulatorWorkingDir+File.separator+"ochre_helics_config.json");
+            
 
             //if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
             File serviceDir = serviceManager.getServiceConfigDirectory();
@@ -115,13 +123,13 @@ public class SimulationProcess extends Thread {
             ProcessBuilder simulatorBuilder = new ProcessBuilder();
             List<String> commands = new ArrayList<String>();
             
-            if(simulationConfig.getSimulator().equals(OchreAllConfigurationHandler.TYPENAME)){
+            if(simulator.equals(OchreAllConfigurationHandler.TYPENAME)){
             	
             	
             	//Start gridlabd
 //				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
 				//File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
-	            File gldStartupFile = new File(simContext.simulationDir+File.separator+"model_startup.glm");
+	            File gldStartupFile = new File(simulatorWorkingDir+File.separator+"model_startup.glm");
 				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
 //            	commands.add(simContext.getSimulatorPath());
 				commands.add(gldSimulatorPath);
@@ -140,8 +148,8 @@ public class SimulationProcess extends Thread {
             	
             	//Start ochre
             	commands = new ArrayList<String>();
-            	commands.add(simContext.getSimulatorPath());
-            	ServiceInfo serviceInfo = serviceManager.getService(simulationConfig.getSimulator());
+            	commands.add(simulatorPath);
+            	ServiceInfo serviceInfo = serviceManager.getService(simulator);
             	List<String> staticArgsList = serviceInfo.getStatic_args();
         		for(String staticArg : staticArgsList) {
         		    if(staticArg!=null){
@@ -161,12 +169,12 @@ public class SimulationProcess extends Thread {
 	            logManager.info(ProcessStatus.RUNNING, simulationId, "Command for ochre ready "+String.join(" ",commands));
 
             }
-            else if(simulationConfig.getSimulator().equals(gridlabdConstant)){
-            	commands.add(simContext.getSimulatorPath());
+            else if(powerSystemConfig.simulator_config.getSimulator().equals(gridlabdConstant)){
+            	commands.add(simulatorPath);
             	commands.add(simulationFile.getAbsolutePath());
             	simulatorBuilder.command(commands);
             } else {
-            	log.warn("No known simulator: "+simulationConfig.getSimulator());
+            	log.warn("No known simulator: "+simulator);
             }
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
@@ -182,7 +190,7 @@ public class SimulationProcess extends Thread {
 
             //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
 
-            logManager.info(ProcessStatus.RUNNING, simulationId,  simulationConfig.getSimulator()+" simulator started");
+            logManager.info(ProcessStatus.RUNNING, simulationId,  simulator+" simulator started");
 
             //Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);

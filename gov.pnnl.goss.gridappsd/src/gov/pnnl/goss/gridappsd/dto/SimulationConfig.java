@@ -74,7 +74,7 @@ public class SimulationConfig  implements Serializable {
 	public String simulation_broker_location = DEFAULT_SIMULATION_BROKER_LOCATION;
 	
 
-	public List<SimulatorConfig> simulator_configs = new ArrayList<SimulatorConfig>();
+	//public List<SimulatorConfig> simulator_configs = new ArrayList<SimulatorConfig>();
 	
 
 	public int getDuration() {
@@ -128,7 +128,7 @@ public class SimulationConfig  implements Serializable {
 	public void setSimulation_broker_location(String simulation_broker_location) {
 		this.simulation_broker_location = simulation_broker_location;
 	}
-	public void addSimulatorConfig(SimulatorConfig simulatorConfig) {
+	/*public void addSimulatorConfig(SimulatorConfig simulatorConfig) {
 		if (simulatorConfig != null) {
 			this.simulator_configs.add(simulatorConfig);
 		}
@@ -138,7 +138,7 @@ public class SimulationConfig  implements Serializable {
 	}
 	public void setSimulator_configs(List<SimulatorConfig> simulator_configs) {
 		this.simulator_configs = simulator_configs;
-	}
+	}*/
 
 	@Override
 	public String toString() {
