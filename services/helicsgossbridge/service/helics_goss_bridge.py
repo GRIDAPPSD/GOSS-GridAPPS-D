@@ -1249,7 +1249,7 @@ class HelicsGossBridge(object):
         
         try:
             for modelMrid, graphModel in self._graphModels["distributionModels"].items():
-                map_file_dir = f"/home/vale/workspace/{self._simulation_id}/{modelMrid}/model_dict.json"
+                map_file_dir = f"/tmp/gridappsd_tmp/{self._simulation_id}/{modelMrid}/model_dict.json"
                 with open(map_file_dir, "r", encoding="utf-8") as file_input_stream:
                     file_dict = json.load(file_input_stream)
                 feeders = file_dict.get("feeders", [])
@@ -1798,7 +1798,7 @@ class HelicsGossBridge(object):
 
     def _generate_cimgraph_models(self):
         os.environ['CIMG_CIM_PROFILE'] = 'cimhub_2023'
-        os.environ['CIMG_URL'] = 'http://localhost:8889/bigdata/namespace/kb/sparql'
+        os.environ['CIMG_URL'] = 'http://blazegraph:8080/bigdata/namespace/kb/sparql'
         os.environ['CIMG_DATABASE'] = 'powergridmodel'
         os.environ['CIMG_HOST'] = 'localhost'
         os.environ['CIMG_PORT'] = '61613'
