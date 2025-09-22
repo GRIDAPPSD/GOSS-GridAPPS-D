@@ -107,7 +107,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 	
 	
 	public static final String HELICS_PREFIX = "{\n"
-											  + "\t\"name\": \"PROCESS_ID\",\n"
+											  + "\t\"name\": \"MODEL_ID\",\n"
 											  + "\t\"log_level\": \"DATA\",\n"
 											  + "\t\"period\": 1.0,\n"
 											  + "\t\"broker\": \"BROKER_LOCATION:BROKER_PORT\",\n"
@@ -249,7 +249,7 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
 			String brokerPort = String.valueOf(simulationBrokerPort);
 			String HELICS_PREFIX1 = HELICS_PREFIX.replaceAll("BROKER_LOCATION", brokerLocation);
 			String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort);
-			result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId)
+			result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId).replaceAll("MODEL_ID", modelId)
 					+ result.replaceAll("    ", "\t\t\t\t\t").replaceAll("  ", "\t\t\t\t").replaceAll("}", "\t\t\t}\n") + HELICS_SUFFIX;
 		}
 

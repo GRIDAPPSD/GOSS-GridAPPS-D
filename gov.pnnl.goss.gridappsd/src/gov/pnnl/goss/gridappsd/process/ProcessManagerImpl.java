@@ -115,10 +115,6 @@ public class ProcessManagerImpl implements ProcessManager {
 
 	ProcessNewSimulationRequest newSimulationProcess = null;
 
-	private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
-
-	private Random randPort = new Random();
-
 	public ProcessManagerImpl(){}
 	public ProcessManagerImpl(ClientFactory clientFactory,
 			ConfigurationManager configurationManager,
@@ -189,24 +185,6 @@ public class ProcessManagerImpl implements ProcessManager {
 	 */
 	static String generateProcessId(){
 		return Integer.toString(Math.abs(new Random().nextInt()));
-	}
-
-	public int assignSimulationPort(String simulationId) throws Exception {
-		Integer simIdKey = new Integer(simulationId);
-		if (!simulationPorts.containsKey(simIdKey)) {
-			int tempPort = 49152 + randPort.nextInt(16384);
-			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
-			while (simulationPorts.containsValue(tempPortObj)) {
-				int newTempPort = 49152 + randPort.nextInt(16384);
-				tempPortObj.set(newTempPort);
-			}
-			simulationPorts.put(simIdKey, tempPortObj);
-			return tempPortObj.get();
-			//TODO: test host:port is available
-		} else {
-			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
-					+ "simulation in progress.");
-		}
 	}
 
 }
