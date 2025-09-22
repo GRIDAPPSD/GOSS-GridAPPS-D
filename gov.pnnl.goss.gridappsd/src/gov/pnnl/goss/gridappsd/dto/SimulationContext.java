@@ -12,9 +12,9 @@ public class SimulationContext implements Serializable {
 	public String simulationHost = "127.0.0.1";
 	public int simulationPort;
 	public String simulationDir;
-	public String startupFile;
+	//public String startupFile;
 	public RequestSimulation request;
-	public String simulatorPath;
+	//public String simulatorPath;
 	public List<String> appInstanceIds;
 	public List<String> serviceInstanceIds;
 	public String simulationUser;
@@ -52,13 +52,13 @@ public class SimulationContext implements Serializable {
 		this.simulationDir = simulationDir;
 	}
 
-	public String getStartupFile() {
+	/*public String getStartupFile() {
 		return startupFile;
 	}
 
 	public void setStartupFile(String startupFile) {
 		this.startupFile = startupFile;
-	}
+	}*/
 
 	public RequestSimulation getRequest() {
 		return request;
@@ -68,13 +68,13 @@ public class SimulationContext implements Serializable {
 		this.request = request;
 	}
 
-	public String getSimulatorPath() {
+	/*public String getSimulatorPath() {
 		return simulatorPath;
 	}
 
 	public void setSimulatorPath(String simulatorPath) {
 		this.simulatorPath = simulatorPath;
-	}
+	}*/
 
 	public List<String> getAppInstanceIds() {
 		return appInstanceIds;

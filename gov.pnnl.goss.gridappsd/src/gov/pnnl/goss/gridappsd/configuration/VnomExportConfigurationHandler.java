@@ -37,7 +37,7 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.configuration;
+/*package gov.pnnl.goss.gridappsd.configuration;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -246,4 +246,4 @@ public class VnomExportConfigurationHandler implements ConfigurationHandler {
 	
 	
 	
-}
+}*/

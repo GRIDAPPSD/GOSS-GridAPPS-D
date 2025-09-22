@@ -463,7 +463,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 
 		if(GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)){
 			startupFileWriter.println("object helics_msg {");
-			startupFileWriter.println("      name "+simulationID+";");
+			startupFileWriter.println("      name "+modelId+";");
 			if(simulator.equalsIgnoreCase("gridlab-d"))
 				startupFileWriter.println("      message_type JSON;");
 			if(run_realtime)
@@ -483,9 +483,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
 		}
 		
 		startupFileWriter.println("object recorder {");
-		startupFileWriter.println("     parent "+simulationID+";");
+		startupFileWriter.println("     parent "+modelId+";");
 		startupFileWriter.println("     property message_type;");
-		startupFileWriter.println("     file "+simulationID+".csv;");
+		startupFileWriter.println("     file "+modelId+".csv;");
 		if(run_realtime)
 			startupFileWriter.println("     interval 1;");
 		else
