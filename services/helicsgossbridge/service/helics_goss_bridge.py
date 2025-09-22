@@ -547,11 +547,11 @@ class HelicsGossBridge(object):
                       f'{json.dumps(self._simulation_request, indent=4, sort_keys=True)}'
         log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
-        run_realtime = self._simulation_request.get("simulation_config", [{}])[0].get("run_realtime", 1)
-        simulation_length = self._simulation_request.get("simulation_config", [{}])[0].get("duration", 0)
-        simulation_start = self._simulation_request.get("simulation_config", [{}])[0].get("start_time", 0)
+        run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime", 1)
+        simulation_length = self._simulation_request.get("simulation_config", {}).get("duration", 0)
+        simulation_start = self._simulation_request.get("simulation_config", {}).get("start_time", 0)
         pause_after_measurements = \
-            self._simulation_request.get("simulation_config", [{}])[0].get("pause_after_measurements", False)
+            self._simulation_request.get("simulation_config", {}).get("pause_after_measurements", False)
         try:
             message = {}
             message['command'] = 'nextTimeStep'
@@ -696,7 +696,7 @@ class HelicsGossBridge(object):
     
     
     def _close_helics_connection(self):
-        helics.helicsFederateFree(self._helics_federate)
+        helics.helicsFederateDisconnect(self._helics_federate)
         helics.helicsCloseLibrary()
     
     
@@ -1069,7 +1069,7 @@ class HelicsGossBridge(object):
                         federateMrid = helics_message_source.split("/")[0]
                         helics_output_dict = json.loads(helics_output)
                         
-                        sim_dict = helics_output_dict.get(self._simulation_id, None)
+                        sim_dict = helics_output_dict.get(federateMrid, None)
                         if sim_dict == None:
                             sim_dict = helics_output_dict
                         simulation_time = int(sim_dict.get("globals",{}).get("clock", 0))
@@ -1090,6 +1090,7 @@ class HelicsGossBridge(object):
                                     if y["measurement_mrid"] not in measurement_filter:
                                         measurement["measurement_mrid"] = y["measurement_mrid"]
                                         phases = y["phases"]
+                                        # conducting_equipment_type = type(y["power_system_resource"]).__name__
                                         conducting_equipment_type_str = y["conducting_equipment_type"]
                                         prop_val_str = gld_properties_dict.get(property_name, None)
                                         propertyValue = prop_val_str
@@ -1248,280 +1249,546 @@ class HelicsGossBridge(object):
         
         try:
             for modelMrid, graphModel in self._graphModels["distributionModels"].items():
+                map_file_dir = f"/home/vale/workspace/{self._simulation_id}/{modelMrid}/model_dict.json"
+                with open(map_file_dir, "r", encoding="utf-8") as file_input_stream:
+                    file_dict = json.load(file_input_stream)
+                feeders = file_dict.get("feeders", [])
                 self._object_property_to_measurement_id[modelMrid] = {}
                 self._object_mrid_to_name[modelMrid] = {}
-                measurements = {}
-                measurements.update(graphModel.graph.get(cim.Analog, {}))
-                measurements.update(graphModel.graph.get(cim.Discrete, {}))
-                capacitors = graphModel.graph.get(cim.LinearShuntCompensator, {})
-                xfmrs = graphModel.graph.get(cim.PowerTransformer, {})
-                regulators = []
-                for xfmr in xfmrs.values():
-                    isRegulator = False
-                    for powerTransformerEnd in xfmr.PowerTransformerEnd:
-                        if powerTransformerEnd.RatioTapChanger:
-                            isRegulator = True
-                            break
-                    for transformerTank in xfmr.TransformerTanks:
-                        for transformerEnd in transformerTank.TransformerTankEnds:
-                            if transformerEnd.RatioTapChanger:
-                                isRegulator = True
-                                break
-                        if isRegulator:
-                            break
-                    if isRegulator:
-                        regulators.append(xfmr)
-                switches = {}
-                switches.update(graphModel.graph.get(cim.LoadBreakSwitch,{}))
-                switches.update(graphModel.graph.get(cim.Breaker,{}))
-                switches.update(graphModel.graph.get(cim.Recloser,{}))
-                inverters = graphModel.graph.get(cim.PowerElectronicsConnection, {})
-                batteries = {}
-                solarpanels = {}
-                for objId, obj in inverters.items():
-                    if isinstance(obj.PowerElectronicsUnit[0], cim.BatteryUnit):
-                        batteries[objId] = obj
-                    elif isinstance(obj.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
-                        solarpanels[objId] = obj
-                synchronousMachines = graphModel.graph.get(cim.SynchronousMachine, {})
-                energy_consumers = graphModel.graph.get(cim.EnergyConsumer, {})
-                #TODO: add more object types to handle
-                for objMrid, obj in measurements.items():
-                    measurement_type = obj.measurementType
-                    phases = obj.phases.value
-                    if phases == "s1":
-                        phases = "1"
-                    elif phases == "s2":
-                        phases = "2"
-                    powerSystemResource = obj.PowerSystemResource
-                    terminal = obj.Terminal
-                    if isinstance(powerSystemResource, cim.LinearShuntCompensator):
-                        if measurement_type == "VA":
-                            object_name = f"cap_{powerSystemResource.name}"
-                            property_name = "shunt_" + phases
-                        elif measurement_type == "Pos":
-                            object_name = f"cap_{powerSystemResource.name}"
-                            property_name = "switch" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                               "type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\n"
-                                               f"measurement_type = {measurement_type}.")
-                    elif isinstance(powerSystemResource, cim.PowerTransformer):
-                        if measurement_type == "VA":
-                            object_name = f"xf_{powerSystemResource.name}"
-                            property_name = "power_in_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "A":
-                            object_name = f"xf_{powerSystemResource.name}"
-                            property_name = "current_in_" + phases
-                        elif measurement_type == "Pos" and powerSystemResource in regulators:
-                            object_name = f"xf_{powerSystemResource.name}"
-                            property_name = "tap_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                               "type.\nValid types for PowerTransformer are VA, PNV, A, and Pos.\n"
-                                               f"measurement_type = {measurement_type}.")
-                    elif isinstance(powerSystemResource, cim.ACLineSegment):
-                        if measurement_type == "VA":
-                            object_name = f"line_{powerSystemResource.name}"
-                            if phases == "1":
-                                property_name = "power_in_A"
-                            elif phases == "2":
-                                property_name = "power_in_B"
+                for x in feeders:
+                    self._model_mrid = x.get("mRID","")
+                    measurements = x.get("measurements",[])
+                    capacitors = x.get("capacitors",[])
+                    regulators = x.get("regulators",[])
+                    switches = x.get("switches",[])
+                    batteries = x.get("batteries", [])
+                    solarpanels = x.get("solarpanels",[])
+                    synchronousMachines = x.get("synchronousmachines", [])
+                    breakers = x.get("breakers", [])
+                    reclosers = x.get("reclosers", [])
+                    energy_consumers = x.get("energyconsumers", [])
+                    #TODO: add more object types to handle
+                    for y in measurements:
+                        measurement_type = y.get("measurementType")
+                        phases = y.get("phases")
+                        if phases == "s1":
+                            phases = "1"
+                        elif phases == "s2":
+                            phases = "2"
+                        conducting_equipment_type = y.get("name")
+                        conducting_equipment_name = y.get("SimObject")
+                        connectivity_node = y.get("ConnectivityNode")
+                        measurement_mrid = y.get("mRID")
+                        if "LinearShuntCompensator" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "shunt_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name;
+                                property_name = "switch" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = conducting_equipment_name;
+                                property_name = "voltage_" + phases;
                             else:
-                                property_name = "power_in_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "A":
-                            object_name = f"line_{powerSystemResource.name}"
-                            if phases == "1":
-                                property_name = "current_in_A"
-                            elif phases == "2":
-                                property_name = "current_in_B"
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "PowerTransformer" in conducting_equipment_type \
+                                or "TransformerTank" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
                             else:
-                                property_name = "current_in_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                            "type.\nValid types for ACLineSegment are VA, PNV, and A.\n"
-                                            f"measurement_type = {measurement_type}.")
-                    elif isinstance(powerSystemResource, (cim.Breaker, cim.LoadBreakSwitch, cim.Recloser)):
-                        if measurement_type == "VA":
-                            object_name = f"swt_{powerSystemResource.name}"
-                            property_name = "power_in_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "Pos":
-                            object_name = f"swt_{powerSystemResource.name}"
-                            property_name = "status"
-                        elif measurement_type == "A":
-                            object_name = f"swt_{powerSystemResource.name}"
-                            property_name = "current_in_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                            "type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\n"
-                                            f"measurement_type = {measurement_type}.")
-                    elif isinstance(powerSystemResource, cim.EnergyConsumer):
-                        if measurement_type == "VA":
-                            object_name = f"ld_{powerSystemResource.name}"
-                            if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for PowerTransformer and TransformerTank are VA, "
+                                                f"PNV, and A.\nmeasurement_type = {measurement_type}.")
+                        elif "RatioTapChanger" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name;
+                                property_name = "tap_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
                             else:
-                                property_name = "measured_power_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "A":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "measured_current_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                            "type.\nValid types for EnergyConsumer are VA, A, and PNV.\n"
-                                            f"measurement_type = {measurement_type}.")
-                    elif isinstance(powerSystemResource, cim.PowerElectronicsConnection):
-                        if isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
-                            suffix = "_pvmtr"
-                        elif isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.BatteryUnit):
-                            suffix = "_stmtr"
-                        else:
-                            continue
-                        if measurement_type == "VA":
-                            object_name = f"{terminal.ConnectivityNode.name}{suffix}"
-                            if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "ACLineSegment" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases == "1":
+                                    property_name = "power_in_A"
+                                elif phases == "2":
+                                    property_name = "power_in_B"
+                                else:
+                                    property_name = "power_in_" + phases
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                if phases == "1":
+                                    property_name = "current_in_A"
+                                elif phases == "2":
+                                    property_name = "current_in_B"
+                                else:
+                                    property_name = "current_in_" + phases
                             else:
-                                property_name = "measured_power_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = f"{terminal.ConnectivityNode.name}{suffix}"
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "A":
-                            object_name = f"{terminal.ConnectivityNode.name}{suffix}"
-                            property_name = "measured_current_" + phases
-                        elif measurement_type == "SoC":
-                            object_name = f"bat_{powerSystemResource.PowerElectronicsUnit[0].name}"
-                            property_name = "state_of_charge"
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for ACLineSegment are VA, PNV, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "LoadBreakSwitch" in conducting_equipment_type \
+                                or "Recloser" in conducting_equipment_type \
+                                or "Breaker" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name
+                                property_name = "status"
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "EnergyConsumer" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases in ["1","2"]:
+                                    property_name = "indiv_measured_power_" + phases;
+                                else:
+                                    property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = connectivity_node;
+                                property_name = "measured_current_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for EnergyConsumer are VA, A, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "PowerElectronicsConnection" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases in ["1","2"]:
+                                    property_name = "indiv_measured_power_" + phases;
+                                else:
+                                    property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = conducting_equipment_name;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "measured_current_" + phases;
+                            elif measurement_type == "SoC":
+                                object_name = conducting_equipment_name
+                                property_name = "state_of_charge"
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and "
+                                                f"PNV.\nmeasurement_type = {measurement_type}")
+                        elif "SynchronousMachine" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = connectivity_node;
+                                property_name = "measured_current_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for SynchronousMachine are VA, A, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
                         else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                            "type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and "
-                                            f"PNV.\nmeasurement_type = {measurement_type}")
-                    elif isinstance(powerSystemResource, cim.SynchronousMachine):
-                        if measurement_type == "VA":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "measured_power_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "voltage_" + phases
-                        elif measurement_type == "A":
-                            object_name = terminal.ConnectivityNode.name
-                            property_name = "measured_current_" + phases
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
-                                            "type.\nValid types for SynchronousMachine are VA, A, and PNV.\n"
-                                            f"measurement_type = {measurement_type}.")
-                    else:
-                        raise RuntimeError("_create_cim_object_map: The PowerSystemResource of the measurement is not "
-                                           "a supported class type.\nValid types are ACLineSegment, "
-                                           "LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, "
-                                           "EnergyConsumer, RatioTapChanger, PowerTransformer, and SynchronousMachine."
-                                           f"\npowerSystemResource = {type(powerSystemResource)}.")
+                            raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a "
+                                            "valid type.\nValid types for conducting_equipment_type are ACLineSegment, "
+                                            "LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, "
+                                            "EnergyConsumer, RatioTapChanger, and PowerTransformer.\n"
+                                            f"conducting_equipment_type = {conducting_equipment_type}.")
 
-                    property_dict = {
-                        "property" : property_name,
-                        "power_system_resource" : powerSystemResource,
-                        "measurement_mrid" : obj.mRID,
-                        "phases" : phases
-                    }
-                    if object_name in self._object_property_to_measurement_id[modelMrid].keys():
-                        self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
-                    else:
-                        self._object_property_to_measurement_id[modelMrid][object_name] = []
-                        self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
-                for obj in capacitors.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : f"{obj.name}",
-                        "phases" : getEqPhases(obj),
-                        "total_phases" : getEqPhases(obj),
-                        "type" : "capacitor",
-                        "prefix" : "cap_"
-                    }
-                for y in regulators:
-                    object_mrids = []
-                    object_name = y.name
-                    object_phases = []
-                    for powerTransformerEnd in y.PowerTransformerEnd:
-                        if powerTransformerEnd.RatioTapChanger:
-                            self._object_mrid_to_name[modelMrid][powerTransformerEnd.RatioTapChanger.mRID] = {
+                        property_dict = {
+                            "property" : property_name,
+                            "conducting_equipment_type" : conducting_equipment_type,
+                            "measurement_mrid" : measurement_mrid,
+                            "phases" : phases
+                        }
+                        if object_name in self._object_property_to_measurement_id[modelMrid].keys():
+                            self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                        else:
+                            self._object_property_to_measurement_id[modelMrid][object_name] = []
+                            self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                    for y in capacitors:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "capacitor",
+                            "prefix" : "cap_"
+                        }
+                    for y in regulators:
+                        object_mrids = y.get("mRIDs",[])
+                        object_name = y.get("bankName")
+                        object_phases = y.get("endPhases",[])
+                        for z in range(len(object_mrids)):
+                            self._object_mrid_to_name[modelMrid][object_mrids[z]] = {
                                 "name" : object_name,
-                                "phases" : "ABC",
-                                "total_phases" : "ABC",
+                                "phases" : object_phases[z],
+                                "total_phases" : "".join(object_phases),
                                 "type" : "regulator",
                                 "prefix" : "xf_"
                             }
-                    for transformerTank in y.TransformerTanks:
-                        for tankEnd in transformerTank.TransformerTankEnds:
-                            if tankEnd.RatioTapChanger:
-                                object_mrids.append(tankEnd.RatioTapChanger.mRID)
-                                object_phases.append(tankEnd.orderedPhases.value)
-                    for z in range(len(object_mrids)):
-                        sortedPhases = deepcopy(object_phases)
-                        sortedPhases.sort()
-                        self._object_mrid_to_name[modelMrid][object_mrids[z]] = {
-                            "name" : object_name,
-                            "phases" : object_phases[z],
-                            "total_phases" : "".join(sortedPhases),
-                            "type" : "regulator",
-                            "prefix" : "xf_"
+                    for y in switches:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "switch",
+                            "prefix" : "sw_"
                         }
-                for obj in switches.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : obj.name,
-                        "phases" : getEqPhases(obj),
-                        "total_phases" : getEqPhases(obj),
-                        "type" : "switch",
-                        "prefix" : "sw_"
-                    }
-                for obj in solarpanels.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : obj.name,
-                        "phases" : getEqPhases(obj),
-                        "total_phases" : getEqPhases(obj),
-                        "type" : "pv",
-                        "prefix" : "inv_pv_"
-                    }
-                for obj in batteries.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : obj.name,
-                        "phases" : getEqPhases(obj),
-                        "total_phases" : getEqPhases(obj),
-                        "type" : "battery",
-                        "prefix" : "inv_bat_"
-                    }
-                for obj in synchronousMachines.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : obj.name,
-                        "phases" : "ABC",
-                        "total_phases" : "ABC",
-                        "type" : "diesel_dg",
-                        "prefix" : "dg_"
-                    }
-                for obj in energy_consumers.values():
-                    self._object_mrid_to_name[modelMrid][obj.mRID] = {
-                        "name" : obj.name,
-                        "phases" : getEqPhases(obj),
-                        "total_phases" : getEqPhases(obj),
-                        "prefix" : "ld_"
-                    }
-                    if "s1" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"] \
-                            or "s2" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"]:
-                        self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "triplex_load"
-                    else:
-                        self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "load"
+                    for y in solarpanels:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "pv",
+                            "prefix" : "pv_"
+                        }
+                    for y in batteries:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "battery",
+                            "prefix" : "batt_"
+                        }
+                    for y in synchronousMachines:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "diesel_dg",
+                            "prefix" : "dg_"
+                        }
+                    for y in breakers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "switch",
+                            "prefix" : "sw_"
+                        }
+                    for y in reclosers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "recloser",
+                            "prefix" : "sw_"
+                        }
+                    for y in energy_consumers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "prefix" : "ld_"
+                        }
+                        if "s1" in self._object_mrid_to_name[modelMrid][y.get("mRID")]["phases"] \
+                                or "s2" in self._object_mrid_to_name[modelMrid][y.get("mRID")]["phases"]:
+                            self._object_mrid_to_name[modelMrid][y.get("mRID")]["type"] = "triplex_load"
+                        else:
+                            self._object_mrid_to_name[modelMrid][y.get("mRID")]["type"] = "load"
+                # measurements = {}
+                # measurements.update(graphModel.graph.get(cim.Analog, {}))
+                # measurements.update(graphModel.graph.get(cim.Discrete, {}))
+                # capacitors = graphModel.graph.get(cim.LinearShuntCompensator, {})
+                # xfmrs = graphModel.graph.get(cim.PowerTransformer, {})
+                # regulators = []
+                # for xfmr in xfmrs.values():
+                #     isRegulator = False
+                #     for powerTransformerEnd in xfmr.PowerTransformerEnd:
+                #         if powerTransformerEnd.RatioTapChanger:
+                #             isRegulator = True
+                #             break
+                #     for transformerTank in xfmr.TransformerTanks:
+                #         for transformerEnd in transformerTank.TransformerTankEnds:
+                #             if transformerEnd.RatioTapChanger:
+                #                 isRegulator = True
+                #                 break
+                #         if isRegulator:
+                #             break
+                #     if isRegulator:
+                #         regulators.append(xfmr)
+                # switches = {}
+                # switches.update(graphModel.graph.get(cim.LoadBreakSwitch,{}))
+                # switches.update(graphModel.graph.get(cim.Breaker,{}))
+                # switches.update(graphModel.graph.get(cim.Recloser,{}))
+                # inverters = graphModel.graph.get(cim.PowerElectronicsConnection, {})
+                # batteries = {}
+                # solarpanels = {}
+                # for objId, obj in inverters.items():
+                #     if isinstance(obj.PowerElectronicsUnit[0], cim.BatteryUnit):
+                #         batteries[objId] = obj
+                #     elif isinstance(obj.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
+                #         solarpanels[objId] = obj
+                # synchronousMachines = graphModel.graph.get(cim.SynchronousMachine, {})
+                # energy_consumers = graphModel.graph.get(cim.EnergyConsumer, {})
+                # #TODO: add more object types to handle
+                # for objMrid, obj in measurements.items():
+                #     measurement_type = obj.measurementType
+                #     phases = obj.phases.value
+                #     if phases == "s1":
+                #         phases = "1"
+                #     elif phases == "s2":
+                #         phases = "2"
+                #     powerSystemResource = obj.PowerSystemResource
+                #     terminal = obj.Terminal
+                #     if isinstance(powerSystemResource, cim.LinearShuntCompensator):
+                #         if measurement_type == "VA":
+                #             object_name = f"cap_{powerSystemResource.name}"
+                #             property_name = "shunt_" + phases
+                #         elif measurement_type == "Pos":
+                #             object_name = f"cap_{powerSystemResource.name}"
+                #             property_name = "switch" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                                "type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\n"
+                #                                f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.PowerTransformer):
+                #         if measurement_type == "VA":
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "current_in_" + phases
+                #         elif measurement_type == "Pos" and powerSystemResource in regulators:
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "tap_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                                "type.\nValid types for PowerTransformer are VA, PNV, A, and Pos.\n"
+                #                                f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.ACLineSegment):
+                #         if measurement_type == "VA":
+                #             object_name = f"line_{powerSystemResource.name}"
+                #             if phases == "1":
+                #                 property_name = "power_in_A"
+                #             elif phases == "2":
+                #                 property_name = "power_in_B"
+                #             else:
+                #                 property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"line_{powerSystemResource.name}"
+                #             if phases == "1":
+                #                 property_name = "current_in_A"
+                #             elif phases == "2":
+                #                 property_name = "current_in_B"
+                #             else:
+                #                 property_name = "current_in_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for ACLineSegment are VA, PNV, and A.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, (cim.Breaker, cim.LoadBreakSwitch, cim.Recloser)):
+                #         if measurement_type == "VA":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "Pos":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "status"
+                #         elif measurement_type == "A":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "current_in_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.EnergyConsumer):
+                #         if measurement_type == "VA":
+                #             object_name = f"ld_{powerSystemResource.name}"
+                #             if phases in ["1","2"]:
+                #                 property_name = "indiv_measured_power_" + phases
+                #             else:
+                #                 property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_current_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for EnergyConsumer are VA, A, and PNV.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.PowerElectronicsConnection):
+                #         if isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
+                #             suffix = "_pvmtr"
+                #         elif isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.BatteryUnit):
+                #             suffix = "_stmtr"
+                #         else:
+                #             continue
+                #         if measurement_type == "VA":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             if phases in ["1","2"]:
+                #                 property_name = "indiv_measured_power_" + phases
+                #             else:
+                #                 property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             property_name = "measured_current_" + phases
+                #         elif measurement_type == "SoC":
+                #             object_name = f"bat_{powerSystemResource.PowerElectronicsUnit[0].name}"
+                #             property_name = "state_of_charge"
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and "
+                #                             f"PNV.\nmeasurement_type = {measurement_type}")
+                #     elif isinstance(powerSystemResource, cim.SynchronousMachine):
+                #         if measurement_type == "VA":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_current_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for SynchronousMachine are VA, A, and PNV.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     else:
+                #         raise RuntimeError("_create_cim_object_map: The PowerSystemResource of the measurement is not "
+                #                            "a supported class type.\nValid types are ACLineSegment, "
+                #                            "LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, "
+                #                            "EnergyConsumer, RatioTapChanger, PowerTransformer, and SynchronousMachine."
+                #                            f"\npowerSystemResource = {type(powerSystemResource)}.")
+
+                #     property_dict = {
+                #         "property" : property_name,
+                #         "power_system_resource" : powerSystemResource,
+                #         "measurement_mrid" : obj.mRID,
+                #         "phases" : phases
+                #     }
+                #     if object_name in self._object_property_to_measurement_id[modelMrid].keys():
+                #         self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                #     else:
+                #         self._object_property_to_measurement_id[modelMrid][object_name] = []
+                #         self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                # for obj in capacitors.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : f"{obj.name}",
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "capacitor",
+                #         "prefix" : "cap_"
+                #     }
+                # for y in regulators:
+                #     object_mrids = []
+                #     object_name = y.name
+                #     object_phases = []
+                #     for powerTransformerEnd in y.PowerTransformerEnd:
+                #         if powerTransformerEnd.RatioTapChanger:
+                #             self._object_mrid_to_name[modelMrid][powerTransformerEnd.RatioTapChanger.mRID] = {
+                #                 "name" : object_name,
+                #                 "phases" : "ABC",
+                #                 "total_phases" : "ABC",
+                #                 "type" : "regulator",
+                #                 "prefix" : "xf_"
+                #             }
+                #     for transformerTank in y.TransformerTanks:
+                #         for tankEnd in transformerTank.TransformerTankEnds:
+                #             if tankEnd.RatioTapChanger:
+                #                 object_mrids.append(tankEnd.RatioTapChanger.mRID)
+                #                 object_phases.append(tankEnd.orderedPhases.value)
+                #     for z in range(len(object_mrids)):
+                #         sortedPhases = deepcopy(object_phases)
+                #         sortedPhases.sort()
+                #         self._object_mrid_to_name[modelMrid][object_mrids[z]] = {
+                #             "name" : object_name,
+                #             "phases" : object_phases[z],
+                #             "total_phases" : "".join(sortedPhases),
+                #             "type" : "regulator",
+                #             "prefix" : "xf_"
+                #         }
+                # for obj in switches.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "switch",
+                #         "prefix" : "sw_"
+                #     }
+                # for obj in solarpanels.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "pv",
+                #         "prefix" : "inv_pv_"
+                #     }
+                # for obj in batteries.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "battery",
+                #         "prefix" : "inv_bat_"
+                #     }
+                # for obj in synchronousMachines.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : "ABC",
+                #         "total_phases" : "ABC",
+                #         "type" : "diesel_dg",
+                #         "prefix" : "dg_"
+                #     }
+                # for obj in energy_consumers.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "prefix" : "ld_"
+                #     }
+                #     if "s1" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"] \
+                #             or "s2" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"]:
+                #         self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "triplex_load"
+                #     else:
+                #         self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "load"
         except Exception as e:
             errStr = f"The cim object map couldn't be created.\nError:{traceback.format_exc()}"
             print(errStr)
