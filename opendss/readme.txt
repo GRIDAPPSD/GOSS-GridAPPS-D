@@ -1,19 +1,21 @@
 The Open Distribution System Simulator, OpenDSS
 
-Copyright (c) 2008-2021, Electric Power Research Institute, Inc.
-Copyright (c) 2017-2021, Battelle Memorial Institute
+Copyright (c) 2008-2023, Electric Power Research Institute, Inc.
+Copyright (c) 2017-2023, Battelle Memorial Institute
 All rights reserved.
 
-opendsscmd version 1.2.15
-=========================
+opendsscmd version 1.7.6
+========================
 
-This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 7.6.5 of the Windows-only version, and source code revision r2181. The major differences between opendsscmd and Windows-only OpenDSS are:
+This is a 64-bit command-line version of the simulator for Windows, Linux and Mac OSX operating systems. It is model-compatible with version 9 of the Windows-only version. The major differences between opendsscmd and Windows-only OpenDSS are:
 
 1 - There is no support for Windows COM automation, and no separate DLL version. (Use FNCS or HELICS instead)
 
 2 - There is no graphical user interface (GUI) or plotting. (Use MATLAB or Python instead)
 
-3 - Automation is provided through the Framework for Network Cosimulation (FNCS) library developed by Pacific Northwest National Laboratory (PNNL). It is  planned to upgrade FNCS with the HELIC framework that is currently under development by several US Department of Energy labs under the Grid Modernization Laboratory Consortium (GMLC) project 1.4.15.
+3 - Automation is provided through the Framework for Network Cosimulation (FNCS) library developed by Pacific Northwest National Laboratory (PNNL), and the HELICS framework developed by several US Department of Energy labs under the Grid Modernization Laboratory Consortium (GMLC) project 1.4.15.
+
+4 - It is built with Free Pascal instead of Delphi.
 
 Installation
 ============
@@ -150,9 +152,66 @@ Change Log
 1.2.15 - retain the user-input line length units for subsequent CIM export
        - installs FNCS and HELICS
 
+1.2.16 - CIM export uses load.class=2 to prevent s1, s2 phases on 3-phase LV loads
+
+1.2.17 - links with HELICS, includes three HELICS examples
+       - Distance (21) and incremental distance (TD21) types added to Relay
+       - fix voltage base for 3-phase VCCS in RMS mode
+       - VCCS will cease to inject current when a terminal opens, e.g., by a Relay
+       - VCCS injects positive sequence current only when in RMS mode
+       - Distance (21) and TD21 relays have a reverse-looking flag
+       - Include the Microsoft Visual C++ 2019 redistributable installer
+
+1.3.0  - Version archived for GridAPPS-D co-simulation
+
+1.4.0  - Using the minP and maxP attributes of PowerElectronicsConnection for CIM export
+
+1.5.0  - builds from the Version 8 source tree, with support for most Version 8 features
+       - fixes to autotransformer losses and 3-winding short-circuit currents
+       - new CIM export of autotransformers, capacitor states, reactors
+       - fixed CIM export of secondary switches, center-tapped delta transformers
+       - fixed the line geometry "make like" to reset the number of phases
+       - increased precision of length conversion to 1609.344 m/mile
+       - fixed the change directory command on Linux
+       - properly initialize list of CIM operational limits in a circuit with no Lines
+       - fixes to CIM phase transpositions on lines and transformers
+       - first implementation of the IEC 61970-302 CIM Dynamics profile for DER
+
+1.6.0  - exporting InvControl and ExpControl to the CIM Dynamics profile
+       - correction to CIM export of transformer magnetizing and exciting current
+
+1.7.0  - updated to version 9.4.1 model features from the Windows-only version
+       - updates for GMDM interoperability tests: orderedPhases, TapChanger, minQ, maxQ attributes
+       - updates for round-trip testing of CIM Dynamics and transformer connections
+       - improvements to ExpControl performance and static solutions
+
+1.7.1  - export CIM leakage impedance as Z (was X)
+       - distribute CIM load losses among short-circuit tests (was all on the first one)
+       - rename BatteryState to BatteryStateKind for CIM export
+
+1.7.2  - fixed some pointer errors and memory leaks (these affect the Windows version as well)
+       - change ConverterControlMode to ConverterControlModeKind in CIM export
+
+1.7.3  - update HELICS interface and examples to version 3.x
+       - change rdf:id to rdf:about="urn:uuid:mRID" in CIM export, removed leading _ from mRIDs
+
+1.7.4  - export CIM TransformerCoreAdmittance.b as a negative number
+       - remove deprecated tculControlMode from CIM export
+       - export CIM TransformerMeshImpedance on the winding 1 kVA base
+
+1.7.5  - allow execution to continue if UUIDs file does not exist
+
+1.7.6  - initialize ExpControl.Vreg in state variable monitor
+       - move CIM p, q, ratedS, ratedU from SynchronousMachine to RotatingMachine
+       - exporting EnergyConnectionProfile for CIM (load, PV, storage, generator shapes)
+       - Fix: CIM export fills in missing ACLineSegment length units from LineCode
+       - Fix: CIM storage export of Pmin and Pmax with pctRated
+       - Fix: CIM export of capacitor b0PerSection was aVRDelay
+       - Fix: added some reverse regulator parameters to CIM export
+       - Fix: added CableInfo.relativePermittivity extension
+       - includes other changes from version 9.6.1.1 in the native Windows build
 
 Open Issues
-
 ===========
 
 1. The regular expressions for the batchedit command, which are implemented in ExecHelper.pas, have become case-sensitive.  They need to be made case-insensitive.
@@ -181,3 +240,4 @@ Use of this software is subject to a license. The terms are in:
 
 1 - A file called "license.txt" distributed with the software, and
 2 - The user manual
+
