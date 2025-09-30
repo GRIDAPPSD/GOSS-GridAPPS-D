@@ -206,27 +206,26 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
             @Override
             public void onMessage(Serializable message) {
             	DataResponse event = (DataResponse)message;
-            	for(String str : event.getDestination().split(".")){
-            		System.out.println(str);
-            	}
-            	//String appOrServiceid = event.getDestination().split("[.]")[2];
             	try{
-            		//TODO: Remove if block once changes made in proven cluster to get measurement name from datatype
-            		if(appOrServiceid==null){
-            			JsonParser parser = new JsonParser();
-        				JsonElement data = parser.parse(event.getData().toString());
-        				if (data.isJsonObject()) {
-        					JsonObject dataObj = data.getAsJsonObject();
-        					if(dataObj.get("datatype")!=null){
-        						String datatype = dataObj.get("datatype").getAsString();
-        						if(datatype!=null)
-        							provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype, instanceId, simulationId, new Date().getTime());
-        					}
+            		
+            		String measurementName = appOrServiceid;
+            		String simulation_id = simulationId;
+            		
+            		JsonParser parser = new JsonParser();
+        			JsonElement data = parser.parse(event.getData().toString());
+        			if (data.isJsonObject()) {
+        				JsonObject dataObj = data.getAsJsonObject();
+        				if(dataObj.get("datatype")!=null){
+        					measurementName = dataObj.get("datatype").getAsString();
         				}
-            		}
-            		else{
-            			provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId, simulationId, new Date().getTime());
-            		}
+        				if(event.getDestination().contains("goss.gridappsd.field.output") && dataObj.get("simulation_id")!=null){
+        					simulation_id = dataObj.get("simulation_id").getAsString();
+        					measurementName = simulation_id;
+        				}
+        			}
+            		
+            		provenWriteProducer.sendBulkMessage(event.getData().toString(), measurementName, instanceId, simulation_id, new Date().getTime());
+            		
                 }catch(Exception e){
                     
                     StringWriter sw = new StringWriter();
