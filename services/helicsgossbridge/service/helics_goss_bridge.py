@@ -980,25 +980,26 @@ class HelicsGossBridge(object):
                 if helics_input_message[modelId]["external_event_handler"] == {}:
                     del helics_input_message[modelId]["external_event_handler"]
             for modelId in helics_input_message.keys():
-                goss_message_converted = json.dumps(helics_input_message[modelId], indent=4, sort_keys=True)
-                infoStr = f"Sending the following message to the simulator. {goss_message_converted}"
-                log.info(infoStr)
-                self._gad_connection.send_simulation_status("RUNNING", infoStr, "INFO")
-                if federate_state == 2 and helics_input_message != {}:
-                    helics_msg = helics.helicsEndpointCreateMessage(helics_input_endpoint)
-                    helics.helicsMessageSetDestination(helics_msg, f"{modelId}/helics_input")
-                    helics.helicsMessageSetString(helics_msg, goss_message_converted)
-                    helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
-                    helics.helicsMessageFree(helics_msg)
-                publish_to_helics_bus_finish = time.perf_counter()
-                publish_to_helics_profile = {
-                    "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start \
-                        - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
-                    "time_messege_processing": publish_to_helics_bus_finish - publish_to_helics_bus_start,
-                    "total_time": publish_to_helics_bus_finish - test_goss_message_format.get("time_received",
-                                                                                            publish_to_helics_bus_start)
-                }
-                log.debug(f"Message Processing Profile: {json.dumps(publish_to_helics_profile, indent=4, sort_keys=True)}")
+                if len(helics_input_message[modelId]) > 0:
+                    goss_message_converted = json.dumps(helics_input_message[modelId], indent=4, sort_keys=True)
+                    infoStr = f"Sending the following message to federate {modelId}: {goss_message_converted}"
+                    log.info(infoStr)
+                    self._gad_connection.send_simulation_status("RUNNING", infoStr, "INFO")
+                    if federate_state == 2 and helics_input_message != {}:
+                        helics_msg = helics.helicsEndpointCreateMessage(helics_input_endpoint)
+                        helics.helicsMessageSetDestination(helics_msg, f"{modelId}/helics_input")
+                        helics.helicsMessageSetString(helics_msg, goss_message_converted)
+                        helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
+                        helics.helicsMessageFree(helics_msg)
+                    publish_to_helics_bus_finish = time.perf_counter()
+                    publish_to_helics_profile = {
+                        "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start \
+                            - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
+                        "time_messege_processing": publish_to_helics_bus_finish - publish_to_helics_bus_start,
+                        "total_time": publish_to_helics_bus_finish - test_goss_message_format.get("time_received",
+                                                                                                publish_to_helics_bus_start)
+                    }
+                    log.debug(f"Message Processing Profile: {json.dumps(publish_to_helics_profile, indent=4, sort_keys=True)}")
         except ValueError as ve:
             raise ValueError(ve)
         except Exception as ex:
