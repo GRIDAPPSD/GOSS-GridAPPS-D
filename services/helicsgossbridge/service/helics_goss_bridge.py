@@ -1431,9 +1431,9 @@ class HelicsGossBridge(object):
                         "prefix" : "cap_"
                     }
                 for y in regulators:
-                    object_mrids = y.get("mRID",[])
+                    object_mrids = y.get("mRIDs",[])
                     object_name = y.get("bankName")
-                    object_phases = y.get("endPhase",[])
+                    object_phases = y.get("endPhases",[])
                     for z in range(len(object_mrids)):
                         self._object_mrid_to_name[object_mrids[z]] = {
                             "name" : object_name,
