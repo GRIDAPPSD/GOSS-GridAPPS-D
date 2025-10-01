@@ -41,8 +41,11 @@ package gov.pnnl.goss.gridappsd.simulation;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.felix.dm.annotation.api.Component;
 import org.apache.felix.dm.annotation.api.ServiceDependency;
@@ -59,6 +62,7 @@ import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
@@ -104,6 +108,11 @@ public class SimulationManagerImpl implements SimulationManager{
 	
 	private Map<String, SimulationContext> simContexts  = new HashMap<String, SimulationContext>();
 //	private Map<String, SimulationProcess> simProcesses = new HashMap<String, SimulationProcess>();
+
+	private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
+
+	private Random randPort = new Random();
+
 	public SimulationManagerImpl(){ }
 
 
@@ -129,7 +138,7 @@ public class SimulationManagerImpl implements SimulationManager{
 	 * @param simulationFile
 	 */
 	@Override
-	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext){
+	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig){
 		//TODO: remove simulationContext parameter after refactoring service manager
 
 			try {
@@ -141,7 +150,7 @@ public class SimulationManagerImpl implements SimulationManager{
 			simContexts.put(simContext.getSimulationId(), simContext);
 			
 			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext);
+						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext, powerSystemConfig);
 //			simProcesses.put(simContext.getSimulationId(), simProc);
 			simProc.start();
 	}
@@ -186,6 +195,23 @@ public class SimulationManagerImpl implements SimulationManager{
 	public SimulationContext getSimulationContextForId(String simulationId){
 		return this.simContexts.get(simulationId);
 	}
-	
-	
+
+	public int assignSimulationPort(String simulationId) throws Exception {
+		Integer simIdKey = new Integer(simulationId);
+		if (!simulationPorts.containsKey(simIdKey)) {
+			int tempPort = 49152 + randPort.nextInt(16384);
+			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
+			while (simulationPorts.containsValue(tempPortObj)) {
+				int newTempPort = 49152 + randPort.nextInt(16384);
+				tempPortObj.set(newTempPort);
+			}
+			simulationPorts.put(simIdKey, tempPortObj);
+			return tempPortObj.get();
+			//TODO: test host:port is available
+		} else {
+			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
+					+ "simulation in progress.");
+		}
+	}
+
 }

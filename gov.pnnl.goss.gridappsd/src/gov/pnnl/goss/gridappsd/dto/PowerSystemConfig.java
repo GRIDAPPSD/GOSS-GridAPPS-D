@@ -44,8 +44,10 @@ import java.io.Serializable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-// TODO change to be a dto rather than full implementation of getters and setters.
 public class PowerSystemConfig implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+
 	public PowerSystemConfig(){
 	}
 	public PowerSystemConfig(String GeographicalRegion_name, 
@@ -61,6 +63,8 @@ public class PowerSystemConfig implements Serializable {
 	public String GeographicalRegion_name;
 
 	public String Line_name;
+	
+	public SimulatorConfig simulator_config;
 
 	public String getSubGeographicalRegion_name() {
 		return SubGeographicalRegion_name;
@@ -92,6 +96,13 @@ public class PowerSystemConfig implements Serializable {
 		return gson.toJson(this);
 	}
 	
+	public SimulatorConfig getSimulator_config() {
+		return simulator_config;
+	}
+	
+	public void setSimulator_config(SimulatorConfig simulator_config) {
+		this.simulator_config = simulator_config;
+	}
 	
 	public static PowerSystemConfig parse(String jsonString){
 		Gson  gson = new Gson();

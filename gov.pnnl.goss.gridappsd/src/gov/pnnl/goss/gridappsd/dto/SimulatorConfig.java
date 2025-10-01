@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, Battelle Memorial Institute All rights reserved.
+ * Copyright  2017, Battelle Memorial Institute All rights reserved.
  * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
  * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
  * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
@@ -37,38 +37,77 @@
  * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
  ******************************************************************************/ 
-package gov.pnnl.goss.gridappsd.api;
+package gov.pnnl.goss.gridappsd.dto;
 
-import java.util.Map;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationConfig;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
-/**
- * This represents Internal Function 405 Simulation Control Manager.
- * This is the management function that controls the running/execution of the Distribution Simulator (401).
- * @author shar064 
- */
 
-public interface SimulationManager {
+public class SimulatorConfig  implements Serializable {
+	private static final long serialVersionUID = -2995486912804104569L;
+
+	//eg, forward backward sweeper
+	public String power_flow_solver_method;
+	//the name of the simulator that will be used to run the simulation, e.g. GridLAB-D, OpenDSS, etc.
+	public String simulator;
 	
-	/**
-	 * This method is called by Process Manager to start a simulation
-	 * @param simulationId
-	 * @param simulationFile
-	 * @param simulationConfig	Map<String, Object> simulationContext
-	 */
-	void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext, Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig);
+	//eg "simulation_output": [{"name":"objectname", "properties": ["prop1","prop2"]},{"name":"object2name","properties":["prop1","prop2"]}]
+	public SimulationOutput simulation_output = new SimulationOutput();
 	
-	SimulationContext getSimulationContextForId(String simulationId);
-
-	void endSimulation(String simulationId);
-
-	void pauseSimulation(String simulationId);
-
-	void resumeSimulation(String simulationId);
-
-	int assignSimulationPort(String simulationId) throws Exception;
-
+	public ModelCreationConfig model_creation_config = new ModelCreationConfig(); 
+	
+	//temp working folder for simulation files
+	public String simulation_work_dir;
+	
+	public String getPower_flow_solver_method() {
+		return power_flow_solver_method;
+	}
+	public void setPower_flow_solver_method(String power_flow_solver_method) {
+		this.power_flow_solver_method = power_flow_solver_method;
+	}
+	
+	public String getSimulator() {
+		return simulator;
+	}
+	public void setSimulator(String simulator) {
+		this.simulator = simulator;
+	}
+	
+	public SimulationOutput getSimulation_output() {
+		return simulation_output;
+	}
+	public void setSimulation_output(SimulationOutput simulation_output) {
+		this.simulation_output = simulation_output;
+	}
+	public ModelCreationConfig getModel_creation_config() {
+		return model_creation_config;
+	}
+	public void setModel_creation_config(ModelCreationConfig model_creation_config) {
+		this.model_creation_config = model_creation_config;
+	}
+	public String getSimulation_work_dir() {
+		return simulation_work_dir;
+	}
+	public void setSimulation_work_dir(String simulation_work_dir) {
+		this.simulation_work_dir = simulation_work_dir;
+	}
+	
+	
+	@Override
+	public String toString() {
+		Gson  gson = new Gson();
+		return gson.toJson(this);
+	}
+		
+	public static SimulatorConfig parse(String jsonString){
+		Gson  gson = new Gson();
+		SimulatorConfig obj = gson.fromJson(jsonString, SimulatorConfig.class);
+		if(obj.simulator==null)
+			throw new JsonSyntaxException("Expected attribute simulator not found");
+		return obj;
+	}
 }
