@@ -1,35 +1,317 @@
 /*
- * Master Gradle build script
- *
- * Depends on bndPlugin property set by settings.gradle.
- * and bnd_* values from gradle.properties.
+ * Master Gradle build script for GridAPPS-D
+ * Updated for JDK 21 compatibility
  */
 
-import aQute.bnd.build.Workspace
-import aQute.bnd.osgi.Constants
-
-/* Add bnd gradle plugin as a script dependency */
-buildscript {
-  dependencies {
-    classpath bndPlugin
-  }
+plugins {
+    id 'biz.aQute.bnd' version '7.1.0' apply false
+    id 'com.diffplug.spotless' version '6.25.0' apply false
 }
 
-/* Initialize the bnd workspace */
-Workspace.setDriver(Constants.BNDDRIVER_GRADLE)
-Workspace.addGestalt(Constants.GESTALT_BATCH, null)
-ext.bndWorkspace = new Workspace(rootDir, bnd_cnf).setOffline(gradle.startParameter.offline)
+allprojects {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 
-ext.cnf = rootProject.project(bnd_cnf)
-
-/* Configure the subprojects */
 subprojects {
-  def bndProject = bndWorkspace.getProject(name)
-  if (bndProject != null) {
-    plugins.apply 'biz.aQute.bnd'
-  }
+    apply plugin: 'java'
+    apply plugin: 'biz.aQute.bnd'
+    apply plugin: 'com.diffplug.spotless'
+
+    // Spotless configuration for code formatting
+    spotless {
+        java {
+            // Use Eclipse formatter if available
+            if (rootProject.file('.settings/eclipse-java-formatter.xml').exists()) {
+                eclipse().configFile(rootProject.file('.settings/eclipse-java-formatter.xml'))
+            }
+
+            // Ensure files end with a newline
+            endWithNewline()
+
+            // Remove trailing whitespace
+            trimTrailingWhitespace()
+
+            // Target all Java files
+            target 'src/**/*.java', 'test/**/*.java'
+
+            // Exclude generated files
+            targetExclude 'build/**', 'bin/**', 'generated/**'
+        }
+    }
+
+    // Explicit Java toolchain configuration for JDK 21
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    // Configure encoding
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    // Print build info
+    def javaVersion = System.getProperty('java.version')
+    println "Building ${project.name} with Java ${javaVersion} (target: ${java.targetCompatibility})"
 }
 
-task wrapper(type: Wrapper) {
-  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
+// Custom task to build and assemble the Felix launcher distribution
+task assembleLauncher(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Assembles the Felix launcher distribution with all bundles'
+
+    dependsOn ':gov.pnnl.goss.gridappsd:jar'
+
+    into "$buildDir/launcher"
+
+    // Copy launcher class and resources
+    from('gov.pnnl.goss.gridappsd/launcher') {
+        include 'config.properties'
+        into '.'
+    }
+
+    doLast {
+        println "Launcher distribution assembled in: $buildDir/launcher"
+        println "Bundle directory: $buildDir/launcher/bundle"
+    }
+}
+
+// Task to collect all bundle JARs
+task collectBundles(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Collects all OSGi bundles into the launcher bundle directory'
+
+    // Only depend on production JAR, skip test modules
+    dependsOn ':gov.pnnl.goss.gridappsd:jar'
+    dependsOn assembleLauncher
+
+    into "$buildDir/launcher/bundle"
+
+    // Collect GridAPPS-D bundles
+    from(project(':gov.pnnl.goss.gridappsd').jar) {
+        include '*.jar'
+    }
+
+    // Collect GOSS bundles from local repository
+    from('../GOSS/cnf/releaserepo') {
+        include '**/*.jar'
+        exclude '**/*-sources.jar'
+        exclude '**/*-javadoc.jar'
+        eachFile { file ->
+            file.path = file.name
+        }
+        includeEmptyDirs = false
+    }
+
+    // Collect CIMHub library from BND cache
+    from('cnf/cache/7.1.0/CIMHub') {
+        include 'cimhub.lib-2.0.3.jar'
+    }
+
+    // Collect Apache Jena OSGi from BND cache (Maven Central version has same dexx dependency issue)
+    from('cnf/cache/7.1.0/GOSS Dependencies') {
+        include 'org.apache.jena.osgi-3.7.0.jar'
+    }
+
+    // Download Maven dependencies matching GOSS build dependencies from libraries.bnd
+    // Prefer Maven Central over GOSS-Repository for consistency with GOSS build
+    doFirst {
+        def felixDeps = [
+            // Core Felix framework (needed on classpath for ServiceLoader, skipped during bundle installation)
+            'org.apache.felix:org.apache.felix.framework:7.0.5',
+
+            // OSGi Service APIs
+            'org.osgi:org.osgi.service.component:1.5.1',
+            'org.osgi:org.osgi.util.promise:1.3.0',
+            'org.osgi:org.osgi.util.function:1.2.0',
+
+            // Felix OSGi bundles
+            'org.apache.felix:org.apache.felix.scr:2.2.10',
+            'org.apache.felix:org.apache.felix.configadmin:1.9.26',
+            'org.apache.felix:org.apache.felix.gogo.command:1.1.2',
+            'org.apache.felix:org.apache.felix.gogo.runtime:1.1.6',
+            'org.apache.felix:org.apache.felix.gogo.shell:1.1.4',
+            'org.apache.felix:org.apache.felix.http.servlet-api:3.0.0',
+            'org.apache.felix:org.apache.felix.http.jetty:4.1.14',
+            'org.apache.felix:org.apache.felix.dependencymanager:4.6.1',
+            'org.apache.felix:org.apache.felix.metatype:1.2.4',
+            'org.apache.felix:org.apache.felix.log:1.2.6',
+
+            // SLF4J (GOSS uses 2.0.13+ per libraries.bnd)
+            'org.slf4j:slf4j-api:2.0.13',
+            'org.slf4j:slf4j-simple:2.0.13',
+
+            // Apache Aries SPI Fly (OSGi ServiceLoader support for SLF4J 2.x)
+            'org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.7',
+            'org.ow2.asm:asm:9.7',
+            'org.ow2.asm:asm-commons:9.7',
+            'org.ow2.asm:asm-tree:9.7',
+            'org.ow2.asm:asm-analysis:9.7',
+            'org.ow2.asm:asm-util:9.7',
+
+            // Jackson (GOSS uses 2.17.2 per libraries.bnd)
+            'com.fasterxml.jackson.core:jackson-core:2.17.2',
+            'com.fasterxml.jackson.core:jackson-databind:2.17.2',
+            'com.fasterxml.jackson.core:jackson-annotations:2.17.2',
+
+            // GSON (GOSS uses 2.11.0 per bnd.bnd)
+            'com.google.code.gson:gson:2.11.0',
+
+            // ActiveMQ OSGi bundles
+            'org.apache.activemq:activemq-osgi:5.18.6',
+            'org.apache.activemq:activemq-client:5.18.6',
+            'org.apache.activemq:activemq-shiro:5.18.6',
+            'org.fusesource.hawtbuf:hawtbuf:1.11',
+            'org.fusesource.hawtdispatch:hawtdispatch:1.22',
+            'org.fusesource.stompjms:stompjms-client:1.19',
+
+            // Shiro (required by ActiveMQ)
+            'org.apache.shiro:shiro-core:1.13.0',
+            'org.apache.shiro:shiro-web:1.13.0',
+
+            // HTTP Components (GOSS uses 4.5.14 per bnd.bnd)
+            'org.apache.httpcomponents:httpclient:4.5.14',
+            'org.apache.httpcomponents:httpcore:4.4.16',
+            'org.apache.httpcomponents:httpclient-osgi:4.5.14',
+            'org.apache.httpcomponents:httpcore-osgi:4.4.16',
+
+            // Commons libraries (GOSS versions per bnd.bnd)
+            'commons-io:commons-io:2.16.1',
+            'commons-lang:commons-lang:2.6',
+            'org.apache.commons:commons-lang3:3.17.0',
+            'commons-pool:commons-pool:1.6',
+            'org.apache.commons:commons-pool2:2.12.0',
+            'commons-dbcp:commons-dbcp:1.4',
+            'commons-logging:commons-logging:1.2',
+
+            // XStream (GOSS uses 1.4.20 per bnd.bnd)
+            'com.thoughtworks.xstream:xstream:1.4.20',
+
+            // NOTE: Apache Jena 3.7.0 is included from BND cache above, not Maven Central
+            // Maven Central version requires dexx-collections dependency that isn't an OSGi bundle
+
+            // Spring (GOSS uses 6.1.13 per bnd.bnd)
+            'org.springframework:spring-beans:6.1.13',
+            'org.springframework:spring-context:6.1.13',
+            'org.springframework:spring-core:6.1.13',
+
+            // JMS API (GOSS uses 2.0.1 per bnd.bnd)
+            'javax.jms:javax.jms-api:2.0.1',
+
+            // Geronimo JTA
+            'org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1',
+
+            // JAXB
+            'javax.xml.bind:jaxb-api:2.3.1',
+            'com.sun.activation:javax.activation:1.2.0',
+
+            // JAX-RS
+            'javax.ws.rs:jsr311-api:1.1.1',
+
+            // OSGI JDBC service
+            'org.osgi:org.osgi.service.jdbc:1.0.0',
+
+            // Javax annotation (GOSS uses 1.3.2 per bnd.bnd)
+            'javax.annotation:javax.annotation-api:1.3.2'
+        ]
+
+        def destDir = file("$buildDir/launcher/bundle")
+        destDir.mkdirs()
+
+        // Download Maven dependencies
+        felixDeps.each { dep ->
+            def parts = dep.split(':')
+            def group = parts[0].replace('.', '/')
+            def artifact = parts[1]
+            def version = parts[2]
+            def jarName = "${artifact}-${version}.jar"
+            def url = "https://repo1.maven.org/maven2/${group}/${artifact}/${version}/${jarName}"
+            def destFile = new File(destDir, jarName)
+
+            if (!destFile.exists()) {
+                println "Downloading ${jarName}..."
+                new URL(url).withInputStream { input ->
+                    destFile.withOutputStream { output ->
+                        output << input
+                    }
+                }
+            }
+        }
+    }
+
+    doLast {
+        def bundleCount = fileTree("$buildDir/launcher/bundle").include('*.jar').files.size()
+        println "Collected ${bundleCount} bundles"
+    }
+}
+
+// Task to compile launcher
+task compileLauncher(type: JavaCompile) {
+    group = 'GridAPPS-D'
+    description = 'Compiles the Felix launcher'
+
+    source = fileTree('gov.pnnl.goss.gridappsd/launcher/src/main/java')
+    destinationDirectory = file("$buildDir/launcher-classes")
+    classpath = files("$buildDir/launcher/bundle/org.apache.felix.framework-7.0.5.jar")
+    sourceCompatibility = '21'
+    targetCompatibility = '21'
+
+    dependsOn collectBundles
+
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+// Task to create launcher JAR
+task launcherJar(type: Jar) {
+    group = 'GridAPPS-D'
+    description = 'Creates the launcher JAR file'
+
+    archiveFileName = 'gridappsd-launcher.jar'
+    destinationDirectory = file("$buildDir/launcher")
+
+    from("$buildDir/launcher-classes")
+
+    manifest {
+        attributes(
+            'Main-Class': 'gov.pnnl.goss.gridappsd.launcher.GridAPPSDLauncher',
+            'Class-Path': fileTree("$buildDir/launcher/bundle").include('*.jar').files.collect {
+                "bundle/${it.name}"
+            }.join(' ')
+        )
+    }
+
+    dependsOn compileLauncher
+
+    doLast {
+        println "Launcher JAR created: ${archiveFile.get()}"
+    }
+}
+
+// Main distribution task
+task dist {
+    group = 'GridAPPS-D'
+    description = 'Creates complete GridAPPS-D distribution'
+
+    dependsOn launcherJar
+
+    doLast {
+        println ""
+        println "============================================"
+        println "GridAPPS-D Distribution Ready"
+        println "============================================"
+        println "Location: $buildDir/launcher"
+        println ""
+        println "To run GridAPPS-D:"
+        println "  cd $buildDir/launcher"
+        println "  java -jar gridappsd-launcher.jar"
+        println "============================================"
+    }
 }

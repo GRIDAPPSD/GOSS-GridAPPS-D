@@ -24,10 +24,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
-import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -145,7 +145,7 @@ public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
   public static <T> RuntimeTypeAdapterFactory<T> of(Class<T> baseType, String typeFieldName, boolean maintainType) {
     return new RuntimeTypeAdapterFactory<T>(baseType, typeFieldName, maintainType);
   }
-  
+
   /**
    * Creates a new runtime type adapter using for {@code baseType} using {@code
    * typeFieldName} as the type field name. Type field names are case sensitive.
@@ -209,14 +209,14 @@ public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
 
     return new TypeAdapter<R>() {
       @Override public R read(JsonReader in) throws IOException {
-        JsonElement jsonElement = Streams.parse(in);
+        JsonElement jsonElement = new JsonParser().parse(in);
         JsonElement labelJsonElement;
         if (maintainType) {
             labelJsonElement = jsonElement.getAsJsonObject().get(typeFieldName);
         } else {
             labelJsonElement = jsonElement.getAsJsonObject().remove(typeFieldName);
         }
-        
+
         if (labelJsonElement == null) {
           throw new JsonParseException("cannot deserialize " + baseType
               + " because it does not define a field named " + typeFieldName);
@@ -243,7 +243,7 @@ public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
         JsonObject jsonObject = delegate.toJsonTree(value).getAsJsonObject();
 
         if (maintainType) {
-          Streams.write(jsonObject, out);
+          gson.toJson(jsonObject, out);
           return;
         }
 
@@ -254,11 +254,11 @@ public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
               + " because it already defines a field named " + typeFieldName);
         }
         clone.add(typeFieldName, new JsonPrimitive(label));
-        
+
         for (Map.Entry<String, JsonElement> e : jsonObject.entrySet()) {
           clone.add(e.getKey(), e.getValue());
         }
-        Streams.write(clone, out);
+        gson.toJson(clone, out);
       }
     }.nullSafe();
   }

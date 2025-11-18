@@ -20,3 +20,12 @@ cnf/release/index.xml.sha
 cnf/release/index.xml
 cnf/Local/index.xml.sha
 cnf/Local/index.xml
+*.log
+
+# Gradle build output
+build/
+
+# BND generated files
+cnf/ext/felix.xml
+cnf/Local/
+cnf/local/

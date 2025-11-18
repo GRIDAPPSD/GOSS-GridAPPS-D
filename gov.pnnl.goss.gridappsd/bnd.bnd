@@ -1,16 +1,12 @@
 -buildpath: \
-	org.apache.felix.dependencymanager,\
-	org.apache.felix.dependencymanager.annotation,\
-	org.apache.felix.dependencymanager.runtime,\
 	biz.aQute.bnd.annotation,\
 	pnnl.goss.core.core-api;version=latest,\
 	pnnl.goss.core.goss-core-security;version=latest,\
 	pnnl.goss.core.goss-core-server-api;version=latest,\
 	pnnl.goss.core.goss-client;version=latest,\
 	pnnl.goss.core.goss-core-server;version=latest,\
-	pnnl.goss.core.goss-core-server-web;version=latest,\
 	pnnl.goss.core.goss-core-server-registry;version=latest,\
-	com.springsource.javax.jms,\
+	javax.jms-api,\
 	slf4j.api,\
 	org.apache.activemq.activemq-osgi,\
 	com.springsource.javax.management.j2ee,\
@@ -27,7 +23,6 @@
 	osgi.enroute.junit.wrapper,\
 	osgi.enroute.hamcrest.wrapper,\
 	osgi.enroute.base.api,\
-	org.mockito.mockito-all,\
 	httpcore,\
 	cimhub.lib;version=2.0.3,\
 	httpclient,\
@@ -41,10 +36,8 @@
 	org.apache.servicemix.bundles.poi;version=3.17,\
 	org.apache.commons.commons-collections4;version=4.4
 
--plugin org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;log=debug
-	
 -sub: *.bnd
--runee: JavaSE-1.8
--runfw: org.apache.felix.framework;version='5.4.0'
+-runee: JavaSE-21
+-runfw: org.apache.felix.framework;version='[7.0.5,8)'
 -runbundles: org.apache.felix.log;version='[1.0.1,1.0.2)'
 -runrequires: osgi.identity;filter:='(osgi.identity=httpcore)'

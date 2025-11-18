@@ -5,9 +5,9 @@
 #
 
 
-javac.source: 			1.8
-javac.target: 			1.8
--runee:					JavaSE-1.8
+javac.source: 			21
+javac.target: 			21
+-runee:					JavaSE-21
 
 Service-Component: 		*
 -dsannotations: 		*

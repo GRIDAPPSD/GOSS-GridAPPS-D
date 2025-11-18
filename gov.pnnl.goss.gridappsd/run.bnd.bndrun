@@ -22,9 +22,7 @@
 	org.apache.commons.io;version='[2.4.0,2.4.1)',\
 	org.apache.commons.pool;version='[1.5.4,1.5.5)',\
 	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
-	org.apache.felix.dependencymanager,\
-	org.apache.felix.dependencymanager.runtime,\
-	org.apache.felix.dependencymanager.shell,\
+	org.apache.felix.scr;version='[2.2.0,3.0.0)',\
 	org.apache.felix.gogo.command;version='[0.14.0,0.14.1)',\
 	org.apache.felix.gogo.runtime;version='[0.12.1,0.12.2)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.10.1)',\
@@ -54,8 +52,6 @@
 	pnnl.goss.core.goss-core-server-api;version=latest,\
 	pnnl.goss.core.goss-core-server-registry;version=latest,\
 	pnnl.goss.core.security-propertyfile;version=latest,\
-	pnnl.goss.core.security-system;version=latest,\
-	pnnl.goss.core.security-jwt;version=latest,\
 	org.apache.felix.http.jetty;version='[2.2.2,2.3)',\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
@@ -119,5 +115,5 @@
 	${shared.runrequires}
 	
 
--runfw: org.apache.felix.framework;version='[5.0.0,5.0.0]'
--runee: JavaSE-1.8
+-runfw: org.apache.felix.framework;version='[7.0.5,8)'
+-runee: JavaSE-21

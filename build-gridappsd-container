@@ -6,14 +6,14 @@ Script for building the gridappsd container.
 This script pulls the gridappsd_base docker image, cleans the project, exports the project, and builds the gridappsd container.
 
 Usage:
-    python build-gridappsd-container <base_version> [--output_version <output_version>]
+    python build-gridappsd-container [--base-version <base_version>] [--output-version <output_version>]
 
 Arguments:
-    base_version (str): The version of the gridappsd_base docker image.
-    output_version (str, optional): The output tag version for local development. Default is "local".
+    base-version (str, optional): The version of the gridappsd_base docker image. Default is "rc2".
+    output-version (str, optional): The output tag version for local development. Default is "local".
 
 Example:
-    python build-gridappsd-container.py 2.3.0 --output_version 2.3.1
+    python build-gridappsd-container.py --base-version rc2 --output-version local
 
 """
 
@@ -22,28 +22,32 @@ import subprocess
 import shutil
 
 
-def execute(cmd: str | list[str]):
+def execute(cmd: str | list[str], shell: bool = False):
     """
     Executes a command in the shell and prints the output.
 
     Args:
-        cmd (str | list[str]): The command to execute. If a string, it will be split into a list of arguments.
+        cmd (str | list[str]): The command to execute. If a string and shell=False, it will be split into a list of arguments.
+        shell (bool): Whether to execute the command through the shell.
 
     Raises:
         subprocess.CalledProcessError: If the command returns a non-zero exit code.
 
     """
-    if isinstance(cmd, str):
+    if not shell and isinstance(cmd, str):
         cmd = cmd.split(" ")
-    
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True) as p:
+
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True, shell=shell) as p:
         for line in iter(p.stdout.readline, ""):
             if line.strip():
                 print(line.strip())
-        
+
     p.wait()
     if p.returncode:
-        raise subprocess.CalledProcessError(p.returncode, cmd=" ".join(cmd))
+        if isinstance(cmd, list):
+            raise subprocess.CalledProcessError(p.returncode, cmd=" ".join(cmd))
+        else:
+            raise subprocess.CalledProcessError(p.returncode, cmd=cmd)
             
             
 
@@ -51,17 +55,33 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("base_version",
-                        help="The gridappsd_base docker image version")
-    parser.add_argument("--output_version", default="local",
-                        help="The output tag version for local development")
+    parser.add_argument("--base-version", "--base_version", dest="base_version", default="rc2",
+                        help="The gridappsd_base docker image version (default: rc2)")
+    parser.add_argument("--output-version", "--output_version", dest="output_version", default="local",
+                        help="The output tag version for local development (default: local)")
+    parser.add_argument("--pull", action="store_true",
+                        help="Force pull base image from registry even if it exists locally")
 
     opts = parser.parse_args()
 
-    base_version = opts.base_version
+    # Check if we should pull the base image
+    if opts.pull:
+        print(f"Pulling gridappsd/gridappsd_base:{opts.base_version} from registry (--pull specified)...")
+        execute(f"docker pull gridappsd/gridappsd_base:{opts.base_version}")
+    else:
+        # Check if base image exists locally, pull only if not found
+        result = subprocess.run(
+            f"docker image inspect gridappsd/gridappsd_base:{opts.base_version}".split(),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        if result.returncode != 0:
+            print(f"Local image gridappsd/gridappsd_base:{opts.base_version} not found, pulling from registry...")
+            execute(f"docker pull gridappsd/gridappsd_base:{opts.base_version}")
+        else:
+            print(f"Using local image gridappsd/gridappsd_base:{opts.base_version}")
 
-    execute(f"docker pull gridappsd/gridappsd_base:{opts.base_version}")
     execute("./gradlew clean")
-    shutil.rmtree("gov.pnnl.goss/gridappsd/generated", ignore_errors=True)
-    execute("./gradlew export")
-    execute(f"docker build --build-arg GRIDAPPSD_BASE_VERSION=:{opts.base_version} --no-cache --network=host -t gridappsd:{opts.output_version} .")
+    shutil.rmtree("build/launcher", ignore_errors=True)
+    execute("./gradlew dist")
+    execute(f"docker build --build-arg GRIDAPPSD_BASE_VERSION=:{opts.base_version} --build-arg TIMESTAMP=$(date +%Y%m%d%H%M%S) --network=host -t gridappsd/gridappsd:{opts.output_version} .", shell=True)

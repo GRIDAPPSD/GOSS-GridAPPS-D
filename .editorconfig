@@ -1,0 +1,70 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# This file defines consistent coding styles for GOSS project
+# Supported by VS Code, IntelliJ IDEA, Eclipse, and many other editors
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = tab
+tab_width = 4
+
+# Java files
+[*.java]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+max_line_length = 120
+continuation_indent_size = 8
+
+# Gradle files
+[*.gradle]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Properties files
+[*.{properties,cfg}]
+indent_style = space
+indent_size = 4
+
+# BND files
+[*.{bnd,bndrun}]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Markdown files
+[*.{md,markdown}]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+
+# YAML files (GitHub Actions, etc.)
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# XML files
+[*.xml]
+indent_style = space
+indent_size = 2
+
+# Shell scripts
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+
+# Travis CI (legacy - keeping for reference)
+[.travis.yml]
+indent_style = space
+indent_size = 2
