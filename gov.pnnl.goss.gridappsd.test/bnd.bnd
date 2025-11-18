@@ -25,7 +25,6 @@ Test-Cases: ${test-cases}
 	osgi.enroute.junit.wrapper;version=4.12,\
 	org.mockito.mockito-all,\
 	org.amdatu.testing.configurator;version='[3.1,4)',\
-	org.apache.felix.dependencymanager;version='[4,5)',\
 	org.apache.felix.configadmin,\
 	pnnl.goss.core.core-api;version=latest,\
 	pnnl.goss.core.goss-client;version=latest,\
@@ -77,5 +76,5 @@ Test-Cases: ${test-cases}
 	org.fusesource.stompjms.stompjms-client;version=latest,\
 	pnnl.goss.core.core-api;version=latest,\
 	org.apache.activemq.activemq-osgi;version=latest
--runfw: org.apache.felix.framework;version='[5.2.0,5.2.0]'
--runee: JavaSE-1.8
+-runfw: org.apache.felix.framework;version='[7.0.5,8)'
+-runee: JavaSE-21

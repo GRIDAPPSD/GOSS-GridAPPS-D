@@ -32,7 +32,8 @@ import gov.pnnl.goss.gridappsd.utils.RunCommandLine;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-import pnnl.goss.core.security.SecurityConfig;
+// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+//import pnnl.goss.core.security.SecurityConfig;
 
 public class SimulationProcess extends Thread {
     private static Logger log = LoggerFactory.getLogger(SimulationProcess.class);
@@ -43,15 +44,14 @@ public class SimulationProcess extends Thread {
     public boolean isRunning() {
         return running;
     }
+
     public void setRunning(boolean running) {
         this.running = running;
     }
 
-
     class InitializedTracker {
         public boolean isInited = false;
     }
-
 
     class SimulationTracker {
         public boolean isFinished = false;
@@ -64,14 +64,22 @@ public class SimulationProcess extends Thread {
     LogManager logManager;
     AppManager appManager;
     Client client;
-    SecurityConfig securityConfig;
+    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+    // SecurityConfig securityConfig;
     Map<String, Object> simulationContex;
     PowerSystemConfig powerSystemConfig;
 
+    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+    // public SimulationProcess(SimulationContext simContext, ServiceManager
+    // serviceManager,
+    // SimulationConfig simulationConfig, String simulationId, LogManager
+    // logManager,
+    // AppManager appManager, Client client, SecurityConfig securityConfig,
+    // Map<String, Object> simulationContex, PowerSystemConfig powerSystemConfig){
     public SimulationProcess(SimulationContext simContext, ServiceManager serviceManager,
             SimulationConfig simulationConfig, String simulationId, LogManager logManager,
-            AppManager appManager, Client client, SecurityConfig securityConfig, 
-            Map<String, Object> simulationContex, PowerSystemConfig powerSystemConfig){
+            AppManager appManager, Client client,
+            Map<String, Object> simulationContex, PowerSystemConfig powerSystemConfig) {
         this.simContext = simContext;
         this.serviceManager = serviceManager;
         this.simulationConfig = simulationConfig;
@@ -79,12 +87,11 @@ public class SimulationProcess extends Thread {
         this.logManager = logManager;
         this.appManager = appManager;
         this.client = client;
-        this.securityConfig = securityConfig;
+        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+        // this.securityConfig = securityConfig;
         this.simulationContex = simulationContex;
         this.powerSystemConfig = powerSystemConfig;
     }
-
-
 
     @Override
     public void run() {
@@ -92,174 +99,194 @@ public class SimulationProcess extends Thread {
         Process simulatorProcess = null;
         InitializedTracker isInitialized = new InitializedTracker();
         SimulationTracker isFinished = new SimulationTracker();
-        try{
-        	
-        	String simulator = powerSystemConfig.simulator_config.simulator;
-        	String simulatorPath = serviceManager.getService(powerSystemConfig.simulator_config.getSimulator()).getExecution_path();
-        	String simulatorWorkingDir = powerSystemConfig.simulator_config.getSimulation_work_dir();
-        	
-        	File simulationFile = null;
-        	if(simulator.equals("GridLAB-D"))
-        		simulationFile = new File(simulatorWorkingDir+File.separator+"model_startup.glm");
-        	else if(simulator.equals("OCHRE"))
-        		simulationFile = new File(simulatorWorkingDir+File.separator+"ochre_helics_config.json");
-            
+        try {
 
-            //if(simulationConfig!=null && simulationConfig.model_creation_config!=null && simulationConfig.model_creation_config.schedule_name!=null && simulationConfig.model_creation_config.schedule_name.trim().length()>0){
+            String simulator = powerSystemConfig.simulator_config.simulator;
+            String simulatorPath = serviceManager.getService(powerSystemConfig.simulator_config.getSimulator())
+                    .getExecution_path();
+            String simulatorWorkingDir = powerSystemConfig.simulator_config.getSimulation_work_dir();
+
+            File simulationFile = null;
+            if (simulator.equals("GridLAB-D"))
+                simulationFile = new File(simulatorWorkingDir + File.separator + "model_startup.glm");
+            else if (simulator.equals("OCHRE"))
+                simulationFile = new File(simulatorWorkingDir + File.separator + "ochre_helics_config.json");
+
+            // if(simulationConfig!=null && simulationConfig.model_creation_config!=null &&
+            // simulationConfig.model_creation_config.schedule_name!=null &&
+            // simulationConfig.model_creation_config.schedule_name.trim().length()>0){
             File serviceDir = serviceManager.getServiceConfigDirectory();
-            /*try{
-                RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile().getAbsolutePath()+File.separator+simulationConfig.model_creation_config.schedule_name+".player");
-            }catch(Exception e){
-               log.warn("Could not copy player file to working directory");
-            }*/
-            try{
-                RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+"etc"+File.separator+"appliance_schedules.glm "+simulationFile.getParentFile().getAbsolutePath()+File.separator+GLDAllConfigurationHandler.SCHEDULES_FILENAME);
-            }catch(Exception e){
+            /*
+             * try{
+             * RunCommandLine.runCommand("cp "+serviceDir.getAbsolutePath()+File.separator+
+             * "etc"+File.separator+"zipload_schedule.player "+simulationFile.getParentFile(
+             * ).getAbsolutePath()+File.separator+simulationConfig.model_creation_config.
+             * schedule_name+".player"); }catch(Exception e){
+             * log.warn("Could not copy player file to working directory"); }
+             */
+            try {
+                RunCommandLine.runCommand("cp " + serviceDir.getAbsolutePath() + File.separator + "etc" + File.separator
+                        + "appliance_schedules.glm " + simulationFile.getParentFile().getAbsolutePath() + File.separator
+                        + GLDAllConfigurationHandler.SCHEDULES_FILENAME);
+            } catch (Exception e) {
                 log.warn("Could not copy schedules file to working directory");
             }
-            //}
+            // }
 
-            //Start Simulator
+            // Start Simulator
             ProcessBuilder simulatorBuilder = new ProcessBuilder();
             List<String> commands = new ArrayList<String>();
-            
-            if(simulator.equals(OchreAllConfigurationHandler.TYPENAME)){
-            	
-            	
-            	//Start gridlabd
-//				simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
-				//File gldStartupFile = new File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
-	            File gldStartupFile = new File(simulatorWorkingDir+File.separator+"model_startup.glm");
-				String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
-//            	commands.add(simContext.getSimulatorPath());
-				commands.add(gldSimulatorPath);
-//            	commands.add(simulationFile.getAbsolutePath());
-            	commands.add(gldStartupFile.getAbsolutePath());
+
+            if (simulator.equals(OchreAllConfigurationHandler.TYPENAME)) {
+
+                // Start gridlabd
+                // simulationContext.put("simulationFile",tempDataPathDir.getAbsolutePath()+File.separator+"model_startup.glm");
+                // File gldStartupFile = new
+                // File(simContext.simulationDir+File.separator+"inputs"+File.separator+"gridlabd"+File.separator+"IEEE-13"+File.separator+"IEEE-13_Houses.glm");
+                File gldStartupFile = new File(simulatorWorkingDir + File.separator + "model_startup.glm");
+                String gldSimulatorPath = serviceManager.getService(gridlabdConstant).getExecution_path();
+                // commands.add(simContext.getSimulatorPath());
+                commands.add(gldSimulatorPath);
+                // commands.add(simulationFile.getAbsolutePath());
+                commands.add(gldStartupFile.getAbsolutePath());
                 ProcessBuilder gldSimulatorBuilder = new ProcessBuilder();
                 gldSimulatorBuilder.command(commands);
                 gldSimulatorBuilder.redirectErrorStream(true);
                 gldSimulatorBuilder.redirectOutput();
-	            //launch from directory containing simulation files
+                // launch from directory containing simulation files
                 gldSimulatorBuilder.directory(simulationFile.getParentFile());
-	            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting gridlabd simulator with command "+String.join(" ",commands));
-	            simulatorProcess = gldSimulatorBuilder.start();
-	            // Watch the process
-	            watch(simulatorProcess, "GLDSimulator-"+simulationId);
-            	
-            	//Start ochre
-            	commands = new ArrayList<String>();
-            	commands.add(simulatorPath);
-            	ServiceInfo serviceInfo = serviceManager.getService(simulator);
-            	List<String> staticArgsList = serviceInfo.getStatic_args();
-        		for(String staticArg : staticArgsList) {
-        		    if(staticArg!=null){
-        		    	//Right now this depends on having the simulationContext set, so don't try it if the simulation context is null
-        				if(simulationContex!=null){
-        			    	if(staticArg.contains("(")){
-        				    	 String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
-        				    	 for(String args : replaceArgs){
-        				    		 staticArg = staticArg.replace("("+args+")",simulationContex.get(args).toString());
-        				    	 }
-        			    	}
-        				}
-        		    	commands.add(staticArg);
-        		    }
-        		}
-            	simulatorBuilder.command(commands);
-	            logManager.info(ProcessStatus.RUNNING, simulationId, "Command for ochre ready "+String.join(" ",commands));
+                logManager.info(ProcessStatus.RUNNING, simulationId,
+                        "Starting gridlabd simulator with command " + String.join(" ", commands));
+                simulatorProcess = gldSimulatorBuilder.start();
+                // Watch the process
+                watch(simulatorProcess, "GLDSimulator-" + simulationId);
 
-            }
-            else if(powerSystemConfig.simulator_config.getSimulator().equals(gridlabdConstant)){
-            	commands.add(simulatorPath);
-            	commands.add(simulationFile.getAbsolutePath());
-            	simulatorBuilder.command(commands);
+                // Start ochre
+                commands = new ArrayList<String>();
+                commands.add(simulatorPath);
+                ServiceInfo serviceInfo = serviceManager.getService(simulator);
+                List<String> staticArgsList = serviceInfo.getStatic_args();
+                for (String staticArg : staticArgsList) {
+                    if (staticArg != null) {
+                        // Right now this depends on having the simulationContext set, so don't try it
+                        // if the simulation context is null
+                        if (simulationContex != null) {
+                            if (staticArg.contains("(")) {
+                                String[] replaceArgs = StringUtils.substringsBetween(staticArg, "(", ")");
+                                for (String args : replaceArgs) {
+                                    staticArg = staticArg.replace("(" + args + ")",
+                                            simulationContex.get(args).toString());
+                                }
+                            }
+                        }
+                        commands.add(staticArg);
+                    }
+                }
+                simulatorBuilder.command(commands);
+                logManager.info(ProcessStatus.RUNNING, simulationId,
+                        "Command for ochre ready " + String.join(" ", commands));
+
+            } else if (powerSystemConfig.simulator_config.getSimulator().equals(gridlabdConstant)) {
+                commands.add(simulatorPath);
+                commands.add(simulationFile.getAbsolutePath());
+                simulatorBuilder.command(commands);
             } else {
-            	log.warn("No known simulator: "+simulator);
+                log.warn("No known simulator: " + simulator);
             }
             simulatorBuilder.redirectErrorStream(true);
             simulatorBuilder.redirectOutput();
-            //launch from directory containing simulation files
+            // launch from directory containing simulation files
             simulatorBuilder.directory(simulationFile.getParentFile());
-            logManager.info(ProcessStatus.RUNNING, simulationId, "Starting simulator with command "+String.join(" ",commands));
+            logManager.info(ProcessStatus.RUNNING, simulationId,
+                    "Starting simulator with command " + String.join(" ", commands));
             simulatorProcess = simulatorBuilder.start();
-            logManager.info(ProcessStatus.RUNNING, simulationId, "Started simulator with command "+String.join(" ",commands));
+            logManager.info(ProcessStatus.RUNNING, simulationId,
+                    "Started simulator with command " + String.join(" ", commands));
 
             // Watch the process
-            watch(simulatorProcess, "Simulator-"+simulationId);
+            watch(simulatorProcess, "Simulator-" + simulationId);
 
+            // TODO: check if GridLAB-D is started correctly and send publish simulation
+            // status accordingly
 
-            //TODO: check if GridLAB-D is started correctly and send publish simulation status accordingly
+            logManager.info(ProcessStatus.RUNNING, simulationId, simulator + " simulator started");
 
-            logManager.info(ProcessStatus.RUNNING, simulationId,  simulator+" simulator started");
+            // Subscribe to fncs-goss-bridge output topic
+            GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized,
+                    isFinished, simulationId);
+            client.subscribe("/topic/" + GridAppsDConstants.topic_COSIM_output + "." + simulationId,
+                    gossFncsResponseEvent);
 
-            //Subscribe to fncs-goss-bridge output topic
-            GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized, isFinished, simulationId);
-            client.subscribe("/topic/"+GridAppsDConstants.topic_COSIM_output+"."+simulationId, gossFncsResponseEvent);
-            
-            logManager.info(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation is initialized, currently "+isInitialized.isInited);
+            logManager.info(ProcessStatus.RUNNING, simulationId,
+                    "Checking if co-simulation is initialized, currently " + isInitialized.isInited);
 
             int initAttempts = 0;
-            while(!isInitialized.isInited && initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
-                //Send 'isInitialized' call to fncs-goss-bridge to check initialization until it is initialized.
-                //TODO add limiting how long it checks for initialized, or cancel if the fncs process exits
-                //This call would return true/false for initialization and simulation output of time step 0.
-                
-                client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, "{\"command\": \"isInitialized\"}");
+            while (!isInitialized.isInited && initAttempts < SimulationManagerImpl.MAX_INIT_ATTEMPTS) {
+                // Send 'isInitialized' call to fncs-goss-bridge to check initialization until
+                // it is initialized.
+                // TODO add limiting how long it checks for initialized, or cancel if the fncs
+                // process exits
+                // This call would return true/false for initialization and simulation output of
+                // time step 0.
+
+                client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId,
+                        "{\"command\": \"isInitialized\"}");
                 initAttempts++;
                 Thread.sleep(1000);
 
             }
 
-            if(initAttempts<SimulationManagerImpl.MAX_INIT_ATTEMPTS){
+            if (initAttempts < SimulationManagerImpl.MAX_INIT_ATTEMPTS) {
                 logManager.info(ProcessStatus.RUNNING, simulationId, "Co-Simulation Bridge Initialized");
 
-
-                //Send the start simulation command to the co-simulation bridge
+                // Send the start simulation command to the co-simulation bridge
                 startSimulation(gossFncsResponseEvent, simulationConfig, simulationId);
-                while(!gossFncsResponseEvent.simulationTracker.isFinished){
-                    logManager.debug(ProcessStatus.RUNNING, simulationId, "Checking if co-simulation federation is finished, currently "+gossFncsResponseEvent.simulationTracker.isFinished);
+                while (!gossFncsResponseEvent.simulationTracker.isFinished) {
+                    logManager.debug(ProcessStatus.RUNNING, simulationId,
+                            "Checking if co-simulation federation is finished, currently "
+                                    + gossFncsResponseEvent.simulationTracker.isFinished);
                     Thread.sleep(1000);
                 }
             } else {
                 logManager.error(ProcessStatus.ERROR, simulationId, "Co-simulation Bridge Initialization Failed");
             }
 
-            //call to stop the simulation
-            client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, "{\"command\":  \"stop\"}");
-            logManager.info(ProcessStatus.COMPLETE, simulationId,  "Simulation "+simulationId+" complete");
-        }
-        catch(Exception e){
-                log.error("Error during simulation",e);
-                try {
-                    logManager.error(ProcessStatus.ERROR, simulationId,  "Simulation error: "+e.getMessage());
-                } catch (Exception e1) {
-                    log.error("Error while reporting error status", e);
-                }
+            // call to stop the simulation
+            client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId, "{\"command\":  \"stop\"}");
+            logManager.info(ProcessStatus.COMPLETE, simulationId, "Simulation " + simulationId + " complete");
+        } catch (Exception e) {
+            log.error("Error during simulation", e);
+            try {
+                logManager.error(ProcessStatus.ERROR, simulationId, "Simulation error: " + e.getMessage());
+            } catch (Exception e1) {
+                log.error("Error while reporting error status", e);
+            }
         } finally {
-            //Shut down applications and services connected with the simulation
+            // Shut down applications and services connected with the simulation
             List<String> ids = simContext.getServiceInstanceIds();
             simulatorProcess.destroy();
             try {
                 simulatorProcess.waitFor(10, TimeUnit.MILLISECONDS);
-            } catch(InterruptedException ex) {
+            } catch (InterruptedException ex) {
                 simulatorProcess.destroyForcibly();
             }
-            for(String id : ids){
+            for (String id : ids) {
                 serviceManager.stopServiceInstance(id);
             }
             ids = simContext.getAppInstanceIds();
-            for(String id : ids){
+            for (String id : ids) {
                 appManager.stopAppInstance(id);
             }
         }
     }
 
-
-    private void startSimulation(GossFncsResponseEvent gossEvent, SimulationConfig simulationConfig, String simulationId) throws Exception{
-        // Send the start simulation command to the fncsgossbridge so that it runs it's time loop to move the fncs simulation forward
+    private void startSimulation(GossFncsResponseEvent gossEvent, SimulationConfig simulationConfig,
+            String simulationId) throws Exception {
+        // Send the start simulation command to the fncsgossbridge so that it runs it's
+        // time loop to move the fncs simulation forward
         logManager.debug(ProcessStatus.RUNNING, simulationId, "Sending start simulation to bridge.");
         String message = "{\"command\": \"StartSimulation\"}";
-        client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, message);
+        client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId, message);
     }
 
     private void watch(final Process process, String processName) {
@@ -269,67 +296,71 @@ public class SimulationProcess extends Thread {
                 String line = null;
                 try {
                     while ((line = input.readLine()) != null) {
-                    	if(!line.trim().isEmpty()){
-                    		if(line.contains("DEBUG"))
-                    			logManager.debug(ProcessStatus.RUNNING, processName, line);
-                    		else if(line.contains("ERROR"))
-                    			logManager.error(ProcessStatus.ERROR, processName, line);
-                    		else if(line.contains("FATAL") && !line.contains("INFO"))
-                    			logManager.fatal(ProcessStatus.ERROR, processName, line);
-                    		else if(line.contains("WARN"))
-                    			logManager.warn(ProcessStatus.RUNNING, processName, line);
-                    		else
-                    			logManager.debug(ProcessStatus.RUNNING, processName, line);
-                    	}
+                        if (!line.trim().isEmpty()) {
+                            if (line.contains("DEBUG"))
+                                logManager.debug(ProcessStatus.RUNNING, processName, line);
+                            else if (line.contains("ERROR"))
+                                logManager.error(ProcessStatus.ERROR, processName, line);
+                            else if (line.contains("FATAL") && !line.contains("INFO"))
+                                logManager.fatal(ProcessStatus.ERROR, processName, line);
+                            else if (line.contains("WARN"))
+                                logManager.warn(ProcessStatus.RUNNING, processName, line);
+                            else
+                                logManager.debug(ProcessStatus.RUNNING, processName, line);
+                        }
                     }
                 } catch (IOException e) {
-                	if(!(e.getMessage().contains("Stream closed")))
-                		logManager.error(ProcessStatus.ERROR, processName, "Error reading input stream of simulator process: "+e.getMessage());
+                    if (!(e.getMessage().contains("Stream closed")))
+                        logManager.error(ProcessStatus.ERROR, processName,
+                                "Error reading input stream of simulator process: " + e.getMessage());
                 }
             }
         }.start();
     }
 
-
-    class GossFncsResponseEvent implements GossResponseEvent{
+    class GossFncsResponseEvent implements GossResponseEvent {
         InitializedTracker initializedTracker;
         SimulationTracker simulationTracker;
         LogManager logManager;
         String simulationId;
-        public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized, SimulationTracker simFinished, String id) {
+
+        public GossFncsResponseEvent(LogManager logManager, InitializedTracker initialized,
+                SimulationTracker simFinished, String id) {
             this.logManager = logManager;
             initializedTracker = initialized;
             simulationTracker = simFinished;
             simulationId = id;
         }
 
-
         @Override
         public void onMessage(Serializable response) {
-            try{
-                //Parse response
-                // if it is an isInitialized response, check the value and send timesteps if true, or wait and publish another check if false
+            try {
+                // Parse response
+                // if it is an isInitialized response, check the value and send timesteps if
+                // true, or wait and publish another check if false
 
-                DataResponse dataResponse = (DataResponse)response;
+                DataResponse dataResponse = (DataResponse) response;
 
-                logManager.debug(ProcessStatus.RUNNING, simulationId, "Co-simulation Bridge response:"+dataResponse.getData());
+                logManager.debug(ProcessStatus.RUNNING, simulationId,
+                        "Co-simulation Bridge response:" + dataResponse.getData());
 
-                Gson  gson = new Gson();
+                Gson gson = new Gson();
 
-                FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(), FncsBridgeResponse.class);
-                //log.debug("FNCS output message: "+responseJson);
-                if("isInitialized".equals(responseJson.command)){
-                    log.info("Bridge Initialized response: "+responseJson);
-                    if("True".equals(responseJson.response)){
-                        //log.info("FNCS is initialized "+initializedTracker);
+                FncsBridgeResponse responseJson = gson.fromJson(dataResponse.getData().toString(),
+                        FncsBridgeResponse.class);
+                // log.debug("FNCS output message: "+responseJson);
+                if ("isInitialized".equals(responseJson.command)) {
+                    log.info("Bridge Initialized response: " + responseJson);
+                    if ("True".equals(responseJson.response)) {
+                        // log.info("FNCS is initialized "+initializedTracker);
                         initializedTracker.isInited = true;
                     }
-                } else if("simulationFinished".equals(responseJson.command)) {
-                    //log.debug("FNCS simulation finished");
+                } else if ("simulationFinished".equals(responseJson.command)) {
+                    // log.debug("FNCS simulation finished");
                     simulationTracker.isFinished = true;
                 }
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

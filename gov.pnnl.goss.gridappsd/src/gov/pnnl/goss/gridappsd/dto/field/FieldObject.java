@@ -6,12 +6,12 @@ import com.google.gson.annotations.SerializedName;
 
 public class FieldObject implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	
-	@SerializedName("@id")
-	public String id;
-	
-	@SerializedName("@type")
-	public String type;
+    private static final long serialVersionUID = 1L;
+
+    @SerializedName("@id")
+    public String id;
+
+    @SerializedName("@type")
+    public String type;
 
 }

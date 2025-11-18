@@ -61,142 +61,149 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.Activate;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.security.SecurityConfig;
+// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+//import pnnl.goss.core.security.SecurityConfig;
 
-@Component
-public class GLDZiploadScheduleConfigurationHandler extends
-		BaseConfigurationHandler implements ConfigurationHandler {
+@Component(service = ConfigurationHandler.class)
+public class GLDZiploadScheduleConfigurationHandler
+        extends
+            BaseConfigurationHandler
+        implements
+            ConfigurationHandler {
 
-	Client client = null;
+    Client client = null;
 
-	@ServiceDependency
-	private volatile ConfigurationManager configManager;
-	@ServiceDependency
-	volatile LogManager logManager;
-	@ServiceDependency
-	volatile DataManager dataManager;
-	@ServiceDependency
-	volatile SecurityConfig securityConfig;
+    @Reference
+    private volatile ConfigurationManager configManager;
+    @Reference
+    volatile LogManager logManager;
+    @Reference
+    volatile DataManager dataManager;
+    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+    // @Reference
+    // volatile SecurityConfig securityConfig;
 
-	public static final String TYPENAME = "GridLAB-D Zipload Schedule";
-	public static final String DIRECTORY = "directory";
-	public static final String SIMULATIONNAME = "simulation_name";
-	public static final String SCHEDULENAME = "schedule_name";
-	public static final String SIMULATIONSTARTTIME = "simulation_start_time";
-	public static final String SIMULATIONDURATION = "simulation_duration";
-	public static final String SIMULATIONID = "simulation_id";
-	public static final String STARTTIME_FILTER = "startTime";
-	public static final String ENDTIME_FILTER = "endTime";
-	public static final int TIMEFILTER_YEAR = 2018;
+    public static final String TYPENAME = "GridLAB-D Zipload Schedule";
+    public static final String DIRECTORY = "directory";
+    public static final String SIMULATIONNAME = "simulation_name";
+    public static final String SCHEDULENAME = "schedule_name";
+    public static final String SIMULATIONSTARTTIME = "simulation_start_time";
+    public static final String SIMULATIONDURATION = "simulation_duration";
+    public static final String SIMULATIONID = "simulation_id";
+    public static final String STARTTIME_FILTER = "startTime";
+    public static final String ENDTIME_FILTER = "endTime";
+    public static final int TIMEFILTER_YEAR = 2018;
 
-	public static final String cimhub_PREFIX = "model";
-	
-	final double sqrt3 = Math.sqrt(3);
+    public static final String cimhub_PREFIX = "model";
 
-	public GLDZiploadScheduleConfigurationHandler() {
-	}
+    final double sqrt3 = Math.sqrt(3);
 
-	public GLDZiploadScheduleConfigurationHandler(LogManager logManager,
-			DataManager dataManager) {
-		this.logManager = logManager;
-		this.dataManager = dataManager;
-	}
+    public GLDZiploadScheduleConfigurationHandler() {
+    }
 
-	@Override
-	@Start
-	public void start() {
-		if (configManager != null) {
-			configManager.registerConfigurationHandler(TYPENAME, this);
-		} else {
-			logManager.error(ProcessStatus.ERROR, null, "No Config manager avilable for " + getClass().getSimpleName());
-		}
-	}
+    public GLDZiploadScheduleConfigurationHandler(LogManager logManager,
+            DataManager dataManager) {
+        this.logManager = logManager;
+        this.dataManager = dataManager;
+    }
 
-	@Override
-	public void generateConfig(Properties parameters, PrintWriter out,
-			String processId, String username) throws Exception {
+    @Override
+    @Activate
+    public void start() {
+        if (configManager != null) {
+            configManager.registerConfigurationHandler(TYPENAME, this);
+        } else {
+            logManager.error(ProcessStatus.ERROR, null, "No Config manager avilable for " + getClass().getSimpleName());
+        }
+    }
 
-		logManager.info(ProcessStatus.RUNNING, processId, "Generating zipload schedule GridLAB-D configuration files using parameters: "
-						+ parameters);
+    @Override
+    public void generateConfig(Properties parameters, PrintWriter out,
+            String processId, String username) throws Exception {
 
-		String scheduleName = GridAppsDConstants.getStringProperty(parameters,
-				SCHEDULENAME, null);
-		String directory = GridAppsDConstants.getStringProperty(parameters,
-				DIRECTORY, null);
-		if (directory == null || directory.trim().length() == 0) {
-			logManager.error(ProcessStatus.ERROR, processId, "No " + DIRECTORY + " parameter provided");
-			throw new Exception("Missing parameter " + DIRECTORY);
-		}
+        logManager.info(ProcessStatus.RUNNING, processId,
+                "Generating zipload schedule GridLAB-D configuration files using parameters: "
+                        + parameters);
 
-		long simulationStartTime = GridAppsDConstants.getLongProperty(
-				parameters, SIMULATIONSTARTTIME, -1);
-		if (simulationStartTime < 0) {
-			logManager.error(ProcessStatus.ERROR, processId,"No " + SIMULATIONSTARTTIME + " parameter provided");
-			throw new Exception("Missing parameter " + SIMULATIONSTARTTIME);
-		}
-		long simulationDuration = GridAppsDConstants.getLongProperty(
-				parameters, SIMULATIONDURATION, 0);
-		if (simulationDuration == 0) {
-			logManager.error(ProcessStatus.ERROR, processId,"No " + SIMULATIONDURATION + " parameter provided");
-			throw new Exception("Missing parameter " + SIMULATIONDURATION);
-		}
-		File dir = new File(directory);
-		if (!dir.exists()) {
-			dir.mkdirs();
-		}
-		String tempDataPath = dir.getAbsolutePath();
-		
-		String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "ieeezipload");
-		String simId = "1";
-		if(simulationID==null || simulationID.trim().length()==0){
-			logManager.error(ProcessStatus.ERROR, simulationID,"No "+SIMULATIONID+" parameter provided");
-			throw new Exception("Missing parameter "+SIMULATIONID);
-		}
-		try{
-			simId = simulationID;
-		}catch (Exception e) {
-			logManager.error(ProcessStatus.ERROR, simulationID,"Simulation ID not a valid  "+simulationID+", defaulting to "+simId);
-		}
-				
-		RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic();
-		request.setQueryMeasurement(loadprofile);
-		request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
-		Map<String, Object> queryFilter = new HashMap<String, Object>();
+        String scheduleName = GridAppsDConstants.getStringProperty(parameters,
+                SCHEDULENAME, null);
+        String directory = GridAppsDConstants.getStringProperty(parameters,
+                DIRECTORY, null);
+        if (directory == null || directory.trim().length() == 0) {
+            logManager.error(ProcessStatus.ERROR, processId, "No " + DIRECTORY + " parameter provided");
+            throw new Exception("Missing parameter " + DIRECTORY);
+        }
 
-		Calendar c = Calendar.getInstance();
-		c.setTime(new Date(simulationStartTime*1000));
-		int simulationYear = c.get(Calendar.YEAR);
-		c.set(Calendar.YEAR, TIMEFILTER_YEAR);
-		queryFilter.put(STARTTIME_FILTER, "" + c.getTimeInMillis());
-		c.add(Calendar.SECOND, new Long(simulationDuration).intValue());
-		queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis());
-		request.setQueryFilter(queryFilter);
-		request.setSimulationYear(simulationYear);
-		request.setOriginalFormat("loadprofile");
-		DataResponse resp = (DataResponse) dataManager.processDataRequest(
-				request,
-				ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId,
-				tempDataPath, username);
-		if (resp.getData() == null) {
-			throw new Exception(
-					"No load schedule data in time series data store. Setting useClimate = false.");
-		} else {
-			File loadScheduleFile = new File(directory + File.separator+ scheduleName+".player");
-			FileOutputStream fout = new FileOutputStream(loadScheduleFile);
-			fout.write(resp.getData().toString().getBytes());
-			fout.flush();
-			fout.close();
-		}
+        long simulationStartTime = GridAppsDConstants.getLongProperty(
+                parameters, SIMULATIONSTARTTIME, -1);
+        if (simulationStartTime < 0) {
+            logManager.error(ProcessStatus.ERROR, processId, "No " + SIMULATIONSTARTTIME + " parameter provided");
+            throw new Exception("Missing parameter " + SIMULATIONSTARTTIME);
+        }
+        long simulationDuration = GridAppsDConstants.getLongProperty(
+                parameters, SIMULATIONDURATION, 0);
+        if (simulationDuration == 0) {
+            logManager.error(ProcessStatus.ERROR, processId, "No " + SIMULATIONDURATION + " parameter provided");
+            throw new Exception("Missing parameter " + SIMULATIONDURATION);
+        }
+        File dir = new File(directory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        String tempDataPath = dir.getAbsolutePath();
 
-		logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all GridLAB-D configuration files.");
+        String simulationID = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+        String loadprofile = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, "ieeezipload");
+        String simId = "1";
+        if (simulationID == null || simulationID.trim().length() == 0) {
+            logManager.error(ProcessStatus.ERROR, simulationID, "No " + SIMULATIONID + " parameter provided");
+            throw new Exception("Missing parameter " + SIMULATIONID);
+        }
+        try {
+            simId = simulationID;
+        } catch (Exception e) {
+            logManager.error(ProcessStatus.ERROR, simulationID,
+                    "Simulation ID not a valid  " + simulationID + ", defaulting to " + simId);
+        }
 
-	}
+        RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic();
+        request.setQueryMeasurement(loadprofile);
+        request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
+        Map<String, Object> queryFilter = new HashMap<String, Object>();
+
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(simulationStartTime * 1000));
+        int simulationYear = c.get(Calendar.YEAR);
+        c.set(Calendar.YEAR, TIMEFILTER_YEAR);
+        queryFilter.put(STARTTIME_FILTER, "" + c.getTimeInMillis());
+        c.add(Calendar.SECOND, (int) simulationDuration);
+        queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis());
+        request.setQueryFilter(queryFilter);
+        request.setSimulationYear(simulationYear);
+        request.setOriginalFormat("loadprofile");
+        DataResponse resp = (DataResponse) dataManager.processDataRequest(
+                request,
+                ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId,
+                tempDataPath, username);
+        if (resp.getData() == null) {
+            throw new Exception(
+                    "No load schedule data in time series data store. Setting useClimate = false.");
+        } else {
+            File loadScheduleFile = new File(directory + File.separator + scheduleName + ".player");
+            FileOutputStream fout = new FileOutputStream(loadScheduleFile);
+            fout.write(resp.getData().toString().getBytes());
+            fout.flush();
+            fout.close();
+        }
+
+        logManager.info(ProcessStatus.RUNNING, processId, "Finished generating all GridLAB-D configuration files.");
+
+    }
 
 }
