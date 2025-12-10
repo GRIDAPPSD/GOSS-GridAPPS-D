@@ -65,12 +65,11 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.security.SecurityConfig;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessEventTests {
@@ -98,8 +97,6 @@ public class ProcessEventTests {
     @Mock
     TestManager testManager;
     @Mock
-    SecurityConfig securityConfig;
-    @Mock
     FieldBusManager fieldBusManager;
 
     @Captor
@@ -119,7 +116,7 @@ public class ProcessEventTests {
 
         ProcessEvent pe = new ProcessEvent(processManager, client,
                 newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager,
-                dataManager, testManager, securityConfig, fieldBusManager);
+                dataManager, testManager, fieldBusManager);
 
         PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
         String queryString = "select ?line_name ?subregion_name ?region_name WHERE {?line rdf:type cim:Line." +
@@ -150,7 +147,7 @@ public class ProcessEventTests {
 
         ProcessEvent pe = new ProcessEvent(processManager, client,
                 newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager,
-                dataManager, testManager, securityConfig, fieldBusManager);
+                dataManager, testManager, fieldBusManager);
 
         PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 
@@ -174,7 +171,7 @@ public class ProcessEventTests {
 
         ProcessEvent pe = new ProcessEvent(processManager, client,
                 newSimulationProcess, configurationManager, simulationManager, appManager, logManager, serviceManager,
-                dataManager, testManager, securityConfig, fieldBusManager);
+                dataManager, testManager, fieldBusManager);
 
         PowergridModelDataRequest pgDataRequest = new PowergridModelDataRequest();
 

@@ -57,6 +57,17 @@ subprojects {
         options.release = 21
     }
 
+    // Configure test JVM arguments for Java 21 module system
+    tasks.withType(Test) {
+        jvmArgs = [
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED'
+        ]
+    }
+
     // Print build info
     def javaVersion = System.getProperty('java.version')
     println "Building ${project.name} with Java ${javaVersion} (target: ${java.targetCompatibility})"
@@ -313,5 +324,20 @@ task dist {
         println "  cd $buildDir/launcher"
         println "  java -jar gridappsd-launcher.jar"
         println "============================================"
+    }
+}
+
+// Apply BndRunnerPlugin to project with .bndrun files
+project(':gov.pnnl.goss.gridappsd') {
+    apply plugin: com.pnnl.goss.gradle.BndRunnerPlugin
+
+    bndRunner {
+        // GridAPPS-D bundles from this project
+        bundleDirs = [
+            file('generated'),
+            // GOSS bundles from sibling project
+            file('../../GOSS/pnnl.goss.core/generated')
+        ]
+        configDir = file('conf')
     }
 }

@@ -52,7 +52,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
 
-import javax.jms.Destination;
+import jakarta.jms.Destination;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.*;
 
@@ -64,7 +64,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import gov.pnnl.goss.gridappsd.data.GridAppsDataSourcesImpl;

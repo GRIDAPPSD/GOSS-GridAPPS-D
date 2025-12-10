@@ -36,10 +36,6 @@ shared.runrequires: \
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager.runtime)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager.shell)',\
-	osgi.identity;filter:='(osgi.identity=org.amdatu.configurator.autoconf)',\
-	osgi.identity;filter:='(osgi.identity=org.amdatu.configurator.api)',\
-	osgi.identity;filter:='(osgi.identity=org.amdatu.configurator.properties)',\
-	osgi.identity;filter:='(osgi.identity=org.amdatu.configurator.shell)',\
 	osgi.identity;filter:='(osgi.identity=org.ops4j.pax.logging.pax-logging-api)',\
 	osgi.identity;filter:='(osgi.identity=org.ops4j.pax.logging.pax-logging-service)',\
 	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.runtime)(version>=0.12.1))',\

@@ -55,7 +55,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import gov.pnnl.goss.gridappsd.dto.ApplicationConfig;
 import gov.pnnl.goss.gridappsd.dto.ApplicationObject;
@@ -214,12 +214,12 @@ public class DTOComponentTests {
         // Verify parse from string
         RequestSimulation parsed = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
         assertNotNull(parsed.application_config);
-        assertNotNull(parsed.power_system_config);
+        assertNotNull(parsed.power_system_configs);
         assertNotNull(parsed.simulation_config);
 
         // Create and Initialize with DTO object for serialization
         RequestSimulation config = new RequestSimulation();
-        config.power_system_config = generatePowerSystemConfig();
+        config.power_system_configs = java.util.Collections.singletonList(generatePowerSystemConfig());
         config.simulation_config = generateSimulationConfig();
         config.application_config = generateApplicationConfig();
 
@@ -240,11 +240,10 @@ public class DTOComponentTests {
         // Verify parse from string
         SimulationConfig parsed = SimulationConfig.parse(SIMULATION_CONFIG);
         assertNotNull(parsed.duration);
-        assertNotNull(parsed.model_creation_config);
-        assertNotNull(parsed.power_flow_solver_method);
         assertNotNull(parsed.simulation_name);
-        assertNotNull(parsed.simulation_output);
-        assertNotNull(parsed.simulator);
+        // Note: model_creation_config, power_flow_solver_method, simulation_output,
+        // simulator
+        // have been removed from SimulationConfig in the DTO refactoring
         assertNotNull(parsed.start_time);
         assertNotNull(parsed.run_realtime);
 
@@ -300,7 +299,6 @@ public class DTOComponentTests {
     }
 
     private SimulationConfig generateSimulationConfig() {
-        SimulationOutput configOutput = generateSimulationOutput();
         SimulationConfig config = new SimulationConfig();
         Date d;
         try {
@@ -311,14 +309,12 @@ public class DTOComponentTests {
         }
         config.start_time = d.getTime();
         config.duration = 120;
-        config.simulator = "GridLAB-D";
         config.run_realtime = true;
         config.simulation_name = "ieee8500";
-        config.power_flow_solver_method = "NR";
         config.simulation_id = "12345";
-
-        config.simulation_output = configOutput;
-        config.model_creation_config = generateModelCreationConfig();
+        // Note: simulator, power_flow_solver_method, simulation_output,
+        // model_creation_config
+        // have been removed from SimulationConfig in the DTO refactoring
 
         return config;
     }

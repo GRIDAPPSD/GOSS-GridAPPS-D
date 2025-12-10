@@ -1,18 +1,17 @@
+# Repository configuration for GOSS-GridAPPS-D
+# Maven Central: BUILD-TIME dependency resolution (Maven coordinates)
+# GOSS-Repository: RUNTIME OSGi bundles from GitHub
+# GOSS Local: Latest built GOSS bundles
+
 -plugin: \
 	aQute.lib.deployer.FileRepo;name=GOSS Local;location=${workspace}/../GOSS/cnf/releaserepo,\
-	aQute.bnd.repository.maven.pom.provider.BndPomRepository;\
-		snapshotUrls=https://oss.sonatype.org/content/repositories/osgi/;\
-		releaseUrls=https://repo1.maven.org/maven2/;\
-		pom=${workspace}/cnf/ext/felix.xml;\
-		name=Felix,\
 	aQute.bnd.repository.maven.provider.MavenBndRepository;\
 		releaseUrl=https://repo1.maven.org/maven2/;\
 		index=${.}/central.maven;\
 		name=Maven Central,\
-	aQute.bnd.deployer.repository.FixedIndexedRepo;name=GOSS Dependencies;locations=https://github.com/GridOptics/GOSS-Repository/raw/master/dependencies/index.xml.gz,\
+	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Dependencies;locations=https://github.com/GridOPTICS/GOSS-Repository/raw/master/dependencies/index.xml.gz,\
 	aQute.bnd.deployer.repository.FixedIndexedRepo;name=CIMHub;locations=https://raw.githubusercontent.com/GRIDAPPSD/CIMHub/master/cnf/release/index.xml,\
 	aQute.lib.deployer.FileRepo;name=Local;location=${workspace}/cnf/Local,\
-	aQute.bnd.deployer.repository.FixedIndexedRepo;name=BND Hub;locations=https://raw.githubusercontent.com/bndtools/bundle-hub/master/index.xml.gz,\
 	aQute.lib.deployer.FileRepo;name=Build;location=${workspace}/cnf/buildrepo;latest=false
 
 -releaserepo: Release

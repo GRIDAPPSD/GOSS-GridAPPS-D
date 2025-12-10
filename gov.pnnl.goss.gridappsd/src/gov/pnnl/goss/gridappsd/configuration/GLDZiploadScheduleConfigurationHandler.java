@@ -43,8 +43,8 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
-import gov.pnnl.goss.gridappsd.data.conversion.ProvenLoadScheduleToGridlabdLoadScheduleConverter;
+// TEMP DISABLED: import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
+// TEMP DISABLED: import gov.pnnl.goss.gridappsd.data.conversion.ProvenLoadScheduleToGridlabdLoadScheduleConverter;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
@@ -174,7 +174,7 @@ public class GLDZiploadScheduleConfigurationHandler
 
         RequestTimeseriesDataBasic request = new RequestTimeseriesDataBasic();
         request.setQueryMeasurement(loadprofile);
-        request.setResponseFormat(ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
+        request.setResponseFormat("GridLAB-D");
         Map<String, Object> queryFilter = new HashMap<String, Object>();
 
         Calendar c = Calendar.getInstance();
@@ -189,7 +189,7 @@ public class GLDZiploadScheduleConfigurationHandler
         request.setOriginalFormat("loadprofile");
         DataResponse resp = (DataResponse) dataManager.processDataRequest(
                 request,
-                ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId,
+                "proven", simId,
                 tempDataPath, username);
         if (resp.getData() == null) {
             throw new Exception(

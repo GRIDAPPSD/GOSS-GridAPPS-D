@@ -55,7 +55,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 import java.io.Serializable;
 
-import javax.jms.Destination;
+import jakarta.jms.Destination;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +63,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;

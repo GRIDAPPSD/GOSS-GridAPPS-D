@@ -81,8 +81,8 @@ import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
-import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
+// TEMP DISABLED: import gov.pnnl.goss.gridappsd.data.ProvenTimeSeriesDataManagerImpl;
+// TEMP DISABLED: import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.data.handlers.BlazegraphQueryHandler;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
@@ -287,7 +287,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
             if (useClimate) {
                 RequestTimeseriesDataBasic weatherRequest = new RequestTimeseriesDataBasic();
                 weatherRequest.setQueryMeasurement("weather");
-                weatherRequest.setResponseFormat(ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
+                weatherRequest.setResponseFormat("GridLAB-D");
                 Map<String, Object> queryFilter = new HashMap<String, Object>();
 
                 Calendar c = Calendar.getInstance();
@@ -307,7 +307,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
                 queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis() + "000000");
                 weatherRequest.setQueryFilter(queryFilter);
                 DataResponse resp = (DataResponse) dataManager.processDataRequest(weatherRequest,
-                        ProvenTimeSeriesDataManagerImpl.DATA_MANAGER_TYPE, simId, tempDataPath, username);
+                        "proven", simId, tempDataPath, username);
                 if (resp.getData() == null) {
                     useClimate = false;
                     throw new Exception("No weather data in time series data store. Setting useClimate = false.");

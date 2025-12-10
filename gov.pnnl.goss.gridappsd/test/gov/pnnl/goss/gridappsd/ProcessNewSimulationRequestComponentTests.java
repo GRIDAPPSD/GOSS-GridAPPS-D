@@ -64,10 +64,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import pnnl.goss.core.DataResponse;
-import pnnl.goss.core.security.SecurityConfig;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessNewSimulationRequestComponentTests {
@@ -94,8 +93,6 @@ public class ProcessNewSimulationRequestComponentTests {
     TestManager testManager;
     @Mock
     DataManager dataManager;
-    @Mock
-    SecurityConfig securityConfig;
 
     /**
      * Succeeds when info log message is called at the start of the process new
@@ -112,7 +109,7 @@ public class ProcessNewSimulationRequestComponentTests {
         }
 
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
-        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager, securityConfig);
+        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
@@ -169,9 +166,9 @@ public class ProcessNewSimulationRequestComponentTests {
         }
 
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
-        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager, securityConfig);
+        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
-        requestSimulation.getPower_system_config().setGeographicalRegion_name("Bad");
+        requestSimulation.getPower_system_config().get(0).setGeographicalRegion_name("Bad");
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
@@ -211,7 +208,7 @@ public class ProcessNewSimulationRequestComponentTests {
         }
 
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
-        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager, securityConfig);
+        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         request.process(configurationManager, simulationManager, simulationId, event, null, appManager, serviceManager,
                 testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
@@ -250,7 +247,7 @@ public class ProcessNewSimulationRequestComponentTests {
         }
 
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
-        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager, securityConfig);
+        ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);

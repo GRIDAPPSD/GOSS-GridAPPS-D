@@ -46,7 +46,7 @@ import pnnl.goss.core.DataResponse;
 
 import java.util.List;
 
-import javax.jms.Destination;
+import jakarta.jms.Destination;
 
 import com.google.gson.JsonObject;
 
