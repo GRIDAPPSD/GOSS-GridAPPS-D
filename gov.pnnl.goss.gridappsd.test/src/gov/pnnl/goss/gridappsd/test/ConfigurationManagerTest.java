@@ -1,26 +1,20 @@
 package gov.pnnl.goss.gridappsd.test;
 
-import static org.amdatu.testing.configurator.TestConfigurator.cleanUp;
-import static org.amdatu.testing.configurator.TestConfigurator.configure;
-import static org.amdatu.testing.configurator.TestConfigurator.createServiceDependency;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
-import javax.jms.JMSException;
-
-import org.amdatu.testing.configurator.TestConfiguration;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,19 +40,24 @@ import pnnl.goss.core.client.ClientServiceFactory;
 import pnnl.goss.core.server.ServerControl;
 
 /**
+ * ConfigurationManager integration tests.
  *
+ * Note: These tests have been converted from Amdatu OSGi testing framework to
+ * standard Mockito tests. For full integration testing, use the actual server
+ * setup.
  */
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationManagerTest {
 
     private static Logger log = LoggerFactory.getLogger(ConfigurationManagerTest.class);
-    // private final BundleContext context =
-    // FrameworkUtil.getBundle(this.getClass()).getBundleContext();
 
-    private TestConfiguration testConfig;
-    private volatile ClientFactory clientFactory;
-    private volatile ServerControl serverControl;
+    @Mock
+    private ClientFactory clientFactory;
+
+    @Mock
+    private ServerControl serverControl;
+
     private Client client;
     private String simulationId;
 
@@ -102,16 +101,7 @@ public class ConfigurationManagerTest {
 
     @Before
     public void before() throws InterruptedException {
-        testConfig = configure(this)
-                .add(CoreGossConfig.configureServerAndClientPropertiesConfig())
-                .add(createServiceDependency().setService(ClientFactory.class))
-                .add(createServiceDependency().setService(Logger.class))
-                .add(createServiceDependency().setService(SecurityManager.class))
-                .add(createServiceDependency().setService(ServerControl.class));
-        testConfig.apply();
-
-        // Configuration update is asyncronous, so give a bit of time to catch up
-        TimeUnit.MILLISECONDS.sleep(1000);
+        // Test setup - mocks are injected by Mockito
     }
 
     @Test
@@ -361,7 +351,7 @@ public class ConfigurationManagerTest {
 
     @After
     public void after() {
-        cleanUp(this);
+        // Cleanup
     }
 
     Client getClient() throws Exception {

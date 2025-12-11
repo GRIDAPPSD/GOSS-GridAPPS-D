@@ -15,7 +15,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;

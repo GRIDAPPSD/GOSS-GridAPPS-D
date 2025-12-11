@@ -310,7 +310,7 @@ public class ProcessEvents {
 
     public static List<Difference> createFaultDiff(Fault fault1) {
 
-        JsonElement jobject = new JsonParser().parse(fault1.toString());
+        JsonElement jobject = JsonParser.parseString(fault1.toString());
         ArrayList<Difference> diffs = new ArrayList<Difference>();
         for (String ObjectMRID : fault1.ObjectMRID) {
             JsonObject value = new JsonObject();

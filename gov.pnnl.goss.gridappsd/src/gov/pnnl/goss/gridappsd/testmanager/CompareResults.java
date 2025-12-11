@@ -118,10 +118,9 @@ public class CompareResults {
     }
 
     public void compare() {
-        JsonParser parser = new JsonParser();
-        JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
-        JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
-        JsonElement o3 = parser.parse("{b : 2, a : {a : 2}}");
+        JsonElement o1 = JsonParser.parseString("{a : {a : 2}, b : 2}");
+        JsonElement o2 = JsonParser.parseString("{b : 3, a : {a : 2}}");
+        JsonElement o3 = JsonParser.parseString("{b : 2, a : {a : 2}}");
         System.out.println(o1.equals(o2));
         System.out.println(o1.equals(o3));
         // Assert.assertEquals(o1, o2);
@@ -408,8 +407,7 @@ public class CompareResults {
     public JsonObject getSimulationOutput(String simOutput) {
         JsonObject jsonObject = null;
 
-        JsonParser parser = new JsonParser();
-        JsonElement simOutputObject = parser.parse(simOutput);
+        JsonElement simOutputObject = JsonParser.parseString(simOutput);
 
         if (simOutputObject.isJsonObject()) {
             jsonObject = simOutputObject.getAsJsonObject();
@@ -426,8 +424,7 @@ public class CompareResults {
     public static JsonObject getSimulationJson(String simOutput) {
         JsonObject jsonObject = null;
 
-        JsonParser parser = new JsonParser();
-        JsonElement simOutputObject = parser.parse(simOutput);
+        JsonElement simOutputObject = JsonParser.parseString(simOutput);
 
         if (simOutputObject.isJsonObject()) {
             jsonObject = simOutputObject.getAsJsonObject();
@@ -446,8 +443,8 @@ public class CompareResults {
     public Map<String, JsonElement> getExpectedOutputMap(String expectedOutputPath) {
         Map<String, JsonElement> expectedOutputMap = null;
         try {
-            JsonParser parser = new JsonParser();
-            JsonElement expectedOutputObj = parser.parse(new BufferedReader(new FileReader(expectedOutputPath)));
+            JsonElement expectedOutputObj = JsonParser
+                    .parseReader(new BufferedReader(new FileReader(expectedOutputPath)));
             if (expectedOutputObj.isJsonObject()) {
                 JsonObject jsonObject = expectedOutputObj.getAsJsonObject();
                 JsonObject output = jsonObject.get("expected_output").getAsJsonObject();
@@ -541,8 +538,8 @@ public class CompareResults {
     public Map<String, JsonElement> getExpectedOutputMap(String timestamp, String expectedOutputPath) {
         Map<String, JsonElement> expectedOutputMap = null;
         try {
-            JsonParser parser = new JsonParser();
-            JsonElement expectedOutputObj = parser.parse(new BufferedReader(new FileReader(expectedOutputPath)));
+            JsonElement expectedOutputObj = JsonParser
+                    .parseReader(new BufferedReader(new FileReader(expectedOutputPath)));
             if (expectedOutputObj.isJsonObject()) {
                 JsonObject jsonObject = expectedOutputObj.getAsJsonObject();
                 // JsonArray outputs = jsonObject.get("expected_outputs").getAsJsonArray();
@@ -592,11 +589,10 @@ public class CompareResults {
                 }
             }
         } else if (tempObj.has("forward_differences")) {
-            JsonParser parser = new JsonParser();
             JsonArray temp = tempObj.getAsJsonArray("forward_differences");
             for (JsonElement jsonElement : temp) {
                 jsonElement.getAsJsonObject().add("difference_mrid", tempObj.get("difference_mrid"));
-                jsonElement.getAsJsonObject().add("hasMeasurementDifference", parser.parse("FORWARD"));
+                jsonElement.getAsJsonObject().add("hasMeasurementDifference", JsonParser.parseString("FORWARD"));
                 forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
             }
         }
@@ -619,10 +615,9 @@ public class CompareResults {
             }
         } else if (tempObj.has("reverse_differences")) {
             JsonArray temp = tempObj.getAsJsonArray("reverse_differences");
-            JsonParser parser = new JsonParser();
             for (JsonElement jsonElement : temp) {
                 jsonElement.getAsJsonObject().add("difference_mrid", tempObj.get("difference_mrid"));
-                jsonElement.getAsJsonObject().add("hasMeasurementDifference", parser.parse("REVERSE"));
+                jsonElement.getAsJsonObject().add("hasMeasurementDifference", JsonParser.parseString("REVERSE"));
                 reverseDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
             }
         }
@@ -703,8 +698,7 @@ public class CompareResults {
     }
 
     public static String getFirstKey(String json_string) {
-        JsonParser parser = new JsonParser();
-        JsonElement simOutputObject = parser.parse(json_string);
+        JsonElement simOutputObject = JsonParser.parseString(json_string);
         String firstKey = CompareResults.getFirstKey(simOutputObject.getAsJsonObject());
         return firstKey;
     }

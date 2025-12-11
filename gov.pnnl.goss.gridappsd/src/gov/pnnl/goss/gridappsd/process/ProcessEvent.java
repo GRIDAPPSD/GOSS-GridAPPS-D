@@ -296,7 +296,7 @@ public class ProcessEvent implements GossResponseEvent {
                         username);
                 // client.publish(event.getReplyDestination(), r);
                 String responseFormat = null;
-                JsonObject jsonObject = new JsonParser().parse(request.toString()).getAsJsonObject();
+                JsonObject jsonObject = JsonParser.parseString(request.toString()).getAsJsonObject();
                 if (jsonObject.has("resultFormat"))
                     responseFormat = jsonObject.get("resultFormat").getAsString();
                 if (jsonObject.has("responseFormat"))

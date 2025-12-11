@@ -192,8 +192,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
                 String simOutputStr = event.getData().toString();
                 JsonObject simOutputJsonObj = null;
 
-                JsonParser parser = new JsonParser();
-                JsonElement simOutputObject = parser.parse(simOutputStr);
+                JsonElement simOutputObject = JsonParser.parseString(simOutputStr);
 
                 if (simOutputObject.isJsonObject()) {
                     simOutputJsonObj = simOutputObject.getAsJsonObject();

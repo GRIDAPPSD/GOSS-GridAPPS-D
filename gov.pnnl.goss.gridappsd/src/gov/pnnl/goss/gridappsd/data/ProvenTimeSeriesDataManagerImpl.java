@@ -213,8 +213,7 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     // TODO: Remove if block once changes made in proven cluster to get measurement
                     // name from datatype
                     if (appOrServiceid == null) {
-                        JsonParser parser = new JsonParser();
-                        JsonElement data = parser.parse(event.getData().toString());
+                        JsonElement data = JsonParser.parseString(event.getData().toString());
                         if (data.isJsonObject()) {
                             JsonObject dataObj = data.getAsJsonObject();
                             if (dataObj.get("datatype") != null) {

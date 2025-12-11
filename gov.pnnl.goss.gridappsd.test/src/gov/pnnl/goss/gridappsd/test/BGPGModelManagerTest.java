@@ -19,13 +19,12 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.ConfigurationException;
 
-import org.amdatu.testing.configurator.TestConfiguration;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.fusesource.stomp.jms.StompJmsConnectionFactory;
 import org.fusesource.stomp.jms.StompJmsDestination;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -61,7 +60,6 @@ public class BGPGModelManagerTest {
 
     // ClientFactory clientFactory;
     Client client;
-    private TestConfiguration testConfig;
 
     public static void main(String[] args) {
 

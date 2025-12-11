@@ -7,13 +7,12 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +31,8 @@ public class GridAPPSDLauncher {
 
     private static final String BUNDLE_DIR = "bundle.dir";
     private static final String CONFIG_FILE = "config.properties";
-    private static final String AUTO_START_LEVEL = "felix.auto.start";
+
+    private File baseDir;
 
     public static void main(String[] args) {
         GridAPPSDLauncher launcher = new GridAPPSDLauncher();
@@ -47,6 +47,10 @@ public class GridAPPSDLauncher {
 
     private void launch() throws Exception {
         System.out.println("Starting GridAPPS-D OSGi Framework...");
+
+        // Determine base directory (where the JAR file is located)
+        baseDir = determineBaseDir();
+        System.out.println("Base directory: " + baseDir.getAbsolutePath());
 
         // Load configuration
         Map<String, String> config = loadConfiguration();
@@ -81,11 +85,49 @@ public class GridAPPSDLauncher {
         System.exit(0);
     }
 
+    /**
+     * Determine the base directory where the launcher JAR is located.
+     * This allows the launcher to find config.properties and bundle/ relative
+     * to the JAR file location, regardless of the current working directory.
+     */
+    private File determineBaseDir() {
+        try {
+            // Get the location of this class's JAR file
+            CodeSource codeSource = GridAPPSDLauncher.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null) {
+                URL jarUrl = codeSource.getLocation();
+                File jarFile = new File(jarUrl.toURI());
+                if (jarFile.isFile()) {
+                    // JAR file - return its parent directory
+                    return jarFile.getParentFile();
+                } else {
+                    // Running from classes directory (development mode)
+                    return jarFile;
+                }
+            }
+        } catch (URISyntaxException e) {
+            System.err.println("Warning: Could not determine JAR location: " + e.getMessage());
+        }
+        // Fall back to current directory
+        return new File(".");
+    }
+
+    /**
+     * Resolve a path relative to the base directory.
+     */
+    private File resolveFile(String path) {
+        File file = new File(path);
+        if (file.isAbsolute()) {
+            return file;
+        }
+        return new File(baseDir, path);
+    }
+
     private Map<String, String> loadConfiguration() throws IOException {
         Map<String, String> config = new HashMap<>();
 
-        // Load from config.properties if it exists
-        File configFile = new File(CONFIG_FILE);
+        // Look for config.properties in base directory
+        File configFile = resolveFile(CONFIG_FILE);
         if (configFile.exists()) {
             Properties props = new Properties();
             try (FileInputStream fis = new FileInputStream(configFile)) {
@@ -94,7 +136,9 @@ public class GridAPPSDLauncher {
             for (String key : props.stringPropertyNames()) {
                 config.put(key, props.getProperty(key));
             }
-            System.out.println("Loaded configuration from " + CONFIG_FILE);
+            System.out.println("Loaded configuration from " + configFile.getAbsolutePath());
+        } else {
+            System.out.println("No config file found at " + configFile.getAbsolutePath() + ", using defaults");
         }
 
         // Set defaults if not specified
@@ -134,10 +178,10 @@ public class GridAPPSDLauncher {
 
     private void installBundles(BundleContext context, Map<String, String> config) throws BundleException {
         String bundleDirPath = config.get(BUNDLE_DIR);
-        File bundleDir = new File(bundleDirPath);
+        File bundleDir = resolveFile(bundleDirPath);
 
         if (!bundleDir.exists() || !bundleDir.isDirectory()) {
-            System.err.println("Warning: Bundle directory not found: " + bundleDirPath);
+            System.err.println("Warning: Bundle directory not found: " + bundleDir.getAbsolutePath());
             return;
         }
 
@@ -146,7 +190,7 @@ public class GridAPPSDLauncher {
         // Get list of JAR files
         File[] bundleFiles = bundleDir.listFiles((dir, name) -> name.endsWith(".jar"));
         if (bundleFiles == null || bundleFiles.length == 0) {
-            System.err.println("Warning: No bundles found in " + bundleDirPath);
+            System.err.println("Warning: No bundles found in " + bundleDir.getAbsolutePath());
             return;
         }
 

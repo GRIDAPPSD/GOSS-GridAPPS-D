@@ -1,155 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" output="bin_test" path="test">
+	<classpathentry kind="src" output="bin/test" path="test">
 		<attributes>
+			<attribute name="gradle_scope" value="test"/>
+			<attribute name="gradle_used_by_scope" value="test"/>
 			<attribute name="test" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" output="bin" path="src">
+	<classpathentry kind="src" output="bin/main" path="src">
 		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
+			<attribute name="gradle_scope" value="main"/>
+			<attribute name="gradle_used_by_scope" value="main,test"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" output="bin_test" path="generated/generated/sources/annotationProcessor/java/test">
-		<attributes>
-			<attribute name="test" value="true"/>
-			<attribute name="optional" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="src" output="bin" path="generated/generated/sources/annotationProcessor/java/main">
-		<attributes>
-			<attribute name="optional" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS/cnf/releaserepo/pnnl.goss.core.goss-core-server-api/pnnl.goss.core.goss-core-server-api-3.0.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="pnnl.goss.core.goss-core-server-api-3.0.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/org/fusesource/stompjms/stompjms-client/1.19/stompjms-client-1.19.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="stompjms-client-1.19.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/generated/gov.pnnl.goss.gridappsd.gridappsd.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="gov.pnnl.goss.gridappsd.gridappsd.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS/cnf/releaserepo/pnnl.goss.core.goss-core-server/pnnl.goss.core.goss-core-server-3.0.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="pnnl.goss.core.goss-core-server-3.0.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="junit-4.13.2.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS/cnf/releaserepo/pnnl.goss.core.goss-client/pnnl.goss.core.goss-client-3.0.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="pnnl.goss.core.goss-client-3.0.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="httpclient-4.5.14.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/org/apache/felix/org.apache.felix.configadmin/1.9.28/org.apache.felix.configadmin-1.9.28.jar">
-		<attributes>
-			<attribute name="optional" value="true"/>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="org.apache.felix.configadmin-1.9.28.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/org/mockito/mockito-core/5.14.2/mockito-core-5.14.2.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="mockito-core-5.14.2.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS/cnf/releaserepo/pnnl.goss.core.goss-core-security/pnnl.goss.core.goss-core-security-3.0.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="pnnl.goss.core.goss-core-security-3.0.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/jakarta/jms/jakarta.jms-api/3.1.0/jakarta.jms-api-3.1.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="jakarta.jms-api-3.1.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS-GridAPPS-D/gov.pnnl.goss.gridappsd/generated/gov.pnnl.goss.gridappsd.gridappsd.api.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="gov.pnnl.goss.gridappsd.gridappsd.api.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/repos/GridAPPSD/GOSS/cnf/releaserepo/pnnl.goss.core.core-api/pnnl.goss.core.core-api-8.0.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="pnnl.goss.core.core-api-8.0.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="slf4j-api-2.0.16.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="/home/debian/.m2/repository/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar">
-		<attributes>
-			<attribute name="gradle.buildServer" value="true"/>
-			<attribute name="groupId" value="unknown"/>
-			<attribute name="artifactId" value="gson-2.11.0.jar"/>
-			<attribute name="version" value="unknown"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21/"/>
+	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
 	<classpathentry kind="src" path="/gov.pnnl.goss.gridappsd">
 		<attributes>
 			<attribute name="gradle.buildServer" value="true"/>

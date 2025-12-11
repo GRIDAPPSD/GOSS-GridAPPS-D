@@ -99,7 +99,7 @@ public class ProvenLoadScheduleToGridlabdLoadScheduleConverter implements DataFo
     @Override
     public void convert(InputStream inputContent, PrintWriter outputContent, RequestTimeseriesData request)
             throws Exception {
-        String strContent = IOUtils.toString(inputContent);
+        String strContent = IOUtils.toString(inputContent, java.nio.charset.StandardCharsets.UTF_8);
         TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
         boolean isFirstRecord = true;
         Calendar c = Calendar.getInstance();

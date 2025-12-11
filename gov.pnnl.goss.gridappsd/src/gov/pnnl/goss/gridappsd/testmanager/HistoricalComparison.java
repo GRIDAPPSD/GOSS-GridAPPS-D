@@ -266,8 +266,7 @@ public class HistoricalComparison {
         }
         String data = jsonObject.get("data").getAsString();
         System.out.println(data.substring(0, 100));
-        JsonParser parser = new JsonParser();
-        JsonArray measurements = (JsonArray) parser.parse(data);
+        JsonArray measurements = (JsonArray) JsonParser.parseString(data);
 
         JsonObject expectedObject = buildExpectedFromTimeseries(measurements);
         return expectedObject;

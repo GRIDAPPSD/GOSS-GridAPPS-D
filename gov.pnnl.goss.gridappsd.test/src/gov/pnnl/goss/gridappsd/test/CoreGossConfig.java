@@ -1,7 +1,7 @@
 package gov.pnnl.goss.gridappsd.test;
 
-import org.amdatu.testing.configurator.ConfigurationSteps;
-import static org.amdatu.testing.configurator.TestConfigurator.createConfiguration;
+import java.util.HashMap;
+import java.util.Map;
 
 import pnnl.goss.core.ClientFactory;
 
@@ -18,44 +18,55 @@ import pnnl.goss.core.ClientFactory;
 public class CoreGossConfig {
 
     /**
-     * Minimal configuration for goss including broker uri
+     * Get server configuration properties for testing
      *
-     * @return
+     * @return Map of configuration properties
      */
-    public static ConfigurationSteps configureServerAndClientPropertiesConfig() {
+    public static Map<String, String> getServerProperties() {
+        Map<String, String> props = new HashMap<>();
+        props.put("goss.openwire.uri", "tcp://localhost:6000");
+        props.put("goss.stomp.uri", "stomp://localhost:6001");
+        props.put("goss.ws.uri", "ws://localhost:6002");
+        props.put("goss.start.broker", "true");
+        props.put("goss.broker.uri", "tcp://localhost:6000");
+        return props;
+    }
 
-        return ConfigurationSteps.create()
-                .add(createConfiguration("pnnl.goss.core.server")
-                        .set("goss.openwire.uri", "tcp://localhost:6000")
-                        .set("goss.stomp.uri", "stomp://localhost:6001") // vm:(broker:(tcp://localhost:6001)?persistent=false)?marshal=false")
-                        .set("goss.ws.uri", "ws://localhost:6002")
-                        .set("goss.start.broker", "true")
-                        .set("goss.broker.uri", "tcp://localhost:6000"))
-                .add(createConfiguration(ClientFactory.CONFIG_PID)
-                        .set("goss.openwire.uri", "tcp://localhost:6000")
-                        .set("goss.stomp.uri", "stomp://localhost:6001")
-                        .set("goss.ws.uri", "ws://localhost:6002"))
-                .add(createConfiguration("org.ops4j.pax.logging")
-                        .set("log4j.rootLogger", "DEBUG, out, osgi:*")
-                        .set("log4j.throwableRenderer", "org.apache.log4j.OsgiThrowableRenderer")
+    /**
+     * Get client configuration properties for testing
+     *
+     * @return Map of configuration properties
+     */
+    public static Map<String, String> getClientProperties() {
+        Map<String, String> props = new HashMap<>();
+        props.put("goss.openwire.uri", "tcp://localhost:6000");
+        props.put("goss.stomp.uri", "stomp://localhost:6001");
+        props.put("goss.ws.uri", "ws://localhost:6002");
+        return props;
+    }
 
-                        // # CONSOLE appender not used by default
-                        .set("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender")
-                        .set("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout")
-                        .set("log4j.appender.stdout.layout.ConversionPattern", "%-5.5p| %c{1} (%L) | %m%n")
-                        // #server.core.internal.GossRequestHandlerRegistrationImpl", "DEBUG,stdout
-                        .set("log4j.logger.pnnl.goss", "DEBUG, stdout")
-                        .set("log4j.logger.org.apache.aries", "INFO")
-
-                        // # File appender
-                        .set("log4j.appender.out", "org.apache.log4j.RollingFileAppender")
-                        .set("log4j.appender.out.layout", "org.apache.log4j.PatternLayout")
-                        .set("log4j.appender.out.layout.ConversionPattern",
-                                "%d{ISO8601} | %-5.5p | %-16.16t | %-32.32c{1} | %X{bundle.id} - %X{bundle.name} - %X{bundle.version} | %m%n")
-                        .set("log4j.appender.out.file", "felix.log")
-                        .set("log4j.appender.out.append", "true")
-                        .set("log4j.appender.out.maxFileSize", "1MB")
-                        .set("log4j.appender.out.maxBackupIndex", "10"));
-
+    /**
+     * Get logging configuration properties for testing
+     *
+     * @return Map of configuration properties
+     */
+    public static Map<String, String> getLoggingProperties() {
+        Map<String, String> props = new HashMap<>();
+        props.put("log4j.rootLogger", "DEBUG, out, osgi:*");
+        props.put("log4j.throwableRenderer", "org.apache.log4j.OsgiThrowableRenderer");
+        props.put("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
+        props.put("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
+        props.put("log4j.appender.stdout.layout.ConversionPattern", "%-5.5p| %c{1} (%L) | %m%n");
+        props.put("log4j.logger.pnnl.goss", "DEBUG, stdout");
+        props.put("log4j.logger.org.apache.aries", "INFO");
+        props.put("log4j.appender.out", "org.apache.log4j.RollingFileAppender");
+        props.put("log4j.appender.out.layout", "org.apache.log4j.PatternLayout");
+        props.put("log4j.appender.out.layout.ConversionPattern",
+                "%d{ISO8601} | %-5.5p | %-16.16t | %-32.32c{1} | %X{bundle.id} - %X{bundle.name} - %X{bundle.version} | %m%n");
+        props.put("log4j.appender.out.file", "felix.log");
+        props.put("log4j.appender.out.append", "true");
+        props.put("log4j.appender.out.maxFileSize", "1MB");
+        props.put("log4j.appender.out.maxBackupIndex", "10");
+        return props;
     }
 }

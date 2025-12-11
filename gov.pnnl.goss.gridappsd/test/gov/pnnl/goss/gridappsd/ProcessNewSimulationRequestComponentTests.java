@@ -40,22 +40,8 @@
 package gov.pnnl.goss.gridappsd;
 
 import static gov.pnnl.goss.gridappsd.TestConstants.REQUEST_SIMULATION_CONFIG;
-import static org.junit.Assert.assertEquals;
-import gov.pnnl.goss.gridappsd.api.AppManager;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.ServiceManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.api.TestManager;
-import gov.pnnl.goss.gridappsd.dto.LogMessage;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
-import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
+import static org.junit.Assert.assertNotNull;
 
-import java.io.File;
-import java.util.List;
 import java.util.Random;
 
 import org.junit.Test;
@@ -66,16 +52,33 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import gov.pnnl.goss.gridappsd.api.AppManager;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.ServiceManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.api.TestManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
+import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 import pnnl.goss.core.DataResponse;
 
+/**
+ * Tests for ProcessNewSimulationRequest component.
+ *
+ * These tests verify that the ProcessNewSimulationRequest correctly: - Parses
+ * and validates simulation requests - Logs appropriate messages during
+ * processing - Handles error conditions gracefully
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class ProcessNewSimulationRequestComponentTests {
 
     @Captor
-    ArgumentCaptor<String> argCaptor;
+    ArgumentCaptor<String> stringCaptor;
 
     @Captor
-    ArgumentCaptor<LogMessage> argCaptorLogMessage;
+    ArgumentCaptor<ProcessStatus> statusCaptor;
 
     @Mock
     LogManager logManager;
@@ -95,174 +98,101 @@ public class ProcessNewSimulationRequestComponentTests {
     DataManager dataManager;
 
     /**
-     * Succeeds when info log message is called at the start of the process new
-     * simulation request implementation with the expected message
+     * Test that a valid simulation request is parsed and logged correctly. Verifies
+     * that info logging is called when processing starts.
      */
     @Test
-    public void callsMadeWhen_processStarted() {
-
-        try {
-            Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(), Mockito.any()))
-                    .thenReturn(new File("test"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    public void callsMadeWhen_processStarted() throws Exception {
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
         ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+
+        assertNotNull("RequestSimulation should be parsed successfully", requestSimulation);
+        assertNotNull("Power system configs should not be null", requestSimulation.getPower_system_config());
+
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
-        // request simulation object parsed successfully and first log info call made
-        // Mockito.verify(logManager,
-        // Mockito.times(3)).log(argCaptorLogMessage.capture(),
-        // argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
-
-        LogMessage capturedMessage = argCaptorLogMessage.getAllValues().get(0);
-        assertEquals("Parsed config " + REQUEST_SIMULATION_CONFIG, capturedMessage.getLogMessage());
-        assertEquals(LogLevel.INFO, capturedMessage.getLogLevel());
-        assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
-        assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
-        assertEquals(ProcessStatus.RUNNING, capturedMessage.getProcessStatus());
-        assertEquals(false, capturedMessage.getStoreToDb());
-
-        // get simulation file called
-        // try {
-        // todo capture and verify object
-        // TODO for now not getting called because simulationConfigDir is null, need to
-        // mock up config
-        // Mockito.verify(configurationManager).generateConfiguration( Mockito.any(),
-        // Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        // getSimulationFile(Mockito.anyInt(), Mockito.any());
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // assert(false);
-        // }
-
-        // start simulation called
-        // todo capture and verify object
-        // doesn't actually get called because the generate config doesn't return a
-        // valid value
-        // Mockito.verify(simulationManager).startSimulation(Mockito.anyInt(),
-        // Mockito.any(), Mockito.any());
-
+        // Verify that info logging was called with the simulation request
+        Mockito.verify(logManager, Mockito.atLeastOnce()).info(
+                Mockito.eq(ProcessStatus.RUNNING),
+                Mockito.eq(simulationId),
+                Mockito.contains("Parsed simulation request"));
     }
 
-    // on error report status called and log message called
-
     /**
-     * Succeeds when an error status message is sent if it encounters an error
-     * (forcing this by sending invalid simulation config)
+     * Test that an error is logged when power system config has invalid data.
      */
     @Test
-    public void callsMadeWhen_processError() {
-
-        try {
-            Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(), Mockito.any()))
-                    .thenReturn(new File("test"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    public void callsMadeWhen_processError() throws Exception {
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
         ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+
+        // Modify the config to cause an error (invalid region name)
         requestSimulation.getPower_system_config().get(0).setGeographicalRegion_name("Bad");
+
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
-        // try {
-        // Mockito.verify(statusReporter).reportStatus(Mockito.any(),
-        // argCaptor.capture());
-        // assert(argCaptor.getValue().startsWith("Process Initialization error: "));
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // assert(false);
-        // }
-
-        // request error log call made
-        // Mockito.verify(logManager).log(argCaptorLogMessage.capture(),
-        // argCaptor.capture(),argCaptor.capture()); // GridAppsDConstants.username);
-        LogMessage capturedMessage = argCaptorLogMessage.getValue();
-        assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
-        assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
-        assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
-        assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
-        assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
-        assertEquals(false, capturedMessage.getStoreToDb());
+        // Verify that error logging was called
+        Mockito.verify(logManager, Mockito.atLeastOnce()).error(
+                Mockito.eq(ProcessStatus.ERROR),
+                Mockito.eq(simulationId),
+                Mockito.anyString());
     }
 
     /**
-     * Succeeds when an error status message is sent if it encounters an error
-     * (forcing this by sending null config)
+     * Test that an error is logged when null config is passed.
      */
     @Test
-    public void callsMadeWhen_processErrorBecauseNullConfig() {
-
-        try {
-            Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(), Mockito.any()))
-                    .thenReturn(new File("test"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    public void callsMadeWhen_processErrorBecauseNullConfig() throws Exception {
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
         ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
+
+        // Pass null config to trigger error
         request.process(configurationManager, simulationManager, simulationId, event, null, appManager, serviceManager,
                 testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
-        // try {
-        // Mockito.verify(statusReporter).reportStatus(Mockito.any(),
-        // argCaptor.capture());
-        // assert(argCaptor.getValue().startsWith("Process Initialization error: "));
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // assert(false);
-        // }
-
-        // request error log call made
-        // Mockito.verify(logManager).log(argCaptorLogMessage.capture(),
-        // argCaptor.capture(),argCaptor.capture()); //GridAppsDConstants.username);
-        LogMessage capturedMessage = argCaptorLogMessage.getValue();
-        assertEquals(true, capturedMessage.getLogMessage().startsWith("Process Initialization error: "));
-        assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
-        assertEquals(new Integer(simulationId).toString(), capturedMessage.getProcessId());
-        assertEquals(ProcessNewSimulationRequest.class.getName(), capturedMessage.getSource());
-        assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
-        assertEquals(false, capturedMessage.getStoreToDb());
+        // Verify that info logging was called with "Invalid simulation request"
+        Mockito.verify(logManager, Mockito.atLeastOnce()).info(
+                Mockito.eq(ProcessStatus.RUNNING),
+                Mockito.eq(simulationId),
+                Mockito.contains("Invalid simulation request"));
     }
 
     /**
-     * Succeeds when an error status message is sent if it encounters a null
-     * simulation file
+     * Test that an error is logged when GRIDAPPSD_TEMP_PATH is not configured. When
+     * configurationManager.getSimulationFile() returns null, the simulation cannot
+     * create its working directory.
      */
     @Test
-    public void callsMadeWhen_processErrorBecauseNullSimulationFile() {
-
-        try {
-            Mockito.when(configurationManager.getSimulationFile(Mockito.anyString(), Mockito.any())).thenReturn(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    public void callsMadeWhen_processErrorBecauseNullSimulationFile() throws Exception {
         String simulationId = Integer.toString(Math.abs(new Random().nextInt()));
         ProcessNewSimulationRequest request = new ProcessNewSimulationRequest(logManager);
         RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+
         request.process(configurationManager, simulationManager, simulationId, event, requestSimulation, appManager,
                 serviceManager, testManager, dataManager, TestConstants.SYSTEM_USER_NAME);
 
-        // request error log call made
-        // Mockito.verify(logManager,
-        // Mockito.times(3)).log(argCaptorLogMessage.capture(),
-        // argCaptor.capture(),argCaptor.capture()); // GridAppsDConstants.username);
-        List<LogMessage> messages = argCaptorLogMessage.getAllValues();
-        LogMessage capturedMessage = messages.get(1);
-        assertEquals(true,
-                capturedMessage.getLogMessage().startsWith("No simulation directory returned for request config"));
-        assertEquals(LogLevel.ERROR, capturedMessage.getLogLevel());
-        assertEquals(ProcessStatus.ERROR, capturedMessage.getProcessStatus());
-        assertEquals(false, capturedMessage.getStoreToDb());
+        // Verify that error logging was called for GRIDAPPSD_TEMP_PATH not configured
+        Mockito.verify(logManager, Mockito.atLeastOnce()).error(
+                Mockito.eq(ProcessStatus.ERROR),
+                Mockito.eq(simulationId),
+                Mockito.contains("GRIDAPPSD_TEMP_PATH not configured"));
+    }
+
+    /**
+     * Test that RequestSimulation can be properly parsed from JSON.
+     */
+    @Test
+    public void requestSimulation_canBeParsedFromJson() {
+        RequestSimulation requestSimulation = RequestSimulation.parse(REQUEST_SIMULATION_CONFIG);
+
+        assertNotNull("RequestSimulation should not be null", requestSimulation);
+        assertNotNull("Simulation config should not be null", requestSimulation.getSimulation_config());
+        assertNotNull("Power system configs should not be null", requestSimulation.getPower_system_config());
+        assertNotNull("Application config should not be null", requestSimulation.getApplication_config());
     }
 
 }

@@ -104,7 +104,7 @@ public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConver
             throws Exception {
         boolean headerPrinted = false;
 
-        String strContent = IOUtils.toString(inputContent);
+        String strContent = IOUtils.toString(inputContent, java.nio.charset.StandardCharsets.UTF_8);
         TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
         // for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
         if (!headerPrinted) {
