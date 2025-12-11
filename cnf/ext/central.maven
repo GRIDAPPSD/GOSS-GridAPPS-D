@@ -1,0 +1,132 @@
+# Maven Central dependencies for GOSS-GridAPPS-D
+# Updated for Java 21 + Jakarta EE migration
+
+# BND Annotations
+biz.aQute.bnd:biz.aQute.bnd.annotation:6.4.0
+
+# Jakarta EE - Java 21 compatible
+jakarta.jms:jakarta.jms-api:3.1.0
+jakarta.ws.rs:jakarta.ws.rs-api:4.0.0
+jakarta.annotation:jakarta.annotation-api:3.0.0
+jakarta.inject:jakarta.inject-api:2.0.1
+
+# ActiveMQ - Jakarta EE compatible (6.x)
+org.apache.activemq:activemq-osgi:6.2.0
+org.apache.activemq:activemq-client:6.2.0
+
+# SLF4J
+org.slf4j:slf4j-api:2.0.16
+org.slf4j:slf4j-simple:2.0.16
+
+# Apache Commons
+commons-logging:commons-logging:1.2
+commons-lang:commons-lang:2.6
+org.apache.commons:commons-lang3:3.17.0
+org.apache.commons:commons-math3:3.6.1
+org.apache.commons:commons-collections4:4.4
+org.apache.commons:commons-csv:1.12.0
+org.apache.commons:commons-pool2:2.12.0
+commons-codec:commons-codec:1.17.1
+commons-io:commons-io:2.18.0
+
+# Google Gson
+com.google.code.gson:gson:2.11.0
+
+# StompJMS
+org.fusesource.stompjms:stompjms-client:1.19
+
+# HTTP Components
+org.apache.httpcomponents:httpclient:4.5.14
+org.apache.httpcomponents:httpcore:4.4.16
+
+# Apache Jena (RDF/SPARQL) - using jena-osgi bundle which contains core+arq
+org.apache.jena:jena-osgi:3.7.0
+
+# Apache ServiceMix Bundles
+org.apache.servicemix.bundles:org.apache.servicemix.bundles.xerces:2.12.2_1
+org.apache.servicemix.bundles:org.apache.servicemix.bundles.xmlresolver:1.2_5
+org.apache.servicemix.bundles:org.apache.servicemix.bundles.poi:3.17_1
+org.apache.servicemix.bundles:org.apache.servicemix.bundles.commons-dbcp:1.4_3
+
+# XML APIs
+xml-apis:xml-apis:1.4.01
+
+# MySQL Connector
+com.mysql:mysql-connector-j:9.1.0
+
+# Bigdata (Blazegraph)
+com.blazegraph:bigdata-core:2.1.4
+
+# Jersey (REST) - updated versions
+org.glassfish.jersey.core:jersey-client:2.26
+org.glassfish.jersey.core:jersey-common:2.26
+org.glassfish.jersey.core:jersey-server:2.26
+org.glassfish.jersey.media:jersey-media-json-jackson:2.26
+
+# Glassfish HK2
+org.glassfish.hk2:hk2-api:2.6.1
+org.glassfish.hk2:hk2-locator:2.6.1
+org.glassfish.hk2:hk2-utils:2.6.1
+org.glassfish.hk2:osgi-resource-locator:1.0.3
+
+# Nimbus JOSE JWT
+com.nimbusds:nimbus-jose-jwt:9.41.2
+
+# Jackson
+com.fasterxml.jackson.core:jackson-core:2.18.1
+com.fasterxml.jackson.core:jackson-annotations:2.18.1
+com.fasterxml.jackson.core:jackson-databind:2.18.1
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.18.1
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.18.1
+com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.18.1
+
+# Guava
+com.google.guava:guava:33.3.1-jre
+
+# Jettison (JSON)
+org.codehaus.jettison:jettison:1.5.4
+
+# Log4j (legacy - for old code compatibility)
+log4j:log4j:1.2.17
+
+# XStream
+com.thoughtworks.xstream:xstream:1.4.20
+
+# Thrift
+org.apache.thrift:libthrift:0.21.0
+
+# OSGi Core
+org.osgi:osgi.core:8.0.0
+org.osgi:osgi.cmpn:7.0.0
+org.osgi:osgi.enterprise:7.0.0
+org.osgi:org.osgi.service.component.annotations:1.5.1
+org.osgi:org.osgi.annotation.versioning:1.1.2
+
+# Apache Felix
+org.apache.felix:org.apache.felix.framework:7.0.5
+org.apache.felix:org.apache.felix.configadmin:1.9.28
+org.apache.felix:org.apache.felix.scr:2.2.12
+org.apache.felix:org.apache.felix.gogo.command:1.1.2
+org.apache.felix:org.apache.felix.gogo.runtime:1.1.6
+org.apache.felix:org.apache.felix.gogo.shell:1.1.4
+org.apache.felix:org.apache.felix.http.servlet-api:3.0.0
+org.apache.felix:org.apache.felix.log:1.3.0
+org.apache.felix:org.apache.felix.dependencymanager:4.6.1
+org.apache.felix:org.apache.felix.dependencymanager.runtime:4.0.6
+org.apache.felix:org.apache.felix.dependencymanager.shell:4.0.8
+org.apache.felix:org.apache.felix.dependencymanager.annotation:5.0.2
+
+# Testing
+junit:junit:4.13.2
+org.junit.jupiter:junit-jupiter-api:5.11.3
+org.junit.jupiter:junit-jupiter-engine:5.11.3
+org.mockito:mockito-core:5.14.2
+net.bytebuddy:byte-buddy:1.15.10
+net.bytebuddy:byte-buddy-agent:1.15.10
+org.objenesis:objenesis:3.4
+org.assertj:assertj-core:3.26.3
+org.hamcrest:hamcrest:2.2
+
+# BND Testing Support
+biz.aQute.bnd:biz.aQute.launcher:7.1.0
+biz.aQute.bnd:biz.aQute.junit:7.1.0

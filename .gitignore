@@ -29,3 +29,6 @@ build/
 cnf/ext/felix.xml
 cnf/Local/
 cnf/local/
+
+# Eclipse/Buildship IDE settings (machine-specific paths)
+**/.settings/org.eclipse.buildship.core.prefs

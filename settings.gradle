@@ -9,3 +9,6 @@ rootProject.name = 'gridappsd'
 // Include the main modules (cnf is configuration only, not a buildable module)
 include 'gov.pnnl.goss.gridappsd'
 include 'gov.pnnl.goss.gridappsd.test'
+include 'gridappsd-proven'
+include 'gridappsd-jena'
+include 'gridappsd-poi'

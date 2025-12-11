@@ -16,8 +16,11 @@ allprojects {
 }
 
 subprojects {
+    // Skip BND plugin for non-BND projects (wrapper bundles that use Shadow)
+    if (project.name != 'gridappsd-proven' && project.name != 'gridappsd-jena' && project.name != 'gridappsd-poi') {
+        apply plugin: 'biz.aQute.bnd'
+    }
     apply plugin: 'java'
-    apply plugin: 'biz.aQute.bnd'
     apply plugin: 'com.diffplug.spotless'
 
     // Spotless configuration for code formatting
@@ -101,6 +104,9 @@ task collectBundles(type: Copy) {
 
     // Only depend on production JAR, skip test modules
     dependsOn ':gov.pnnl.goss.gridappsd:jar'
+    dependsOn ':gridappsd-proven:shadowJar'
+    dependsOn ':gridappsd-jena:shadowJar'
+    dependsOn ':gridappsd-poi:shadowJar'
     dependsOn assembleLauncher
 
     into "$buildDir/launcher/bundle"
@@ -110,15 +116,11 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect GOSS bundles from local repository
-    from('../GOSS/cnf/releaserepo') {
-        include '**/*.jar'
-        exclude '**/*-sources.jar'
-        exclude '**/*-javadoc.jar'
-        eachFile { file ->
-            file.path = file.name
-        }
-        includeEmptyDirs = false
+    // Collect freshly built GOSS bundles from generated directory (not releaserepo which has old versions)
+    from('../GOSS/pnnl.goss.core/generated') {
+        include '*.jar'
+        exclude '*-sources.jar'
+        exclude '*-javadoc.jar'
     }
 
     // Collect CIMHub library from BND cache
@@ -126,9 +128,19 @@ task collectBundles(type: Copy) {
         include 'cimhub.lib-2.0.3.jar'
     }
 
-    // Collect Apache Jena OSGi from BND cache (Maven Central version has same dexx dependency issue)
-    from('cnf/cache/7.1.0/GOSS Dependencies') {
-        include 'org.apache.jena.osgi-3.7.0.jar'
+    // Collect gridappsd-jena wrapper bundle (uber JAR with all Jena dependencies embedded)
+    from('gridappsd-jena/build/libs') {
+        include 'gridappsd-jena-3.7.0.jar'
+    }
+
+    // Collect gridappsd-proven wrapper bundle (uber JAR with all Proven dependencies embedded)
+    from('gridappsd-proven/build/libs') {
+        include 'gridappsd-proven-0.5.0.jar'
+    }
+
+    // Collect gridappsd-poi wrapper bundle (uber JAR with all POI dependencies embedded)
+    from('gridappsd-poi/build/libs') {
+        include 'gridappsd-poi-3.17.0.jar'
     }
 
     // Download Maven dependencies matching GOSS build dependencies from libraries.bnd
@@ -167,25 +179,37 @@ task collectBundles(type: Copy) {
             'org.ow2.asm:asm-analysis:9.7',
             'org.ow2.asm:asm-util:9.7',
 
-            // Jackson (GOSS uses 2.17.2 per libraries.bnd)
-            'com.fasterxml.jackson.core:jackson-core:2.17.2',
-            'com.fasterxml.jackson.core:jackson-databind:2.17.2',
-            'com.fasterxml.jackson.core:jackson-annotations:2.17.2',
+            // Jackson (GridAPPS-D requires 2.18.1+ per bnd.bnd)
+            'com.fasterxml.jackson.core:jackson-core:2.18.1',
+            'com.fasterxml.jackson.core:jackson-databind:2.18.1',
+            'com.fasterxml.jackson.core:jackson-annotations:2.18.1',
 
             // GSON (GOSS uses 2.11.0 per bnd.bnd)
             'com.google.code.gson:gson:2.11.0',
 
-            // ActiveMQ OSGi bundles
-            'org.apache.activemq:activemq-osgi:5.18.6',
-            'org.apache.activemq:activemq-client:5.18.6',
-            'org.apache.activemq:activemq-shiro:5.18.6',
+            // ActiveMQ OSGi bundles (GOSS uses 6.2.0 for Jakarta EE support)
+            'org.apache.activemq:activemq-osgi:6.2.0',
+            'org.apache.activemq:activemq-client:6.2.0',
+            'org.apache.activemq:activemq-shiro:6.2.0',
             'org.fusesource.hawtbuf:hawtbuf:1.11',
             'org.fusesource.hawtdispatch:hawtdispatch:1.22',
             'org.fusesource.stompjms:stompjms-client:1.19',
 
-            // Shiro (required by ActiveMQ)
-            'org.apache.shiro:shiro-core:1.13.0',
-            'org.apache.shiro:shiro-web:1.13.0',
+            // Shiro 2.0.0 (required by ActiveMQ 6.2.0 and GOSS for Jakarta EE support)
+            'org.apache.shiro:shiro-core:2.0.0',
+            'org.apache.shiro:shiro-lang:2.0.0',
+            'org.apache.shiro:shiro-web:2.0.0',
+            'org.apache.shiro:shiro-cache:2.0.0',
+            'org.apache.shiro:shiro-event:2.0.0',
+            'org.apache.shiro:shiro-crypto-core:2.0.0',
+            'org.apache.shiro:shiro-crypto-hash:2.0.0',
+            'org.apache.shiro:shiro-crypto-cipher:2.0.0',
+            'org.apache.shiro:shiro-config-core:2.0.0',
+            'org.apache.shiro:shiro-config-ogdl:2.0.0',
+
+            // Commons BeanUtils (required by Shiro config-ogdl)
+            'commons-beanutils:commons-beanutils:1.9.4',
+            'commons-collections:commons-collections:3.2.2',
 
             // HTTP Components (GOSS uses 4.5.14 per bnd.bnd)
             'org.apache.httpcomponents:httpclient:4.5.14',
@@ -201,6 +225,14 @@ task collectBundles(type: Copy) {
             'org.apache.commons:commons-pool2:2.12.0',
             'commons-dbcp:commons-dbcp:1.4',
             'commons-logging:commons-logging:1.2',
+            'org.apache.commons:commons-math3:3.6.1',
+
+            // Guava (required by GridAPPS-D for RuntimeTypeAdapterFactory)
+            'com.google.guava:guava:33.3.1-jre',
+            'com.google.guava:failureaccess:1.0.2',
+
+            // Jettison (required by GridAPPS-D ProcessEvent for JSON processing)
+            'org.codehaus.jettison:jettison:1.5.4',
 
             // XStream (GOSS uses 1.4.20 per bnd.bnd)
             'com.thoughtworks.xstream:xstream:1.4.20',
@@ -213,24 +245,62 @@ task collectBundles(type: Copy) {
             'org.springframework:spring-context:6.1.13',
             'org.springframework:spring-core:6.1.13',
 
-            // JMS API (GOSS uses 2.0.1 per bnd.bnd)
+            // Jakarta JMS API (GOSS uses 3.1.0 for Jakarta EE)
+            'jakarta.jms:jakarta.jms-api:3.1.0',
+
+            // Jakarta Transaction API (replaces Geronimo JTA)
+            'jakarta.transaction:jakarta.transaction-api:2.0.1',
+
+            // Jakarta XML Binding (replaces javax.xml.bind)
+            'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2',
+            'jakarta.activation:jakarta.activation-api:2.1.3',
+
+            // Jakarta RESTful WS API (replaces JAX-RS)
+            'jakarta.ws.rs:jakarta.ws.rs-api:4.0.0',
+
+            // Legacy JMS API (still needed by some bundles)
             'javax.jms:javax.jms-api:2.0.1',
 
-            // Geronimo JTA
+            // Legacy javax.transaction (needed by ActiveMQ OSGi and commons-dbcp)
+            // Using Geronimo spec which has fewer dependencies
             'org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1',
 
-            // JAXB
-            'javax.xml.bind:jaxb-api:2.3.1',
-            'com.sun.activation:javax.activation:1.2.0',
+            // javax.el for CDI (required by javax.enterprise.cdi-api)
+            'javax.el:javax.el-api:3.0.0',
 
-            // JAX-RS
-            'javax.ws.rs:jsr311-api:1.1.1',
+            // NOTE: Xerces/xmlresolver now embedded in gridappsd-jena
 
             // OSGI JDBC service
             'org.osgi:org.osgi.service.jdbc:1.0.0',
 
             // Javax annotation (GOSS uses 1.3.2 per bnd.bnd)
-            'javax.annotation:javax.annotation-api:1.3.2'
+            'javax.annotation:javax.annotation-api:1.3.2',
+
+            // Jakarta annotation (needed by ActiveMQ 6.2.0)
+            'jakarta.annotation:jakarta.annotation-api:2.1.1',
+
+            // Javax inject (needed by javax.enterprise.cdi-api) - use ServiceMix bundle
+            'org.apache.servicemix.bundles:org.apache.servicemix.bundles.javax-inject:1_3',
+
+            // HawtDispatch transport (needed by stompjms-client)
+            'org.fusesource.hawtdispatch:hawtdispatch-transport:1.22',
+
+            // Jakarta CDI API (needed by Jakarta Transaction) - per GOSS libraries.bnd
+            'jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.1',
+            'jakarta.inject:jakarta.inject-api:2.0.1',
+            'jakarta.interceptor:jakarta.interceptor-api:2.1.0',
+            'jakarta.enterprise:jakarta.enterprise.lang-model:4.0.1',
+            'jakarta.el:jakarta.el-api:5.0.1',
+
+            // Jakarta Resource (needed by ActiveMQ 6.2.0 OSGi)
+            'jakarta.resource:jakarta.resource-api:2.1.0',
+
+            // Commons BeanUtils dependencies
+            'commons-collections:commons-collections:3.2.2'
+
+            // NOTE: Jena deps (dexx, jsonld-java, commons-csv, thrift, xerces) are now embedded in gridappsd-jena
+            // NOTE: POI deps (xmlsec, bouncycastle, xmlbeans, commons-codec/collections4) are now embedded in gridappsd-poi
+            // NOTE: Proven deps (Jersey, JAX-RS 2.x, JAXB, HK2, Hazelcast) are now embedded in gridappsd-proven
         ]
 
         def destDir = file("$buildDir/launcher/bundle")
@@ -290,16 +360,23 @@ task launcherJar(type: Jar) {
 
     from("$buildDir/launcher-classes")
 
-    manifest {
-        attributes(
-            'Main-Class': 'gov.pnnl.goss.gridappsd.launcher.GridAPPSDLauncher',
-            'Class-Path': fileTree("$buildDir/launcher/bundle").include('*.jar').files.collect {
-                "bundle/${it.name}"
-            }.join(' ')
-        )
-    }
-
+    // Must depend on collectBundles so bundles exist when manifest is generated
     dependsOn compileLauncher
+    dependsOn collectBundles
+
+    // Generate Class-Path at execution time, after bundles are copied
+    doFirst {
+        def bundleJars = fileTree("$buildDir/launcher/bundle").include('*.jar').files.collect {
+            "bundle/${it.name}"
+        }.join(' ')
+        manifest {
+            attributes(
+                'Main-Class': 'gov.pnnl.goss.gridappsd.launcher.GridAPPSDLauncher',
+                'Class-Path': bundleJars
+            )
+        }
+        println "Manifest Class-Path includes ${fileTree("$buildDir/launcher/bundle").include('*.jar').files.size()} bundles"
+    }
 
     doLast {
         println "Launcher JAR created: ${archiveFile.get()}"
