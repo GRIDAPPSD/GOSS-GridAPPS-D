@@ -165,11 +165,17 @@ task collectBundles(type: Copy) {
             'org.apache.felix:org.apache.felix.http.jetty:4.1.14',
             'org.apache.felix:org.apache.felix.dependencymanager:4.6.1',
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
-            'org.apache.felix:org.apache.felix.log:1.2.6',
+
+            // OSGi Log Service API (needed by Felix Metatype, previously bundled with Felix Log)
+            'org.osgi:org.osgi.service.log:1.5.0',
+
+            // Logback (replaces Felix Log for Java 21 compatibility)
+            // Felix Log 1.2.6 has NPE issues with null bundle locations in Java 21
+            'ch.qos.logback:logback-classic:1.5.18',
+            'ch.qos.logback:logback-core:1.5.18',
 
             // SLF4J (GOSS uses 2.0.13+ per libraries.bnd)
-            'org.slf4j:slf4j-api:2.0.13',
-            'org.slf4j:slf4j-simple:2.0.13',
+            'org.slf4j:slf4j-api:2.0.16',
 
             // Apache Aries SPI Fly (OSGi ServiceLoader support for SLF4J 2.x)
             'org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.7',
@@ -210,6 +216,9 @@ task collectBundles(type: Copy) {
             // Commons BeanUtils (required by Shiro config-ogdl)
             'commons-beanutils:commons-beanutils:1.9.4',
             'commons-collections:commons-collections:3.2.2',
+
+            // OWASP Encoder (required by Shiro 2.0 web module)
+            'org.owasp.encoder:encoder:1.3.1',
 
             // HTTP Components (GOSS uses 4.5.14 per bnd.bnd)
             'org.apache.httpcomponents:httpclient:4.5.14',

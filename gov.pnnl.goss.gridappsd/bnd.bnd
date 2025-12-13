@@ -56,7 +56,10 @@
 -sub: *.bnd
 -runee: JavaSE-21
 -runfw: org.apache.felix.framework;version='[7.0.5,8)'
--runbundles: org.apache.felix.log;version='[1.0.1,1.0.2)'
+# Using Logback instead of Felix Log for Java 21 compatibility
+-runbundles: \
+	ch.qos.logback.classic;version='[1.5,2)',\
+	ch.qos.logback.core;version='[1.5,2)'
 -runrequires: osgi.identity;filter:='(osgi.identity=httpcore)'
 
 -sources: true
