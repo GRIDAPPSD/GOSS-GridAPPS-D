@@ -101,7 +101,14 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources {
     public void start() {
         log.debug("Starting " + this.getClass().getName());
 
-        registerDataSource();
+        // Only register datasource if configuration has been provided
+        // Configuration is typically provided via OSGi ConfigAdmin or config files
+        if (datasourceProperties != null) {
+            registerDataSource();
+        } else {
+            log.info(
+                    "No datasource configuration provided yet - datasource will be registered when configuration is available");
+        }
     }
 
     // TODO: Felix DM ConfigurationDependency removed - needs OSGi DS replacement

@@ -6,7 +6,7 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 import java.io.Serializable;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import static org.junit.Assert.assertNotNull;
 

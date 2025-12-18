@@ -69,6 +69,18 @@ subprojects {
             '--add-opens', 'java.base/java.io=ALL-UNNAMED',
             '--add-opens', 'java.base/java.time=ALL-UNNAMED'
         ]
+
+        // Support for excluding integration tests via property
+        // Usage: ./gradlew test -PexcludeIntegrationTests
+        if (project.hasProperty('excludeIntegrationTests')) {
+            exclude '**/*IntegrationTests.class'
+        }
+
+        // Support for running only integration tests via property
+        // Usage: ./gradlew test -PonlyIntegrationTests
+        if (project.hasProperty('onlyIntegrationTests')) {
+            include '**/*IntegrationTests.class'
+        }
     }
 
     // Print build info
@@ -97,6 +109,23 @@ task assembleLauncher(type: Copy) {
     }
 }
 
+// Task to copy configuration files
+task copyConfig(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Copies configuration files to the launcher directory'
+
+    from('gov.pnnl.goss.gridappsd/conf') {
+        include '*.cfg'
+        include '*.properties'
+    }
+
+    into "$buildDir/launcher/conf"
+
+    doLast {
+        println "Configuration files copied to: $buildDir/launcher/conf"
+    }
+}
+
 // Task to collect all bundle JARs
 task collectBundles(type: Copy) {
     group = 'GridAPPS-D'
@@ -108,6 +137,7 @@ task collectBundles(type: Copy) {
     dependsOn ':gridappsd-jena:shadowJar'
     dependsOn ':gridappsd-poi:shadowJar'
     dependsOn assembleLauncher
+    dependsOn copyConfig
 
     into "$buildDir/launcher/bundle"
 
@@ -121,6 +151,8 @@ task collectBundles(type: Copy) {
         include '*.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
+        // LDAP bundle is now configurable - only activates when pnnl.goss.core.security.ldap.cfg
+        // exists with enabled=true and the LDAP server is reachable
     }
 
     // Collect CIMHub library from BND cache
@@ -158,6 +190,7 @@ task collectBundles(type: Copy) {
             // Felix OSGi bundles
             'org.apache.felix:org.apache.felix.scr:2.2.10',
             'org.apache.felix:org.apache.felix.configadmin:1.9.26',
+            'org.apache.felix:org.apache.felix.fileinstall:3.7.4',  // Monitors conf/ and loads .cfg files into ConfigAdmin
             'org.apache.felix:org.apache.felix.gogo.command:1.1.2',
             'org.apache.felix:org.apache.felix.gogo.runtime:1.1.6',
             'org.apache.felix:org.apache.felix.gogo.shell:1.1.4',
@@ -166,18 +199,14 @@ task collectBundles(type: Copy) {
             'org.apache.felix:org.apache.felix.dependencymanager:4.6.1',
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
 
-            // OSGi Log Service API (needed by Felix Metatype, previously bundled with Felix Log)
-            'org.osgi:org.osgi.service.log:1.5.0',
+            // Pax Logging (OSGi-native logging framework)
+            // Provides SLF4J 2.x API + Logback backend with proper OSGi classloader handling
+            // See: https://github.com/ops4j/org.ops4j.pax.logging
+            'org.ops4j.pax.logging:pax-logging-api:2.2.8',
+            'org.ops4j.pax.logging:pax-logging-logback:2.2.8',
 
-            // Logback (replaces Felix Log for Java 21 compatibility)
-            // Felix Log 1.2.6 has NPE issues with null bundle locations in Java 21
-            'ch.qos.logback:logback-classic:1.5.18',
-            'ch.qos.logback:logback-core:1.5.18',
-
-            // SLF4J (GOSS uses 2.0.13+ per libraries.bnd)
-            'org.slf4j:slf4j-api:2.0.16',
-
-            // Apache Aries SPI Fly (OSGi ServiceLoader support for SLF4J 2.x)
+            // Apache Aries SPI Fly (OSGi ServiceLoader support)
+            // Required by Shiro 2.0 crypto-hash which uses ServiceLoader for hash algorithms
             'org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.7',
             'org.ow2.asm:asm:9.7',
             'org.ow2.asm:asm-commons:9.7',
@@ -270,9 +299,9 @@ task collectBundles(type: Copy) {
             // Legacy JMS API (still needed by some bundles)
             'javax.jms:javax.jms-api:2.0.1',
 
-            // Legacy javax.transaction (needed by ActiveMQ OSGi and commons-dbcp)
-            // Using Geronimo spec which has fewer dependencies
-            'org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1',
+            // NOTE: Removed geronimo-jta_1.1_spec - it conflicts with Felix framework's
+            // javax.transaction.xa export, causing "uses constraint violation" errors.
+            // javax.transaction.xa is now exported from the system packages instead.
 
             // javax.el for CDI (required by javax.enterprise.cdi-api)
             'javax.el:javax.el-api:3.0.0',

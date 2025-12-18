@@ -155,7 +155,33 @@ public class GridAPPSDLauncher {
             config.put("org.osgi.framework.system.packages.extra", "sun.misc");
         }
 
+        // Resolve relative paths to absolute paths based on baseDir
+        // This ensures FileInstall and other components find files correctly
+        resolveRelativePaths(config);
+
         return config;
+    }
+
+    /**
+     * Resolve relative paths in configuration to absolute paths based on baseDir.
+     * This is necessary because the working directory may not be the same as
+     * the launcher's base directory.
+     */
+    private void resolveRelativePaths(Map<String, String> config) {
+        // Resolve FileInstall directory
+        String fileInstallDir = config.get("felix.fileinstall.dir");
+        if (fileInstallDir != null && !new File(fileInstallDir).isAbsolute()) {
+            File resolved = resolveFile(fileInstallDir);
+            config.put("felix.fileinstall.dir", resolved.getAbsolutePath());
+            System.out.println("FileInstall directory: " + resolved.getAbsolutePath());
+        }
+
+        // Resolve felix cache directory
+        String cacheDir = config.get(Constants.FRAMEWORK_STORAGE);
+        if (cacheDir != null && !new File(cacheDir).isAbsolute()) {
+            File resolved = resolveFile(cacheDir);
+            config.put(Constants.FRAMEWORK_STORAGE, resolved.getAbsolutePath());
+        }
     }
 
     private Framework createFramework(Map<String, String> config) throws Exception {
@@ -217,12 +243,58 @@ public class GridAPPSDLauncher {
         }
 
         // Phase 2: Start bundles that aren't fragments
+        // Start Pax Logging first to avoid SLF4J "no providers found" warning
         System.out.println("Starting bundles...");
+
+        // Priority bundles that should start first (infrastructure bundles)
+        // Order matters: logging -> SPI -> config -> SCR -> fileinstall -> security
+        List<String> priorityBundles = List.of(
+            // Logging first (Pax Logging provides OSGi-native SLF4J)
+            "org.ops4j.pax.logging.pax-logging-api",
+            "org.ops4j.pax.logging.pax-logging-logback",
+            // SPI Fly for ServiceLoader support (Shiro 2.0 crypto modules)
+            "org.apache.aries.spifly.dynamic.bundle",
+            // Configuration Admin - stores/manages configurations
+            "org.apache.felix.configadmin",
+            // SCR - Declarative Services runtime (activates @Component classes)
+            "org.apache.felix.scr",
+            // FileInstall - loads .cfg files from conf/ into ConfigAdmin
+            "org.apache.felix.fileinstall",
+            // GOSS Core API (provides interfaces needed by security)
+            "pnnl.goss.core.core-api",
+            // GOSS Security - provides SecurityManager and GossPermissionResolver
+            // Must start before security-ldap and security-propertyfile
+            "pnnl.goss.core.goss-core-security"
+        );
+
+        // Start priority bundles first
+        for (String priorityName : priorityBundles) {
+            for (Bundle bundle : installedBundles) {
+                if (priorityName.equals(bundle.getSymbolicName())) {
+                    try {
+                        if (bundle.getHeaders().get(Constants.FRAGMENT_HOST) == null) {
+                            bundle.start();
+                            System.out.println("  Started: " + bundle.getSymbolicName() + " (priority)");
+                        }
+                    } catch (BundleException e) {
+                        System.err.println("  Failed to start " + bundle.getSymbolicName() + ": " + e.getMessage());
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Start remaining bundles
         for (Bundle bundle : installedBundles) {
             try {
                 // Skip fragment bundles
                 if (bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null) {
                     System.out.println("  Skipping fragment: " + bundle.getSymbolicName());
+                    continue;
+                }
+
+                // Skip already started priority bundles
+                if (bundle.getState() == Bundle.ACTIVE) {
                     continue;
                 }
 

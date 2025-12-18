@@ -4,7 +4,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.http.auth.Credentials;
@@ -356,7 +357,7 @@ public class ConfigurationManagerTest {
 
     Client getClient() throws Exception {
         if (client == null) {
-            Dictionary properties = new Properties();
+            Map<String, Object> properties = new HashMap<>();
             properties.put("goss.system.manager", "system");
             properties.put("goss.system.manager.password", "manager");
 

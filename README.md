@@ -134,6 +134,90 @@ GridAPPS-D uses ActiveMQ for message-based communication:
 ./build-docker.sh
 ```
 
+### Version Management
+
+GridAPPS-D uses [Semantic Versioning](https://semver.org/) with automated API change detection:
+
+| Change Type | Version Bump | Example |
+|-------------|--------------|---------|
+| **MAJOR** | X.0.0 | Interface changes, removed public methods, breaking changes |
+| **MINOR** | x.Y.0 | New public methods on classes, new classes (backward compatible) |
+| **PATCH** | x.y.Z | Implementation-only changes, bug fixes |
+
+#### Basic Commands
+
+```bash
+make version              # Show versions of all bundles
+make build                # Build all bundles
+make test                 # Run tests
+make clean                # Clean build artifacts
+```
+
+#### API Change Detection
+
+Before bumping versions, analyze your changes to determine the appropriate version bump:
+
+```bash
+make check-api            # Analyze API changes and get recommendation
+```
+
+#### Version Bumping Commands
+
+```bash
+# Automatic version bumping (reads current version, increments appropriately)
+make bump-major           # 2.0.0 -> 3.0.0-SNAPSHOT (breaking changes)
+make bump-minor           # 2.0.0 -> 2.1.0-SNAPSHOT (new features)
+make bump-patch           # 2.0.0 -> 2.0.1-SNAPSHOT (bug fixes)
+make next-snapshot        # Same as bump-patch (use after release)
+
+# Manual version setting
+make release VERSION=2.0.0    # Set exact release version (removes -SNAPSHOT)
+make snapshot VERSION=2.1.0   # Set exact snapshot version (adds -SNAPSHOT)
+```
+
+#### Complete Release Workflow
+
+```bash
+# 1. Analyze changes to determine version bump type
+make check-api
+
+# 2. If currently on snapshot, set release version
+make version                      # Verify: 2.0.0-SNAPSHOT
+make release VERSION=2.0.0        # Changes to: 2.0.0
+
+# 3. Build and test
+make build && make test
+
+# 4. Tag and commit release
+git add -A && git commit -m "Release 2.0.0"
+git tag v2.0.0
+git push && git push --tags
+
+# 5. Start next development cycle
+make next-snapshot                # Bumps to: 2.0.1-SNAPSHOT
+git add -A && git commit -m "Start 2.0.1-SNAPSHOT development"
+git push
+```
+
+#### API Compatibility Guidelines
+
+**MAJOR version bump required:**
+- Adding or removing methods from an **interface** (breaks implementors)
+- Removing public methods from a class
+- Changing method signatures (parameters, return types)
+- Changing class hierarchy (superclass, implemented interfaces)
+
+**MINOR version bump required:**
+- Adding new public methods to a **class** (not interface)
+- Adding new classes
+- Adding new packages
+
+**PATCH version bump required:**
+- Bug fixes with no API changes
+- Performance improvements
+- Internal refactoring
+- Documentation updates
+
 ## Technology Stack
 
 - **Java 21** with modern language features
@@ -146,7 +230,8 @@ GridAPPS-D uses ActiveMQ for message-based communication:
 
 ## Related Repositories
 
-- [GOSS](https://github.com/GRIDAPPSD/GOSS) - Core messaging framework
+- [GOSS](https://github.com/GridOPTICS/GOSS) - Core messaging framework
+- [GOSS-Repository](https://github.com/GridOPTICS/GOSS-Repository) - OSGi bundle repository
 - [gridappsd-docker](https://github.com/GRIDAPPSD/gridappsd-docker) - Docker deployment
 - [gridappsd-python](https://github.com/GRIDAPPSD/gridappsd-python) - Python client library
 - [CIMHub](https://github.com/GRIDAPPSD/CIMHub) - CIM model utilities

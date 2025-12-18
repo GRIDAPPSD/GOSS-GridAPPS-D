@@ -6,17 +6,16 @@ import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import javax.naming.ConfigurationException;
 
 import org.apache.http.auth.Credentials;
@@ -306,7 +305,7 @@ public class BGPGModelManagerTest {
 
     Client getClient() throws Exception {
         if (client == null) {
-            Dictionary properties = new Properties();
+            Map<String, Object> properties = new HashMap<>();
             properties.put("goss.system.manager", "system");
             properties.put("goss.system.manager.password", "manager");
 
