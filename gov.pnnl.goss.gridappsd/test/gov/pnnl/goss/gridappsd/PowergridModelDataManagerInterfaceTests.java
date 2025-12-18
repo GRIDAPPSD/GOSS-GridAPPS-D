@@ -55,21 +55,18 @@ import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 /**
  * Tests for the PowergridModelDataManager interface methods.
  *
- * These tests verify the PowergridModelDataManager interface contract using mocks.
- * The actual implementation (BGPowergridModelDataManagerImpl) requires Jena/Blazegraph
- * dependencies that are only available at runtime with the full OSGi container.
+ * These tests verify the PowergridModelDataManager interface contract using
+ * mocks. The actual implementation (BGPowergridModelDataManagerImpl) requires
+ * Jena/Blazegraph dependencies that are only available at runtime with the full
+ * OSGi container.
  *
- * Interface methods:
- * - query, queryResultSet
- * - queryObject, queryObjectResultSet
- * - queryObjectTypes, queryObjectTypeList
- * - queryModel, queryModelResultSet
- * - queryModelNames, queryModelNameList
- * - queryModelNamesAndIds, queryModelNamesAndIdsResultSet
- * - queryObjectIds, queryObjectIdsList
- * - queryObjectDictByType, queryObjectDictByTypeResultSet
- * - queryMeasurementDictByObject, queryMeasurementDictByObjectResultSet
- * - putModel
+ * Interface methods: - query, queryResultSet - queryObject,
+ * queryObjectResultSet - queryObjectTypes, queryObjectTypeList - queryModel,
+ * queryModelResultSet - queryModelNames, queryModelNameList -
+ * queryModelNamesAndIds, queryModelNamesAndIdsResultSet - queryObjectIds,
+ * queryObjectIdsList - queryObjectDictByType, queryObjectDictByTypeResultSet -
+ * queryMeasurementDictByObject, queryMeasurementDictByObjectResultSet -
+ * putModel
  */
 @RunWith(MockitoJUnitRunner.class)
 public class PowergridModelDataManagerInterfaceTests {

@@ -61,16 +61,15 @@ import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 /**
  * Tests for the ConfigurationManager interface methods.
  *
- * These tests verify that the ConfigurationManagerImpl correctly implements
- * all methods defined in the ConfigurationManager interface:
- * - getSimulationFile
- * - getConfigurationProperty
- * - registerConfigurationHandler
- * - generateConfiguration
+ * These tests verify that the ConfigurationManagerImpl correctly implements all
+ * methods defined in the ConfigurationManager interface: - getSimulationFile -
+ * getConfigurationProperty - registerConfigurationHandler -
+ * generateConfiguration
  *
  * Note: ConfigurationManagerImpl uses OSGi @Reference injection for LogManager.
- * The constructor only accepts (LogManager, DataManager) but doesn't set logManager field.
- * Tests that require logManager will use a mock ConfigurationManager instead.
+ * The constructor only accepts (LogManager, DataManager) but doesn't set
+ * logManager field. Tests that require logManager will use a mock
+ * ConfigurationManager instead.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationManagerInterfaceTests {
@@ -91,7 +90,8 @@ public class ConfigurationManagerInterfaceTests {
 
     @Before
     public void setUp() throws Exception {
-        // Note: The constructor doesn't properly inject logManager (it's a bug in the impl)
+        // Note: The constructor doesn't properly inject logManager (it's a bug in the
+        // impl)
         // For full testing, we would need OSGi DS context
         configManager = new ConfigurationManagerImpl(mockLogManager, mockDataManager);
     }

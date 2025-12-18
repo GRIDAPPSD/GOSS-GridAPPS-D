@@ -23,7 +23,7 @@ Test-Cases: ${test-cases}
 -buildpath: \
 	junit:junit;version=4.13.2,\
 	org.mockito:mockito-core;version=5.14.2,\
-	org.apache.felix:org.apache.felix.configadmin;version=1.9.28,\
+	org.apache.felix:org.apache.felix.configadmin;version=1.9.26,\
 	pnnl.goss.core.core-api;version='[8,9)',\
 	pnnl.goss.core.goss-client;version='[3,4)',\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
@@ -44,13 +44,13 @@ Test-Cases: ${test-cases}
 # Using Logback instead of Felix Log for Java 21 compatibility
 -runbundles: \
 	gov.pnnl.goss.gridappsd.test;version=snapshot,\
-	ch.qos.logback.classic;version='[1.5,2)',\
-	ch.qos.logback.core;version='[1.5,2)',\
+	ch.qos.logback:logback-classic;version='[1.5,2)',\
+	ch.qos.logback:logback-core;version='[1.5,2)',\
 	org.mockito:mockito-core;version='[5.14,6)',\
 	org.objenesis:objenesis;version='[3.4,4)',\
 	jakarta.jms:jakarta.jms-api;version='[3.1,4)',\
 	org.apache.activemq:activemq-osgi;version='[6.2,7)',\
-	org.apache.commons:commons-logging;version='[1.2,2)',\
+	commons-logging:commons-logging;version='[1.2,2)',\
 	org.apache.felix:org.apache.felix.configadmin;version='[1.9,2)',\
 	org.apache.httpcomponents:httpclient;version='[4.5,5)',\
 	org.apache.httpcomponents:httpcore;version='[4.4,5)',\

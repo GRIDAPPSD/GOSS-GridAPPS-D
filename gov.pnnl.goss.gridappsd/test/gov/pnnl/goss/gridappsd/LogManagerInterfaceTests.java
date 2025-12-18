@@ -56,16 +56,13 @@ import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 /**
  * Tests for the LogManager interface methods.
  *
- * These tests verify that the LogManagerImpl correctly implements
- * all methods defined in the LogManager interface:
- * - trace, debug, info, warn, error, fatal
- * - logMessageFromSource
- * - getLogDataManager
- * - getLogLevel
- * - setProcessType
+ * These tests verify that the LogManagerImpl correctly implements all methods
+ * defined in the LogManager interface: - trace, debug, info, warn, error, fatal
+ * - logMessageFromSource - getLogDataManager - getLogLevel - setProcessType
  *
  * Note: LogManagerImpl publishes to a message broker which requires a client.
- * These tests verify method signatures and basic behavior without a connected client.
+ * These tests verify method signatures and basic behavior without a connected
+ * client.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class LogManagerInterfaceTests {
@@ -118,8 +115,8 @@ public class LogManagerInterfaceTests {
     // ========== trace() method signature tests ==========
 
     /**
-     * Test that trace method is callable with correct signature.
-     * Note: Will not actually publish without a client connection.
+     * Test that trace method is callable with correct signature. Note: Will not
+     * actually publish without a client connection.
      */
     @Test
     public void trace_methodIsCallable() {

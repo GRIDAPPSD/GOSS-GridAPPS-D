@@ -68,14 +68,9 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import pnnl.goss.core.Response;
 
 /**
- * Tests for remaining API interfaces:
- * - RoleManager
- * - FieldBusManager
- * - TimeseriesDataManager
- * - LogDataManager
- * - GridAppsDataHandler
- * - DataManagerHandler
- * - ConfigurationHandler
+ * Tests for remaining API interfaces: - RoleManager - FieldBusManager -
+ * TimeseriesDataManager - LogDataManager - GridAppsDataHandler -
+ * DataManagerHandler - ConfigurationHandler
  *
  * These interfaces are typically implemented by specific components or are
  * functional interfaces that require specific context. This test file verifies
@@ -148,7 +143,8 @@ public class RemainingInterfacesTests {
         assertEquals("Should return expected MRID", "mrid-12345", result);
     }
 
-    // ==================== TimeseriesDataManager Interface Tests ====================
+    // ==================== TimeseriesDataManager Interface Tests
+    // ====================
 
     /**
      * Test that TimeseriesDataManager has all required methods.
@@ -303,7 +299,8 @@ public class RemainingInterfacesTests {
         mockHandler.handle("request", "process", "user");
     }
 
-    // ==================== ConfigurationHandler Interface Tests ====================
+    // ==================== ConfigurationHandler Interface Tests
+    // ====================
 
     /**
      * Test that ConfigurationHandler has generateConfig method.

@@ -61,11 +61,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * Integration tests for Blazegraph/SPARQL operations used by PowergridModelDataManager.
+ * Integration tests for Blazegraph/SPARQL operations used by
+ * PowergridModelDataManager.
  *
- * These tests require Blazegraph to be running on localhost:8889 with power grid models loaded.
+ * These tests require Blazegraph to be running on localhost:8889 with power
+ * grid models loaded.
  *
- * To run: Ensure Blazegraph container is running (docker ps should show blazegraph container)
+ * To run: Ensure Blazegraph container is running (docker ps should show
+ * blazegraph container)
  *
  * Tests are skipped if Blazegraph is not available.
  */
@@ -129,22 +132,23 @@ public class BlazegraphIntegrationTests {
     public void canQueryForFeeders() throws Exception {
         // This is the query used by PowergridModelDataManager to get model names
         String query = CIM_PREFIX +
-            "SELECT ?name ?mRID ?substationName ?substationID ?subregionName ?subregionID ?regionName ?regionID WHERE { " +
-            "?s r:type c:Feeder. " +
-            "?s c:IdentifiedObject.name ?name. " +
-            "?s c:IdentifiedObject.mRID ?mRID. " +
-            "OPTIONAL { " +
-            "  ?s c:Feeder.NormalEnergizingSubstation ?subStation. " +
-            "  ?subStation c:IdentifiedObject.name ?substationName. " +
-            "  ?subStation c:IdentifiedObject.mRID ?substationID. " +
-            "  ?subStation c:Substation.Region ?subRegion. " +
-            "  ?subRegion c:IdentifiedObject.name ?subregionName. " +
-            "  ?subRegion c:IdentifiedObject.mRID ?subregionID. " +
-            "  ?subRegion c:SubGeographicalRegion.Region ?region. " +
-            "  ?region c:IdentifiedObject.name ?regionName. " +
-            "  ?region c:IdentifiedObject.mRID ?regionID. " +
-            "} " +
-            "} ORDER BY ?name";
+                "SELECT ?name ?mRID ?substationName ?substationID ?subregionName ?subregionID ?regionName ?regionID WHERE { "
+                +
+                "?s r:type c:Feeder. " +
+                "?s c:IdentifiedObject.name ?name. " +
+                "?s c:IdentifiedObject.mRID ?mRID. " +
+                "OPTIONAL { " +
+                "  ?s c:Feeder.NormalEnergizingSubstation ?subStation. " +
+                "  ?subStation c:IdentifiedObject.name ?substationName. " +
+                "  ?subStation c:IdentifiedObject.mRID ?substationID. " +
+                "  ?subStation c:Substation.Region ?subRegion. " +
+                "  ?subRegion c:IdentifiedObject.name ?subregionName. " +
+                "  ?subRegion c:IdentifiedObject.mRID ?subregionID. " +
+                "  ?subRegion c:SubGeographicalRegion.Region ?region. " +
+                "  ?region c:IdentifiedObject.name ?regionName. " +
+                "  ?region c:IdentifiedObject.mRID ?regionID. " +
+                "} " +
+                "} ORDER BY ?name";
 
         String result = executeSparqlQuery(query);
         assertNotNull("Query result should not be null", result);
@@ -178,10 +182,10 @@ public class BlazegraphIntegrationTests {
     public void canQueryObjectTypes() throws Exception {
         // Query to get distinct object types in the model
         String query = CIM_PREFIX +
-            "SELECT DISTINCT ?type WHERE { " +
-            "?s r:type ?type. " +
-            "FILTER(STRSTARTS(STR(?type), 'http://iec.ch/TC57/CIM100#')) " +
-            "} ORDER BY ?type LIMIT 20";
+                "SELECT DISTINCT ?type WHERE { " +
+                "?s r:type ?type. " +
+                "FILTER(STRSTARTS(STR(?type), 'http://iec.ch/TC57/CIM100#')) " +
+                "} ORDER BY ?type LIMIT 20";
 
         String result = executeSparqlQuery(query);
         assertNotNull("Query result should not be null", result);
@@ -202,17 +206,17 @@ public class BlazegraphIntegrationTests {
     public void canQueryMeasurements() throws Exception {
         // Query for measurements - similar to what PowergridModelDataManager does
         String query = CIM_PREFIX +
-            "SELECT ?name ?type ?phases ?measid ?eqid ?trmid WHERE { " +
-            "?s r:type c:Analog. " +
-            "?s c:IdentifiedObject.name ?name. " +
-            "?s c:IdentifiedObject.mRID ?measid. " +
-            "?s c:Analog.measurementType ?type. " +
-            "?s c:Measurement.phases ?phases. " +
-            "?s c:Measurement.Terminal ?trm. " +
-            "?trm c:IdentifiedObject.mRID ?trmid. " +
-            "?trm c:Terminal.ConductingEquipment ?eq. " +
-            "?eq c:IdentifiedObject.mRID ?eqid. " +
-            "} LIMIT 10";
+                "SELECT ?name ?type ?phases ?measid ?eqid ?trmid WHERE { " +
+                "?s r:type c:Analog. " +
+                "?s c:IdentifiedObject.name ?name. " +
+                "?s c:IdentifiedObject.mRID ?measid. " +
+                "?s c:Analog.measurementType ?type. " +
+                "?s c:Measurement.phases ?phases. " +
+                "?s c:Measurement.Terminal ?trm. " +
+                "?trm c:IdentifiedObject.mRID ?trmid. " +
+                "?trm c:Terminal.ConductingEquipment ?eq. " +
+                "?eq c:IdentifiedObject.mRID ?eqid. " +
+                "} LIMIT 10";
 
         String result = executeSparqlQuery(query);
         assertNotNull("Query result should not be null", result);

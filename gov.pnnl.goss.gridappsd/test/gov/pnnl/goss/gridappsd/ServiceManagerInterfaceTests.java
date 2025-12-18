@@ -64,19 +64,11 @@ import pnnl.goss.core.ClientFactory;
 /**
  * Tests for the ServiceManager interface methods.
  *
- * These tests verify that the ServiceManagerImpl correctly implements
- * all methods defined in the ServiceManager interface:
- * - registerService
- * - listServices
- * - getService
- * - getServiceIdForInstance
- * - deRegisterService
- * - startService
- * - startServiceForSimultion
- * - stopService
- * - listRunningServices (2 overloads)
- * - stopServiceInstance
- * - getServiceConfigDirectory
+ * These tests verify that the ServiceManagerImpl correctly implements all
+ * methods defined in the ServiceManager interface: - registerService -
+ * listServices - getService - getServiceIdForInstance - deRegisterService -
+ * startService - startServiceForSimultion - stopService - listRunningServices
+ * (2 overloads) - stopServiceInstance - getServiceConfigDirectory
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ServiceManagerInterfaceTests {
@@ -109,7 +101,8 @@ public class ServiceManagerInterfaceTests {
     // ========== listRunningServices() tests ==========
 
     /**
-     * Test that listRunningServices returns empty list when no services are running.
+     * Test that listRunningServices returns empty list when no services are
+     * running.
      */
     @Test
     public void listRunningServices_returnsEmptyListWhenNoServicesRunning() {
@@ -119,7 +112,8 @@ public class ServiceManagerInterfaceTests {
     }
 
     /**
-     * Test that listRunningServices with serviceId and simulationId returns empty list when no matching services.
+     * Test that listRunningServices with serviceId and simulationId returns empty
+     * list when no matching services.
      */
     @Test
     public void listRunningServices_withIds_returnsEmptyListWhenNoMatchingServices() {

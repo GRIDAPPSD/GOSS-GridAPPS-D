@@ -65,21 +65,17 @@ import pnnl.goss.core.DataResponse;
 /**
  * Tests for the TestManager interface methods.
  *
- * These tests verify that the TestManager interface is correctly defined
- * and that TestManagerImpl implements it. Due to the complex dependencies
- * of TestManagerImpl (requires OSGi context, Gson initialization, etc.),
- * these tests use a mock interface for method signature verification.
+ * These tests verify that the TestManager interface is correctly defined and
+ * that TestManagerImpl implements it. Due to the complex dependencies of
+ * TestManagerImpl (requires OSGi context, Gson initialization, etc.), these
+ * tests use a mock interface for method signature verification.
  *
- * Interface methods tested:
- * - handleTestRequest
- * - sendEventsToSimulation
- * - compareSimulations
- * - compareTimeseriesSimulationWithExpected
- * - compareRunningWithTimeseriesSimulation
- * - compareRunningSimulationOutputWithExpected
- * - compareRunningSimulationInputWithExpected
- * - updateEventForSimulation
- * - sendEventStatus
+ * Interface methods tested: - handleTestRequest - sendEventsToSimulation -
+ * compareSimulations - compareTimeseriesSimulationWithExpected -
+ * compareRunningWithTimeseriesSimulation -
+ * compareRunningSimulationOutputWithExpected -
+ * compareRunningSimulationInputWithExpected - updateEventForSimulation -
+ * sendEventStatus
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TestManagerInterfaceTests {

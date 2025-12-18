@@ -68,20 +68,11 @@ import pnnl.goss.core.DataResponse;
 /**
  * Tests for the AppManager interface methods.
  *
- * These tests verify that the AppManagerImpl correctly implements
- * all methods defined in the AppManager interface:
- * - process
- * - registerApp
- * - listApps
- * - listRunningApps (2 overloads)
- * - getApp
- * - getAppIdForInstance
- * - deRegisterApp
- * - startApp
- * - startAppForSimultion
- * - stopApp
- * - stopAppInstance
- * - getAppConfigDirectory
+ * These tests verify that the AppManagerImpl correctly implements all methods
+ * defined in the AppManager interface: - process - registerApp - listApps -
+ * listRunningApps (2 overloads) - getApp - getAppIdForInstance - deRegisterApp
+ * - startApp - startAppForSimultion - stopApp - stopAppInstance -
+ * getAppConfigDirectory
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AppManagerInterfaceTests {
@@ -131,7 +122,8 @@ public class AppManagerInterfaceTests {
     }
 
     /**
-     * Test that listRunningApps with appId returns empty list when no matching apps are running.
+     * Test that listRunningApps with appId returns empty list when no matching apps
+     * are running.
      */
     @Test
     public void listRunningApps_withAppId_returnsEmptyListWhenNoMatchingApps() {
@@ -355,10 +347,10 @@ public class AppManagerInterfaceTests {
      */
     private byte[] createMinimalZip() {
         // Minimal valid ZIP file
-        return new byte[] {
-            0x50, 0x4B, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        return new byte[]{
+                0x50, 0x4B, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
     }
 }

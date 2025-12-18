@@ -3,7 +3,8 @@
 
 .PHONY: help build clean dist test test-unit test-integration run docker docker-build docker-run \
         cache-clear goss goss-build goss-test commit push version release snapshot \
-        release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot
+        release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
+        format format-check
 
 # Default target
 help:
@@ -14,6 +15,8 @@ help:
 	@echo "  make build        - Build the project (compile only)"
 	@echo "  make dist         - Build distribution (launcher JAR + bundles)"
 	@echo "  make clean        - Clean build artifacts"
+	@echo "  make format       - Format all Java files using Spotless"
+	@echo "  make format-check - Check formatting without making changes"
 	@echo ""
 	@echo "Test targets:"
 	@echo "  make test              - Run all tests (unit + integration if services available)"
@@ -216,3 +219,14 @@ bump-major:
 
 next-snapshot:
 	@python3 scripts/version.py next-snapshot --gridappsd-only
+
+# Code formatting targets (uses Spotless with Eclipse formatter)
+format:
+	@echo "Formatting Java files..."
+	./gradlew spotlessApply
+	@echo "Formatting complete."
+
+format-check:
+	@echo "Checking code formatting..."
+	./gradlew spotlessCheck
+	@echo "Format check complete."

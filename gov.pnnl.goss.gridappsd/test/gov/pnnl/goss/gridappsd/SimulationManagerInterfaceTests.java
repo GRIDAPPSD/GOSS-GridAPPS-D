@@ -65,19 +65,18 @@ import pnnl.goss.core.server.ServerControl;
 /**
  * Unit tests for the SimulationManager interface.
  *
- * Tests all public methods defined in the SimulationManager interface:
- * - startSimulation(String, SimulationConfig, SimulationContext, Map, PowerSystemConfig)
- * - getSimulationContextForId(String)
- * - endSimulation(String)
- * - pauseSimulation(String)
- * - resumeSimulation(String)
- * - assignSimulationPort(String)
+ * Tests all public methods defined in the SimulationManager interface: -
+ * startSimulation(String, SimulationConfig, SimulationContext, Map,
+ * PowerSystemConfig) - getSimulationContextForId(String) -
+ * endSimulation(String) - pauseSimulation(String) - resumeSimulation(String) -
+ * assignSimulationPort(String)
  *
- * Note: Simulation IDs must be numeric strings as the implementation
- * uses Integer.valueOf(simulationId) internally.
+ * Note: Simulation IDs must be numeric strings as the implementation uses
+ * Integer.valueOf(simulationId) internally.
  *
- * Some methods (endSimulation) require the client to be initialized via start(),
- * which needs OSGi context. Those methods are tested via mock interface.
+ * Some methods (endSimulation) require the client to be initialized via
+ * start(), which needs OSGi context. Those methods are tested via mock
+ * interface.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class SimulationManagerInterfaceTests {
@@ -103,10 +102,9 @@ public class SimulationManagerInterfaceTests {
     public void setUp() throws Exception {
         // Create SimulationManager with mock dependencies
         simulationManager = new SimulationManagerImpl(
-            mockClientFactory,
-            mockServerControl,
-            mockLogManager
-        );
+                mockClientFactory,
+                mockServerControl,
+                mockLogManager);
     }
 
     // ========== Interface Implementation Tests ==========
@@ -155,7 +153,7 @@ public class SimulationManagerInterfaceTests {
 
         // All ports should be different (highly likely with random assignment)
         assertTrue("Ports should be different",
-            port1 != port2 || port2 != port3 || port1 != port3);
+                port1 != port2 || port2 != port3 || port1 != port3);
     }
 
     @Test
@@ -175,7 +173,8 @@ public class SimulationManagerInterfaceTests {
         simulationManager.assignSimulationPort(simId);
 
         // Second call with same ID should throw exception
-        // "The simulation id already exists. This indicates that the simulation id is part of a simulation in progress."
+        // "The simulation id already exists. This indicates that the simulation id is
+        // part of a simulation in progress."
         simulationManager.assignSimulationPort(simId);
     }
 
@@ -211,7 +210,8 @@ public class SimulationManagerInterfaceTests {
 
     @Test
     public void pauseSimulation_handlesUnknownSimulationId() {
-        // pauseSimulation is a stub in the implementation, so it should work without client
+        // pauseSimulation is a stub in the implementation, so it should work without
+        // client
         simulationManager.pauseSimulation("66666");
         assertTrue("pauseSimulation should handle unknown simulation gracefully", true);
     }
@@ -220,7 +220,8 @@ public class SimulationManagerInterfaceTests {
 
     @Test
     public void resumeSimulation_handlesUnknownSimulationId() {
-        // resumeSimulation is a stub in the implementation, so it should work without client
+        // resumeSimulation is a stub in the implementation, so it should work without
+        // client
         simulationManager.resumeSimulation("55555");
         assertTrue("resumeSimulation should handle unknown simulation gracefully", true);
     }
@@ -237,15 +238,15 @@ public class SimulationManagerInterfaceTests {
         PowerSystemConfig powerSystemConfig = createTestPowerSystemConfig();
 
         // Note: startSimulation actually starts an external process (GridLAB-D)
-        // which won't work in unit test environment, but we can verify it accepts valid parameters
+        // which won't work in unit test environment, but we can verify it accepts valid
+        // parameters
         try {
             simulationManager.startSimulation(
-                simulationId,
-                simulationConfig,
-                simContext,
-                simulationContextMap,
-                powerSystemConfig
-            );
+                    simulationId,
+                    simulationConfig,
+                    simContext,
+                    simulationContextMap,
+                    powerSystemConfig);
         } catch (Exception e) {
             // Expected - simulator won't be available in test environment
         }

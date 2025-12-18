@@ -169,7 +169,7 @@ public class AppManagerTest2 {
         // The fusesource stomp-jms library is not compatible with Jakarta JMS
         // This test requires a running server and manual execution
         throw new UnsupportedOperationException(
-            "sendMessage not implemented - fusesource stomp-jms is not Jakarta JMS compatible");
+                "sendMessage not implemented - fusesource stomp-jms is not Jakarta JMS compatible");
     }
 
 }

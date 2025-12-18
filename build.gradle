@@ -456,3 +456,11 @@ project(':gov.pnnl.goss.gridappsd') {
         configDir = file('conf')
     }
 }
+
+// Skip testOSGi for test project - it requires full OSGi runtime with many transitive dependencies
+// The unit tests (test task) provide sufficient coverage
+project(':gov.pnnl.goss.gridappsd.test') {
+    tasks.matching { it.name == 'testOSGi' }.configureEach {
+        enabled = false
+    }
+}

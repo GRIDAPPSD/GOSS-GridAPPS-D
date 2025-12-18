@@ -62,16 +62,10 @@ import pnnl.goss.core.Response;
 /**
  * Tests for the DataManager interface methods.
  *
- * These tests verify that the DataManagerImpl correctly implements
- * all methods defined in the DataManager interface:
- * - getHandlers
- * - getHandler
- * - getAllHandlers
- * - registerHandler
- * - registerDataManagerHandler
- * - processDataRequest
- * - registerConverter
- * - getConverter
+ * These tests verify that the DataManagerImpl correctly implements all methods
+ * defined in the DataManager interface: - getHandlers - getHandler -
+ * getAllHandlers - registerHandler - registerDataManagerHandler -
+ * processDataRequest - registerConverter - getConverter
  */
 @RunWith(MockitoJUnitRunner.class)
 public class DataManagerInterfaceTests {
@@ -101,7 +95,8 @@ public class DataManagerInterfaceTests {
     // ========== getHandlers() tests ==========
 
     /**
-     * Test that getHandlers returns null when no handlers are registered for the class.
+     * Test that getHandlers returns null when no handlers are registered for the
+     * class.
      */
     @Test
     public void getHandlers_returnsNullWhenNoHandlersRegistered() {

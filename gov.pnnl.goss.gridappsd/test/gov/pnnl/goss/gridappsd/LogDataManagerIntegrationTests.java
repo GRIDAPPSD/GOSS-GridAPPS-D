@@ -62,14 +62,14 @@ import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 
 /**
- * Integration tests for LogDataManager that test actual MySQL database operations.
+ * Integration tests for LogDataManager that test actual MySQL database
+ * operations.
  *
- * These tests require MySQL to be running on localhost:3306 with:
- * - Database: gridappsd
- * - Username: gridappsd
- * - Password: gridappsd1234
+ * These tests require MySQL to be running on localhost:3306 with: - Database:
+ * gridappsd - Username: gridappsd - Password: gridappsd1234
  *
- * To run: Ensure MySQL container is running (docker ps should show mysql container)
+ * To run: Ensure MySQL container is running (docker ps should show mysql
+ * container)
  *
  * Tests are skipped if database is not available.
  */
@@ -110,7 +110,7 @@ public class LogDataManagerIntegrationTests {
             // Clean up test data
             try {
                 PreparedStatement ps = connection.prepareStatement(
-                    "DELETE FROM gridappsd.log WHERE process_id LIKE 'test-integration-%'");
+                        "DELETE FROM gridappsd.log WHERE process_id LIKE 'test-integration-%'");
                 ps.executeUpdate();
             } catch (SQLException e) {
                 // Ignore cleanup errors
@@ -124,7 +124,7 @@ public class LogDataManagerIntegrationTests {
     @Test
     public void logTableExists() throws Exception {
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'gridappsd' AND table_name = 'log'");
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'gridappsd' AND table_name = 'log'");
         ResultSet rs = ps.executeQuery();
         assertTrue("Result set should have data", rs.next());
         assertEquals("log table should exist", 1, rs.getInt(1));
@@ -133,7 +133,7 @@ public class LogDataManagerIntegrationTests {
     @Test
     public void logTableHasRequiredColumns() throws Exception {
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT column_name FROM information_schema.columns WHERE table_schema = 'gridappsd' AND table_name = 'log'");
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = 'gridappsd' AND table_name = 'log'");
         ResultSet rs = ps.executeQuery();
 
         java.util.Set<String> columns = new java.util.HashSet<>();
@@ -150,7 +150,8 @@ public class LogDataManagerIntegrationTests {
         assertTrue("log table should have 'username' column", columns.contains("username"));
     }
 
-    // ========== Direct SQL Tests (Testing what LogDataManagerMySQL does) ==========
+    // ========== Direct SQL Tests (Testing what LogDataManagerMySQL does)
+    // ==========
 
     @Test
     public void canInsertLogEntry() throws Exception {
@@ -159,8 +160,9 @@ public class LogDataManagerIntegrationTests {
         long timestamp = System.currentTimeMillis();
 
         PreparedStatement ps = connection.prepareStatement(
-            "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) " +
-            "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
+                "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) "
+                        +
+                        "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
         ps.setString(1, source);
         ps.setString(2, TEST_PROCESS_ID);
         ps.setTimestamp(3, new java.sql.Timestamp(timestamp));
@@ -182,8 +184,9 @@ public class LogDataManagerIntegrationTests {
         long timestamp = System.currentTimeMillis();
 
         PreparedStatement insertPs = connection.prepareStatement(
-            "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) " +
-            "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
+                "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) "
+                        +
+                        "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
         insertPs.setString(1, source);
         insertPs.setString(2, TEST_PROCESS_ID);
         insertPs.setTimestamp(3, new java.sql.Timestamp(timestamp));
@@ -196,7 +199,7 @@ public class LogDataManagerIntegrationTests {
 
         // Now query for it
         PreparedStatement queryPs = connection.prepareStatement(
-            "SELECT * FROM gridappsd.log WHERE process_id = ? AND source = ?");
+                "SELECT * FROM gridappsd.log WHERE process_id = ? AND source = ?");
         queryPs.setString(1, TEST_PROCESS_ID);
         queryPs.setString(2, source);
         ResultSet rs = queryPs.executeQuery();
@@ -217,7 +220,7 @@ public class LogDataManagerIntegrationTests {
 
         // Query by log level
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT * FROM gridappsd.log WHERE process_id = ? AND log_level = ?");
+                "SELECT * FROM gridappsd.log WHERE process_id = ? AND log_level = ?");
         ps.setString(1, TEST_PROCESS_ID);
         ps.setString(2, LogLevel.ERROR.toString());
         ResultSet rs = ps.executeQuery();
@@ -236,7 +239,7 @@ public class LogDataManagerIntegrationTests {
 
         // Query by process status
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT * FROM gridappsd.log WHERE process_id = ? AND process_status = ?");
+                "SELECT * FROM gridappsd.log WHERE process_id = ? AND process_status = ?");
         ps.setString(1, TEST_PROCESS_ID);
         ps.setString(2, ProcessStatus.RUNNING.toString());
         ResultSet rs = ps.executeQuery();
@@ -250,9 +253,10 @@ public class LogDataManagerIntegrationTests {
         // Insert some test data
         insertTestLog("JsonSource", "Json test message", LogLevel.INFO);
 
-        // Query and convert to JSON (similar to what LogDataManagerMySQL.getJSONFromResultSet does)
+        // Query and convert to JSON (similar to what
+        // LogDataManagerMySQL.getJSONFromResultSet does)
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT source, process_id, log_message, log_level FROM gridappsd.log WHERE process_id = ?");
+                "SELECT source, process_id, log_message, log_level FROM gridappsd.log WHERE process_id = ?");
         ps.setString(1, TEST_PROCESS_ID);
         ResultSet rs = ps.executeQuery();
 
@@ -286,13 +290,14 @@ public class LogDataManagerIntegrationTests {
         insertTestLog("SpecialCharSource", specialMessage, LogLevel.INFO);
 
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT log_message FROM gridappsd.log WHERE process_id = ? AND source = ?");
+                "SELECT log_message FROM gridappsd.log WHERE process_id = ? AND source = ?");
         ps.setString(1, TEST_PROCESS_ID);
         ps.setString(2, "SpecialCharSource");
         ResultSet rs = ps.executeQuery();
 
         assertTrue("Should find entry", rs.next());
-        assertEquals("Message with special chars should be stored correctly", specialMessage, rs.getString("log_message"));
+        assertEquals("Message with special chars should be stored correctly", specialMessage,
+                rs.getString("log_message"));
     }
 
     @Test
@@ -307,7 +312,7 @@ public class LogDataManagerIntegrationTests {
         insertTestLog("LongMsgSource", longMessage.substring(0, Math.min(longMessage.length(), 10000)), LogLevel.INFO);
 
         PreparedStatement ps = connection.prepareStatement(
-            "SELECT log_message FROM gridappsd.log WHERE process_id = ? AND source = ?");
+                "SELECT log_message FROM gridappsd.log WHERE process_id = ? AND source = ?");
         ps.setString(1, TEST_PROCESS_ID);
         ps.setString(2, "LongMsgSource");
         ResultSet rs = ps.executeQuery();
@@ -328,10 +333,12 @@ public class LogDataManagerIntegrationTests {
         insertTestLogWithStatus(source, message, LogLevel.INFO, status);
     }
 
-    private void insertTestLogWithStatus(String source, String message, LogLevel level, ProcessStatus status) throws SQLException {
+    private void insertTestLogWithStatus(String source, String message, LogLevel level, ProcessStatus status)
+            throws SQLException {
         PreparedStatement ps = connection.prepareStatement(
-            "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) " +
-            "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
+                "INSERT INTO gridappsd.log (id, source, process_id, timestamp, log_message, log_level, process_status, username, process_type) "
+                        +
+                        "VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?)");
         ps.setString(1, source);
         ps.setString(2, TEST_PROCESS_ID);
         ps.setTimestamp(3, new java.sql.Timestamp(System.currentTimeMillis()));
