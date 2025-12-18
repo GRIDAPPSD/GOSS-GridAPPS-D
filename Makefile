@@ -52,7 +52,7 @@ help:
 	@echo "  make release-release  - Build GOSS and push releases to ../GOSS-Repository"
 	@echo ""
 	@echo "Utility targets:"
-	@echo "  make cache-clear  - Clear BND and Gradle caches"
+	@echo "  make cache-clear  - Clear all Gradle/BND caches and stop daemons (fixes build issues)"
 	@echo "  make commit       - Stage and commit changes"
 	@echo "  make push         - Push to remote"
 	@echo ""
@@ -145,12 +145,28 @@ goss-clean:
 
 # Utility targets
 cache-clear:
+	@echo "Stopping Gradle daemons..."
+	./gradlew --stop || true
+	cd $(GOSS_DIR) && ./gradlew --stop || true
 	@echo "Clearing BND caches..."
 	rm -rf ~/.bnd/cache ~/.bnd/urlcache
 	rm -rf cnf/cache
+	rm -rf $(GOSS_DIR)/cnf/cache
 	@echo "Clearing Gradle caches..."
 	rm -rf ~/.gradle/caches/modules-2/files-2.1/bnd*
-	@echo "Caches cleared"
+	rm -rf ~/.gradle/caches/modules-2/files-2.1/biz.aQute*
+	rm -rf ~/.gradle/caches/modules-2/files-2.1/com.diffplug*
+	@echo "Clearing local Gradle caches..."
+	rm -rf .gradle
+	rm -rf $(GOSS_DIR)/.gradle
+	rm -rf buildSrc/.gradle
+	rm -rf $(GOSS_DIR)/buildSrc/.gradle
+	@echo "Clearing build directories..."
+	rm -rf build
+	rm -rf */build
+	rm -rf $(GOSS_DIR)/build
+	rm -rf $(GOSS_DIR)/*/build
+	@echo "Caches cleared. Run './gradlew build' to rebuild."
 
 # Git targets
 commit:

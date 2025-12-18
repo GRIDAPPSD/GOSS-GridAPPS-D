@@ -16,11 +16,12 @@ allprojects {
 }
 
 subprojects {
-    // Skip BND plugin for non-BND projects (wrapper bundles that use Shadow)
-    if (project.name != 'gridappsd-proven' && project.name != 'gridappsd-jena' && project.name != 'gridappsd-poi') {
+    apply plugin: 'java'
+    // Apply BND plugin only to OSGi bundle projects (projects with bnd.bnd file)
+    // Skip wrapper bundles (gridappsd-proven, gridappsd-jena, gridappsd-poi) that use Shadow
+    if (project.file('bnd.bnd').exists()) {
         apply plugin: 'biz.aQute.bnd'
     }
-    apply plugin: 'java'
     apply plugin: 'com.diffplug.spotless'
 
     // Spotless configuration for code formatting
