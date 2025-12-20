@@ -67,6 +67,8 @@ dist:
 clean:
 	./gradlew clean
 	rm -rf build/launcher
+	rm -rf felix-cache
+	rm -rf */felix-cache
 
 # Test targets
 # Run all tests (unit tests always run, integration tests skip if services unavailable)
