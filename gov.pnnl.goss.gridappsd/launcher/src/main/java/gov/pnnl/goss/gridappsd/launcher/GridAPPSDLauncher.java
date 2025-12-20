@@ -171,7 +171,7 @@ public class GridAPPSDLauncher {
         // Resolve FileInstall directory
         String fileInstallDir = config.get("felix.fileinstall.dir");
         if (fileInstallDir != null && !new File(fileInstallDir).isAbsolute()) {
-            File resolved = resolveFile(fileInstallDir);
+            File resolved = resolveFileInstallDir(fileInstallDir);
             config.put("felix.fileinstall.dir", resolved.getAbsolutePath());
             System.out.println("FileInstall directory: " + resolved.getAbsolutePath());
         }
@@ -182,6 +182,30 @@ public class GridAPPSDLauncher {
             File resolved = resolveFile(cacheDir);
             config.put(Constants.FRAMEWORK_STORAGE, resolved.getAbsolutePath());
         }
+    }
+
+    /**
+     * Resolve FileInstall directory, checking multiple locations.
+     * This handles both local development (conf next to launcher) and
+     * Docker deployment (conf at /gridappsd/conf, launcher at /gridappsd/lib).
+     */
+    private File resolveFileInstallDir(String path) {
+        // First, try relative to baseDir (normal case for local development)
+        File resolved = resolveFile(path);
+        if (resolved.exists() && resolved.isDirectory()) {
+            return resolved;
+        }
+
+        // For Docker: if baseDir is /gridappsd/lib and path is "conf",
+        // try /gridappsd/conf (parent directory + conf)
+        File parentConf = new File(baseDir.getParentFile(), path);
+        if (parentConf.exists() && parentConf.isDirectory()) {
+            return parentConf;
+        }
+
+        // Fall back to the original resolution even if it doesn't exist
+        // (FileInstall will log a warning)
+        return resolved;
     }
 
     private Framework createFramework(Map<String, String> config) throws Exception {
