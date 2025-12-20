@@ -108,16 +108,48 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
             Credentials credentials = new UsernamePasswordCredentials(
                     "system", "manager");
             client = clientFactory.create(PROTOCOL.STOMP, credentials);
-            connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
+            // Don't acquire connection here - datasource may not be registered yet
+            // Connection will be acquired lazily when first needed
+            log.info("LogDataManagerMySQL started - connection will be acquired on first use");
 
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("Error starting LogDataManagerMySQL", e);
         }
 
+    }
+
+    /**
+     * Gets a database connection, acquiring one if necessary.
+     * The datasource may not be available at component startup time
+     * because FileInstall loads configuration asynchronously.
+     */
+    private Connection getConnection() {
+        if (connection != null) {
+            try {
+                // Check if connection is still valid
+                if (!connection.isClosed()) {
+                    return connection;
+                }
+            } catch (SQLException e) {
+                // Connection is invalid, will get a new one
+                connection = null;
+            }
+        }
+
+        // Try to acquire a new connection
+        try {
+            var dataSource = dataSources.getDataSourceByKey("gridappsd");
+            if (dataSource != null) {
+                connection = dataSource.getConnection();
+                log.info("Successfully acquired MySQL connection");
+            } else {
+                log.debug("Datasource 'gridappsd' not yet available");
+            }
+        } catch (SQLException e) {
+            log.warn("Failed to acquire MySQL connection: {}", e.getMessage());
+        }
+
+        return connection;
     }
 
     @Override
@@ -125,10 +157,11 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
             String log_message, LogLevel log_level, ProcessStatus process_status, String username,
             String process_type) {
 
-        if (connection != null) {
+        Connection conn = getConnection();
+        if (conn != null) {
             try {
 
-                PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO gridappsd.log ("
+                PreparedStatement preparedStatement = conn.prepareStatement("INSERT INTO gridappsd.log ("
                         + "id, "
                         + "source, "
                         + "process_id, "
@@ -170,10 +203,11 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
             String mrid, String property, String expected, String actual, String difference_direction,
             String difference_mrid, Boolean match) {
 
-        if (connection != null) {
+        Connection conn = getConnection();
+        if (conn != null) {
             try {
 
-                PreparedStatement preparedStatement = connection.prepareStatement(
+                PreparedStatement preparedStatement = conn.prepareStatement(
                         "INSERT INTO gridappsd.expected_results VALUES (default, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 preparedStatement.setString(1, app_id);
                 preparedStatement.setString(2, test_id);
@@ -212,16 +246,8 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
             ProcessStatus process_status,
             String username, String process_type) {
 
-        if (connection == null) {
-            try {
-                connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
-            } catch (SQLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-
-        if (connection != null) {
+        Connection conn = getConnection();
+        if (conn != null) {
 
             try {
                 String queryString = "SELECT * FROM gridappsd.log WHERE";
@@ -272,7 +298,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
                         queryString += " timestamp=" + timestamp;
                     }
 
-                PreparedStatement preparedStatement = connection.prepareStatement(queryString);
+                PreparedStatement preparedStatement = conn.prepareStatement(queryString);
 
                 ResultSet rs = preparedStatement.executeQuery();
 
@@ -302,18 +328,10 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 
     @Override
     public Serializable query(String queryString) {
-        if (connection == null) {
+        Connection conn = getConnection();
+        if (conn != null) {
             try {
-                connection = dataSources.getDataSourceByKey("gridappsd").getConnection();
-            } catch (SQLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-
-        if (connection != null) {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement(queryString);
+                PreparedStatement preparedStatement = conn.prepareStatement(queryString);
                 ResultSet rs = preparedStatement.executeQuery();
                 return this.getJSONFromResultSet(rs);
             } catch (SQLException e) {
