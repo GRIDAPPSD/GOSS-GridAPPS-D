@@ -1,7 +1,7 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration run docker docker-build docker-run \
+.PHONY: help build clean dist test test-unit test-integration run run-bg run-stop run-log docker docker-build docker-run \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check
@@ -25,7 +25,10 @@ help:
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
-	@echo "  make run          - Run GridAPPS-D locally (from build/launcher)"
+	@echo "  make run          - Run GridAPPS-D locally (foreground)"
+	@echo "  make run-bg       - Run GridAPPS-D in background, log to gridappsd.out"
+	@echo "  make run-stop     - Stop background GridAPPS-D process"
+	@echo "  make run-log      - Tail the background log file"
 	@echo ""
 	@echo "Docker targets:"
 	@echo "  make docker       - Build Docker image (gridappsd/gridappsd:local)"
@@ -105,9 +108,66 @@ test-check:
 	@echo ""
 	@echo "To start services: cd ../gridappsd-docker && ./run.sh"
 
-# Run locally
+# Run locally (foreground)
 run: dist
+	@rm -rf build/launcher/felix-cache
 	cd build/launcher && java -jar gridappsd-launcher.jar
+
+# Run in background with logging
+GRIDAPPSD_LOG ?= gridappsd.out
+GRIDAPPSD_PID = .gridappsd.pid
+
+run-bg: dist
+	@if [ -f $(GRIDAPPSD_PID) ] && kill -0 $$(cat $(GRIDAPPSD_PID)) 2>/dev/null; then \
+		echo "GridAPPS-D is already running (PID: $$(cat $(GRIDAPPSD_PID)))"; \
+		echo "Use 'make run-stop' to stop it first"; \
+		exit 1; \
+	fi
+	@rm -rf build/launcher/felix-cache
+	@echo "Starting GridAPPS-D in background..."
+	@echo "Log file: $(GRIDAPPSD_LOG)"
+	@nohup sh -c 'cd build/launcher && exec java -jar gridappsd-launcher.jar' > $(GRIDAPPSD_LOG) 2>&1 & \
+		PID=$$!; \
+		echo $$PID > $(GRIDAPPSD_PID); \
+		sleep 2; \
+		if kill -0 $$PID 2>/dev/null; then \
+			echo "GridAPPS-D started (PID: $$PID)"; \
+			echo "Use 'make run-log' to view logs"; \
+			echo "Use 'make run-stop' to stop"; \
+		else \
+			echo "Failed to start GridAPPS-D. Check $(GRIDAPPSD_LOG) for errors."; \
+			rm -f $(GRIDAPPSD_PID); \
+			exit 1; \
+		fi
+
+run-stop:
+	@if [ -f $(GRIDAPPSD_PID) ]; then \
+		PID=$$(cat $(GRIDAPPSD_PID)); \
+		if kill -0 $$PID 2>/dev/null; then \
+			echo "Stopping GridAPPS-D (PID: $$PID)..."; \
+			kill $$PID; \
+			sleep 2; \
+			if kill -0 $$PID 2>/dev/null; then \
+				echo "Process still running, sending SIGKILL..."; \
+				kill -9 $$PID; \
+			fi; \
+			echo "GridAPPS-D stopped"; \
+		else \
+			echo "GridAPPS-D is not running (stale PID file)"; \
+		fi; \
+		rm -f $(GRIDAPPSD_PID); \
+	else \
+		echo "No PID file found. GridAPPS-D may not be running."; \
+		echo "Looking for java processes..."; \
+		pgrep -f gridappsd-launcher.jar || echo "No GridAPPS-D process found"; \
+	fi
+
+run-log:
+	@if [ -f $(GRIDAPPSD_LOG) ]; then \
+		tail -f $(GRIDAPPSD_LOG); \
+	else \
+		echo "Log file $(GRIDAPPSD_LOG) not found. Start GridAPPS-D with 'make run-bg' first."; \
+	fi
 
 # Docker targets
 DOCKER_TAG ?= local

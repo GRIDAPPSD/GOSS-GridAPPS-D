@@ -201,10 +201,10 @@ task collectBundles(type: Copy) {
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
 
             // Pax Logging (OSGi-native logging framework)
-            // Provides SLF4J 2.x API + Logback backend with proper OSGi classloader handling
+            // Provides SLF4J 2.x API + Log4j2 backend with properties-based configuration
             // See: https://github.com/ops4j/org.ops4j.pax.logging
             'org.ops4j.pax.logging:pax-logging-api:2.2.8',
-            'org.ops4j.pax.logging:pax-logging-logback:2.2.8',
+            'org.ops4j.pax.logging:pax-logging-log4j2:2.2.8',
 
             // Apache Aries SPI Fly (OSGi ServiceLoader support)
             // Required by Shiro 2.0 crypto-hash which uses ServiceLoader for hash algorithms

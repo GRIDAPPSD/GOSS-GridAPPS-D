@@ -273,9 +273,9 @@ public class GridAPPSDLauncher {
         // Priority bundles that should start first (infrastructure bundles)
         // Order matters: logging -> SPI -> config -> SCR -> fileinstall -> security
         List<String> priorityBundles = List.of(
-            // Logging first (Pax Logging provides OSGi-native SLF4J)
+            // Logging first (Pax Logging provides OSGi-native SLF4J with Log4j2 backend)
             "org.ops4j.pax.logging.pax-logging-api",
-            "org.ops4j.pax.logging.pax-logging-logback",
+            "org.ops4j.pax.logging.pax-logging-log4j2",
             // SPI Fly for ServiceLoader support (Shiro 2.0 crypto modules)
             "org.apache.aries.spifly.dynamic.bundle",
             // Configuration Admin - stores/manages configurations
