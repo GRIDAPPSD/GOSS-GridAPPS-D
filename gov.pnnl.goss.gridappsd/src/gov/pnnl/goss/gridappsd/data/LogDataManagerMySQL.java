@@ -100,28 +100,33 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
 
     @Activate
     public void start() {
-
-        try {
-            // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-            // Credentials credentials = new UsernamePasswordCredentials(
-            // securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-            Credentials credentials = new UsernamePasswordCredentials(
-                    "system", "manager");
-            client = clientFactory.create(PROTOCOL.STOMP, credentials);
-            // Don't acquire connection here - datasource may not be registered yet
-            // Connection will be acquired lazily when first needed
-            log.info("LogDataManagerMySQL started - connection will be acquired on first use");
-
-        } catch (Exception e) {
-            log.error("Error starting LogDataManagerMySQL", e);
-        }
-
+        // Don't acquire client or connection here - services may not be available yet
+        // at component activation time. They will be acquired lazily when first needed.
+        log.info("LogDataManagerMySQL started - client and connection will be acquired on first use");
     }
 
     /**
-     * Gets a database connection, acquiring one if necessary.
-     * The datasource may not be available at component startup time
-     * because FileInstall loads configuration asynchronously.
+     * Gets or creates the GOSS client for messaging. The client is created lazily
+     * because the broker may not be available at component activation time.
+     */
+    private Client getClient() {
+        if (client != null) {
+            return client;
+        }
+        try {
+            Credentials credentials = new UsernamePasswordCredentials("system", "manager");
+            client = clientFactory.create(PROTOCOL.STOMP, credentials);
+            log.info("Successfully acquired GOSS client connection");
+        } catch (Exception e) {
+            log.warn("Failed to acquire GOSS client: {}", e.getMessage());
+        }
+        return client;
+    }
+
+    /**
+     * Gets a database connection, acquiring one if necessary. The datasource may
+     * not be available at component startup time because FileInstall loads
+     * configuration asynchronously.
      */
     private Connection getConnection() {
         if (connection != null) {

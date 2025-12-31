@@ -281,6 +281,33 @@ public class LogManagerImpl implements LogManager {
     }
 
     private void publishLog(LogMessage logMessage, String topic) {
+        // Guard against null client during startup when components are initializing
+        if (client == null) {
+            // Fall back to SLF4J logging only
+            String logString = String.format("%s|%s|%s|%s|%s\n%s",
+                    logMessage.getTimestamp(), logMessage.getSource(),
+                    logMessage.getProcessStatus(), "system", logMessage.getLogLevel(),
+                    logMessage.getLogMessage());
+            switch (logMessage.getLogLevel()) {
+                case TRACE :
+                    log.trace(logString);
+                    break;
+                case DEBUG :
+                    log.debug(logString);
+                    break;
+                case INFO :
+                    log.info(logString);
+                    break;
+                case WARN :
+                    log.warn(logString);
+                    break;
+                case ERROR :
+                case FATAL :
+                    log.error(logString);
+                    break;
+            }
+            return;
+        }
 
         switch (logMessage.getLogLevel()) {
             case TRACE :

@@ -49,7 +49,7 @@ import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.ClientFactory;
 
-@Component(service = PowergridModelDataManager.class)
+@Component(service = PowergridModelDataManager.class, immediate = true)
 public class BGPowergridModelDataManagerImpl implements PowergridModelDataManager {
     final String nsCIM = "http://iec.ch/TC57/CIM100#";
     final String nsRDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";

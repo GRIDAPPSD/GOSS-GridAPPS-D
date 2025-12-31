@@ -142,6 +142,9 @@ public class ProcessManagerComponentTests {
         assertTrue("ProcessManager should log debug messages", true);
     }
 
+    @Mock
+    Destination replyDestination;
+
     /**
      * Test that a simulation ID is published when a simulation request is received.
      */
@@ -160,13 +163,15 @@ public class ProcessManagerComponentTests {
 
         DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
         dr.setDestination("goss.gridappsd.process.request.simulation");
+        // Set a reply destination so the response can be sent back
+        dr.setReplyDestination(replyDestination);
         GossResponseEvent response = gossResponseEventArgCaptor.getValue();
         response.onMessage(dr);
 
-        // Verify that client.publish was called (the response contains simulation ID)
-        // The publish method is called with null Destination and
+        // Verify that client.publish was called with the reply destination
+        // The publish method is called with the reply Destination and
         // RequestSimulationResponse
-        Mockito.verify(client, Mockito.atLeastOnce()).publish(Mockito.<Destination>isNull(),
+        Mockito.verify(client, Mockito.atLeastOnce()).publish(Mockito.eq(replyDestination),
                 Mockito.any(Serializable.class));
     }
 
@@ -200,6 +205,8 @@ public class ProcessManagerComponentTests {
 
         DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
         dr.setDestination(GridAppsDConstants.topic_requestSimulation);
+        // Set a reply destination so the response can be sent back
+        dr.setReplyDestination(replyDestination);
         GossResponseEvent response = gossResponseEventArgCaptor.getValue();
         response.onMessage(dr);
 

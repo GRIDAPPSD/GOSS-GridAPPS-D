@@ -106,7 +106,7 @@ public class BlazegraphIntegrationTests {
 
     // ========== Basic Connectivity Tests ==========
 
-    @Test
+    @Test(timeout = 30000)
     public void canConnectToBlazegraph() throws Exception {
         URL url = URI.create("http://localhost:8889/bigdata/namespace").toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -116,7 +116,7 @@ public class BlazegraphIntegrationTests {
         conn.disconnect();
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void sparqlEndpointResponds() throws Exception {
         // Simple ASK query to verify SPARQL endpoint works
         String query = "ASK { ?s ?p ?o }";
@@ -128,7 +128,7 @@ public class BlazegraphIntegrationTests {
 
     // ========== Power Grid Model Query Tests ==========
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryForFeeders() throws Exception {
         // This is the query used by PowergridModelDataManager to get model names
         String query = CIM_PREFIX +
@@ -178,7 +178,7 @@ public class BlazegraphIntegrationTests {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryObjectTypes() throws Exception {
         // Query to get distinct object types in the model
         String query = CIM_PREFIX +
@@ -202,7 +202,7 @@ public class BlazegraphIntegrationTests {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryMeasurements() throws Exception {
         // Query for measurements - similar to what PowergridModelDataManager does
         String query = CIM_PREFIX +
@@ -228,7 +228,7 @@ public class BlazegraphIntegrationTests {
         System.out.println("Found " + bindings.size() + " analog measurements");
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canCountTriples() throws Exception {
         // Count total triples in the store
         String query = "SELECT (COUNT(*) as ?count) WHERE { ?s ?p ?o }";
@@ -248,7 +248,7 @@ public class BlazegraphIntegrationTests {
         assertTrue("Should have some triples", count > 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void queryResultsAreValidJson() throws Exception {
         String query = CIM_PREFIX + "SELECT ?s ?name WHERE { ?s c:IdentifiedObject.name ?name } LIMIT 5";
 

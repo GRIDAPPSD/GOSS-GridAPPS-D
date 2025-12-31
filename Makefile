@@ -1,10 +1,14 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration run run-bg run-stop run-log docker docker-build docker-run \
+.PHONY: help build clean dist test test-unit test-integration test-simulation \
+        run run-bg run-stop run-log docker docker-build docker-run \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
-        format format-check
+        format format-check run-local run-local-bg
+
+# Configuration directory: 'conf' (default, Docker) or 'local-conf' (local development)
+CONFIG ?= conf
 
 # Default target
 help:
@@ -22,11 +26,14 @@ help:
 	@echo "  make test              - Run all tests (unit + integration if services available)"
 	@echo "  make test-unit         - Run unit tests only (no external dependencies)"
 	@echo "  make test-integration  - Run integration tests (requires MySQL, Blazegraph)"
+	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
-	@echo "  make run          - Run GridAPPS-D locally (foreground)"
-	@echo "  make run-bg       - Run GridAPPS-D in background, log to gridappsd.out"
+	@echo "  make run          - Run GridAPPS-D (foreground, Docker config)"
+	@echo "  make run-bg       - Run GridAPPS-D in background (Docker config)"
+	@echo "  make run-local    - Run GridAPPS-D (foreground, local dev config)"
+	@echo "  make run-local-bg - Run GridAPPS-D in background (local dev config)"
 	@echo "  make run-stop     - Stop background GridAPPS-D process"
 	@echo "  make run-log      - Tail the background log file"
 	@echo ""
@@ -65,7 +72,7 @@ build:
 	./gradlew build
 
 dist:
-	./gradlew dist
+	./gradlew dist -PconfigDir=$(CONFIG)
 
 clean:
 	./gradlew clean
@@ -93,6 +100,35 @@ test-integration:
 	@echo ""
 	./gradlew :gov.pnnl.goss.gridappsd:test -PonlyIntegrationTests
 
+# Run simulation integration test inside Docker container
+# This is the only practical way to run simulation tests since they require
+# GridLAB-D, FNCS/HELICS bridge, and other simulators only available in Docker
+# Usage: make test-simulation [SIMULATION_DURATION=10]
+SIMULATION_DURATION ?= 10
+test-simulation:
+	@echo "Running simulation integration test inside Docker container..."
+	@echo "Duration: $(SIMULATION_DURATION) seconds"
+	@echo ""
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo ""; \
+		echo "To start the Docker environment:"; \
+		echo "  cd ../gridappsd-docker && ./run.sh"; \
+		echo ""; \
+		echo "Then re-run: make test-simulation"; \
+		exit 1; \
+	fi
+	@echo "Building test classes..."
+	@./gradlew :gov.pnnl.goss.gridappsd:testClasses --quiet
+	@echo "Copying test classes to container..."
+	@docker cp gov.pnnl.goss.gridappsd/generated/test-classes gridappsd:/tmp/test-classes
+	@docker cp gov.pnnl.goss.gridappsd/generated/classes gridappsd:/tmp/classes
+	@echo "Running simulation test ($(SIMULATION_DURATION) seconds)..."
+	@echo ""
+	@docker exec gridappsd java -cp "/tmp/test-classes:/tmp/classes:/gridappsd/lib/*" \
+		-Dtest.simulation.duration=$(SIMULATION_DURATION) \
+		gov.pnnl.goss.gridappsd.SimulationRunIntegrationTest
+
 # Check if integration test services are available
 test-check:
 	@echo "Checking integration test dependencies..."
@@ -108,8 +144,14 @@ test-check:
 	@echo ""
 	@echo "To start services: cd ../gridappsd-docker && ./run.sh"
 
-# Run locally (foreground)
+# Run with Docker config (foreground)
 run: dist
+	@rm -rf build/launcher/felix-cache
+	cd build/launcher && java -jar gridappsd-launcher.jar
+
+# Run with local dev config (foreground)
+run-local:
+	$(MAKE) dist CONFIG=local-conf
 	@rm -rf build/launcher/felix-cache
 	cd build/launcher && java -jar gridappsd-launcher.jar
 
@@ -139,6 +181,10 @@ run-bg: dist
 			rm -f $(GRIDAPPSD_PID); \
 			exit 1; \
 		fi
+
+# Run with local dev config in background
+run-local-bg:
+	$(MAKE) run-bg CONFIG=local-conf
 
 run-stop:
 	@if [ -f $(GRIDAPPSD_PID) ]; then \

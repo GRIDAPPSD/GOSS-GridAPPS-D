@@ -121,7 +121,7 @@ public class LogDataManagerIntegrationTests {
 
     // ========== Database Schema Tests ==========
 
-    @Test
+    @Test(timeout = 30000)
     public void logTableExists() throws Exception {
         PreparedStatement ps = connection.prepareStatement(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'gridappsd' AND table_name = 'log'");
@@ -130,7 +130,7 @@ public class LogDataManagerIntegrationTests {
         assertEquals("log table should exist", 1, rs.getInt(1));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void logTableHasRequiredColumns() throws Exception {
         PreparedStatement ps = connection.prepareStatement(
                 "SELECT column_name FROM information_schema.columns WHERE table_schema = 'gridappsd' AND table_name = 'log'");
@@ -153,7 +153,7 @@ public class LogDataManagerIntegrationTests {
     // ========== Direct SQL Tests (Testing what LogDataManagerMySQL does)
     // ==========
 
-    @Test
+    @Test(timeout = 30000)
     public void canInsertLogEntry() throws Exception {
         String source = "TestSource";
         String logMessage = "Test log message";
@@ -176,7 +176,7 @@ public class LogDataManagerIntegrationTests {
         assertEquals("Should insert 1 row", 1, rowsAffected);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryLogEntries() throws Exception {
         // First insert a log entry
         String source = "QueryTestSource";
@@ -211,7 +211,7 @@ public class LogDataManagerIntegrationTests {
         assertEquals("Log level should match", LogLevel.DEBUG.toString(), rs.getString("log_level"));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryByLogLevel() throws Exception {
         // Insert entries with different log levels
         insertTestLog("Source1", "Debug message", LogLevel.DEBUG);
@@ -230,7 +230,7 @@ public class LogDataManagerIntegrationTests {
         assertFalse("Should only find one ERROR entry", rs.next());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canQueryByProcessStatus() throws Exception {
         // Insert entries with different statuses
         insertTestLogWithStatus("Source1", "Started message", ProcessStatus.STARTED);
@@ -248,7 +248,7 @@ public class LogDataManagerIntegrationTests {
         assertEquals("Source should be Source2", "Source2", rs.getString("source"));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void resultSetCanBeConvertedToJson() throws Exception {
         // Insert some test data
         insertTestLog("JsonSource", "Json test message", LogLevel.INFO);
@@ -284,7 +284,7 @@ public class LogDataManagerIntegrationTests {
         assertTrue("Array should have at least one element", array.size() >= 1);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canHandleSpecialCharactersInLogMessage() throws Exception {
         String specialMessage = "Test with 'quotes' and \"double quotes\" and \\ backslash";
         insertTestLog("SpecialCharSource", specialMessage, LogLevel.INFO);
@@ -300,7 +300,7 @@ public class LogDataManagerIntegrationTests {
                 rs.getString("log_message"));
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void canHandleLongLogMessages() throws Exception {
         // Create a long message (but within reasonable limits)
         StringBuilder sb = new StringBuilder();

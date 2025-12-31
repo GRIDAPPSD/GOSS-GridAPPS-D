@@ -71,16 +71,18 @@ subprojects {
             '--add-opens', 'java.base/java.time=ALL-UNNAMED'
         ]
 
-        // Support for excluding integration tests via property
-        // Usage: ./gradlew test -PexcludeIntegrationTests
-        if (project.hasProperty('excludeIntegrationTests')) {
-            exclude '**/*IntegrationTests.class'
-        }
-
-        // Support for running only integration tests via property
+        // Support for running ONLY integration tests via property
         // Usage: ./gradlew test -PonlyIntegrationTests
         if (project.hasProperty('onlyIntegrationTests')) {
+            include '**/*IntegrationTest.class'
             include '**/*IntegrationTests.class'
+        }
+        // By default, exclude integration tests from the normal build
+        // Integration tests require a running GridAPPS-D platform and message bus
+        // Run with: ./gradlew test -PincludeIntegrationTests to include them
+        else if (!project.hasProperty('includeIntegrationTests')) {
+            exclude '**/*IntegrationTest.class'
+            exclude '**/*IntegrationTests.class'
         }
     }
 
@@ -111,11 +113,14 @@ task assembleLauncher(type: Copy) {
 }
 
 // Task to copy configuration files
+// Use -PconfigDir=local-conf for local development, defaults to conf (Docker)
 task copyConfig(type: Copy) {
     group = 'GridAPPS-D'
     description = 'Copies configuration files to the launcher directory'
 
-    from('gov.pnnl.goss.gridappsd/conf') {
+    def configDir = project.hasProperty('configDir') ? project.configDir : 'conf'
+
+    from("gov.pnnl.goss.gridappsd/${configDir}") {
         include '*.cfg'
         include '*.properties'
     }
@@ -123,6 +128,7 @@ task copyConfig(type: Copy) {
     into "$buildDir/launcher/conf"
 
     doLast {
+        println "Configuration files copied from: gov.pnnl.goss.gridappsd/${configDir}"
         println "Configuration files copied to: $buildDir/launcher/conf"
     }
 }
@@ -147,13 +153,14 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect freshly built GOSS bundles from generated directory (not releaserepo which has old versions)
-    from('../GOSS/pnnl.goss.core/generated') {
-        include '*.jar'
+    // Collect GOSS bundles from GOSS-Repository (local clone or will be downloaded)
+    // Use fileTree to collect all versioned JARs from the release directory structure
+    from('../GOSS-Repository/release') {
+        include 'pnnl.goss.core.*/*.jar'
+        // Only include the latest version (11.0.0)
+        include '**/pnnl.goss.core.*-11.0.0.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
-        // LDAP bundle is now configurable - only activates when pnnl.goss.core.security.ldap.cfg
-        // exists with enabled=true and the LDAP server is reachable
     }
 
     // Collect CIMHub library from BND cache
@@ -451,8 +458,8 @@ project(':gov.pnnl.goss.gridappsd') {
         // GridAPPS-D bundles from this project
         bundleDirs = [
             file('generated'),
-            // GOSS bundles from sibling project
-            file('../../GOSS/pnnl.goss.core/generated')
+            // GOSS bundles from GOSS-Repository (local clone)
+            file('../../GOSS-Repository/release')
         ]
         configDir = file('conf')
     }

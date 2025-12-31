@@ -77,7 +77,7 @@ import pnnl.goss.core.ClientFactory;
  * @author shar064
  *
  */
-@Component(service = ProcessManager.class)
+@Component(service = ProcessManager.class, immediate = true)
 public class ProcessManagerImpl implements ProcessManager {
 
     @Reference

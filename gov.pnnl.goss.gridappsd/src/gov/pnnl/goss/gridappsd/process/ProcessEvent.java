@@ -90,6 +90,9 @@ import pnnl.goss.core.Request.RESPONSE_FORMAT;
 //import pnnl.goss.core.security.JWTAuthenticationToken;
 //import pnnl.goss.core.security.SecurityConfig;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -112,6 +115,8 @@ import com.nimbusds.jwt.SignedJWT;
  *
  */
 public class ProcessEvent implements GossResponseEvent {
+
+    private static final Logger log = LoggerFactory.getLogger(ProcessEvent.class);
 
     Client client;
     ProcessNewSimulationRequest newSimulationProcess;
@@ -161,6 +166,13 @@ public class ProcessEvent implements GossResponseEvent {
     public void onMessage(Serializable message) {
 
         DataResponse event = (DataResponse) message;
+
+        log.trace("ProcessEvent.onMessage received message");
+        log.trace("  Destination: {}", event.getDestination());
+        log.trace("  ReplyDestination: {}", event.getReplyDestination());
+        log.trace("  Data type: {}", event.getData() != null ? event.getData().getClass().getName() : "null");
+        log.trace("  Data: {}", event.getData());
+
         String token = event.getUsername();
 
         String processId = ProcessManagerImpl.generateProcessId();
@@ -243,7 +255,13 @@ public class ProcessEvent implements GossResponseEvent {
                         if (simRequest.getTest_config() != null)
                             response.setEvents(testManager
                                     .sendEventsToSimulation(simRequest.getTest_config().getEvents(), processId));
-                        client.publish(event.getReplyDestination(), response);
+                        if (event.getReplyDestination() != null) {
+                            client.publish(event.getReplyDestination(), response);
+                        } else {
+                            log.warn(
+                                    "No reply destination for simulation request {}. Client will not receive simulationId.",
+                                    processId);
+                        }
                         // TODO also verify that we have the correct sub-configurations as part of the
                         // request
                         // newSimulationProcess.process(configurationManager, simulationManager,
@@ -270,6 +288,9 @@ public class ProcessEvent implements GossResponseEvent {
 
             } else if (event.getDestination().contains(GridAppsDConstants.topic_requestData)) {
 
+                log.trace("Processing data request");
+                log.trace("  Full destination: {}", event.getDestination());
+
                 String requestTopicExtension = event.getDestination()
                         .substring(event.getDestination().indexOf(GridAppsDConstants.topic_requestData)
                                 + GridAppsDConstants.topic_requestData.length());
@@ -282,6 +303,7 @@ public class ProcessEvent implements GossResponseEvent {
                 }
                 String type = requestTopicExtension;
 
+                log.trace("  Extracted type: {}", type);
                 logManager.debug(ProcessStatus.RUNNING, processId, "Received data request of type: " + type);
 
                 Serializable request;
@@ -291,9 +313,15 @@ public class ProcessEvent implements GossResponseEvent {
                     request = message;
                 }
 
+                log.trace("  Request payload: {}", request);
+                log.trace("  Calling dataManager.processDataRequest...");
+
                 Response r = dataManager.processDataRequest(request, type, processId,
                         configurationManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH),
                         username);
+
+                log.trace("  DataManager returned response type: {}", r != null ? r.getClass().getName() : "null");
+
                 // client.publish(event.getReplyDestination(), r);
                 String responseFormat = null;
                 JsonObject jsonObject = JsonParser.parseString(request.toString()).getAsJsonObject();
@@ -302,8 +330,14 @@ public class ProcessEvent implements GossResponseEvent {
                 if (jsonObject.has("responseFormat"))
                     responseFormat = jsonObject.get("responseFormat").getAsString();
 
+                log.trace("  Response format: {}", responseFormat);
+                log.trace("  Reply destination: {}", event.getReplyDestination());
+                log.trace("  Sending response via sendData...");
+
                 sendData(client, event.getReplyDestination(), ((DataResponse) r).getData(), processId, username,
                         responseFormat);
+
+                log.trace("  Response sent successfully");
 
             } else if (event.getDestination().contains(GridAppsDConstants.topic_requestConfig)) {
 
@@ -380,7 +414,11 @@ public class ProcessEvent implements GossResponseEvent {
                     platformStatus.setServiceInstances(serviceManager.listRunningServices());
                 if (request.isField())
                     platformStatus.setField(fieldBusManager.getFieldModelMrid());
-                client.publish(event.getReplyDestination(), platformStatus);
+                if (event.getReplyDestination() != null) {
+                    client.publish(event.getReplyDestination(), platformStatus);
+                } else {
+                    log.warn("No reply destination for platform status request {}.", processId);
+                }
 
             } else if (event.getDestination().contains(GridAppsDConstants.topic_requestMyRoles)) {
                 List<String> roles = new ArrayList<String>();// .getRoles(username);
@@ -408,6 +446,12 @@ public class ProcessEvent implements GossResponseEvent {
 
     private void sendData(Client client, Destination replyDestination, Serializable data, String processId,
             String username, String responseFormat) {
+        // If no reply destination, we can't send a response - just log and return
+        if (replyDestination == null) {
+            log.warn("No reply destination specified for processId {}. Cannot send response.", processId);
+            return;
+        }
+
         try {
             // Make sure it is sending back something in the data field for valid json (or
             // if it is null maybe it should send error response instead???)
@@ -440,6 +484,13 @@ public class ProcessEvent implements GossResponseEvent {
 
     private void sendError(Client client, Destination replyDestination, String error, String processId,
             String username) {
+        // If no reply destination, we can't send an error response - just log
+        if (replyDestination == null) {
+            log.warn("No reply destination specified for processId {}. Cannot send error response. Error was: {}",
+                    processId, error);
+            return;
+        }
+
         try {
             DataResponse r = new DataResponse();
             r.setError(new DataError(error));

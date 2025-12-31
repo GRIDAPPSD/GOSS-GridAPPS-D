@@ -147,17 +147,30 @@ public class DataManagerImpl implements DataManager {
     public Response processDataRequest(Serializable request, String type, String simulationId, String tempDataPath,
             String username) throws Exception {
 
+        log.trace("DataManagerImpl.processDataRequest called");
+        log.trace("  Request type: {}", type);
+        log.trace("  SimulationId: {}", simulationId);
+        log.trace("  Request: {}", request);
+        log.trace("  Registered handlers: {}", dataManagers.keySet());
+
         if (request != null && type != null) {
             DataResponse r = new DataResponse();
             Serializable responseData = null;
             if (dataManagers.containsKey(type)) {
+                log.trace("  Found handler for type '{}': {}", type, dataManagers.get(type).getClass().getName());
                 responseData = dataManagers.get(type).handle(request, "" + simulationId, username);
+                log.trace("  Handler returned: {}",
+                        responseData != null
+                                ? responseData.toString().substring(0, Math.min(200, responseData.toString().length()))
+                                : "null");
             } else {
+                log.warn("TYPE NOT SUPPORTED: {}", type);
                 System.out.println("TYPE NOT SUPPORTED");
                 // TODO throw error that type not supported
             }
             r.setData(responseData);
             r.setResponseComplete(true);
+            log.trace("  Returning DataResponse with responseComplete=true");
             return r;
         }
 

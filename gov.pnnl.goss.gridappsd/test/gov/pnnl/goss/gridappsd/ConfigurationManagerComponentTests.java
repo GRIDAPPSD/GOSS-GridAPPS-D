@@ -99,7 +99,6 @@ public class ConfigurationManagerComponentTests {
     public void configPropertiesSetWhen_configManagerUpdated() {
         ArgumentCaptor<String> argCaptor = ArgumentCaptor.forClass(String.class);
         ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
-        configManager.start();
 
         final String FNCS_PATH_PROP = "fncs.path";
         final String FNCS_PATH_VAL = "fncs_broker";
@@ -110,12 +109,12 @@ public class ConfigurationManagerComponentTests {
         final String FNCS_BRIDGE_PATH_PROP = "fncs.bridge.path";
         final String FNCS_BRIDGE_PATH_VAL = ".\\scripts\\goss_fncs_bridge.py";
 
-        Hashtable<String, String> props = new Hashtable<String, String>();
+        java.util.HashMap<String, Object> props = new java.util.HashMap<>();
         props.put(FNCS_PATH_PROP, FNCS_PATH_VAL);
         props.put(GRIDLABD_PATH_PROP, GRIDLABD_PATH_VAL);
         props.put(GRIDAPPSD_PATH_PROP, GRIDAPPSD_PATH_VAL);
         props.put(FNCS_BRIDGE_PATH_PROP, FNCS_BRIDGE_PATH_VAL);
-        configManager.updated(props);
+        configManager.start(props);
 
         assertEquals(FNCS_PATH_VAL, configManager.getConfigurationProperty(FNCS_PATH_PROP));
         assertEquals(GRIDLABD_PATH_VAL, configManager.getConfigurationProperty(GRIDLABD_PATH_PROP));

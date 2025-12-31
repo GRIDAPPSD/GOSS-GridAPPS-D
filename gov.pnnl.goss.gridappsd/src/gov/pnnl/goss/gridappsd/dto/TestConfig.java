@@ -52,7 +52,9 @@ public class TestConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Random randomNum = new Random();
+    // Mark as transient so Gson ignores it during serialization (fixes Java 21
+    // module access issue)
+    private transient Random randomNum = new Random();
 
     public enum TestType {
         simulation_vs_expected, simulation_vs_timeseries, expected_vs_timeseries, timeseries_vs_timeseries

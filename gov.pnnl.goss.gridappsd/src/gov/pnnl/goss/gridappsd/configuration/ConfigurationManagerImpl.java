@@ -77,7 +77,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
  *
  */
 
-@Component(service = ConfigurationManager.class)
+@Component(service = ConfigurationManager.class, configurationPid = "pnnl.goss.gridappsd", configurationPolicy = org.osgi.service.component.annotations.ConfigurationPolicy.OPTIONAL)
 public class ConfigurationManagerImpl implements ConfigurationManager {
     private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
@@ -105,9 +105,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Activate
-    public void start() {
-        // TODO send log "Starting configuration manager
-
+    public void start(java.util.Map<String, Object> config) {
+        // Receive initial configuration from Config Admin
+        if (config != null && !config.isEmpty()) {
+            java.util.Hashtable<String, Object> dict = new java.util.Hashtable<>(config);
+            this.configurationProperties = dict;
+        }
     }
 
     /**
@@ -142,11 +145,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     }
 
-    // TODO: @ConfigurationDependency migration - This method may need refactoring
-    // to use OSGi DS configuration
-    // Original: @ConfigurationDependency(pid=CONFIG_PID)
-    public synchronized void updated(Dictionary<String, ?> config) {
-        this.configurationProperties = config;
+    // Called by OSGi Config Admin when configuration is updated
+    @org.osgi.service.component.annotations.Modified
+    public synchronized void updated(java.util.Map<String, Object> config) {
+        if (config != null && !config.isEmpty()) {
+            java.util.Hashtable<String, Object> dict = new java.util.Hashtable<>(config);
+            this.configurationProperties = dict;
+        }
     }
 
     public String getConfigurationProperty(String key) {

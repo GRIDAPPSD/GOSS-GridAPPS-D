@@ -193,7 +193,7 @@ public class TestManagerComponentTest {
         // dataManager.start();
         DataManagerImpl dataM = new DataManagerImpl();
         ConfigurationManagerImpl configManager = new ConfigurationManagerImpl(logManager, dataManager);
-        configManager.start();
+        configManager.start(new java.util.HashMap<>());
         Response r = null;
         String request1 = "{\"queryMeasurement\": \"simulation\", \"queryFilter\": {\"simulation_id\": \"145774843\"}, \"responseFormat\": \"JSON\"}";
         try {
