@@ -10,8 +10,6 @@
 		releaseUrl=https://repo1.maven.org/maven2/;\
 		index=${.}/central.maven;\
 		name=Maven Central,\
-	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Local Release;locations=file:${workspace}/../GOSS-Repository/release/index.xml,\
-	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Local Dependencies;locations=file:${workspace}/../GOSS-Repository/dependencies/index.xml,\
 	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Dependencies;locations=https://raw.githubusercontent.com/GridOPTICS/GOSS-Repository/master/dependencies/index.xml.gz,\
 	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Release;locations=https://raw.githubusercontent.com/GridOPTICS/GOSS-Repository/master/release/index.xml.gz,\
 	aQute.bnd.repository.osgi.OSGiRepository;name=CIMHub;locations=https://raw.githubusercontent.com/GRIDAPPSD/CIMHub/master/cnf/release/index.xml,\
