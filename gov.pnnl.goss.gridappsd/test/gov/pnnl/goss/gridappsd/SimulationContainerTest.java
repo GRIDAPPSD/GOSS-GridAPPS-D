@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,29 +29,34 @@ import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.client.ClientServiceFactory;
 
-/**
- * Integration test that runs an actual simulation for a specified duration.
- *
- * This test requires the full GridAPPS-D environment including: - GridAPPS-D
- * platform running - Blazegraph with CIM model data - GridLAB-D or other
- * simulator - FNCS/HELICS bridge
- *
- * Run with: ./gradlew :gov.pnnl.goss.gridappsd:test --tests
- * SimulationRunIntegrationTest
- *
- * Or from Docker: docker exec gridappsd /gridappsd/run-tests.sh
- */
-public class SimulationRunIntegrationTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    private static final Logger log = LoggerFactory.getLogger(SimulationRunIntegrationTest.class);
+/**
+ * Container-based integration test that runs a simulation using Testcontainers.
+ *
+ * This test uses GridAppsDTestEnvironment to manage Docker containers via the
+ * gridappsd-docker/docker-compose.yml configuration.
+ *
+ * Run with: ./gradlew :gov.pnnl.goss.gridappsd:containerTest
+ *
+ * Or via Makefile: make test-container
+ *
+ * Prerequisites: - Docker running - gridappsd/gridappsd:local image built (make
+ * docker) - MySQL dump available in gridappsd-docker/dumps/
+ */
+@Tag("container")
+public class SimulationContainerTest {
+
+    private static final Logger log = LoggerFactory.getLogger(SimulationContainerTest.class);
+
+    // Shared test environment (singleton manages container lifecycle)
+    private static final GridAppsDTestEnvironment env = GridAppsDTestEnvironment.getInstance();
 
     private Client client;
     private ClientServiceFactory clientFactory;
-    private boolean gridappsdAvailable = false;
+    private boolean connected = false;
 
-    // Connection settings
-    private static final String OPENWIRE_URI = "tcp://localhost:61616";
-    private static final String STOMP_URI = "stomp://localhost:61613";
+    // Credentials matching docker-compose environment
     private static final String USERNAME = "system";
     private static final String PASSWORD = "manager";
 
@@ -62,39 +67,51 @@ public class SimulationRunIntegrationTest {
     private static final int SIMULATION_DURATION = Integer.getInteger("test.simulation.duration", 10);
 
     // Timeout for test (simulation duration + overhead for startup/shutdown)
-    private static final int TEST_TIMEOUT_SECONDS = SIMULATION_DURATION + 120;
+    private static final int TEST_TIMEOUT_SECONDS = SIMULATION_DURATION + 180;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         try {
-            log.info("Setting up simulation integration test");
-            log.info("Simulation duration: {} seconds", SIMULATION_DURATION);
+            log.info("=== Setting up Container-based Simulation Test ===");
 
+            // Start Docker environment if not already running
+            log.info("Starting Docker environment...");
+            env.start();
+
+            // Get dynamic connection URI from Testcontainers
+            String openwireUri = env.getOpenWireUri();
+            String stompUri = env.getStompUri();
+
+            log.info("GridAPPS-D OpenWire URI: {}", openwireUri);
+            log.info("GridAPPS-D STOMP URI: {}", stompUri);
+
+            // Configure client factory
             Map<String, Object> properties = new HashMap<>();
             properties.put("goss.system.manager", USERNAME);
             properties.put("goss.system.manager.password", PASSWORD);
-            properties.put("goss.openwire.uri", OPENWIRE_URI);
-            properties.put("goss.stomp.uri", STOMP_URI);
+            properties.put("goss.openwire.uri", openwireUri);
+            properties.put("goss.stomp.uri", stompUri);
 
             clientFactory = new ClientServiceFactory();
             clientFactory.updated(properties);
 
+            // Connect to GridAPPS-D
             Credentials credentials = new UsernamePasswordCredentials(USERNAME, PASSWORD);
-
-            log.info("Attempting OpenWire connection to {}", OPENWIRE_URI);
+            log.info("Connecting to GridAPPS-D...");
             client = clientFactory.create(PROTOCOL.OPENWIRE, credentials);
 
-            gridappsdAvailable = true;
-            log.info("Successfully connected to GridAPPS-D message bus");
+            connected = true;
+            log.info("Successfully connected to GridAPPS-D via Testcontainers");
 
         } catch (Exception e) {
-            log.warn("Could not connect to GridAPPS-D: {}. Tests will be skipped.", e.getMessage());
-            gridappsdAvailable = false;
+            System.err.println("Failed to set up test environment: " + e.getMessage());
+            e.printStackTrace();
+            connected = false;
         }
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (client != null) {
             try {
                 client.close();
@@ -103,79 +120,73 @@ public class SimulationRunIntegrationTest {
                 log.warn("Error closing client: {}", e.getMessage());
             }
         }
+        // Note: We don't stop the environment here to allow container reuse
     }
 
     /**
      * Build a simulation request JSON for the specified feeder and duration.
-     *
-     * The request format uses power_system_configs (array) where each element
-     * contains a simulator_config with the simulator type and
-     * model_creation_config.
      */
     private String buildSimulationRequest(String feederMrid, int durationSeconds, boolean runRealtime) {
         long startTime = System.currentTimeMillis() / 1000;
 
         JsonObject request = new JsonObject();
 
-        // Model creation config - goes inside simulator_config
-        JsonObject modelCreationConfig = new JsonObject();
-        modelCreationConfig.addProperty("load_scaling_factor", 1.0);
-        modelCreationConfig.addProperty("schedule_name", "ieeezipload");
-        modelCreationConfig.addProperty("z_fraction", 0.0);
-        modelCreationConfig.addProperty("i_fraction", 1.0);
-        modelCreationConfig.addProperty("p_fraction", 0.0);
-        modelCreationConfig.addProperty("randomize_zipload_fractions", false);
-        modelCreationConfig.addProperty("use_houses", false);
-
-        // Simulator config - contains simulator type, power flow method, and model
-        // creation config
-        JsonObject simulatorConfig = new JsonObject();
-        simulatorConfig.addProperty("simulator", "GridLAB-D");
-        simulatorConfig.addProperty("power_flow_solver_method", "NR");
-        simulatorConfig.add("model_creation_config", modelCreationConfig);
-
-        // Power system config - use feeder MRID and include simulator_config
+        // Power system config - use feeder MRID directly
         JsonObject powerSystemConfig = new JsonObject();
         powerSystemConfig.addProperty("Line_name", feederMrid);
-        powerSystemConfig.add("simulator_config", simulatorConfig);
 
-        // power_system_configs is an array
-        JsonArray powerSystemConfigs = new JsonArray();
-        powerSystemConfigs.add(powerSystemConfig);
+        // Model creation config
+        JsonObject modelCreationConfig = new JsonObject();
+        modelCreationConfig.addProperty("load_scaling_factor", "1.0");
+        modelCreationConfig.addProperty("schedule_name", "ieeezipload");
+        modelCreationConfig.addProperty("z_fraction", "0");
+        modelCreationConfig.addProperty("i_fraction", "1");
+        modelCreationConfig.addProperty("p_fraction", "0");
+        modelCreationConfig.addProperty("randomize_zipload_fractions", false);
+        modelCreationConfig.addProperty("use_houses", false);
+        powerSystemConfig.add("model_creation_config", modelCreationConfig);
 
-        // Simulation config - timing and general simulation settings
+        // Simulation config
         JsonObject simulationConfig = new JsonObject();
         simulationConfig.addProperty("start_time", String.valueOf(startTime));
-        simulationConfig.addProperty("duration", durationSeconds);
-        simulationConfig.addProperty("timestep_frequency", 1000);
-        simulationConfig.addProperty("timestep_increment", 1000);
+        simulationConfig.addProperty("duration", String.valueOf(durationSeconds));
+        simulationConfig.addProperty("simulator", "GridLAB-D");
+        simulationConfig.addProperty("timestep_frequency", "1000");
+        simulationConfig.addProperty("timestep_increment", "1000");
         simulationConfig.addProperty("run_realtime", runRealtime);
-        simulationConfig.addProperty("simulation_name", "test_simulation");
+        simulationConfig.addProperty("simulation_name", "container_test_simulation");
+        simulationConfig.addProperty("power_flow_solver_method", "NR");
+        simulationConfig.add("model_creation_config", new JsonObject());
 
         // Application config (empty)
         JsonObject applicationConfig = new JsonObject();
         applicationConfig.add("applications", new JsonArray());
 
+        // Service config (empty - use defaults)
+        JsonObject serviceConfig = new JsonObject();
+
         // Assemble the full request
-        request.add("power_system_configs", powerSystemConfigs);
+        request.add("power_system_config", powerSystemConfig);
         request.add("simulation_config", simulationConfig);
         request.add("application_config", applicationConfig);
+        request.add("service_config", serviceConfig);
 
         return request.toString();
     }
 
     /**
-     * Test: Run a simulation for the configured duration and verify it completes.
+     * Test: Run a simulation for the configured duration using
+     * Testcontainers-managed Docker environment.
      *
      * This is a full end-to-end test that: 1. Sends a simulation request 2.
      * Receives simulation ID 3. Subscribes to simulation output 4. Waits for
      * simulation to complete 5. Verifies we received measurement data
      */
-    @Test(timeout = 300000) // 5 minute max timeout
-    public void testRunSimulation() throws Exception {
-        Assume.assumeTrue("GridAPPS-D is not available, skipping test", gridappsdAvailable);
+    @Test
+    void testRunSimulationWithContainers() throws Exception {
+        Assumptions.assumeTrue(connected, "Could not connect to GridAPPS-D, skipping test");
 
-        log.info("=== Starting Simulation Run Test ===");
+        log.info("=== Starting Container-based Simulation Run Test ===");
         log.info("Duration: {} seconds, Timeout: {} seconds", SIMULATION_DURATION, TEST_TIMEOUT_SECONDS);
 
         // Track simulation state
@@ -214,7 +225,7 @@ public class SimulationRunIntegrationTest {
         Serializable response = client.getResponse(request, GridAppsDConstants.topic_requestSimulation,
                 RESPONSE_FORMAT.JSON);
 
-        Assert.assertNotNull("Should receive response from simulation request", response);
+        assertNotNull(response, "Should receive response from simulation request");
         String responseStr = response.toString();
         log.info("Response: {}", responseStr);
 
@@ -233,8 +244,8 @@ public class SimulationRunIntegrationTest {
         }
 
         String simulationId = simulationIdRef.get();
-        Assert.assertNotNull("Should have simulation ID", simulationId);
-        Assert.assertFalse("Simulation ID should not be empty", simulationId.isEmpty());
+        assertNotNull(simulationId, "Should have simulation ID");
+        assertFalse(simulationId.isEmpty(), "Simulation ID should not be empty");
         log.info("Simulation started with ID: {}", simulationId);
 
         // Subscribe to simulation output
@@ -273,7 +284,7 @@ public class SimulationRunIntegrationTest {
 
         // Log results
         int totalMeasurements = measurementCount.get();
-        log.info("=== Simulation Test Results ===");
+        log.info("=== Container-based Simulation Test Results ===");
         log.info("Simulation ID: {}", simulationId);
         log.info("Completed: {}", completed);
         log.info("Total measurements received: {}", totalMeasurements);
@@ -283,102 +294,62 @@ public class SimulationRunIntegrationTest {
         }
 
         // Assertions
-        Assert.assertTrue("Simulation should complete within timeout", completed);
-        Assert.assertTrue("Should receive at least some measurements (got " + totalMeasurements + ")",
-                totalMeasurements > 0);
+        assertTrue(completed, "Simulation should complete within timeout");
+        assertTrue(totalMeasurements > 0, "Should receive at least some measurements (got " + totalMeasurements + ")");
 
-        log.info("=== Simulation Run Test PASSED ===");
+        log.info("=== Container-based Simulation Run Test PASSED ===");
     }
 
     /**
-     * Test: Verify simulation can be stopped prematurely.
+     * Test: Verify platform status query works through containers.
      */
-    @Test(timeout = 120000) // 2 minute timeout
-    public void testStopSimulation() throws Exception {
-        Assume.assumeTrue("GridAPPS-D is not available, skipping test", gridappsdAvailable);
+    @Test
+    void testPlatformStatusWithContainers() throws Exception {
+        Assumptions.assumeTrue(connected, "Could not connect to GridAPPS-D, skipping test");
 
-        log.info("=== Starting Simulation Stop Test ===");
+        log.info("=== Testing Platform Status via Containers ===");
 
-        AtomicReference<String> simulationIdRef = new AtomicReference<>();
-        CountDownLatch measurementReceived = new CountDownLatch(3); // Wait for a few measurements
+        // Query platform status
+        String statusRequest = "{}";
+        Serializable response = client.getResponse(statusRequest,
+                GridAppsDConstants.topic_requestPlatformStatus, RESPONSE_FORMAT.JSON);
 
-        // Start a longer simulation that we'll stop early
-        String request = buildSimulationRequest(TEST_FEEDER_MRID, 60, false);
-        Serializable response = client.getResponse(request, GridAppsDConstants.topic_requestSimulation,
-                RESPONSE_FORMAT.JSON);
-
-        Assert.assertNotNull("Should receive response", response);
+        assertNotNull(response, "Should receive platform status response");
         String responseStr = response.toString();
+        log.info("Platform status: {}", responseStr);
 
-        // Parse simulation ID
-        try {
-            JsonObject json = JsonParser.parseString(responseStr).getAsJsonObject();
-            if (json.has("simulationId")) {
-                simulationIdRef.set(json.get("simulationId").getAsString());
-            }
-        } catch (Exception e) {
-            simulationIdRef.set(responseStr.replaceAll("\"", "").trim());
-        }
+        // Verify we got a valid JSON response
+        JsonObject status = JsonParser.parseString(responseStr).getAsJsonObject();
+        assertTrue(status.has("applications") || status.has("services") || status.has("simulations"),
+                "Status should contain applications, services, or simulations info");
 
-        String simulationId = simulationIdRef.get();
-        Assert.assertNotNull("Should have simulation ID", simulationId);
-        log.info("Simulation started with ID: {}", simulationId);
-
-        // Subscribe to output
-        String outputTopic = GridAppsDConstants.topic_simulationOutput + "." + simulationId;
-        client.subscribe(outputTopic, new GossResponseEvent() {
-            @Override
-            public void onMessage(Serializable response) {
-                log.debug("Received measurement");
-                measurementReceived.countDown();
-            }
-        });
-
-        // Wait for some measurements
-        boolean gotMeasurements = measurementReceived.await(60, TimeUnit.SECONDS);
-        log.info("Received initial measurements: {}", gotMeasurements);
-
-        // Send stop command
-        String stopTopic = GridAppsDConstants.topic_simulationInput + "." + simulationId;
-        JsonObject stopCommand = new JsonObject();
-        stopCommand.addProperty("command", "stop");
-
-        log.info("Sending stop command to: {}", stopTopic);
-        client.publish(stopTopic, stopCommand.toString());
-
-        // Give it time to stop
-        Thread.sleep(5000);
-
-        log.info("=== Simulation Stop Test PASSED ===");
+        log.info("=== Platform Status Test PASSED ===");
     }
 
     /**
-     * Main method for running tests standalone.
+     * Test: Verify data query works through containers (list available feeders).
      */
-    public static void main(String[] args) {
-        SimulationRunIntegrationTest test = new SimulationRunIntegrationTest();
+    @Test
+    void testDataQueryWithContainers() throws Exception {
+        Assumptions.assumeTrue(connected, "Could not connect to GridAPPS-D, skipping test");
 
-        try {
-            test.setUp();
+        log.info("=== Testing Data Query via Containers ===");
 
-            if (!test.gridappsdAvailable) {
-                System.err.println("GridAPPS-D is not available. Make sure the platform is running.");
-                System.exit(1);
-            }
+        // Query for available feeders
+        JsonObject dataRequest = new JsonObject();
+        dataRequest.addProperty("requestType", "QUERY_MODEL_NAMES");
+        dataRequest.addProperty("resultFormat", "JSON");
 
-            System.out.println("\n========== Running Simulation Integration Tests ==========\n");
+        Serializable response = client.getResponse(dataRequest.toString(),
+                GridAppsDConstants.topic_requestData, RESPONSE_FORMAT.JSON);
 
-            test.testRunSimulation();
-            System.out.println("testRunSimulation PASSED\n");
+        assertNotNull(response, "Should receive data query response");
+        String responseStr = response.toString();
+        log.info("Available models: {}", responseStr.substring(0, Math.min(500, responseStr.length())));
 
-            System.out.println("========== All Tests Completed ==========");
+        // Should have some data
+        assertFalse(responseStr.isEmpty(), "Response should not be empty");
 
-        } catch (Exception e) {
-            System.err.println("Test failed with exception:");
-            e.printStackTrace();
-            System.exit(1);
-        } finally {
-            test.tearDown();
-        }
+        log.info("=== Data Query Test PASSED ===");
     }
 }

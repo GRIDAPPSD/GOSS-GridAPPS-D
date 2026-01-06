@@ -81,6 +81,19 @@ public class FieldBusManagerImpl implements FieldBusManager {
         System.out.println("Starting FieldBusManager");
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
     @Activate
     public void start() {
 

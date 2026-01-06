@@ -84,6 +84,29 @@ public class DSSAllConfigurationHandler extends BaseConfigurationHandler impleme
     volatile LogManager logManager;
     private volatile SimulationManager simulationManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // DSSAllConfigurationHandler doesn't have dataManager field - no-op for
+        // compatibility
+    }
+
     public static final String TYPENAME = "DSS All";
     public static final String DIRECTORY = "directory";
     public static final String SIMULATIONNAME = "simulation_name";

@@ -85,6 +85,29 @@ public class CIMDictionaryConfigurationHandler extends BaseConfigurationHandler 
     @Reference
     private volatile LogManager logManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // CIMDictionaryConfigurationHandler doesn't have dataManager field - no-op for
+        // compatibility
+    }
+
     public static final String TYPENAME = "CIM Dictionary";
     public static final String MODELID = "model_id";
     public static final String SIMULATIONID = "simulation_id";

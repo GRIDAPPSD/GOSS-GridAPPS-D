@@ -97,6 +97,24 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
     @Reference
     volatile LogManager logManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
     public static final String TYPENAME = "GridLAB-D Simulation Output";
     public static final String MODELID = "model_id";
     public static final String DICTIONARY_FILE = "dictionary_file";

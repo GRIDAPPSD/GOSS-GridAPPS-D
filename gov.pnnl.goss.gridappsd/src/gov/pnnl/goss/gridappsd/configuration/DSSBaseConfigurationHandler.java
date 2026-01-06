@@ -55,6 +55,7 @@ import gov.pnnl.gridappsd.cimhub.CIMImporter;
 import gov.pnnl.gridappsd.cimhub.queryhandler.QueryHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
@@ -80,6 +81,29 @@ public class DSSBaseConfigurationHandler extends BaseConfigurationHandler implem
     private volatile PowergridModelDataManager powergridModelManager;
     @Reference
     private volatile LogManager logManager;
+
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // DSSBaseConfigurationHandler doesn't have dataManager field - no-op for
+        // compatibility
+    }
 
     public static final String cimhub_PREFIX = "model";
     public static final String DSSBASE_FILENAME = cimhub_PREFIX + "_base.dss";

@@ -48,6 +48,8 @@ import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.component.annotations.Activate;
 
 import pnnl.goss.core.Client;
@@ -88,7 +90,8 @@ public class DataManagerImpl implements DataManager {
 
     @Reference
     private volatile ClientFactory clientFactory;
-    @Reference
+
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     private volatile LogManager logManager;
 
     public DataManagerImpl(ClientFactory clientFactory, LogManager logManager) {
@@ -100,13 +103,32 @@ public class DataManagerImpl implements DataManager {
 
     }
 
+    // Setter for manual dependency injection
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+        // Try to register LogDataManager if not done yet
+        registerLogDataManagerIfAvailable();
+    }
+
+    private void registerLogDataManagerIfAvailable() {
+        if (logManager != null && logManager.getLogDataManager() != null) {
+            try {
+                this.registerDataManagerHandler((LogDataManagerMySQL) logManager.getLogDataManager(),
+                        LogDataManagerMySQL.DATA_MANAGER_TYPE);
+                log.info("Registered LogDataManagerMySQL handler");
+            } catch (Exception e) {
+                log.warn("Could not register LogDataManagerMySQL handler: " + e.getMessage());
+            }
+        }
+    }
+
     @Activate
     public void start() {
         log.info("Starting " + getClass());
         // This is done here instead of in @Start method of LogDataManagerMySQL to avoid
         // circular service dependency
-        this.registerDataManagerHandler((LogDataManagerMySQL) logManager.getLogDataManager(),
-                LogDataManagerMySQL.DATA_MANAGER_TYPE);
+        // LogManager may be null initially if it's an optional dependency
+        registerLogDataManagerIfAvailable();
         // try{
         // Credentials credentials = new UsernamePasswordCredentials(
         // GridAppsDConstants.username, GridAppsDConstants.password);
@@ -233,8 +255,10 @@ public class DataManagerImpl implements DataManager {
             return dataConverters.get(converterKey);
         } else {
             // TODO should we log a warning that the converter is not found?
-            logManager.warn(ProcessStatus.RUNNING, null,
-                    "No Data converter available for " + inputFormat + " to " + outputFormat);
+            if (logManager != null) {
+                logManager.warn(ProcessStatus.RUNNING, null,
+                        "No Data converter available for " + inputFormat + " to " + outputFormat);
+            }
             return null;
         }
     }

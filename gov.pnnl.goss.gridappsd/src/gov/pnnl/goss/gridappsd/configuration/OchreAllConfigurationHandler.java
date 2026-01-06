@@ -82,6 +82,29 @@ public class OchreAllConfigurationHandler extends BaseConfigurationHandler imple
     @Reference
     private volatile LogManager logManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // OchreAllConfigurationHandler doesn't have dataManager field - no-op for
+        // compatibility
+    }
+
     public static final String TYPENAME = "OCHRE";
     public static final String DIRECTORY = "directory";
     public static final String MODELID = "model_id";

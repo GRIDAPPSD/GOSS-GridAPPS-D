@@ -101,6 +101,15 @@ public class LogManagerImpl implements LogManager {
         this.logDataManager = logDataManager;
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setLogDataManager(LogDataManager logDataManager) {
+        this.logDataManager = logDataManager;
+    }
+
     @Activate
     public void start() {
         try {

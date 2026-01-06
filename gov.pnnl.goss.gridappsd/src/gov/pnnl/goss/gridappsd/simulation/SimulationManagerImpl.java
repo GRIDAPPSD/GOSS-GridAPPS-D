@@ -128,6 +128,27 @@ public class SimulationManagerImpl implements SimulationManager {
         // this.configurationManager = configurationManager;
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
+
+    public void setAppManager(AppManager appManager) {
+        this.appManager = appManager;
+    }
+
+    public void setConfigurationManager(gov.pnnl.goss.gridappsd.api.ConfigurationManager configurationManager) {
+        // ConfigurationManager reference is not stored but might be needed for future
+    }
+
     @Activate
     public void start() throws Exception {
 

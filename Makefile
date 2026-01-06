@@ -1,8 +1,8 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration test-simulation \
-        run run-bg run-stop run-log docker docker-build docker-run \
+.PHONY: help build clean dist test test-unit test-integration test-simulation test-container \
+        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-logs docker-status docker-versions \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check run-local run-local-bg
@@ -27,6 +27,7 @@ help:
 	@echo "  make test-unit         - Run unit tests only (no external dependencies)"
 	@echo "  make test-integration  - Run integration tests (requires MySQL, Blazegraph)"
 	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
+	@echo "  make test-container    - Run container-based tests using Testcontainers (auto-starts Docker)"
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
@@ -38,8 +39,13 @@ help:
 	@echo "  make run-log      - Tail the background log file"
 	@echo ""
 	@echo "Docker targets:"
-	@echo "  make docker       - Build Docker image (gridappsd/gridappsd:local)"
-	@echo "  make docker-run   - Run Docker container"
+	@echo "  make docker          - Build Docker image (gridappsd/gridappsd:local)"
+	@echo "  make docker-up       - Start containers (VERSION=develop by default)"
+	@echo "  make docker-up VERSION=v2025.09.0  - Start with specific version for backport testing"
+	@echo "  make docker-down     - Stop containers"
+	@echo "  make docker-logs     - Tail gridappsd logs"
+	@echo "  make docker-status   - Show container status"
+	@echo "  make docker-versions - List available Docker Hub versions"
 	@echo ""
 	@echo "GOSS targets:"
 	@echo "  make goss         - Build GOSS framework"
@@ -103,7 +109,9 @@ test-integration:
 # Run simulation integration test inside Docker container
 # This is the only practical way to run simulation tests since they require
 # GridLAB-D, FNCS/HELICS bridge, and other simulators only available in Docker
-# Usage: make test-simulation [SIMULATION_DURATION=10]
+# Usage: make test-simulation [SIMULATION_DURATION=10] [VERSION=develop]
+# Note: Requires gridappsd/gridappsd:local image built with 'make docker'
+#       Start containers with: make docker-up [VERSION=v2025.09.0]
 SIMULATION_DURATION ?= 10
 test-simulation:
 	@echo "Running simulation integration test inside Docker container..."
@@ -113,21 +121,51 @@ test-simulation:
 		echo "Error: gridappsd container is not running."; \
 		echo ""; \
 		echo "To start the Docker environment:"; \
-		echo "  cd ../gridappsd-docker && ./run.sh"; \
+		echo "  1. Build local image: make docker"; \
+		echo "  2. Start containers:  make docker-up"; \
+		echo "     Or for backport testing: make docker-up VERSION=v2025.09.0"; \
 		echo ""; \
 		echo "Then re-run: make test-simulation"; \
 		exit 1; \
 	fi
 	@echo "Building test classes..."
-	@./gradlew :gov.pnnl.goss.gridappsd:testClasses --quiet
-	@echo "Copying test classes to container..."
-	@docker cp gov.pnnl.goss.gridappsd/generated/test-classes gridappsd:/tmp/test-classes
-	@docker cp gov.pnnl.goss.gridappsd/generated/classes gridappsd:/tmp/classes
+	@./gradlew :gov.pnnl.goss.gridappsd:clean :gov.pnnl.goss.gridappsd:testClasses --quiet
+	@echo "Copying test classes and JUnit to container..."
+	@docker exec gridappsd rm -rf /tmp/test-classes /tmp/classes /tmp/test-libs 2>/dev/null || true
+	@docker exec gridappsd mkdir -p /tmp/test-libs
+	@docker cp gov.pnnl.goss.gridappsd/bin_test gridappsd:/tmp/test-classes
+	@docker cp gov.pnnl.goss.gridappsd/bin gridappsd:/tmp/classes
+	@docker cp ~/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar gridappsd:/tmp/test-libs/
+	@docker cp ~/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar gridappsd:/tmp/test-libs/
 	@echo "Running simulation test ($(SIMULATION_DURATION) seconds)..."
 	@echo ""
-	@docker exec gridappsd java -cp "/tmp/test-classes:/tmp/classes:/gridappsd/lib/*" \
+	@docker exec gridappsd bash -c 'java -cp "/tmp/test-classes:/tmp/classes:/tmp/test-libs/*:$$(find /gridappsd/lib/bundle -name "*-11.0.0.jar" | tr "\n" ":"):$$(find /gridappsd/lib/bundle -maxdepth 1 -name "*.jar" | tr "\n" ":")" \
 		-Dtest.simulation.duration=$(SIMULATION_DURATION) \
-		gov.pnnl.goss.gridappsd.SimulationRunIntegrationTest
+		gov.pnnl.goss.gridappsd.SimulationRunIntegrationTest'
+
+# Run container-based integration tests using Testcontainers
+# This automatically starts Docker containers from gridappsd-docker/docker-compose.yml
+# Prerequisites:
+#   - Docker running
+#   - gridappsd/gridappsd:local image built (make docker)
+#   - MySQL dump available in gridappsd-docker/dumps/
+test-container:
+	@echo "Running container-based integration tests using Testcontainers..."
+	@echo ""
+	@if ! docker info >/dev/null 2>&1; then \
+		echo "Error: Docker is not running."; \
+		echo "Please start Docker and try again."; \
+		exit 1; \
+	fi
+	@if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q 'gridappsd/gridappsd:local'; then \
+		echo "Warning: gridappsd/gridappsd:local image not found."; \
+		echo "Building it now with 'make docker'..."; \
+		$(MAKE) docker; \
+	fi
+	./gradlew :gov.pnnl.goss.gridappsd:containerTest
+	@echo ""
+	@echo "Container tests complete."
+	@echo "Note: Containers may still be running for reuse. Use 'docker compose down' to stop them."
 
 # Check if integration test services are available
 test-check:
@@ -140,9 +178,10 @@ test-check:
 	@curl -s --connect-timeout 2 http://localhost:8889/bigdata/namespace >/dev/null 2>&1 && echo "  ✓ Blazegraph is reachable" || echo "  ✗ Blazegraph is NOT reachable"
 	@echo ""
 	@echo "Docker containers:"
-	@docker ps --format "  {{.Names}}: {{.Status}}" 2>/dev/null | grep -E "mysql|blazegraph|influxdb" || echo "  No relevant containers found"
+	@docker ps --format "  {{.Names}}: {{.Status}}" 2>/dev/null | grep -E "mysql|blazegraph|influxdb|proven|gridappsd" || echo "  No relevant containers found"
 	@echo ""
-	@echo "To start services: cd ../gridappsd-docker && ./run.sh"
+	@echo "To start services: make docker-up"
+	@echo "For backport testing: make docker-up VERSION=v2025.09.0"
 
 # Run with Docker config (foreground)
 run: dist
@@ -218,6 +257,7 @@ run-log:
 # Docker targets
 DOCKER_TAG ?= local
 BASE_VERSION ?= rc2
+VERSION ?= develop
 
 docker:
 	./build-gridappsd-container --base-version $(BASE_VERSION) --output-version $(DOCKER_TAG)
@@ -230,14 +270,29 @@ docker-build:
 		--network=host \
 		-t gridappsd/gridappsd:$(DOCKER_TAG) .
 
+# New Docker management targets using docker_manager.py
+# These use the local docker/docker-compose.yml for self-contained development
+docker-up:
+	python3 scripts/docker_manager.py up --version $(VERSION)
+
+docker-down:
+	python3 scripts/docker_manager.py down
+
+docker-logs:
+	python3 scripts/docker_manager.py logs
+
+docker-status:
+	python3 scripts/docker_manager.py status
+
+docker-versions:
+	python3 scripts/docker_manager.py versions
+
+# Legacy targets for gridappsd-docker compatibility
 docker-run:
 	cd ../gridappsd-docker && docker compose up -d gridappsd
 
 docker-stop:
 	cd ../gridappsd-docker && docker compose down
-
-docker-logs:
-	docker logs -f gridappsd
 
 # GOSS framework targets
 GOSS_DIR = ../GOSS

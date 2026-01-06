@@ -79,6 +79,30 @@ public class GLDBaseConfigurationHandler extends BaseConfigurationHandler implem
     @Reference
     private volatile PowergridModelDataManager powergridModelManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // GLDBaseConfigurationHandler doesn't have dataManager field but the
+        // constructor accepts it
+        // This is a no-op for compatibility
+    }
+
     public static final String TYPENAME = "GridLAB-D Base GLM";
     public static final String ZFRACTION = "z_fraction";
     public static final String IFRACTION = "i_fraction";

@@ -24,6 +24,13 @@ subprojects {
     }
     apply plugin: 'com.diffplug.spotless'
 
+    // Add Testcontainers dependencies for container-based integration tests
+    dependencies {
+        testImplementation 'org.testcontainers:testcontainers:1.19.3'
+        testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    }
+
     // Spotless configuration for code formatting
     spotless {
         java {
@@ -470,5 +477,41 @@ project(':gov.pnnl.goss.gridappsd') {
 project(':gov.pnnl.goss.gridappsd.test') {
     tasks.matching { it.name == 'testOSGi' }.configureEach {
         enabled = false
+    }
+}
+
+// Container-based integration tests using Testcontainers
+// These tests spin up Docker containers using docker-compose.yml
+// Run with: ./gradlew containerTest
+project(':gov.pnnl.goss.gridappsd') {
+    tasks.register('containerTest', Test) {
+        description = 'Run container-based integration tests using Testcontainers'
+        group = 'verification'
+
+        // Use JUnit 5 platform
+        useJUnitPlatform {
+            includeTags 'container'
+        }
+
+        // Container tests need more time for startup
+        systemProperty 'junit.jupiter.execution.timeout.default', '5m'
+
+        // Enable Testcontainers reuse mode for faster iterations
+        systemProperty 'testcontainers.reuse.enable', 'true'
+
+        // Ensure tests can find docker-compose.yml relative to project root
+        workingDir = rootProject.projectDir
+
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+
+        // JVM args for Java 21 module system
+        jvmArgs = [
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED'
+        ]
     }
 }

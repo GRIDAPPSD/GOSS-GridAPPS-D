@@ -81,6 +81,29 @@ public class DSSCoordinateConfigurationHandler extends BaseConfigurationHandler 
     @Reference
     private volatile LogManager logManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        // DSSCoordinateConfigurationHandler doesn't have dataManager field - no-op for
+        // compatibility
+    }
+
     public static final String TYPENAME = "DSS Coordinate";
     // public static final String ZFRACTION = "z_fraction";
     // public static final String IFRACTION = "i_fraction";

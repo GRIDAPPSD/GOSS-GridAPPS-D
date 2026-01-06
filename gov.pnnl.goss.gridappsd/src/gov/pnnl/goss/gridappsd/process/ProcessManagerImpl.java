@@ -174,15 +174,19 @@ public class ProcessManagerImpl implements ProcessManager {
             logMessageObj.setLogMessage("Starting " + this.getClass().getName());
             client.publish(GridAppsDConstants.topic_platformLog, logMessageObj);
 
-            // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-            // client.subscribe(GridAppsDConstants.topic_process_prefix+".>", new
-            // ProcessEvent(this,
-            // client, newSimulationProcess, configurationManager, simulationManager,
-            // appManager, logManager, serviceManager, dataManager, testManager,
-            // securityConfig, fieldBusManager));
-            client.subscribe(GridAppsDConstants.topic_process_prefix + ".>", new ProcessEvent(this,
+            // Create the event handler for processing requests
+            ProcessEvent processEvent = new ProcessEvent(this,
                     client, newSimulationProcess, configurationManager, simulationManager, appManager, logManager,
-                    serviceManager, dataManager, testManager, fieldBusManager));
+                    serviceManager, dataManager, testManager, fieldBusManager);
+
+            // Subscribe to TOPIC for pub/sub messaging (e.g., from viz, external apps)
+            client.subscribe(GridAppsDConstants.topic_process_prefix + ".>", processEvent,
+                    Client.DESTINATION_TYPE.TOPIC);
+
+            // Subscribe to QUEUE for request/response messaging (e.g., from Python/Java
+            // clients using getResponse)
+            client.subscribe(GridAppsDConstants.topic_process_prefix + ".>", processEvent,
+                    Client.DESTINATION_TYPE.QUEUE);
         } catch (Exception e) {
             e.printStackTrace();
             logManager.error(ProcessStatus.ERROR, null, e.getMessage());

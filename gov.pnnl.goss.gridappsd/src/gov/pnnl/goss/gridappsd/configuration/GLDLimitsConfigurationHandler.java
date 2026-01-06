@@ -82,6 +82,28 @@ public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler impl
     @Reference
     volatile DataManager dataManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
+
     public static final String TYPENAME = "GridLAB-D Limits";
     public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
     public static final String MODELID = "model_id";

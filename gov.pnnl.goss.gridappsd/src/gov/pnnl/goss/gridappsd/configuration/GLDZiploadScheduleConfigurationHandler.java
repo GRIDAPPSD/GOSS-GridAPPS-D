@@ -89,6 +89,20 @@ public class GLDZiploadScheduleConfigurationHandler
     // @Reference
     // volatile SecurityConfig securityConfig;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
+
     public static final String TYPENAME = "GridLAB-D Zipload Schedule";
     public static final String DIRECTORY = "directory";
     public static final String SIMULATIONNAME = "simulation_name";

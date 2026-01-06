@@ -147,6 +147,15 @@ public class AppManagerImpl implements AppManager {
 
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
     @Override
     public void process(String processId, DataResponse event, Serializable message)
             throws Exception {

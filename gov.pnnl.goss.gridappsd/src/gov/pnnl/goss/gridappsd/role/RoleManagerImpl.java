@@ -24,6 +24,19 @@ public class RoleManagerImpl implements RoleManager {
 
     private HashMap<String, List<String>> roles = new HashMap<String, List<String>>();
 
+    public RoleManagerImpl() {
+    }
+
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setLogManager(Object logManager) {
+        // RoleManager doesn't use LogManager, but setter provided for consistency
+    }
+
+    public void start() {
+        // Initialization - RoleManager doesn't need special startup
+        log.info("RoleManagerImpl started");
+    }
+
     @Override
     public List<String> getRoles(String userName) throws Exception {
         if (!roles.containsKey(userName)) {

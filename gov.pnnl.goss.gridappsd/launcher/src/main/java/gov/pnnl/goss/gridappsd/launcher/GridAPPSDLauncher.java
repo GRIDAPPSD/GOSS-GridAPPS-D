@@ -208,6 +208,105 @@ public class GridAPPSDLauncher {
         return resolved;
     }
 
+    /**
+     * Find all JAR files in a directory, including subdirectories.
+     * For subdirectories, only the highest version JAR is selected.
+     */
+    private List<File> findBundleJars(File bundleDir) {
+        List<File> bundleFiles = new ArrayList<>();
+
+        File[] entries = bundleDir.listFiles();
+        if (entries == null) {
+            return bundleFiles;
+        }
+
+        for (File entry : entries) {
+            if (entry.isFile() && entry.getName().endsWith(".jar")) {
+                // Direct JAR file in bundle directory
+                bundleFiles.add(entry);
+            } else if (entry.isDirectory()) {
+                // Subdirectory - find the highest version JAR
+                File highestVersionJar = findHighestVersionJar(entry);
+                if (highestVersionJar != null) {
+                    bundleFiles.add(highestVersionJar);
+                }
+            }
+        }
+
+        return bundleFiles;
+    }
+
+    /**
+     * Find the highest version JAR file in a directory.
+     * Compares version numbers in filenames like bundle-1.0.0.jar, bundle-2.1.0.jar.
+     */
+    private File findHighestVersionJar(File dir) {
+        File[] jars = dir.listFiles((d, name) -> name.endsWith(".jar"));
+        if (jars == null || jars.length == 0) {
+            return null;
+        }
+
+        File highest = jars[0];
+        for (int i = 1; i < jars.length; i++) {
+            if (compareVersions(jars[i].getName(), highest.getName()) > 0) {
+                highest = jars[i];
+            }
+        }
+        return highest;
+    }
+
+    /**
+     * Compare two JAR filenames by their version numbers.
+     * Returns positive if a > b, negative if a < b, 0 if equal.
+     */
+    private int compareVersions(String a, String b) {
+        // Extract version from filename like "bundle-1.2.3.jar"
+        String versionA = extractVersion(a);
+        String versionB = extractVersion(b);
+
+        String[] partsA = versionA.split("\\.");
+        String[] partsB = versionB.split("\\.");
+
+        int maxLen = Math.max(partsA.length, partsB.length);
+        for (int i = 0; i < maxLen; i++) {
+            int numA = (i < partsA.length) ? parseVersionPart(partsA[i]) : 0;
+            int numB = (i < partsB.length) ? parseVersionPart(partsB[i]) : 0;
+            if (numA != numB) {
+                return numA - numB;
+            }
+        }
+        return 0;
+    }
+
+    private String extractVersion(String filename) {
+        // Remove .jar extension
+        String name = filename.substring(0, filename.length() - 4);
+        // Find the last hyphen followed by a digit
+        int idx = name.length() - 1;
+        while (idx > 0) {
+            if (name.charAt(idx) == '-' && idx + 1 < name.length() &&
+                Character.isDigit(name.charAt(idx + 1))) {
+                return name.substring(idx + 1);
+            }
+            idx--;
+        }
+        return "0";
+    }
+
+    private int parseVersionPart(String part) {
+        // Extract leading digits from version part (e.g., "3" from "3-SNAPSHOT")
+        StringBuilder sb = new StringBuilder();
+        for (char c : part.toCharArray()) {
+            if (Character.isDigit(c)) {
+                sb.append(c);
+            } else {
+                break;
+            }
+        }
+        if (sb.length() == 0) return 0;
+        return Integer.parseInt(sb.toString());
+    }
+
     private Framework createFramework(Map<String, String> config) throws Exception {
         // Use ServiceLoader to find FrameworkFactory
         ServiceLoader<FrameworkFactory> loader = ServiceLoader.load(FrameworkFactory.class);
@@ -237,9 +336,9 @@ public class GridAPPSDLauncher {
 
         System.out.println("Loading bundles from: " + bundleDir.getAbsolutePath());
 
-        // Get list of JAR files
-        File[] bundleFiles = bundleDir.listFiles((dir, name) -> name.endsWith(".jar"));
-        if (bundleFiles == null || bundleFiles.length == 0) {
+        // Get list of JAR files, including those in subdirectories
+        List<File> bundleFiles = findBundleJars(bundleDir);
+        if (bundleFiles.isEmpty()) {
             System.err.println("Warning: No bundles found in " + bundleDir.getAbsolutePath());
             return;
         }
@@ -248,7 +347,7 @@ public class GridAPPSDLauncher {
         List<Bundle> installedBundles = new ArrayList<>();
 
         // Phase 1: Install all bundles
-        System.out.println("Installing " + bundleFiles.length + " bundles...");
+        System.out.println("Installing " + bundleFiles.size() + " bundles...");
         for (File bundleFile : bundleFiles) {
             try {
                 // Skip Felix framework JAR - it's the container, not a bundle

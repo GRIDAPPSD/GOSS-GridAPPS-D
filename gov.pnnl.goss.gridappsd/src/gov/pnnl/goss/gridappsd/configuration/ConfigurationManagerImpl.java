@@ -56,6 +56,8 @@ import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage;
 import gov.pnnl.goss.gridappsd.dto.RequestSimulation;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.LogLevel;
@@ -92,9 +94,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     @Reference
     private volatile DataManager dataManager;
 
+    @Reference
+    private volatile PowergridModelDataManager powergridModelManager;
+
+    @Reference
+    private volatile SimulationManager simulationManager;
+
     private Dictionary<String, ?> configurationProperties;
 
     private HashMap<String, ConfigurationHandler> configHandlers = new HashMap<String, ConfigurationHandler>();
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationManagerImpl.class);
 
     public ConfigurationManagerImpl() {
     }
@@ -104,12 +114,159 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
     @Activate
     public void start(java.util.Map<String, Object> config) {
         // Receive initial configuration from Config Admin
         if (config != null && !config.isEmpty()) {
             java.util.Hashtable<String, Object> dict = new java.util.Hashtable<>(config);
             this.configurationProperties = dict;
+        }
+
+        // Manually instantiate and register ConfigurationHandlers
+        // This is a workaround for Felix SCR not loading the handler components
+        log.info("ConfigurationManager starting - manually registering configuration handlers");
+        registerBuiltInHandlers();
+    }
+
+    /**
+     * Manually instantiate and register built-in configuration handlers. This is
+     * necessary because Felix SCR doesn't always load all component descriptors
+     * from the Service-Component manifest header.
+     */
+    private void registerBuiltInHandlers() {
+        try {
+            // GridLAB-D handlers
+            GLDAllConfigurationHandler gldAll = new GLDAllConfigurationHandler();
+            gldAll.setConfigManager(this);
+            gldAll.setDataManager(dataManager);
+            gldAll.setLogManager(logManager);
+            gldAll.setPowergridModelManager(powergridModelManager);
+            gldAll.setSimulationManager(simulationManager);
+            gldAll.start();
+            log.info("Registered GLDAllConfigurationHandler");
+
+            GLDBaseConfigurationHandler gldBase = new GLDBaseConfigurationHandler();
+            gldBase.setConfigManager(this);
+            gldBase.setDataManager(dataManager);
+            gldBase.setLogManager(logManager);
+            gldBase.setPowergridModelManager(powergridModelManager);
+            gldBase.setSimulationManager(simulationManager);
+            gldBase.start();
+            log.info("Registered GLDBaseConfigurationHandler");
+
+            GLDSimulationOutputConfigurationHandler gldSimOutput = new GLDSimulationOutputConfigurationHandler();
+            gldSimOutput.setConfigManager(this);
+            gldSimOutput.setLogManager(logManager);
+            gldSimOutput.setSimulationManager(simulationManager);
+            gldSimOutput.setPowergridModelManager(powergridModelManager);
+            gldSimOutput.start();
+            log.info("Registered GLDSimulationOutputConfigurationHandler");
+
+            GLDZiploadScheduleConfigurationHandler gldZipload = new GLDZiploadScheduleConfigurationHandler();
+            gldZipload.setConfigManager(this);
+            gldZipload.setLogManager(logManager);
+            gldZipload.setDataManager(dataManager);
+            gldZipload.start();
+            log.info("Registered GLDZiploadScheduleConfigurationHandler");
+
+            GLDLimitsConfigurationHandler gldLimits = new GLDLimitsConfigurationHandler();
+            gldLimits.setConfigManager(this);
+            gldLimits.setDataManager(dataManager);
+            gldLimits.setLogManager(logManager);
+            gldLimits.setPowergridModelManager(powergridModelManager);
+            gldLimits.setSimulationManager(simulationManager);
+            gldLimits.start();
+            log.info("Registered GLDLimitsConfigurationHandler");
+
+            // DSS handlers
+            DSSAllConfigurationHandler dssAll = new DSSAllConfigurationHandler();
+            dssAll.setConfigManager(this);
+            dssAll.setLogManager(logManager);
+            dssAll.setPowergridModelManager(powergridModelManager);
+            dssAll.setSimulationManager(simulationManager);
+            dssAll.start();
+            log.info("Registered DSSAllConfigurationHandler");
+
+            DSSBaseConfigurationHandler dssBase = new DSSBaseConfigurationHandler();
+            dssBase.setConfigManager(this);
+            dssBase.setDataManager(dataManager);
+            dssBase.setLogManager(logManager);
+            dssBase.setPowergridModelManager(powergridModelManager);
+            dssBase.setSimulationManager(simulationManager);
+            dssBase.start();
+            log.info("Registered DSSBaseConfigurationHandler");
+
+            DSSCoordinateConfigurationHandler dssCoord = new DSSCoordinateConfigurationHandler();
+            dssCoord.setConfigManager(this);
+            dssCoord.setDataManager(dataManager);
+            dssCoord.setLogManager(logManager);
+            dssCoord.setPowergridModelManager(powergridModelManager);
+            dssCoord.setSimulationManager(simulationManager);
+            dssCoord.start();
+            log.info("Registered DSSCoordinateConfigurationHandler");
+
+            // CIM handlers
+            CIMDictionaryConfigurationHandler cimDict = new CIMDictionaryConfigurationHandler();
+            cimDict.setConfigManager(this);
+            cimDict.setDataManager(dataManager);
+            cimDict.setLogManager(logManager);
+            cimDict.setPowergridModelManager(powergridModelManager);
+            cimDict.setSimulationManager(simulationManager);
+            cimDict.start();
+            log.info("Registered CIMDictionaryConfigurationHandler");
+
+            CIMFeederIndexConfigurationHandler cimFeeder = new CIMFeederIndexConfigurationHandler();
+            cimFeeder.setConfigManager(this);
+            cimFeeder.setDataManager(dataManager);
+            cimFeeder.setLogManager(logManager);
+            cimFeeder.setPowergridModelManager(powergridModelManager);
+            cimFeeder.setSimulationManager(simulationManager);
+            cimFeeder.start();
+            log.info("Registered CIMFeederIndexConfigurationHandler");
+
+            CIMSymbolsConfigurationHandler cimSymbols = new CIMSymbolsConfigurationHandler();
+            cimSymbols.setConfigManager(this);
+            cimSymbols.setDataManager(dataManager);
+            cimSymbols.setLogManager(logManager);
+            cimSymbols.setPowergridModelManager(powergridModelManager);
+            cimSymbols.setSimulationManager(simulationManager);
+            cimSymbols.start();
+            log.info("Registered CIMSymbolsConfigurationHandler");
+
+            // OCHRE handler
+            OchreAllConfigurationHandler ochreAll = new OchreAllConfigurationHandler();
+            ochreAll.setConfigManager(this);
+            ochreAll.setDataManager(dataManager);
+            ochreAll.setLogManager(logManager);
+            ochreAll.setPowergridModelManager(powergridModelManager);
+            ochreAll.setSimulationManager(simulationManager);
+            ochreAll.start();
+            log.info("Registered OchreAllConfigurationHandler");
+
+            log.info("All built-in configuration handlers registered successfully");
+        } catch (Exception e) {
+            log.error("Error registering built-in configuration handlers", e);
         }
     }
 

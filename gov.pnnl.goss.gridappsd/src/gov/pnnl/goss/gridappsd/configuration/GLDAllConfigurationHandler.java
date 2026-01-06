@@ -108,6 +108,28 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
     @Reference
     volatile DataManager dataManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
+
     public static final String TYPENAME = "GridLAB-D All";
     public static final String DIRECTORY = "directory";
     public static final String SIMULATIONNAME = "simulation_name";

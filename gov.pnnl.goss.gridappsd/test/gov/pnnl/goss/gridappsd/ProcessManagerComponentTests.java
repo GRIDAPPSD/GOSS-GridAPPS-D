@@ -65,6 +65,7 @@ import gov.pnnl.goss.gridappsd.process.ProcessNewSimulationRequest;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import jakarta.jms.Destination;
 import pnnl.goss.core.Client;
+import pnnl.goss.core.Client.DESTINATION_TYPE;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
@@ -159,7 +160,9 @@ public class ProcessManagerComponentTests {
                 logManager, appManager, newSimulationProcess, testManager, fieldBusManager);
         processManager.start();
 
-        Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
+        // ProcessManagerImpl subscribes twice (TOPIC and QUEUE), capture first one
+        Mockito.verify(client, Mockito.atLeastOnce()).subscribe(Mockito.anyString(),
+                gossResponseEventArgCaptor.capture(), Mockito.any(DESTINATION_TYPE.class));
 
         DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
         dr.setDestination("goss.gridappsd.process.request.simulation");
@@ -201,7 +204,9 @@ public class ProcessManagerComponentTests {
                 logManager, appManager, newSimulationProcess, testManager, fieldBusManager);
         processManager.start();
 
-        Mockito.verify(client).subscribe(Mockito.anyString(), gossResponseEventArgCaptor.capture());
+        // ProcessManagerImpl subscribes twice (TOPIC and QUEUE), capture first one
+        Mockito.verify(client, Mockito.atLeastOnce()).subscribe(Mockito.anyString(),
+                gossResponseEventArgCaptor.capture(), Mockito.any(DESTINATION_TYPE.class));
 
         DataResponse dr = new DataResponse(REQUEST_SIMULATION_CONFIG);
         dr.setDestination(GridAppsDConstants.topic_requestSimulation);

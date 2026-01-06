@@ -171,6 +171,27 @@ public class TestManagerImpl implements TestManager {
         this.simulationManager = simulationManager;
     }
 
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public void setLogDataManager(LogDataManager logDataManager) {
+        this.logDataManager = logDataManager;
+    }
+
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
+
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
+
     @Activate
     public void start() {
         GsonBuilder gsonBuilder = new GsonBuilder();
