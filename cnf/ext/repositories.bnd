@@ -8,6 +8,7 @@
 -plugin: \
 	aQute.bnd.repository.maven.provider.MavenBndRepository;\
 		releaseUrl=https://repo1.maven.org/maven2/;\
+		local=${user.home}/.m2/repository;\
 		index=${.}/central.maven;\
 		name=Maven Central,\
 	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Dependencies;locations=https://raw.githubusercontent.com/GridOPTICS/GOSS-Repository/master/dependencies/index.xml.gz,\

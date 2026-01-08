@@ -4,19 +4,17 @@
 
 Bundle-Version:1.0.0.${tstamp}
 Bundle-Description: \
- 	This bundle is an OSGi test bundle that tests the enRoute Blog Manager API. Projects\
- 	that provide this API should configure their bnd.bnd file to run this test so that\
- 	the providers can test their conformance. This bundle requires DSTest to run so this\
- 	bundle should be included. \
-	\
-	${warning;Please update this Bundle-Description in gov.pnnl.goss.gridappsd.test/bnd.bnd}
+	This bundle is an OSGi test bundle that tests the GridAPPS-D platform implementation. \
+	It provides comprehensive integration and unit tests for the GridAPPS-D services, \
+	including application management, configuration management, data management, \
+	simulation management, and test management components.
 
 
 Private-Package:  \
 	gov.pnnl.goss.gridappsd.test
 
-Test-Cases: ${test-cases}
-
+# Test cases are automatically discovered by the test framework
+# Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.Test}
 
 -includeresource: {readme.md}
 
@@ -24,14 +22,15 @@ Test-Cases: ${test-cases}
 	junit:junit;version=4.13.2,\
 	org.mockito:mockito-core;version=5.14.2,\
 	org.apache.felix:org.apache.felix.configadmin;version=1.9.26,\
-	pnnl.goss.core.core-api;version='[8,9)',\
-	pnnl.goss.core.goss-client;version='[3,4)',\
+	pnnl.goss.core.core-api;version='[11,12)',\
+	pnnl.goss.core.goss-client;version='[11,12)',\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
-	pnnl.goss.core.goss-core-server;version='[3,4)',\
-	pnnl.goss.core.goss-core-server-api;version='[3,4)',\
-	pnnl.goss.core.goss-core-security;version='[3,4)',\
+	pnnl.goss.core.goss-core-server;version='[11,12)',\
+	pnnl.goss.core.goss-core-server-api;version='[11,12)',\
+	pnnl.goss.core.goss-core-security;version='[11,12)',\
 	org.slf4j:slf4j-api;version=2.0.16,\
 	org.apache.httpcomponents:httpclient;version=4.5.14,\
+	org.apache.httpcomponents:httpcore;version=4.4.16,\
 	jakarta.jms:jakarta.jms-api;version=3.1.0,\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
 	com.google.code.gson:gson;version=2.11.0,\

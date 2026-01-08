@@ -1,8 +1,8 @@
 Bundle-Version: 2.0.0.${tstamp}
 Export-Package: \
-	gov.pnnl.goss.gridappsd.dto.field,\
-	gov.pnnl.goss.gridappsd.api,\
-	gov.pnnl.goss.gridappsd.dto,\
-	gov.pnnl.goss.gridappsd.dto.events,\
-	gov.pnnl.goss.gridappsd.dto.field
-Private-Package: gov.pnnl.goss.gridappsd.data.conversion
+	gov.pnnl.goss.gridappsd.dto.field;version="2.0.0",\
+	gov.pnnl.goss.gridappsd.api;version="2.0.0",\
+	gov.pnnl.goss.gridappsd.dto;version="2.0.0",\
+	gov.pnnl.goss.gridappsd.dto.events;version="2.0.0",\
+	gov.pnnl.goss.gridappsd.data.conversion;version="2.0.0"
+

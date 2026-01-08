@@ -326,12 +326,17 @@ public class BGPGModelManagerTest {
         return client;
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        // TODO Auto-generated method stub
-        super.finalize();
+    /**
+     * Cleanup method to close client resources. Should be called explicitly when
+     * done with the test.
+     */
+    public void cleanup() {
         if (client != null) {
-            client.close();
+            try {
+                client.close();
+            } catch (Exception e) {
+                // Log or handle exception as needed
+            }
         }
     }
 

@@ -21,28 +21,15 @@ shared.runprops: \
 	-${user.home}/goss.private.bnd
 
 shared.runrequires: \
-	osgi.identity;filter:='(&(osgi.identity=org.apache.activemq.shiro)(version>=5.11.1))',\
-	osgi.identity;filter:='(&(osgi.identity=org.apache.activemq.activemq-osgi)(version>=5.11.1))',\
-	osgi.identity;filter:='(osgi.identity=org.glassfish.main.transaction.javax.transaction)',\
+	osgi.identity;filter:='(&(osgi.identity=org.apache.activemq.osgi)(version>=6.2.0))',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.core-api)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-client)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-commands)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-exceptions)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-server)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-server-api)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-security)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.security-propertyfile)',\
-	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.runner)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager.runtime)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.dependencymanager.shell)',\
-	osgi.identity;filter:='(osgi.identity=org.ops4j.pax.logging.pax-logging-api)',\
-	osgi.identity;filter:='(osgi.identity=org.ops4j.pax.logging.pax-logging-service)',\
-	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.runtime)(version>=0.12.1))',\
-	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.shell)(version>=0.10.0))',\
-	osgi.identity;filter:='(osgi.identity=org.apache.servicemix.bundles.commons-dbcp)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.servicemix.bundles.commons-dbcp)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.commons.pool)',\
+	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.runtime)(version>=1.1.0))',\
+	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.shell)(version>=1.1.0))',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)',\
-	osgi.identity;filter:='(osgi.identity=org.h2)'
+	osgi.identity;filter:='(osgi.identity=com.h2database)'

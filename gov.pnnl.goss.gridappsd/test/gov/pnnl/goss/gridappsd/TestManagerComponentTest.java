@@ -167,10 +167,9 @@ public class TestManagerComponentTest {
     @Test
     public void compare() {
         // ((TestManagerImpl) tm).compare();
-        JsonParser parser = new JsonParser();
-        JsonElement o1 = parser.parse("{a : {a : 2}, b : 2}");
-        JsonElement o2 = parser.parse("{b : 3, a : {a : 2}}");
-        JsonElement o3 = parser.parse("{b : 2, a : {a : 2}}");
+        JsonElement o1 = JsonParser.parseString("{a : {a : 2}, b : 2}");
+        JsonElement o2 = JsonParser.parseString("{b : 3, a : {a : 2}}");
+        JsonElement o3 = JsonParser.parseString("{b : 2, a : {a : 2}}");
         System.out.println(o1.equals(o2));
         System.out.println(o1.equals(o3));
         // Assert.assertEquals(o1, o2);
@@ -258,8 +257,7 @@ public class TestManagerComponentTest {
         String data = jsonObject.get("data").getAsString();
         System.out.print(data);
         System.out.println(data.substring(0, 100));
-        JsonParser parser = new JsonParser();
-        JsonArray measurements = (JsonArray) parser.parse(data);
+        JsonArray measurements = JsonParser.parseString(data).getAsJsonArray();
 
         JsonObject expectedObject = hc.buildExpectedFromTimeseries(measurements);
         JsonObject simOutputObject = expectedObject.get("output").getAsJsonObject();
@@ -471,15 +469,14 @@ public class TestManagerComponentTest {
     @Test
     public void inputMapTest() {
         String data = "{\"simulation_id\": \"1432157818\", \"message\": {\"timestamp\": 0, \"difference_mrid\": \"d5f5516a-87a9-43d3-9dba-931b4388eabc\", \"reverse_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 1}], \"forward_differences\": [{\"object\": \"_232DD3A8-9A3C-4053-B972-8A5EB49FD980\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_9A74DCDC-EA5A-476B-9B99-B4FB90DC37E3\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}, {\"object\": \"_307E4291-5FEA-4388-B2E0-2B3D22FE8183\", \"attribute\": \"ShuntCompensator.sections\", \"value\": 0}]}}";
-        JsonParser parser = new JsonParser();
-        JsonObject measurements = (JsonObject) parser.parse(data);
+        JsonObject measurements = JsonParser.parseString(data).getAsJsonObject();
         Map<String, JsonElement> forwardDifferenceMap = new HashMap<String, JsonElement>();
         JsonObject tempObj = measurements.getAsJsonObject("message");
 
         JsonArray temp = tempObj.getAsJsonArray("forward_differences");
         for (JsonElement jsonElement : temp) {
             jsonElement.getAsJsonObject().add("difference_mrid", tempObj.get("difference_mrid"));
-            jsonElement.getAsJsonObject().add("hasMeasurementDifference", parser.parse("FORWARD"));
+            jsonElement.getAsJsonObject().add("hasMeasurementDifference", JsonParser.parseString("\"FORWARD\""));
             forwardDifferenceMap.put(jsonElement.getAsJsonObject().get("object").getAsString(), jsonElement);
         }
         assertEquals(forwardDifferenceMap.get("_EEC4FD4B-9214-442C-BA83-C91B8EFD06CB").getAsJsonObject().get("value")
