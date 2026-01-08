@@ -10,6 +10,29 @@ jakarta.ws.rs:jakarta.ws.rs-api:3.1.0
 jakarta.annotation:jakarta.annotation-api:2.1.1
 jakarta.inject:jakarta.inject-api:2.0.1
 jakarta.xml.bind:jakarta.xml.bind-api:4.0.2
+jakarta.activation:jakarta.activation-api:2.1.3
+jakarta.transaction:jakarta.transaction-api:2.0.1
+jakarta.enterprise:jakarta.enterprise.cdi-api:3.0.1
+jakarta.interceptor:jakarta.interceptor-api:2.1.0
+jakarta.el:jakarta.el-api:5.0.1
+
+# Apache Shiro 2.0.0 - required by GOSS 12.x
+# Note: activemq-shiro 6.2.0 requires Shiro <=2.0 but GOSS requires >=2.0
+# The custom launcher in make docker-up resolves this by relaxing OSGi constraints
+org.apache.shiro:shiro-core:2.0.0
+org.apache.shiro:shiro-config-core:2.0.0
+org.apache.shiro:shiro-config-ogdl:2.0.0
+org.apache.shiro:shiro-cache:2.0.0
+org.apache.shiro:shiro-crypto-core:2.0.0
+org.apache.shiro:shiro-crypto-hash:2.0.0
+org.apache.shiro:shiro-crypto-cipher:2.0.0
+org.apache.shiro:shiro-event:2.0.0
+org.apache.shiro:shiro-lang:2.0.0
+commons-beanutils:commons-beanutils:1.9.4
+
+# Pax Logging (OSGi-native logging framework)
+org.ops4j.pax.logging:pax-logging-api:2.2.8
+org.ops4j.pax.logging:pax-logging-log4j2:2.2.8
 
 # ActiveMQ - Jakarta EE compatible (6.x)
 org.apache.activemq:activemq-osgi:6.2.0
@@ -40,9 +63,14 @@ com.google.code.gson:gson:2.11.0
 # StompJMS
 org.fusesource.stompjms:stompjms-client:1.19
 
-# HTTP Components
+# HTTP Components (OSGi bundles)
+org.apache.httpcomponents:httpclient-osgi:4.5.14
+org.apache.httpcomponents:httpcore-osgi:4.4.16
 org.apache.httpcomponents:httpclient:4.5.14
 org.apache.httpcomponents:httpcore:4.4.16
+
+# Geronimo JTA (provides javax.transaction.xa for ActiveMQ)
+org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1
 
 # Apache Jena (RDF/SPARQL) - using jena-osgi bundle which contains core+arq
 org.apache.jena:jena-osgi:3.7.0
@@ -106,11 +134,32 @@ org.osgi:osgi.cmpn:7.0.0
 org.osgi:osgi.enterprise:7.0.0
 org.osgi:org.osgi.service.component.annotations:1.5.1
 org.osgi:org.osgi.annotation.versioning:1.1.2
+org.osgi:org.osgi.service.component:1.5.1
+org.osgi:org.osgi.util.function:1.2.0
+org.osgi:org.osgi.util.promise:1.3.0
+
+# Apache Aries SPI Fly (ServiceLoader support for Shiro crypto)
+org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.7
+org.ow2.asm:asm:9.7.1
+org.ow2.asm:asm-commons:9.7.1
+org.ow2.asm:asm-tree:9.7.1
+org.ow2.asm:asm-analysis:9.7.1
+org.ow2.asm:asm-util:9.7.1
+
+# ActiveMQ Shiro integration (for GOSS security)
+org.apache.activemq:activemq-shiro:6.2.0
+
+# Legacy javax.annotation API (required by Shiro 2.0)
+javax.annotation:javax.annotation-api:1.3.2
+
+# Commons Collections (needed by Shiro config)
+commons-collections:commons-collections:3.2.2
 
 # Apache Felix
 org.apache.felix:org.apache.felix.framework:7.0.5
 org.apache.felix:org.apache.felix.configadmin:1.9.26
 org.apache.felix:org.apache.felix.scr:2.2.12
+org.apache.felix:org.apache.felix.fileinstall:3.7.4
 org.apache.felix:org.apache.felix.gogo.command:1.1.2
 org.apache.felix:org.apache.felix.gogo.runtime:1.1.6
 org.apache.felix:org.apache.felix.gogo.shell:1.1.4

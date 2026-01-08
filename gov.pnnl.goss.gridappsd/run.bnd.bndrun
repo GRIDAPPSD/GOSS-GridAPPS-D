@@ -1,14 +1,14 @@
 # GridAPPS-D Run Configuration
 # Updated for Java 21 + Jakarta EE compatibility
-# 
+#
 # Key Changes from previous version:
 # 1. Updated javax.* to jakarta.* packages (Jakarta EE 9+)
 # 2. Updated ActiveMQ from 5.11.1 to 6.2.0 (Jakarta compatible)
-# 3. Replaced pax-logging with logback (Java 21 compatible)
+# 3. Using Pax Logging (OSGi-native logging framework)
 # 4. Updated all bundles to use proper Maven artifact names
 # 5. Updated Felix HTTP from 2.x to 5.x
 # 6. Updated H2 database from 1.4.x to 2.x
-# 7. Removed obsolete bundles (aries, shiro, hawtdispatch, etc.)
+# 7. Added Shiro 2.0 bundles for security
 # 8. Updated Bouncy Castle to bcprov-jdk18on
 
 -include: include.bndrun,\
@@ -19,6 +19,7 @@
 -runbundles: \
 	com.h2database;version='[2.3.232,2.3.233)',\
 	org.apache.activemq.osgi;version='[6.2.0,6.2.1)',\
+	org.apache.activemq.shiro;version='[6.2.0,6.2.1)',\
 	org.apache.felix.gogo.command;version='[1.1.2,1.1.3)',\
 	org.apache.felix.gogo.runtime;version='[1.1.6,1.1.7)',\
 	org.apache.felix.gogo.shell;version='[1.1.4,1.1.5)',\
@@ -28,16 +29,60 @@
 	pnnl.goss.core.goss-core-security;version='[12.0.0,12.0.1)',\
 	pnnl.goss.core.goss-core-server;version='[12.0.0,12.0.1)',\
 	pnnl.goss.core.goss-core-server-api;version='[12.0.0,12.0.1)',\
-	pnnl.goss.core.security-propertyfile;version='[12.0.0,12.0.1)'
+	pnnl.goss.core.security-propertyfile;version='[12.0.0,12.0.1)',\
+	com.google.gson;version='[2.11.0,2.12.0)',\
+	org.apache.commons.commons-io;version='[2.16.1,2.19.0)',\
+	org.apache.commons.logging;version='[1.2.0,1.3.0)',\
+	jakarta.jms-api;version='[3.1.0,3.2.0)',\
+	jakarta.xml.bind-api;version='[4.0.2,4.1.0)',\
+	jakarta.activation-api;version='[2.1.3,2.2.0)',\
+	javax.annotation-api;version='[1.3.2,1.4.0)',\
+	org.apache.felix.scr;version='[2.2.10,2.3.0)',\
+	org.apache.felix.configadmin;version='[1.9.26,1.10.0)',\
+	org.osgi.service.component;version='[1.5.1,1.6.0)',\
+	org.osgi.util.function;version='[1.2.0,1.3.0)',\
+	org.osgi.util.promise;version='[1.3.0,1.4.0)',\
+	org.apache.shiro.core;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.lang;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.cache;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.event;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.crypto.core;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.crypto.hash;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.crypto.cipher;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.config.core;version='[2.0.0,2.0.1)',\
+	org.apache.shiro.config.ogdl;version='[2.0.0,2.0.1)',\
+	org.apache.commons.commons-beanutils;version='[1.9.4,1.10.0)',\
+	org.apache.commons.collections;version='[3.2.2,3.3.0)',\
+	org.ops4j.pax.logging.pax-logging-api;version='[2.2.8,2.3.0)',\
+	org.ops4j.pax.logging.pax-logging-log4j2;version='[2.2.8,2.3.0)',\
+	org.apache.aries.spifly.dynamic.bundle;version='[1.3.7,1.4.0)',\
+	org.objectweb.asm;version='[9.7.0,9.8.0)',\
+	org.objectweb.asm.commons;version='[9.7.0,9.8.0)',\
+	org.objectweb.asm.tree;version='[9.7.0,9.8.0)',\
+	org.objectweb.asm.tree.analysis;version='[9.7.0,9.8.0)',\
+	org.objectweb.asm.util;version='[9.7.0,9.8.0)',\
+	org.apache.geronimo.specs.geronimo-jta_1.1_spec;version='[1.1.1,1.2.0)',\
+	org.apache.httpcomponents.httpclient;version='[4.5.14,4.6.0)',\
+	org.apache.httpcomponents.httpcore;version='[4.4.16,4.5.0)',\
+	jakarta.annotation-api;version='[2.1.1,2.2.0)',\
+	jakarta.resource-api;version='[2.1.0,2.2.0)',\
+	jakarta.transaction-api;version='[2.0.1,2.1.0)',\
+	jakarta.enterprise.cdi-api;version='[3.0.1,3.1.0)',\
+	jakarta.inject.jakarta.inject-api;version='[2.0.1,2.1.0)',\
+	jakarta.interceptor-api;version='[2.1.0,2.2.0)',\
+	jakarta.el-api;version='[5.0.1,5.1.0)',\
+	org.apache.felix.fileinstall;version='[3.7.4,3.8.0)',\
+	org.apache.servicemix.bundles.commons-dbcp;version='[1.4.0,1.5.0)',\
+	xstream;version='[1.4.20,1.5.0)'
 
 
 # Add broker name to the properties defined in shared.runprops
 -runproperties:  ${shared.runprops},\
 	broker-name=goss default broker
-	
+
 -runrequires:  \
 	${shared.runrequires}
-	
+
 
 -runfw: org.apache.felix.framework;version='[7.0.5,8)'
 -runee: JavaSE-21

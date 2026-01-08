@@ -21,6 +21,7 @@ cnf/release/index.xml
 cnf/Local/index.xml.sha
 cnf/Local/index.xml
 *.log
+.gridappsd.pid
 
 # Gradle build output
 build/
