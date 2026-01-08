@@ -201,6 +201,8 @@ net.bytebuddy:byte-buddy-agent:1.15.10
 org.objenesis:objenesis:3.4
 org.assertj:assertj-core:3.26.3
 org.hamcrest:hamcrest:2.2
+org.testcontainers:testcontainers:1.19.3
+org.testcontainers:junit-jupiter:1.19.3
 
 # BND Testing Support
 biz.aQute.bnd:biz.aQute.launcher:7.1.0
