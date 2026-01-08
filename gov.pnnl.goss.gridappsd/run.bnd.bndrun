@@ -15,6 +15,7 @@
 	runproperties.config
 
 # Modern Java 21 compatible bundles - use version ranges for flexibility
+# NOTE: Must use Bundle-SymbolicName (from MANIFEST.MF), not Maven coordinates!
 -runbundles: \
 	com.h2database;version='[2.3.232,2.3.233)',\
 	org.apache.activemq.osgi;version='[6.2.0,6.2.1)',\
