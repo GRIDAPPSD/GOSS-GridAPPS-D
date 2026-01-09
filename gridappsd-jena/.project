@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>gov.pnnl.goss.gridappsd.test</name>
-	<comment></comment>
-	<projects/>
-	<natures>
-		<nature>org.eclipse.jdt.core.javanature</nature>
-		<nature>bndtools.core.bndnature</nature>
-	</natures>
+	<name>gridappsd-jena</name>
+	<comment>Apache Jena Wrapper Bundle for GridAPPS-D - embeds all Jena dependencies</comment>
+	<projects>
+	</projects>
 	<buildSpec>
 		<buildCommand>
 			<name>org.eclipse.jdt.core.javabuilder</name>
-			<arguments/>
-		</buildCommand>
-		<buildCommand>
-			<name>bndtools.core.bndbuilder</name>
-			<arguments/>
+			<arguments>
+			</arguments>
 		</buildCommand>
 	</buildSpec>
-	<linkedResources/>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
 	<filteredResources>
 		<filter>
-			<id>1</id>
+			<id>1767993765753</id>
+			<name></name>
 			<type>30</type>
-			<name/>
 			<matcher>
 				<id>org.eclipse.core.resources.regexFilterMatcher</id>
 				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
