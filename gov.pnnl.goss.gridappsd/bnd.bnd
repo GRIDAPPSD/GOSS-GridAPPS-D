@@ -55,7 +55,8 @@
 	org.hamcrest:hamcrest;version=2.2,\
 	org.testcontainers:testcontainers;version=1.19.3,\
 	org.testcontainers:junit-jupiter;version=1.19.3,\
-	org.junit.jupiter:junit-jupiter-api;version=5.11.3
+	org.junit.jupiter:junit-jupiter-api;version=5.11.3,\
+	org.slf4j:slf4j-simple;version=2.0.16
 
 -sub: *.bnd
 -runee: JavaSE-21

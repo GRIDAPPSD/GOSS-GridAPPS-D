@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * docker) - MySQL dump available in gridappsd-docker/dumps/
  */
 @Tag("container")
+@Tag("simulation")
 public class SimulationContainerTest {
 
     private static final Logger log = LoggerFactory.getLogger(SimulationContainerTest.class);

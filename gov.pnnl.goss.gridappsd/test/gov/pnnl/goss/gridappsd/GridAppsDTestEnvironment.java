@@ -1,32 +1,38 @@
 package gov.pnnl.goss.gridappsd;
 
-import java.io.File;
-import java.time.Duration;
+import java.io.IOException;
+import java.net.Socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.ComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 /**
- * Manages the Docker Compose environment for container-based integration tests.
+ * Manages the Docker environment for container-based integration tests.
  *
- * This class uses Testcontainers to start and manage the GridAPPS-D Docker
- * environment defined in ../gridappsd-docker/docker-compose.yml.
+ * This class expects containers to be started externally using:
+ *   make docker-up
  *
- * Features: - Uses local docker compose command (not containerized) - Health
- * checks matching docker-compose.yml configuration - Dynamic port mapping for
- * test isolation
+ * And stopped using:
+ *   make docker-down
+ *
+ * The containers use fixed ports as defined in docker/docker-compose.yml:
+ * - GridAPPS-D OpenWire: localhost:61616
+ * - GridAPPS-D STOMP: localhost:61613
+ * - MySQL: localhost:3306
+ * - Blazegraph: localhost:8889
  *
  * Usage:
  *
  * <pre>
+ * // Before running tests, start containers:
+ * // $ make docker-up
+ *
  * public class MyContainerTest {
  *     static GridAppsDTestEnvironment env = GridAppsDTestEnvironment.getInstance();
  *
  *     &#64;BeforeAll
  *     static void startContainers() {
- *         env.start();
+ *         env.start(); // Verifies containers are running
  *     }
  *
  *     &#64;Test
@@ -36,31 +42,28 @@ import org.testcontainers.containers.wait.strategy.Wait;
  *         // ... connect and test
  *     }
  * }
+ *
+ * // After running tests, stop containers:
+ * // $ make docker-down
  * </pre>
  */
 public class GridAppsDTestEnvironment {
 
     private static final Logger log = LoggerFactory.getLogger(GridAppsDTestEnvironment.class);
 
-    // Docker compose file location relative to project root
-    private static final String DOCKER_COMPOSE_PATH = "../gridappsd-docker/docker-compose.yml";
+    // Fixed host for all services (containers expose ports to localhost)
+    private static final String HOST = "localhost";
 
-    // Service names as defined in docker-compose.yml
-    private static final String SERVICE_GRIDAPPSD = "gridappsd";
-    private static final String SERVICE_MYSQL = "mysql";
-    private static final String SERVICE_BLAZEGRAPH = "blazegraph";
-
-    // Ports as defined in docker-compose.yml
+    // Ports as defined in docker/docker-compose.yml
     private static final int GRIDAPPSD_OPENWIRE_PORT = 61616;
     private static final int GRIDAPPSD_STOMP_PORT = 61613;
     private static final int MYSQL_PORT = 3306;
-    private static final int BLAZEGRAPH_PORT = 8080;
+    private static final int BLAZEGRAPH_PORT = 8889;
 
     // Singleton instance
     private static GridAppsDTestEnvironment instance;
 
-    private ComposeContainer environment;
-    private boolean started = false;
+    private boolean verified = false;
 
     private GridAppsDTestEnvironment() {
         // Private constructor for singleton
@@ -77,73 +80,68 @@ public class GridAppsDTestEnvironment {
     }
 
     /**
-     * Start the Docker Compose environment if not already running. Uses the local
-     * docker compose command for better compatibility.
+     * Verify that the Docker containers are running.
+     *
+     * This method checks that the required services are accessible.
+     * Containers must be started externally using: make docker-up
      */
     public synchronized void start() {
-        if (started) {
-            log.info("Docker environment already started");
+        if (verified) {
+            log.info("Docker environment already verified");
             return;
         }
 
-        File composeFile = new File(DOCKER_COMPOSE_PATH);
-        if (!composeFile.exists()) {
+        System.out.println("Verifying Docker environment...");
+        System.out.println("Note: Containers must be started with 'make docker-up' before running tests");
+
+        // Check if GridAPPS-D OpenWire port is accessible
+        if (!isPortOpen(HOST, GRIDAPPSD_OPENWIRE_PORT)) {
             throw new IllegalStateException(
-                    "Docker compose file not found: " + composeFile.getAbsolutePath() +
-                            "\nMake sure you're running from the GOSS-GridAPPS-D directory");
+                    "GridAPPS-D is not running on " + HOST + ":" + GRIDAPPSD_OPENWIRE_PORT + "\n" +
+                    "Please start containers with: make docker-up\n" +
+                    "Then re-run the tests.");
         }
 
-        System.out.println("Starting Docker environment from: " + composeFile.getAbsolutePath());
+        // Check if Blazegraph port is accessible
+        if (!isPortOpen(HOST, BLAZEGRAPH_PORT)) {
+            System.out.println("Warning: Blazegraph not accessible on port " + BLAZEGRAPH_PORT);
+        }
 
-        // Use ComposeContainer which uses local docker compose command
-        // This avoids permission issues with files like MySQL SSL keys
-        environment = new ComposeContainer(composeFile)
-                // Expose and wait for MySQL
-                .withExposedService(SERVICE_MYSQL, MYSQL_PORT,
-                        Wait.forHealthcheck()
-                                .withStartupTimeout(Duration.ofMinutes(2)))
-                // Expose and wait for Blazegraph
-                .withExposedService(SERVICE_BLAZEGRAPH, BLAZEGRAPH_PORT,
-                        Wait.forHttp("/bigdata/namespace")
-                                .forStatusCode(200)
-                                .withStartupTimeout(Duration.ofMinutes(2)))
-                // Expose and wait for GridAPPS-D
-                .withExposedService(SERVICE_GRIDAPPSD, GRIDAPPSD_OPENWIRE_PORT,
-                        Wait.forListeningPort()
-                                .withStartupTimeout(Duration.ofMinutes(3)))
-                .withExposedService(SERVICE_GRIDAPPSD, GRIDAPPSD_STOMP_PORT)
-                // Use local compose binary
-                .withLocalCompose(true);
+        // Check if MySQL port is accessible
+        if (!isPortOpen(HOST, MYSQL_PORT)) {
+            System.out.println("Warning: MySQL not accessible on port " + MYSQL_PORT);
+        }
 
-        try {
-            System.out.println("Starting containers...");
-            environment.start();
-            started = true;
-            System.out.println("Docker environment started successfully");
-            System.out.println("GridAPPS-D available at " + getGridAppsDHost() + ":" + getGridAppsDPort());
-        } catch (Exception e) {
-            System.err.println("Failed to start Docker environment: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Failed to start Docker environment", e);
+        verified = true;
+        System.out.println("Docker environment verified successfully");
+        System.out.println("GridAPPS-D available at " + getGridAppsDHost() + ":" + getGridAppsDPort());
+    }
+
+    /**
+     * Check if a port is open on the given host.
+     */
+    private boolean isPortOpen(String host, int port) {
+        try (Socket socket = new Socket(host, port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 
     /**
-     * Stop the Docker Compose environment.
+     * Stop method is a no-op since containers are managed externally.
+     * Use 'make docker-down' to stop containers.
      */
     public synchronized void stop() {
-        if (environment != null && started) {
-            log.info("Stopping Docker environment");
-            environment.stop();
-            started = false;
-        }
+        log.info("Containers are managed externally. Use 'make docker-down' to stop them.");
+        verified = false;
     }
 
     /**
-     * Check if the environment is started.
+     * Check if the environment has been verified.
      */
     public boolean isStarted() {
-        return started;
+        return verified;
     }
 
     /**
@@ -151,23 +149,23 @@ public class GridAppsDTestEnvironment {
      */
     public String getGridAppsDHost() {
         ensureStarted();
-        return environment.getServiceHost(SERVICE_GRIDAPPSD, GRIDAPPSD_OPENWIRE_PORT);
+        return HOST;
     }
 
     /**
-     * Get the OpenWire port for GridAPPS-D (61616 internally).
+     * Get the OpenWire port for GridAPPS-D (61616).
      */
     public int getGridAppsDPort() {
         ensureStarted();
-        return environment.getServicePort(SERVICE_GRIDAPPSD, GRIDAPPSD_OPENWIRE_PORT);
+        return GRIDAPPSD_OPENWIRE_PORT;
     }
 
     /**
-     * Get the STOMP port for GridAPPS-D (61613 internally).
+     * Get the STOMP port for GridAPPS-D (61613).
      */
     public int getGridAppsDStompPort() {
         ensureStarted();
-        return environment.getServicePort(SERVICE_GRIDAPPSD, GRIDAPPSD_STOMP_PORT);
+        return GRIDAPPSD_STOMP_PORT;
     }
 
     /**
@@ -189,7 +187,7 @@ public class GridAppsDTestEnvironment {
      */
     public String getMySqlHost() {
         ensureStarted();
-        return environment.getServiceHost(SERVICE_MYSQL, MYSQL_PORT);
+        return HOST;
     }
 
     /**
@@ -197,7 +195,7 @@ public class GridAppsDTestEnvironment {
      */
     public int getMySqlPort() {
         ensureStarted();
-        return environment.getServicePort(SERVICE_MYSQL, MYSQL_PORT);
+        return MYSQL_PORT;
     }
 
     /**
@@ -205,7 +203,7 @@ public class GridAppsDTestEnvironment {
      */
     public String getBlazegraphHost() {
         ensureStarted();
-        return environment.getServiceHost(SERVICE_BLAZEGRAPH, BLAZEGRAPH_PORT);
+        return HOST;
     }
 
     /**
@@ -213,7 +211,7 @@ public class GridAppsDTestEnvironment {
      */
     public int getBlazegraphPort() {
         ensureStarted();
-        return environment.getServicePort(SERVICE_BLAZEGRAPH, BLAZEGRAPH_PORT);
+        return BLAZEGRAPH_PORT;
     }
 
     /**
@@ -225,8 +223,10 @@ public class GridAppsDTestEnvironment {
     }
 
     private void ensureStarted() {
-        if (!started) {
-            throw new IllegalStateException("Docker environment not started. Call start() first.");
+        if (!verified) {
+            throw new IllegalStateException(
+                    "Docker environment not verified. Call start() first.\n" +
+                    "Also ensure containers are running with: make docker-up");
         }
     }
 }

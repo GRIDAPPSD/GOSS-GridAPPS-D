@@ -484,34 +484,66 @@ project(':gov.pnnl.goss.gridappsd.test') {
 // These tests spin up Docker containers using docker-compose.yml
 // Run with: ./gradlew containerTest
 project(':gov.pnnl.goss.gridappsd') {
-    tasks.register('containerTest', Test) {
-        description = 'Run container-based integration tests using Testcontainers'
+    // Base configuration shared by all container tests
+    def containerTestJvmArgs = [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.time=ALL-UNNAMED'
+    ]
+
+    // Messaging tests - auto-manages containers via Testcontainers
+    // Run with: ./gradlew messagingTest
+    tasks.register('messagingTest', Test) {
+        description = 'Run messaging integration tests (auto-starts containers via Testcontainers)'
         group = 'verification'
 
-        // Use JUnit 5 platform
+        useJUnitPlatform {
+            includeTags 'messaging'
+        }
+
+        systemProperty 'junit.jupiter.execution.timeout.default', '5m'
+        systemProperty 'testcontainers.reuse.enable', 'true'
+        workingDir = rootProject.projectDir
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        jvmArgs = containerTestJvmArgs
+    }
+
+    // Simulation tests - requires pre-started containers (make docker-up)
+    // Run with: make docker-up && ./gradlew simulationTest && make docker-down
+    tasks.register('simulationTest', Test) {
+        description = 'Run simulation integration tests (requires: make docker-up first)'
+        group = 'verification'
+
+        useJUnitPlatform {
+            includeTags 'simulation'
+        }
+
+        systemProperty 'junit.jupiter.execution.timeout.default', '10m'
+        workingDir = rootProject.projectDir
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        jvmArgs = containerTestJvmArgs
+    }
+
+    // All container tests - for backward compatibility
+    // Note: This may have port conflicts if both messaging and simulation tests run together
+    // Run with: ./gradlew containerTest
+    tasks.register('containerTest', Test) {
+        description = 'Run all container-based integration tests'
+        group = 'verification'
+
         useJUnitPlatform {
             includeTags 'container'
         }
 
-        // Container tests need more time for startup
         systemProperty 'junit.jupiter.execution.timeout.default', '5m'
-
-        // Enable Testcontainers reuse mode for faster iterations
         systemProperty 'testcontainers.reuse.enable', 'true'
-
-        // Ensure tests can find docker-compose.yml relative to project root
         workingDir = rootProject.projectDir
-
         testClassesDirs = sourceSets.test.output.classesDirs
         classpath = sourceSets.test.runtimeClasspath
-
-        // JVM args for Java 21 module system
-        jvmArgs = [
-            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
-            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
-            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
-            '--add-opens', 'java.base/java.time=ALL-UNNAMED'
-        ]
+        jvmArgs = containerTestJvmArgs
     }
 }
