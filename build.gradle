@@ -17,6 +17,14 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+
+    // Eclipse plugin for IDE support (VSCode, Eclipse)
+    // Generates .classpath and .project files with proper dependency resolution
+    // Usage: ./gradlew eclipse
+    //        ./gradlew :gov.pnnl.goss.gridappsd:eclipse  (single project)
+    // After running, reload your IDE to pick up the new classpath
+    apply plugin: 'eclipse'
+
     // Apply BND plugin only to OSGi bundle projects (projects with bnd.bnd file)
     // Skip wrapper bundles (gridappsd-proven, gridappsd-jena, gridappsd-poi) that use Shadow
     if (project.file('bnd.bnd').exists()) {
