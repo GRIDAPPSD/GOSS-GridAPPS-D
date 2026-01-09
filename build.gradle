@@ -25,10 +25,26 @@ subprojects {
     // After running, reload your IDE to pick up the new classpath
     apply plugin: 'eclipse'
 
+    // Configure Eclipse to use a separate output directory to avoid conflicts with BND
+    eclipse {
+        classpath {
+            // Use 'bin' directory for Eclipse output to avoid conflict with BND's 'generated' directory
+            defaultOutputDir = file('bin/default')
+        }
+    }
+
     // Apply BND plugin only to OSGi bundle projects (projects with bnd.bnd file)
     // Skip wrapper bundles (gridappsd-proven, gridappsd-jena, gridappsd-poi) that use Shadow
     if (project.file('bnd.bnd').exists()) {
         apply plugin: 'biz.aQute.bnd'
+
+        // When BND is applied, it modifies the jar task to output to the project directory.
+        // All Eclipse tasks must declare explicit dependencies to avoid Gradle validation errors.
+        ['eclipseClasspath', 'eclipseJdt', 'eclipseProject'].each { taskName ->
+            tasks.named(taskName) {
+                inputs.files(tasks.named('jar'))
+            }
+        }
     }
     apply plugin: 'com.diffplug.spotless'
 
