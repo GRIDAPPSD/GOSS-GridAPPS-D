@@ -103,13 +103,16 @@ public class LogManagerInterfaceTests {
     // ========== getLogLevel() tests ==========
 
     /**
-     * Test that getLogLevel returns null initially (before any logging).
+     * Test that getLogLevel returns a value based on SLF4J logger level. When
+     * logLevel field is not explicitly set, it falls back to detecting the SLF4J
+     * logger's enabled level.
      */
     @Test
-    public void getLogLevel_returnsNullInitially() {
+    public void getLogLevel_returnsLogLevelBasedOnSlf4jLogger() {
         LogLevel result = logManager.getLogLevel();
-        // Initially null before any log messages are published
-        assertNull("getLogLevel should return null initially", result);
+        // Returns a log level based on SLF4J logger configuration, not null
+        // In test environment, this is typically DEBUG or INFO
+        assertNotNull("getLogLevel should return a LogLevel based on SLF4J logger", result);
     }
 
     // ========== trace() method signature tests ==========

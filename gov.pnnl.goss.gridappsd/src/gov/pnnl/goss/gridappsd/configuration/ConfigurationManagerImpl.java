@@ -79,7 +79,7 @@ import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
  *
  */
 
-@Component(service = ConfigurationManager.class, configurationPid = "pnnl.goss.gridappsd", configurationPolicy = org.osgi.service.component.annotations.ConfigurationPolicy.OPTIONAL)
+@Component(service = ConfigurationManager.class, configurationPid = "pnnl.goss.gridappsd", configurationPolicy = org.osgi.service.component.annotations.ConfigurationPolicy.REQUIRE)
 public class ConfigurationManagerImpl implements ConfigurationManager {
     private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
@@ -138,15 +138,39 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     @Activate
     public void start(java.util.Map<String, Object> config) {
         // Receive initial configuration from Config Admin
+        log.info("ConfigurationManager.start() called with config size: {}, keys: {}",
+                config != null ? config.size() : "null",
+                config != null ? config.keySet() : "null");
+
+        // Always store any provided configuration
         if (config != null && !config.isEmpty()) {
             java.util.Hashtable<String, Object> dict = new java.util.Hashtable<>(config);
             this.configurationProperties = dict;
+            log.info("Configuration stored with {} properties", dict.size());
         }
 
-        // Manually instantiate and register ConfigurationHandlers
-        // This is a workaround for Felix SCR not loading the handler components
-        log.info("ConfigurationManager starting - manually registering configuration handlers");
-        registerBuiltInHandlers();
+        // Only register handlers when we have the full configuration (with Blazegraph)
+        // This prevents registering handlers prematurely during early activation
+        if (config != null && config.containsKey(GridAppsDConstants.BLAZEGRAPH_HOST_PATH)) {
+            log.info("Full configuration available, blazegraph.host.path = {}",
+                    config.get(GridAppsDConstants.BLAZEGRAPH_HOST_PATH));
+            log.info("ConfigurationManager starting - manually registering configuration handlers");
+            registerBuiltInHandlers();
+        } else {
+            log.info("ConfigurationManager started without full configuration (waiting for Config Admin)");
+        }
+    }
+
+    @org.osgi.service.component.annotations.Modified
+    public void modified(java.util.Map<String, Object> config) {
+        // Handle configuration updates after component activation
+        log.info("ConfigurationManager.modified() called with config: {}", config != null ? config.keySet() : "null");
+        if (config != null && !config.isEmpty()) {
+            java.util.Hashtable<String, Object> dict = new java.util.Hashtable<>(config);
+            this.configurationProperties = dict;
+            log.info("Configuration updated, blazegraph.host.path = {}",
+                    dict.get(GridAppsDConstants.BLAZEGRAPH_HOST_PATH));
+        }
     }
 
     /**

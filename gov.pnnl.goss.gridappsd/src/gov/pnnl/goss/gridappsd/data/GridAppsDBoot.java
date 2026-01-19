@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import pnnl.goss.core.ClientFactory;
+import pnnl.goss.core.server.ServerControl;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
@@ -63,6 +64,11 @@ public class GridAppsDBoot {
 
     @Reference
     private volatile ClientFactory clientFactory;
+
+    // ServerControl is the GOSS broker - depend on it to ensure broker is started
+    // before we try to connect. This fixes "Connection refused" errors on startup.
+    @Reference
+    private volatile ServerControl serverControl;
 
     // LogDataManager is loaded by SCR (from data/ package) but has a circular
     // dependency

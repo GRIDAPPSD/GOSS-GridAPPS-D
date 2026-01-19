@@ -2,7 +2,7 @@
 # Common build and development tasks
 
 .PHONY: help build clean dist test test-unit test-integration test-simulation test-container \
-        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-logs docker-status docker-versions \
+        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-logs docker-status docker-versions \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check run-local run-local-bg
@@ -277,6 +277,13 @@ docker-up:
 
 docker-down:
 	python3 scripts/docker_manager.py down
+
+# Remove Docker volumes (mysql-data, redis-data) for a clean start
+# Use this when you need to reset database state
+docker-clean:
+	python3 scripts/docker_manager.py down
+	docker volume rm docker_mysql-data docker_redis-data 2>/dev/null || true
+	@echo "Docker volumes removed. Next 'make docker-up' will initialize fresh databases."
 
 docker-logs:
 	python3 scripts/docker_manager.py logs

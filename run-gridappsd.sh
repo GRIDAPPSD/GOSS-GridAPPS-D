@@ -29,8 +29,9 @@ fi
 
 # If the DEBUG environmental variable is set and is not 0
 # then expose the port for remote debugging.
+# Note: address=*:8000 is required for Java 9+ to accept connections from outside the container
 if [ "${DEBUG:-0}" != "0" ]; then
-	java ${JAVA_OPTIONS} -agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=n -jar lib/gridappsd-launcher.jar
+	java ${JAVA_OPTIONS} -agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n -jar lib/gridappsd-launcher.jar
 else
 	java ${JAVA_OPTIONS} -jar lib/gridappsd-launcher.jar
 fi

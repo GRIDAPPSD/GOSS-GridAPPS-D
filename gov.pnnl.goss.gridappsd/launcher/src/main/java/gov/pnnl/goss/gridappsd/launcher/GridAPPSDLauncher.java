@@ -159,7 +159,39 @@ public class GridAPPSDLauncher {
         // This ensures FileInstall and other components find files correctly
         resolveRelativePaths(config);
 
+        // Propagate certain properties to System properties
+        // Some components (like Gogo shell) read from System.getProperty()
+        // rather than Felix framework configuration
+        propagateSystemProperties(config);
+
         return config;
+    }
+
+    /**
+     * Propagate certain configuration properties to System properties.
+     * Some bundles (like Gogo shell) read configuration from System.getProperty()
+     * rather than from Felix framework configuration.
+     */
+    private void propagateSystemProperties(Map<String, String> config) {
+        // List of properties that should be propagated to System properties
+        // if not already set via -D on the command line
+        String[] systemPropKeys = {
+            "gosh.args",  // Gogo shell options (--nointeractive, --noshutdown)
+            "goss.activemq.host",
+            "goss.openwire.port",
+            "goss.stomp.port",
+            "goss.ws.port",
+            "goss.broker-name",
+            "goss.activemq.start.broker"
+        };
+
+        for (String key : systemPropKeys) {
+            String value = config.get(key);
+            if (value != null && System.getProperty(key) == null) {
+                System.setProperty(key, value);
+                System.out.println("Set system property: " + key + "=" + value);
+            }
+        }
     }
 
     /**

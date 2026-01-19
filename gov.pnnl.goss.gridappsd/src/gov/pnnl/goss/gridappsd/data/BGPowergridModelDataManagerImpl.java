@@ -75,6 +75,8 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
     String endpointBaseURL;
     String endpointNSURL;
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory
+            .getLogger(BGPowergridModelDataManagerImpl.class);
     // BlazegraphQueryHandler queryHandler;
 
     @Reference
@@ -105,23 +107,49 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
         // dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
     }
 
+    /**
+     * Lazily initialize the Blazegraph endpoint URL. This is called on first use
+     * rather than during component activation to handle the timing issue where
+     * ConfigurationManager may not have its configuration loaded yet when this
+     * component is activated.
+     */
+    private synchronized String getEndpointBaseURL() {
+        if (endpointBaseURL == null) {
+            try {
+                endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+                log.info("Lazily initialized endpointBaseURL: {}", endpointBaseURL);
+                if (endpointBaseURL == null) {
+                    log.warn("Blazegraph host path not configured, using default");
+                    endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
+                }
+            } catch (Exception e) {
+                log.error("Error getting Blazegraph endpoint, using default", e);
+                endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
+            }
+        }
+        return endpointBaseURL;
+    }
+
+    private synchronized String getEndpointNSURL() {
+        if (endpointNSURL == null) {
+            try {
+                endpointNSURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_NS_PATH);
+                if (endpointNSURL == null) {
+                    endpointNSURL = getEndpointBaseURL();
+                }
+            } catch (Exception e) {
+                endpointNSURL = getEndpointBaseURL();
+            }
+        }
+        return endpointNSURL;
+    }
+
     // Repository repository;
     @Activate
     public void start() {
-        // System.out.println("Starting "+getClass());
-
-        // System.out.println("STARTING BGPGMODELDM");
-        try {
-
-            endpointBaseURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
-            endpointNSURL = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_NS_PATH);
-        } catch (Exception e) {
-            e.printStackTrace();
-            endpointBaseURL = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
-            endpointNSURL = endpointBaseURL;
-        }
-
-        // reservedModelNames.add("kb");
+        // Don't initialize endpointBaseURL here - use lazy initialization
+        // to handle timing issues with ConfigurationManager
+        log.info("BGPowergridModelDataManagerImpl starting - endpoint will be lazily initialized");
 
         dataManager.registerDataManagerHandler(new BGPowergridModelDataManagerHandlerImpl(this), DATA_MANAGER_TYPE);
     }
@@ -1005,25 +1033,15 @@ public class BGPowergridModelDataManagerImpl implements PowergridModelDataManage
 
     private String getEndpointNS(String modelId) {
         if (modelId != null) {
-            return endpointNSURL + modelId;
+            return getEndpointNSURL() + modelId;
         }
-        return endpointNSURL;
+        return getEndpointNSURL();
     }
 
     private String getEndpointURL(String modelId) {
         // Originally this used a different endpoint based on the model id, with all
         // models in the same namespace that is not necessary
-        // if(endpointBaseURL==null){
-        // TODO log error status
-        // throw new Exception(bg endpoint not available);
-        // }
-        // if(modelId==null) {
-        // return endpointBaseURL+"/sparql";
-        // }
-        //
-        // return endpointBaseURL+"/namespace/"+modelId+"/sparql";
-        //
-        return endpointBaseURL;
+        return getEndpointBaseURL();
     }
 
     private String formatStringList(List<String> values, String rootElementName, String resultFormat) {

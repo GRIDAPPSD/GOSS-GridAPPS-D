@@ -36,14 +36,13 @@ import pnnl.goss.core.client.ClientServiceFactory;
 /**
  * Container-based integration tests for GridAPPS-D using Testcontainers.
  *
- * These tests verify:
- * 1. GridAPPS-D starts and exposes ports 61613 (STOMP), 61614 (WebSocket), 61616 (OpenWire)
- * 2. Queue messaging - send and receive with point-to-point semantics
- * 3. Topic messaging - publish and subscribe with broadcast semantics
+ * These tests verify: 1. GridAPPS-D starts and exposes ports 61613 (STOMP),
+ * 61614 (WebSocket), 61616 (OpenWire) 2. Queue messaging - send and receive
+ * with point-to-point semantics 3. Topic messaging - publish and subscribe with
+ * broadcast semantics
  *
- * Prerequisites:
- * - Build local gridappsd image: make docker
- * - Docker daemon running
+ * Prerequisites: - Build local gridappsd image: make docker - Docker daemon
+ * running
  *
  * Run with: ./gradlew :gov.pnnl.goss.gridappsd:containerTest
  */
@@ -79,16 +78,18 @@ public class GridAppsDContainerTest {
         log.info("Using docker-compose.yml at: {}", composeFile.getAbsolutePath());
 
         environment = new ComposeContainer(composeFile)
-            .withEnv("GRIDAPPSD_TAG", ":develop")
-            // Use local compose - this means ports are mapped as defined in docker-compose.yml
-            // and we use localhost:port directly (no dynamic port mapping)
-            .withLocalCompose(true);
+                .withEnv("GRIDAPPSD_TAG", ":develop")
+                // Use local compose - this means ports are mapped as defined in
+                // docker-compose.yml
+                // and we use localhost:port directly (no dynamic port mapping)
+                .withLocalCompose(true);
 
         try {
             environment.start();
             log.info("=== Docker Compose started, waiting for GridAPPS-D to be ready ===");
 
-            // With localCompose=true, ports are mapped directly as defined in docker-compose.yml
+            // With localCompose=true, ports are mapped directly as defined in
+            // docker-compose.yml
             // (no ambassador containers, so we use localhost with fixed ports)
             host = "localhost";
             openwirePort = 61616;
@@ -122,8 +123,8 @@ public class GridAppsDContainerTest {
     }
 
     /**
-     * Wait for the GridAPPS-D broker to be ready.
-     * This checks not just if the port is open, but if ActiveMQ is actually accepting connections.
+     * Wait for the GridAPPS-D broker to be ready. This checks not just if the port
+     * is open, but if ActiveMQ is actually accepting connections.
      */
     private void waitForBroker(String host, int port, Duration timeout) throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeout.toMillis();
@@ -141,8 +142,8 @@ public class GridAppsDContainerTest {
             // Port is open, try to actually connect to the broker
             try {
                 String brokerUrl = "tcp://" + host + ":" + port;
-                org.apache.activemq.ActiveMQConnectionFactory factory =
-                    new org.apache.activemq.ActiveMQConnectionFactory(brokerUrl);
+                org.apache.activemq.ActiveMQConnectionFactory factory = new org.apache.activemq.ActiveMQConnectionFactory(
+                        brokerUrl);
                 factory.setUserName(USERNAME);
                 factory.setPassword(PASSWORD);
                 // Short connection timeout
@@ -208,10 +209,9 @@ public class GridAppsDContainerTest {
     }
 
     /**
-     * Test that all three GridAPPS-D messaging ports are open and accessible.
-     * - 61613: STOMP protocol
-     * - 61614: WebSocket transport
-     * - 61616: OpenWire protocol (primary JMS)
+     * Test that all three GridAPPS-D messaging ports are open and accessible. -
+     * 61613: STOMP protocol - 61614: WebSocket transport - 61616: OpenWire protocol
+     * (primary JMS)
      */
     @Test
     void testGridAppsDPortsAreOpen() {
@@ -219,25 +219,25 @@ public class GridAppsDContainerTest {
 
         // Test OpenWire port (61616)
         assertTrue(isPortOpen(host, openwirePort),
-            "OpenWire port (61616) should be accessible at " + host + ":" + openwirePort);
+                "OpenWire port (61616) should be accessible at " + host + ":" + openwirePort);
         log.info("OpenWire port {} is open", openwirePort);
 
         // Test STOMP port (61613)
         assertTrue(isPortOpen(host, stompPort),
-            "STOMP port (61613) should be accessible at " + host + ":" + stompPort);
+                "STOMP port (61613) should be accessible at " + host + ":" + stompPort);
         log.info("STOMP port {} is open", stompPort);
 
         // Test WebSocket port (61614)
         assertTrue(isPortOpen(host, wsPort),
-            "WebSocket port (61614) should be accessible at " + host + ":" + wsPort);
+                "WebSocket port (61614) should be accessible at " + host + ":" + wsPort);
         log.info("WebSocket port {} is open", wsPort);
 
         log.info("=== All GridAPPS-D ports verified ===");
     }
 
     /**
-     * Test basic queue send and receive.
-     * Messages sent to a queue should be received by a queue subscriber.
+     * Test basic queue send and receive. Messages sent to a queue should be
+     * received by a queue subscriber.
      */
     @Test
     void testQueueSendReceive() throws Exception {
@@ -273,14 +273,14 @@ public class GridAppsDContainerTest {
         assertTrue(messageReceived, "Should receive message from queue within timeout");
         assertNotNull(received.get(), "Received message should not be null");
         assertTrue(received.get().contains(testMessage) || received.get().equals(testMessage),
-            "Received message should contain sent message");
+                "Received message should contain sent message");
 
         log.info("=== Queue Send/Receive PASSED ===");
     }
 
     /**
-     * Test basic topic send and receive.
-     * Messages published to a topic should be received by topic subscribers.
+     * Test basic topic send and receive. Messages published to a topic should be
+     * received by topic subscribers.
      */
     @Test
     void testTopicSendReceive() throws Exception {
@@ -316,14 +316,15 @@ public class GridAppsDContainerTest {
         assertTrue(messageReceived, "Should receive message from topic within timeout");
         assertNotNull(received.get(), "Received message should not be null");
         assertTrue(received.get().contains(testMessage) || received.get().equals(testMessage),
-            "Received message should contain sent message");
+                "Received message should contain sent message");
 
         log.info("=== Topic Send/Receive PASSED ===");
     }
 
     /**
-     * Test queue semantics: messages are delivered to only ONE consumer.
-     * When multiple consumers listen on a queue, each message goes to exactly one consumer.
+     * Test queue semantics: messages are delivered to only ONE consumer. When
+     * multiple consumers listen on a queue, each message goes to exactly one
+     * consumer.
      */
     @Test
     void testQueueDeliveredToOneConsumer() throws Exception {
@@ -377,10 +378,10 @@ public class GridAppsDContainerTest {
             // Verify queue semantics: message delivered to exactly ONE consumer
             int totalReceived = consumer1Count.get() + consumer2Count.get();
             assertEquals(1, totalReceived,
-                "Queue message should be delivered to exactly ONE consumer, but was delivered to " + totalReceived);
+                    "Queue message should be delivered to exactly ONE consumer, but was delivered to " + totalReceived);
 
             log.info("Consumer 1 received: {}, Consumer 2 received: {}",
-                consumer1Count.get(), consumer2Count.get());
+                    consumer1Count.get(), consumer2Count.get());
             log.info("=== Queue semantics verified: message delivered to ONE consumer ===");
 
         } finally {
@@ -389,8 +390,8 @@ public class GridAppsDContainerTest {
     }
 
     /**
-     * Test topic semantics: messages are delivered to ALL subscribers.
-     * When multiple subscribers listen on a topic, each message goes to all of them.
+     * Test topic semantics: messages are delivered to ALL subscribers. When
+     * multiple subscribers listen on a topic, each message goes to all of them.
      */
     @Test
     void testTopicDeliveredToAllSubscribers() throws Exception {
@@ -440,12 +441,12 @@ public class GridAppsDContainerTest {
 
             // Verify topic semantics: message delivered to ALL subscribers
             assertEquals(1, subscriber1Count.get(),
-                "Subscriber 1 should receive exactly 1 message");
+                    "Subscriber 1 should receive exactly 1 message");
             assertEquals(1, subscriber2Count.get(),
-                "Subscriber 2 should receive exactly 1 message");
+                    "Subscriber 2 should receive exactly 1 message");
 
             log.info("Subscriber 1 received: {}, Subscriber 2 received: {}",
-                subscriber1Count.get(), subscriber2Count.get());
+                    subscriber1Count.get(), subscriber2Count.get());
             log.info("=== Topic semantics verified: message delivered to ALL subscribers ===");
 
         } finally {
@@ -465,15 +466,15 @@ public class GridAppsDContainerTest {
     }
 
     /**
-     * Find docker-compose.yml by checking multiple possible paths.
-     * Handles different working directory scenarios (IDE vs Gradle).
+     * Find docker-compose.yml by checking multiple possible paths. Handles
+     * different working directory scenarios (IDE vs Gradle).
      */
     private File findComposeFile() {
         // Possible locations relative to different working directories
         String[] possiblePaths = {
-            "docker/docker-compose.yml",           // From project root
-            "../docker/docker-compose.yml",        // From subproject directory
-            "../../docker/docker-compose.yml",     // From nested directory
+                "docker/docker-compose.yml", // From project root
+                "../docker/docker-compose.yml", // From subproject directory
+                "../../docker/docker-compose.yml", // From nested directory
         };
 
         for (String path : possiblePaths) {

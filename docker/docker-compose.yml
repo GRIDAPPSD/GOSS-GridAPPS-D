@@ -18,10 +18,10 @@ services:
     ports:
       - 3306:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ugridappsd", "-pgridappsd1234"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
       start_period: 30s
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
@@ -98,10 +98,16 @@ services:
     environment:
       - PATH=/home/gridappsd/.local/bin:/gridappsd/bin:/gridappsd/lib:/gridappsd/services/fncsgossbridge/service:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
       - LD_LIBRARY_PATH=/usr/local/lib64
-      - AUTOSTART=1
+      - AUTOSTART=0
       - DEBUG=1
       - MAX_RESTARTS=5
       - RESTART_DELAY=5
+    volumes:
+      # Mount local build output for development - allows quick iteration without rebuilding Docker image
+      # Note: Mount entire lib directory to ensure Class-Path resolution works correctly
+      - ../build/launcher:/gridappsd/lib
+      # Mount source for reference during debugging
+      - ../gov.pnnl.goss.gridappsd/src:/gridappsd/src:ro
     depends_on:
       mysql:
         condition: service_healthy

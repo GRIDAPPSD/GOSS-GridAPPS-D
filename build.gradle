@@ -30,6 +30,19 @@ subprojects {
         classpath {
             // Use 'bin' directory for Eclipse output to avoid conflict with BND's 'generated' directory
             defaultOutputDir = file('bin/default')
+
+            // Remove duplicate bin/bin_test entries that BND adds as library references
+            // These conflict with the source output directories
+            file {
+                whenMerged { cp ->
+                    cp.entries.removeAll { entry ->
+                        entry.kind == 'lib' && (
+                            entry.path.endsWith('/bin') ||
+                            entry.path.endsWith('/bin_test')
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -99,7 +112,9 @@ subprojects {
             '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
             '--add-opens', 'java.base/java.util=ALL-UNNAMED',
             '--add-opens', 'java.base/java.io=ALL-UNNAMED',
-            '--add-opens', 'java.base/java.time=ALL-UNNAMED'
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED',
+            // Allow Mockito's ByteBuddy agent to attach dynamically (required for inline mocking)
+            '-XX:+EnableDynamicAgentLoading'
         ]
 
         // Support for running ONLY integration tests via property
@@ -184,14 +199,19 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect GOSS bundles from GOSS-Repository (local clone or will be downloaded)
-    // Use fileTree to collect all versioned JARs from the release directory structure
-    from('../GOSS-Repository/release') {
+    // Collect GOSS bundles from GOSS-Repository snapshot directory (local development)
+    // Use fileTree to collect all versioned JARs from the snapshot directory structure
+    from('../GOSS-Repository/snapshot') {
         include 'pnnl.goss.core.*/*.jar'
-        // Only include the latest version (11.0.0)
-        include '**/pnnl.goss.core.*-11.0.0.jar'
+        // Include version 12.0.0-SNAPSHOT (Java 21 compatible, local development)
+        include '**/pnnl.goss.core.*-12.0.0-SNAPSHOT.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
+        // Exclude test and development bundles - these should not be deployed
+        exclude '**/pnnl.goss.core.itests*'
+        exclude '**/pnnl.goss.core.testutil*'
+        exclude '**/pnnl.goss.core.runner*'
+        exclude '**/pnnl.goss.core.client-all*'
     }
 
     // Collect CIMHub library from BND cache
@@ -233,10 +253,28 @@ task collectBundles(type: Copy) {
             'org.apache.felix:org.apache.felix.gogo.command:1.1.2',
             'org.apache.felix:org.apache.felix.gogo.runtime:1.1.6',
             'org.apache.felix:org.apache.felix.gogo.shell:1.1.4',
-            'org.apache.felix:org.apache.felix.http.servlet-api:3.0.0',
-            'org.apache.felix:org.apache.felix.http.jetty:4.1.14',
+            // Felix HTTP with Jetty 11.x (compatible with our Jetty 11.x WebSocket dependencies)
+            // Using the "light" variant which does NOT embed Jetty, letting us use our own Jetty 11.x jars
+            'org.apache.felix:org.apache.felix.http.servlet-api:2.1.0',
+            'org.apache.felix:org.apache.felix.http.jetty:5.1.8:light',
             'org.apache.felix:org.apache.felix.dependencymanager:4.6.1',
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
+
+            // Jetty 11.x WebSocket support (required by ActiveMQ 6.2.0 for ws:// transport)
+            'org.eclipse.jetty.websocket:websocket-jetty-server:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-jetty-api:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-jetty-common:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-core-server:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-core-common:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-servlet:11.0.24',
+            'org.eclipse.jetty:jetty-servlet:11.0.24',
+            'org.eclipse.jetty:jetty-server:11.0.24',
+            'org.eclipse.jetty:jetty-http:11.0.24',
+            'org.eclipse.jetty:jetty-io:11.0.24',
+            'org.eclipse.jetty:jetty-util:11.0.24',
+            'org.eclipse.jetty:jetty-security:11.0.24',
+            'org.eclipse.jetty:jetty-webapp:11.0.24',
+            'org.eclipse.jetty:jetty-xml:11.0.24',
 
             // Pax Logging (OSGi-native logging framework)
             // Provides SLF4J 2.x API + Log4j2 backend with properties-based configuration

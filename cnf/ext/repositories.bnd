@@ -3,8 +3,9 @@
 # GOSS-Repository Local: Latest GOSS bundles from local clone (takes precedence)
 # GOSS-Repository Remote: RUNTIME OSGi bundles from GitHub (fallback)
 
-# Local GOSS-Repository clone is checked first for latest bundles
-# Remote GitHub repository provides fallback for CI/CD builds without local clone
+# aQute.lib.deployer.FileRepo;name=GOSS Workspace;location=${workspace}/../GOSS/pnnl.goss.core/generated,\
+# Local GOSS workspace bundles take HIGHEST precedence for development
+# Comment out GOSS Workspace line to use released versions from GitHub
 -plugin: \
 	aQute.bnd.repository.maven.provider.MavenBndRepository;\
 		releaseUrl=https://repo1.maven.org/maven2/;\

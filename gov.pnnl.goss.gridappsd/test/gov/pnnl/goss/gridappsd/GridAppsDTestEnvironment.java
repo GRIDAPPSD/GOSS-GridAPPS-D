@@ -9,17 +9,13 @@ import org.slf4j.LoggerFactory;
 /**
  * Manages the Docker environment for container-based integration tests.
  *
- * This class expects containers to be started externally using:
- *   make docker-up
+ * This class expects containers to be started externally using: make docker-up
  *
- * And stopped using:
- *   make docker-down
+ * And stopped using: make docker-down
  *
- * The containers use fixed ports as defined in docker/docker-compose.yml:
- * - GridAPPS-D OpenWire: localhost:61616
- * - GridAPPS-D STOMP: localhost:61613
- * - MySQL: localhost:3306
- * - Blazegraph: localhost:8889
+ * The containers use fixed ports as defined in docker/docker-compose.yml: -
+ * GridAPPS-D OpenWire: localhost:61616 - GridAPPS-D STOMP: localhost:61613 -
+ * MySQL: localhost:3306 - Blazegraph: localhost:8889
  *
  * Usage:
  *
@@ -82,8 +78,8 @@ public class GridAppsDTestEnvironment {
     /**
      * Verify that the Docker containers are running.
      *
-     * This method checks that the required services are accessible.
-     * Containers must be started externally using: make docker-up
+     * This method checks that the required services are accessible. Containers must
+     * be started externally using: make docker-up
      */
     public synchronized void start() {
         if (verified) {
@@ -98,8 +94,8 @@ public class GridAppsDTestEnvironment {
         if (!isPortOpen(HOST, GRIDAPPSD_OPENWIRE_PORT)) {
             throw new IllegalStateException(
                     "GridAPPS-D is not running on " + HOST + ":" + GRIDAPPSD_OPENWIRE_PORT + "\n" +
-                    "Please start containers with: make docker-up\n" +
-                    "Then re-run the tests.");
+                            "Please start containers with: make docker-up\n" +
+                            "Then re-run the tests.");
         }
 
         // Check if Blazegraph port is accessible
@@ -129,8 +125,8 @@ public class GridAppsDTestEnvironment {
     }
 
     /**
-     * Stop method is a no-op since containers are managed externally.
-     * Use 'make docker-down' to stop containers.
+     * Stop method is a no-op since containers are managed externally. Use 'make
+     * docker-down' to stop containers.
      */
     public synchronized void stop() {
         log.info("Containers are managed externally. Use 'make docker-down' to stop them.");
@@ -226,7 +222,7 @@ public class GridAppsDTestEnvironment {
         if (!verified) {
             throw new IllegalStateException(
                     "Docker environment not verified. Call start() first.\n" +
-                    "Also ensure containers are running with: make docker-up");
+                            "Also ensure containers are running with: make docker-up");
         }
     }
 }
