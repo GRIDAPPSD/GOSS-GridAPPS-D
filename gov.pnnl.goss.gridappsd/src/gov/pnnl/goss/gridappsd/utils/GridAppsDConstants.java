@@ -155,6 +155,12 @@ public class GridAppsDConstants {
     public static final String PROVEN_QUERY_PATH = "proven.query.path";
     public static final String PROVEN_ADVANCED_QUERY_PATH = "proven.advanced_query.path";
 
+    // InfluxDB configuration (direct connection, bypassing Proven middleware)
+    public static final String INFLUXDB_URL = "influxdb.url";
+    public static final String INFLUXDB_DATABASE = "influxdb.database";
+    public static final String INFLUXDB_USERNAME = "influxdb.username";
+    public static final String INFLUXDB_PASSWORD = "influxdb.password";
+
     public static final SimpleDateFormat SDF_SIMULATION_REQUEST = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
     public static final SimpleDateFormat SDF_GLM_CLOCK = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 

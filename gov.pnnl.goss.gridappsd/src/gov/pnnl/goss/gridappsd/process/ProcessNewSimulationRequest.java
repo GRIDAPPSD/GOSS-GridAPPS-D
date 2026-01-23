@@ -153,7 +153,15 @@ public class ProcessNewSimulationRequest {
 
             // Create model working directories for each model in request
             for (PowerSystemConfig powerSystemConfig : simRequest.power_system_configs) {
+                // Initialize simulator_config if null (can happen when not provided in request)
+                if (powerSystemConfig.simulator_config == null) {
+                    powerSystemConfig.simulator_config = new SimulatorConfig();
+                }
                 SimulatorConfig simulatorConfig = powerSystemConfig.simulator_config;
+                // Default to GridLAB-D if no simulator specified
+                if (simulatorConfig.getSimulator() == null || simulatorConfig.getSimulator().trim().isEmpty()) {
+                    simulatorConfig.setSimulator("GridLAB-D");
+                }
                 File modelWorkingDir = new File(simulationWorkingDir, powerSystemConfig.getLine_name());
                 simulatorConfig.simulation_work_dir = modelWorkingDir.getAbsolutePath();
                 if (!modelWorkingDir.exists()) {
@@ -419,7 +427,13 @@ public class ProcessNewSimulationRequest {
         // TODO where to get feeder id?
         params.put(GLDAllConfigurationHandler.MODELID, powerSystemConfig.Line_name);
 
-        ModelCreationConfig modelConfig = powerSystemConfig.simulator_config.model_creation_config;
+        SimulatorConfig simConfig = powerSystemConfig.simulator_config;
+        ModelCreationConfig modelConfig = simConfig.model_creation_config;
+        if (modelConfig == null) {
+            modelConfig = new ModelCreationConfig();
+            simConfig.model_creation_config = modelConfig;
+        }
+
         double zFraction = modelConfig.z_fraction;
         double iFraction = modelConfig.i_fraction;
         double pFraction = modelConfig.p_fraction;
@@ -437,8 +451,13 @@ public class ProcessNewSimulationRequest {
             params.put(GLDAllConfigurationHandler.SCHEDULENAME, "");
         }
         params.put(GLDAllConfigurationHandler.SIMULATIONNAME, requestSimulation.getSimulation_config().simulation_name);
-        params.put(GLDAllConfigurationHandler.SOLVERMETHOD,
-                powerSystemConfig.simulator_config.power_flow_solver_method);
+
+        // Default power_flow_solver_method if not specified
+        String solverMethod = simConfig.power_flow_solver_method;
+        if (solverMethod == null || solverMethod.trim().isEmpty()) {
+            solverMethod = "NR";
+        }
+        params.put(GLDAllConfigurationHandler.SOLVERMETHOD, solverMethod);
 
         params.put(GLDAllConfigurationHandler.SIMULATIONBROKERHOST,
                 requestSimulation.getSimulation_config().getSimulation_broker_location());
@@ -454,7 +473,7 @@ public class ProcessNewSimulationRequest {
             params.put(GLDAllConfigurationHandler.MODEL_STATE, gson.toJson(modelConfig.getModel_state()));
         }
 
-        params.put(GLDAllConfigurationHandler.SIMULATOR, powerSystemConfig.simulator_config.simulator);
+        params.put(GLDAllConfigurationHandler.SIMULATOR, simConfig.simulator);
         params.put(GLDAllConfigurationHandler.RUN_REALTIME, requestSimulation.getSimulation_config().run_realtime);
 
         if (modelConfig.separated_loads_file != null) {

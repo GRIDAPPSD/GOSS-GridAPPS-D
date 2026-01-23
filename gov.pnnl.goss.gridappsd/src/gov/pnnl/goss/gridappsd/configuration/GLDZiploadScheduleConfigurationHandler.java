@@ -203,7 +203,7 @@ public class GLDZiploadScheduleConfigurationHandler
         request.setOriginalFormat("loadprofile");
         DataResponse resp = (DataResponse) dataManager.processDataRequest(
                 request,
-                "proven", simId,
+                "timeseries", simId,
                 tempDataPath, username);
         if (resp.getData() == null) {
             throw new Exception(

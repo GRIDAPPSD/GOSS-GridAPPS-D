@@ -62,6 +62,10 @@ services:
     container_name: proven
     ports:
       - 18080:8080
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
       - PROVEN_SERVICES_PORT=18080
       - PROVEN_SWAGGER_HOST_PORT=localhost:18080

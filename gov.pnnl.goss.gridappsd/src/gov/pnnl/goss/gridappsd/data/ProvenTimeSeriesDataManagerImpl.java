@@ -33,17 +33,21 @@ import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesDataBasic;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesEntryResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import gov.pnnl.proven.api.producer.ProvenProducer;
-import gov.pnnl.proven.api.producer.ProvenResponse;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
-// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-//import pnnl.goss.core.security.SecurityConfig;
 
-@Component(service = {TimeseriesDataManager.class, DataManagerHandler.class})
+/**
+ * TimeseriesDataManager implementation that uses Proven as the middleware layer
+ * for storing and querying timeseries data in InfluxDB.
+ *
+ * This implementation uses a simple HTTP client (ProvenHttpClient) to
+ * communicate with the Proven REST API, avoiding the Jersey/HK2 classloading
+ * issues that occur with the proven-client library in OSGi.
+ */
+@Component(service = {TimeseriesDataManager.class, DataManagerHandler.class}, immediate = true)
 public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, DataManagerHandler {
 
     @Reference
@@ -67,10 +71,6 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     @Reference
     private volatile AppManager appManager;
 
-    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-    // @Reference
-    // private volatile SecurityConfig securityConfig;
-
     public static final String DATA_MANAGER_TYPE = "timeseries";
 
     public static int count = 0;
@@ -78,40 +78,55 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     List<String> keywords = null;
     String requestId = null;
     Gson gson = new Gson();
-    String provenUri = null;
-    String provenQueryUri = null;
-    String provenAdvancedQueryUri = null;
-    String provenWriteUri = null;
 
-    ProvenProducer provenQueryProducer = new ProvenProducer();
-    ProvenProducer provenWriteProducer = new ProvenProducer();
-    // Credentials credentials = new UsernamePasswordCredentials(
-    // GridAppsDConstants.username, GridAppsDConstants.password);
+    // Simple HTTP client for Proven REST API (avoids Jersey/HK2 issues)
+    private ProvenHttpClient provenClient;
+    private String provenBaseUri;
 
     @Activate
     public void start() {
-
         logManager.debug(ProcessStatus.RUNNING, null, "Starting " + this.getClass().getSimpleName());
 
         dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
-        provenUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
-        provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
-        provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);
-        provenAdvancedQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_ADVANCED_QUERY_PATH);
-        provenQueryProducer.restProducer(provenQueryUri, null, null);
-        provenWriteProducer.restProducer(provenWriteUri, null, null);
+
+        // Get Proven configuration
+        provenBaseUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
+        String provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
+        String provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);
+        String provenAdvancedQueryUri = configManager
+                .getConfigurationProperty(GridAppsDConstants.PROVEN_ADVANCED_QUERY_PATH);
+
+        // Initialize simple HTTP client
+        provenClient = new ProvenHttpClient();
+        provenClient.setQueryUri(provenQueryUri);
+        provenClient.setAdvancedQueryUri(provenAdvancedQueryUri);
+        provenClient.setWriteUri(provenWriteUri);
+        // Derive influxql endpoint from base URI
+        String influxqlUri = provenBaseUri.replace("/provenMessage", "/influxql");
+        if (!influxqlUri.endsWith("/influxql")) {
+            // If base path doesn't end with provenMessage, construct from base
+            influxqlUri = provenBaseUri.replaceAll("/[^/]+$", "/influxql");
+        }
+        provenClient.setInfluxqlUri(influxqlUri);
+
+        // Check Proven availability
+        if (ProvenHttpClient.isProvenAvailable(provenBaseUri)) {
+            logManager.debug(ProcessStatus.RUNNING, null, "Proven service is available at " + provenBaseUri);
+        } else {
+            logManager.warn(ProcessStatus.RUNNING, null,
+                    "Proven service is not available at " + provenBaseUri + " - timeseries data will not be stored");
+        }
 
         try {
             this.subscribeAndStoreDataFromTopic("/topic/goss.gridappsd.*.output", null, null, null);
         } catch (Exception e) {
+            logManager.error(ProcessStatus.RUNNING, null, "Error subscribing to output topics: " + e.getMessage());
             e.printStackTrace();
         }
-
     }
 
     @Override
-    public Serializable handle(Serializable requestContent, String processId,
-            String username) throws Exception {
+    public Serializable handle(Serializable requestContent, String processId, String username) throws Exception {
         if (requestContent instanceof SimulationContext) {
             storeAllData((SimulationContext) requestContent);
         }
@@ -123,7 +138,6 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
             try {
                 timeSeriesRequest = RequestTimeseriesDataAdvanced.parse((String) requestContent);
             } catch (Exception e) {
-                // TODO: handle exception
                 try {
                     timeSeriesRequest = RequestTimeseriesDataBasic.parse((String) requestContent);
                 } catch (Exception e2) {
@@ -139,21 +153,27 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
     @Override
     public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
+        JsonElement response;
 
-        ProvenResponse response = null;
-
-        if (requestTimeseriesData instanceof RequestTimeseriesDataAdvanced) {
-            provenQueryProducer.restProducer(provenAdvancedQueryUri, null, null);
-            provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-            response = provenQueryProducer.getAdvancedTsQuery(requestTimeseriesData.toString(), requestId);
-        } else {
-            provenQueryProducer.restProducer(provenQueryUri, null, null);
-            provenQueryProducer.setMessageInfo("GridAPPSD", "QUERY", this.getClass().getSimpleName(), keywords);
-            response = provenQueryProducer.sendMessage(requestTimeseriesData.toString(), requestId);
+        try {
+            // Build InfluxQL query from the request
+            String influxQuery = buildInfluxQuery(requestTimeseriesData);
+            logManager.debug(ProcessStatus.RUNNING, null, "Executing InfluxQL query: " + influxQuery);
+            response = provenClient.sendInfluxQuery(influxQuery);
+        } catch (Exception e) {
+            logManager.error(ProcessStatus.RUNNING, null, "Error querying Proven: " + e.getMessage());
+            throw e;
         }
-        TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.data.toString());
-        if (result.getData().size() == 0)
+
+        if (response == null) {
             return null;
+        }
+
+        TimeSeriesEntryResult result = TimeSeriesEntryResult.parse(response.toString());
+        if (result.getData().size() == 0) {
+            return null;
+        }
+
         String origFormat = "PROVEN_" + requestTimeseriesData.getQueryMeasurement().toString();
         if (requestTimeseriesData.getOriginalFormat() != null) {
             origFormat = "PROVEN_" + requestTimeseriesData.getOriginalFormat();
@@ -162,17 +182,59 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         DataFormatConverter converter = dataManager.getConverter(origFormat, responseFormat);
         if (converter != null) {
             StringWriter sw = new StringWriter();
-            converter.convert(response.data.toString(), new PrintWriter(sw), requestTimeseriesData);
+            converter.convert(response.toString(), new PrintWriter(sw), requestTimeseriesData);
             return sw.toString();
         }
 
-        return response.data;
+        return response.toString();
+    }
 
+    /**
+     * Build an InfluxQL query string from a RequestTimeseriesData object.
+     */
+    private String buildInfluxQuery(RequestTimeseriesData requestTimeseriesData) {
+        StringBuilder query = new StringBuilder();
+        query.append("SELECT * FROM ").append(requestTimeseriesData.getQueryMeasurement());
+
+        // Handle basic query with filter
+        if (requestTimeseriesData instanceof RequestTimeseriesDataBasic) {
+            RequestTimeseriesDataBasic basicRequest = (RequestTimeseriesDataBasic) requestTimeseriesData;
+            java.util.Map<String, Object> filter = basicRequest.getQueryFilter();
+            if (filter != null && !filter.isEmpty()) {
+                query.append(" WHERE ");
+                boolean first = true;
+                for (java.util.Map.Entry<String, Object> entry : filter.entrySet()) {
+                    if (!first) {
+                        query.append(" AND ");
+                    }
+                    first = false;
+                    String key = entry.getKey();
+                    Object value = entry.getValue();
+
+                    // Handle time fields - input is in microseconds, InfluxDB needs nanoseconds
+                    // Microseconds have 16 digits, nanoseconds have 19 digits
+                    if ("startTime".equals(key)) {
+                        long timeUs = Long.parseLong(value.toString());
+                        long timeNs = timeUs * 1000; // Convert microseconds to nanoseconds
+                        query.append("time >= ").append(timeNs);
+                    } else if ("endTime".equals(key)) {
+                        long timeUs = Long.parseLong(value.toString());
+                        long timeNs = timeUs * 1000; // Convert microseconds to nanoseconds
+                        query.append("time <= ").append(timeNs);
+                    } else if (value instanceof String) {
+                        query.append(key).append(" = '").append(value).append("'");
+                    } else {
+                        query.append(key).append(" = ").append(value);
+                    }
+                }
+            }
+        }
+
+        return query.toString();
     }
 
     @Override
     public void storeAllData(SimulationContext simulationContext) throws Exception {
-
         String simulationId = simulationContext.getSimulationId();
 
         storeSimulationInput(simulationId);
@@ -182,7 +244,6 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
             String serviceId = serviceManager.getServiceIdForInstance(instanceId);
             storeServiceInput(simulationId, serviceId, instanceId);
             storeServiceOutput(simulationId, serviceId, instanceId);
-
         }
 
         for (String instanceId : simulationContext.getAppInstanceIds()) {
@@ -195,44 +256,37 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     private void subscribeAndStoreDataFromTopic(String topic, String appOrServiceid, String instanceId,
             String simulationId) throws Exception {
 
-        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-        // Credentials credentials = new UsernamePasswordCredentials(
-        // securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-        Credentials credentials = new UsernamePasswordCredentials(
-                "system", "manager");
+        Credentials credentials = new UsernamePasswordCredentials("system", "manager");
         Client inputClient = clientFactory.create(PROTOCOL.STOMP, credentials);
+
         inputClient.subscribe(topic, new GossResponseEvent() {
             @Override
             public void onMessage(Serializable message) {
                 DataResponse event = (DataResponse) message;
-                for (String str : event.getDestination().split(".")) {
-                    System.out.println(str);
-                }
-                // String appOrServiceid = event.getDestination().split("[.]")[2];
                 try {
-                    // TODO: Remove if block once changes made in proven cluster to get measurement
-                    // name from datatype
-                    if (appOrServiceid == null) {
-                        JsonElement data = JsonParser.parseString(event.getData().toString());
+                    String dataString = event.getData().toString();
+                    String measurementName = appOrServiceid;
+
+                    // If no app/service specified, try to extract datatype from message
+                    if (measurementName == null) {
+                        JsonElement data = JsonParser.parseString(dataString);
                         if (data.isJsonObject()) {
                             JsonObject dataObj = data.getAsJsonObject();
-                            if (dataObj.get("datatype") != null) {
-                                String datatype = dataObj.get("datatype").getAsString();
-                                if (datatype != null)
-                                    provenWriteProducer.sendBulkMessage(event.getData().toString(), datatype,
-                                            instanceId, simulationId, new Date().getTime());
+                            if (dataObj.has("datatype") && !dataObj.get("datatype").isJsonNull()) {
+                                measurementName = dataObj.get("datatype").getAsString();
                             }
                         }
-                    } else {
-                        provenWriteProducer.sendBulkMessage(event.getData().toString(), appOrServiceid, instanceId,
-                                simulationId, new Date().getTime());
+                    }
+
+                    if (measurementName != null) {
+                        provenClient.sendBulkData(dataString, measurementName, instanceId, simulationId,
+                                new Date().getTime());
                     }
                 } catch (Exception e) {
-
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
                     e.printStackTrace(pw);
-                    String sStackTrace = sw.toString(); // stack trace as a string
+                    String sStackTrace = sw.toString();
                     System.out.println(sStackTrace);
                     logManager.error(ProcessStatus.RUNNING, null, "Error storing timeseries data for message at "
                             + event.getDestination() + " : " + sStackTrace);
@@ -280,5 +334,4 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                 "/topic/" + GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".input", appId,
                 instanceId, simulationId);
     }
-
 }

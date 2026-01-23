@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
 description = 'GridAPPS-D Proven Wrapper Bundle - embeds all Proven dependencies'
@@ -49,7 +49,8 @@ dependencies {
     embed 'org.apache.jena:jena-shaded-guava:3.7.0'
 
     // SHACL for proven-message validation (TopBraid SHACL)
-    // Note: TopBraid SHACL is complex, we may need to find an alternative or exclude
+    // Uses version 1.1.0 from GOSS-Repository which is compatible with proven-message 0.5
+    embed files('../cnf/cache/7.1.0/GOSS Dependencies/shacl-1.1.0.jar')
 
     // Hazelcast for proven-message serialization
     embed 'com.hazelcast:hazelcast:3.9.3'
@@ -59,6 +60,9 @@ dependencies {
 
     // SLF4J API (don't embed implementation, let OSGi provide it)
     compileOnly 'org.slf4j:slf4j-api:2.0.16'
+
+    // OSGi framework API for BundleActivator (don't embed, import from OSGi)
+    compileOnly 'org.osgi:osgi.core:8.0.0'
 }
 
 java {
@@ -96,12 +100,16 @@ shadowJar {
             'Bundle-Name': 'GridAPPS-D Proven Wrapper Bundle',
             'Bundle-Version': '0.5.0',
             'Bundle-Vendor': 'PNNL',
+            // Bundle Activator for Jersey classloader initialization
+            'Bundle-Activator': 'gridappsd.proven.osgi.ProvenBundleActivator',
             // Only export the public API that GridAPPS-D needs
             'Export-Package': 'gov.pnnl.proven.api.producer;version="0.2.5",' +
                              'gov.pnnl.proven.message;version="0.5.0",' +
-                             'gov.pnnl.proven.message.exception;version="0.5.0"',
-            // Import SLF4J from OSGi environment
-            'Import-Package': 'org.slf4j;version="[1.7,3)"',
+                             'gov.pnnl.proven.message.exception;version="0.5.0",' +
+                             'gridappsd.proven.osgi;version="0.5.0"',
+            // Import SLF4J and OSGi framework from OSGi environment
+            'Import-Package': 'org.slf4j;version="[1.7,3)",' +
+                             'org.osgi.framework;version="[1.8,2)"',
             // Embed everything else
             'Bundle-ClassPath': '.',
             'Require-Capability': 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"'
@@ -121,3 +129,36 @@ shadowJar {
 // Make shadow the default jar task
 jar.enabled = false
 assemble.dependsOn shadowJar
+
+// Create a resources directory for the relocated service file
+def relocatedServicesDir = layout.buildDirectory.dir('relocated-services')
+
+// Task to create the relocated JAX-RS service file
+tasks.register('createRelocatedServiceFile') {
+    def outputDir = relocatedServicesDir.get().asFile
+    outputs.dir(outputDir)
+
+    doLast {
+        // Create the relocated service files for JAX-RS
+        def servicesDir = new File(outputDir, 'META-INF/services')
+        servicesDir.mkdirs()
+
+        // Service file for ClientBuilder
+        def clientBuilderFile = new File(servicesDir, 'gridappsd.proven.shaded.javax.ws.rs.client.ClientBuilder')
+        clientBuilderFile.text = 'gridappsd.proven.shaded.jersey.client.JerseyClientBuilder'
+
+        // Service file for RuntimeDelegate (also used by JAX-RS internally)
+        def runtimeDelegateFile = new File(servicesDir, 'gridappsd.proven.shaded.javax.ws.rs.ext.RuntimeDelegate')
+        runtimeDelegateFile.text = 'gridappsd.proven.shaded.jersey.internal.RuntimeDelegateImpl'
+
+        // Service file for InjectionManagerFactory (HK2 injection for Jersey)
+        def injectionManagerFile = new File(servicesDir, 'gridappsd.proven.shaded.jersey.internal.inject.InjectionManagerFactory')
+        injectionManagerFile.text = 'gridappsd.proven.shaded.jersey.inject.hk2.Hk2InjectionManagerFactory'
+    }
+}
+
+// Include the relocated service file in the shadow JAR
+shadowJar {
+    dependsOn createRelocatedServiceFile
+    from(relocatedServicesDir)
+}

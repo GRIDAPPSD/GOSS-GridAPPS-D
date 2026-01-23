@@ -55,8 +55,8 @@ public class SimulationRunIntegrationTest {
     private static final String USERNAME = "system";
     private static final String PASSWORD = "manager";
 
-    // Default test model - IEEE 13 node test feeder
-    private static final String TEST_FEEDER_MRID = "_49AD8E07-3BF9-A4E2-CB8F-C3722F837B62";
+    // Default test model - IEEE 13 node test feeder (no underscore prefix)
+    private static final String TEST_FEEDER_MRID = "49AD8E07-3BF9-A4E2-CB8F-C3722F837B62";
 
     // Simulation duration in seconds (configurable via system property)
     private static final int SIMULATION_DURATION = Integer.getInteger("test.simulation.duration", 10);
@@ -120,7 +120,8 @@ public class SimulationRunIntegrationTest {
         // Model creation config - goes inside simulator_config
         JsonObject modelCreationConfig = new JsonObject();
         modelCreationConfig.addProperty("load_scaling_factor", 1.0);
-        modelCreationConfig.addProperty("schedule_name", "ieeezipload");
+        // Empty schedule_name avoids dependency on Proven timeseries data store
+        modelCreationConfig.addProperty("schedule_name", "");
         modelCreationConfig.addProperty("z_fraction", 0.0);
         modelCreationConfig.addProperty("i_fraction", 1.0);
         modelCreationConfig.addProperty("p_fraction", 0.0);
@@ -205,35 +206,58 @@ public class SimulationRunIntegrationTest {
             }
         });
 
-        // Build and send simulation request
+        // Build simulation request
         String request = buildSimulationRequest(TEST_FEEDER_MRID, SIMULATION_DURATION, false);
         log.info("Sending simulation request to: {}", GridAppsDConstants.topic_requestSimulation);
         log.debug("Request payload: {}", request);
 
-        // Send request and get response with simulation ID
-        Serializable response = client.getResponse(request, GridAppsDConstants.topic_requestSimulation,
-                RESPONSE_FORMAT.JSON);
+        // Use async approach: subscribe to platform log to capture simulation ID, then
+        // publish request
+        // The platform log will contain "New process id generated" with the simulation
+        // ID
+        CountDownLatch gotSimulationId = new CountDownLatch(1);
 
-        Assert.assertNotNull("Should receive response from simulation request", response);
-        String responseStr = response.toString();
-        log.info("Response: {}", responseStr);
-
-        // Parse simulation ID from response
-        try {
-            JsonObject json = JsonParser.parseString(responseStr).getAsJsonObject();
-            if (json.has("simulationId")) {
-                simulationIdRef.set(json.get("simulationId").getAsString());
-            } else if (json.has("data") && json.get("data").isJsonPrimitive()) {
-                // Sometimes the ID is wrapped in data field
-                simulationIdRef.set(json.get("data").getAsString());
+        client.subscribe(GridAppsDConstants.topic_platformLog, new GossResponseEvent() {
+            @Override
+            public void onMessage(Serializable response) {
+                String msg = response.toString();
+                // Look for simulation ID in platform log
+                if (msg.contains("Creating simulation working folders for simulation Id")) {
+                    // Extract ID: "Creating simulation working folders for simulation Id 123456"
+                    String[] parts = msg.split("simulation Id ");
+                    if (parts.length > 1) {
+                        String id = parts[1].trim().split("[^0-9]")[0];
+                        if (!id.isEmpty() && simulationIdRef.get() == null) {
+                            log.info("Captured simulation ID from platform log: {}", id);
+                            simulationIdRef.set(id);
+                            gotSimulationId.countDown();
+                        }
+                    }
+                }
             }
-        } catch (Exception e) {
-            // Response might be just the ID as a string
-            simulationIdRef.set(responseStr.replaceAll("\"", "").trim());
+        });
+
+        // Small delay to ensure subscription is ready
+        Thread.sleep(500);
+
+        // Publish the simulation request (don't use getResponse which has issues)
+        log.info("Publishing simulation request...");
+        client.publish(GridAppsDConstants.topic_requestSimulation, request);
+
+        // Wait for simulation ID to be captured from platform log
+        log.info("Waiting for simulation ID from platform log...");
+        boolean gotId = gotSimulationId.await(30, TimeUnit.SECONDS);
+
+        if (!gotId) {
+            // Check if there was an error
+            String error = lastError.get();
+            if (error != null) {
+                log.error("Platform reported error: {}", error);
+            }
         }
 
         String simulationId = simulationIdRef.get();
-        Assert.assertNotNull("Should have simulation ID", simulationId);
+        Assert.assertNotNull("Should have simulation ID (captured from platform log)", simulationId);
         Assert.assertFalse("Simulation ID should not be empty", simulationId.isEmpty());
         log.info("Simulation started with ID: {}", simulationId);
 

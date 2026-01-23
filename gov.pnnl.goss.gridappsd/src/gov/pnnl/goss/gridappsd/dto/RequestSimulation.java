@@ -63,6 +63,10 @@ public class RequestSimulation implements Serializable {
 
     public List<PowerSystemConfig> power_system_configs;
 
+    // Backward compatibility: support singular power_system_config from legacy
+    // clients
+    public PowerSystemConfig power_system_config;
+
     public SimulationConfig simulation_config;
 
     public ApplicationConfig application_config;
@@ -149,6 +153,15 @@ public class RequestSimulation implements Serializable {
         gsonBuilder.setPrettyPrinting();
         Gson gson = gsonBuilder.create();
         RequestSimulation obj = gson.fromJson(jsonString, RequestSimulation.class);
+
+        // Backward compatibility: if power_system_configs is null but
+        // power_system_config exists,
+        // convert the singular config to a list
+        if (obj.power_system_configs == null && obj.power_system_config != null) {
+            obj.power_system_configs = new ArrayList<>();
+            obj.power_system_configs.add(obj.power_system_config);
+        }
+
         if (obj.power_system_configs == null)
             throw new JsonSyntaxException("Expected attribute power_system_config not found");
         if (obj.test_config != null) {

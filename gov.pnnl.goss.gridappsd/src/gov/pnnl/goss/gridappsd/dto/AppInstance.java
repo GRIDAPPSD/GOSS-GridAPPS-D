@@ -52,7 +52,7 @@ public class AppInstance implements Serializable {
     String runtime_options;
     String request_id;
     String simulation_id;
-    Process process;
+    transient Process process;
 
     public AppInstance(String instance_id, AppInfo app_info, String runtime_options, String request_id,
             String simulation_id, Process process) {

@@ -235,6 +235,14 @@ public class ProcessEvent implements GossResponseEvent {
                         try {
                             // simRequest = RequestSimulation.parse(request.toString());
                             simRequest = gsonSpecial.fromJson(request.toString(), RequestSimulation.class);
+                            // Backward compatibility: if power_system_configs is null but
+                            // power_system_config exists,
+                            // convert the singular config to a list
+                            if (simRequest != null && simRequest.power_system_configs == null
+                                    && simRequest.power_system_config != null) {
+                                simRequest.power_system_configs = new ArrayList<>();
+                                simRequest.power_system_configs.add(simRequest.power_system_config);
+                            }
                         } catch (JsonSyntaxException e) {
                             e.printStackTrace();
                             // TODO log error
@@ -266,8 +274,19 @@ public class ProcessEvent implements GossResponseEvent {
                         // request
                         // newSimulationProcess.process(configurationManager, simulationManager,
                         // processId, event, event.getData(), appManager, serviceManager);
-                        newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,
-                                appManager, serviceManager, testManager, dataManager, username);
+                        log.info("Calling newSimulationProcess.process() for simulation {}", processId);
+                        log.info("  simRequest.power_system_configs = {}",
+                                simRequest.power_system_configs != null
+                                        ? simRequest.power_system_configs.size()
+                                        : "null");
+                        try {
+                            newSimulationProcess.process(configurationManager, simulationManager, processId, simRequest,
+                                    appManager, serviceManager, testManager, dataManager, username);
+                            log.info("newSimulationProcess.process() completed for simulation {}", processId);
+                        } catch (Exception e) {
+                            log.error("Error in newSimulationProcess.process() for simulation {}: {}", processId,
+                                    e.getMessage(), e);
+                        }
                     } else if (simRequest.simulation_request_type.equals(SimulationRequestType.PAUSE)) { // if pause
                         simulationManager.pauseSimulation(simRequest.getSimulation_id());
                     } else if (simRequest.simulation_request_type.equals(SimulationRequestType.RESUME)) { // if play

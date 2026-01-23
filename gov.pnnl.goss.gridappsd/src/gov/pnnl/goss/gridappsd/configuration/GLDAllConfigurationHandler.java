@@ -329,7 +329,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
                 queryFilter.put(ENDTIME_FILTER, "" + c.getTimeInMillis() + "000000");
                 weatherRequest.setQueryFilter(queryFilter);
                 DataResponse resp = (DataResponse) dataManager.processDataRequest(weatherRequest,
-                        "proven", simId, tempDataPath, username);
+                        "timeseries", simId, tempDataPath, username);
                 if (resp.getData() == null) {
                     useClimate = false;
                     throw new Exception("No weather data in time series data store. Setting useClimate = false.");

@@ -3,12 +3,15 @@ FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 ARG TIMESTAMP
 
+# Upgrade pip first - base image has ancient pip and pip defaults to Python 2
+RUN python3 -m pip install --upgrade pip
+
 # Get the gridappsd-sensor-simulator from the proper repository
 RUN if [ ! -d ${TEMP_DIR} ]; then mkdir ${TEMP_DIR}; fi \
   && cd ${TEMP_DIR} \
   && git clone https://github.com/GRIDAPPSD/gridappsd-sensor-simulator -b develop  \
   && cd gridappsd-sensor-simulator \
-  && pip3 install -r requirements.txt \
+  && python3 -m pip install -r requirements.txt \
   && mkdir -p /gridappsd/services/gridappsd-sensor-simulator \
   && rm .git -rf \
   && cp -r * /gridappsd/services/gridappsd-sensor-simulator \
@@ -123,9 +126,7 @@ COPY ./build/launcher/gridappsd-launcher.jar /gridappsd/lib/gridappsd-launcher.j
 COPY ./build/launcher/bundle /gridappsd/lib/bundle
 COPY ./build/launcher/config.properties /gridappsd/lib/config.properties
 
-RUN pip install --pre -r /gridappsd/requirements.txt && \
-  pip install -r /gridappsd/services/fncsgossbridge/requirements.txt && \
-  rm -rf /root/.cache/pip/wheels
+RUN rm -rf /root/.cache/pip/wheels
 
 # Should match what is in conf/pnnl.goss.core.server.cfg and
 # conf/pnnl.goss.core.client.cfg
