@@ -1,19 +1,14 @@
 # Repository configuration for GOSS-GridAPPS-D
 # Maven Central: BUILD-TIME dependency resolution (Maven coordinates)
-# GOSS-Repository Local: Latest GOSS bundles from local clone (takes precedence)
-# GOSS-Repository Remote: RUNTIME OSGi bundles from GitHub (fallback)
-
-# aQute.lib.deployer.FileRepo;name=GOSS Workspace;location=${workspace}/../GOSS/pnnl.goss.core/generated,\
-# Local GOSS workspace bundles take HIGHEST precedence for development
-# Comment out GOSS Workspace line to use released versions from GitHub
+# Use local GOSS-Repository clone for development (avoids GitHub checksum issues)
 -plugin: \
 	aQute.bnd.repository.maven.provider.MavenBndRepository;\
 		releaseUrl=https://repo1.maven.org/maven2/;\
 		local=${user.home}/.m2/repository;\
 		index=${.}/central.maven;\
 		name=Maven Central,\
-	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Dependencies;locations=https://raw.githubusercontent.com/GridOPTICS/GOSS-Repository/master/dependencies/index.xml.gz,\
-	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Release;locations=https://raw.githubusercontent.com/GridOPTICS/GOSS-Repository/master/release/index.xml.gz,\
+	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Dependencies;locations=file://${workspace}/../GOSS-Repository/dependencies/index.xml,\
+	aQute.bnd.repository.osgi.OSGiRepository;name=GOSS Release;locations=file://${workspace}/../GOSS-Repository/release/index.xml,\
 	aQute.bnd.repository.osgi.OSGiRepository;name=CIMHub;locations=https://raw.githubusercontent.com/GRIDAPPSD/CIMHub/master/cnf/release/index.xml,\
 	aQute.lib.deployer.FileRepo;name=Local;location=${workspace}/cnf/Local,\
 	aQute.lib.deployer.FileRepo;name=Build;location=${workspace}/cnf/buildrepo;latest=false
