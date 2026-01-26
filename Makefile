@@ -40,7 +40,9 @@ help:
 	@echo ""
 	@echo "Docker targets:"
 	@echo "  make docker          - Build Docker image (gridappsd/gridappsd:local)"
-	@echo "  make docker-up       - Start containers (VERSION=develop by default)"
+	@echo "  make docker BASE_VERSION=<tag>  - Build using specific base image tag"
+	@echo "  make docker-up       - Start containers with auto-run (AUTOSTART=1 by default)"
+	@echo "  make docker-up AUTOSTART=0         - Start containers without auto-run (wait mode)"
 	@echo "  make docker-up VERSION=v2025.09.0  - Start with specific version for backport testing"
 	@echo "  make docker-down     - Stop containers"
 	@echo "  make docker-logs     - Tail gridappsd logs"
@@ -272,8 +274,13 @@ docker-build:
 
 # New Docker management targets using docker_manager.py
 # These use the local docker/docker-compose.yml for self-contained development
+AUTOSTART ?= 1
 docker-up:
+ifeq ($(AUTOSTART),0)
 	python3 scripts/docker_manager.py up --version $(VERSION)
+else
+	python3 scripts/docker_manager.py up --version $(VERSION) --autostart
+endif
 
 docker-down:
 	python3 scripts/docker_manager.py down

@@ -124,6 +124,11 @@ def cmd_up(args):
 
     env = {"GRIDAPPSD_TAG": tag}
 
+    # Set autostart if requested
+    if args.autostart:
+        env["AUTOSTART"] = "1"
+        info("AUTOSTART=1 enabled - GridAPPS-D will start automatically")
+
     # Pull images if requested
     if args.pull:
         info("Pulling latest images...")
@@ -295,6 +300,11 @@ Examples:
         "--force", "-f",
         action="store_true",
         help="Start even if gridappsd:local image is missing"
+    )
+    up_parser.add_argument(
+        "--autostart", "-a",
+        action="store_true",
+        help="Auto-start GridAPPS-D when container starts (sets AUTOSTART=1)"
     )
     up_parser.set_defaults(func=cmd_up)
 

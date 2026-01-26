@@ -101,8 +101,8 @@ services:
       start_period: 60s
     environment:
       - PATH=/home/gridappsd/.local/bin:/gridappsd/bin:/gridappsd/lib:/gridappsd/services/fncsgossbridge/service:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
-      - LD_LIBRARY_PATH=/usr/local/lib64
-      - AUTOSTART=0
+      - LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/helics/install/lib64:/usr/local/lib64:/usr/local/lib
+      - AUTOSTART=${AUTOSTART:-1}
       - DEBUG=1
       - MAX_RESTARTS=5
       - RESTART_DELAY=5
