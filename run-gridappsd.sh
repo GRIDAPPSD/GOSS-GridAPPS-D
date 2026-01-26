@@ -12,9 +12,6 @@ if [ "$1" = "version" -o "$1" = "-v" -o "$1" = "--version" ]; then
   exit 0
 fi
 
-# Setup the path for running the gridappsd framework
-export PATH=/gridappsd/services/fncsgossbridge/service:$PATH
-
 cd /gridappsd
 
 # clean up log files
@@ -31,7 +28,7 @@ fi
 # then expose the port for remote debugging.
 # Note: address=*:8000 is required for Java 9+ to accept connections from outside the container
 if [ "${DEBUG:-0}" != "0" ]; then
-	java ${JAVA_OPTIONS} -agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n -jar lib/gridappsd-launcher.jar
+	java ${JAVA_OPTIONS} -agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n -jar launcher/gridappsd-launcher.jar
 else
-	java ${JAVA_OPTIONS} -jar lib/gridappsd-launcher.jar
+	java ${JAVA_OPTIONS} -jar launcher/gridappsd-launcher.jar
 fi

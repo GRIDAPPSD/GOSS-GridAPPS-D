@@ -2,7 +2,7 @@
 # Common build and development tasks
 
 .PHONY: help build clean dist test test-unit test-integration test-simulation test-container \
-        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-logs docker-status docker-versions \
+        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check run-local run-local-bg
@@ -45,6 +45,7 @@ help:
 	@echo "  make docker-up AUTOSTART=0         - Start containers without auto-run (wait mode)"
 	@echo "  make docker-up VERSION=v2025.09.0  - Start with specific version for backport testing"
 	@echo "  make docker-down     - Stop containers"
+	@echo "  make docker-shell    - Open bash shell in gridappsd container"
 	@echo "  make docker-logs     - Tail gridappsd logs"
 	@echo "  make docker-status   - Show container status"
 	@echo "  make docker-versions - List available Docker Hub versions"
@@ -141,7 +142,7 @@ test-simulation:
 	@docker cp ~/.m2/repository/org/hamcrest/hamcrest/2.2/hamcrest-2.2.jar gridappsd:/tmp/test-libs/
 	@echo "Running simulation test ($(SIMULATION_DURATION) seconds)..."
 	@echo ""
-	@docker exec gridappsd bash -c 'java -cp "/tmp/test-classes:/tmp/classes:/tmp/test-libs/*:$$(find /gridappsd/lib/bundle -name "*-11.0.0.jar" | tr "\n" ":"):$$(find /gridappsd/lib/bundle -maxdepth 1 -name "*.jar" | tr "\n" ":")" \
+	@docker exec gridappsd bash -c 'java -cp "/tmp/test-classes:/tmp/classes:/tmp/test-libs/*:$$(find /gridappsd/launcher/bundle -name "*-11.0.0.jar" | tr "\n" ":"):$$(find /gridappsd/launcher/bundle -maxdepth 1 -name "*.jar" | tr "\n" ":")" \
 		-Dtest.simulation.duration=$(SIMULATION_DURATION) \
 		gov.pnnl.goss.gridappsd.SimulationRunIntegrationTest'
 
@@ -291,6 +292,9 @@ docker-clean:
 	python3 scripts/docker_manager.py down
 	docker volume rm docker_mysql-data docker_redis-data 2>/dev/null || true
 	@echo "Docker volumes removed. Next 'make docker-up' will initialize fresh databases."
+
+docker-shell:
+	docker exec -it gridappsd bash
 
 docker-logs:
 	python3 scripts/docker_manager.py logs

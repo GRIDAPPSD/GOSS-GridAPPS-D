@@ -1,6 +1,10 @@
 ARG GRIDAPPSD_BASE_VERSION=:java-update
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
+# Install additional utilities (killall is in psmisc)
+RUN apt-get update && apt-get install -y --no-install-recommends psmisc \
+    && rm -rf /var/lib/apt/lists/*
+
 # Upgrade pip first - base image has ancient pip
 RUN python3 -m pip install --no-cache-dir --root-user-action=ignore --upgrade pip
 
@@ -65,9 +69,10 @@ COPY ./opendss/liblinenoise.so ./opendss/libklusolve.so /usr/local/lib/
 RUN chmod +x /usr/local/bin/opendsscmd && ldconfig
 
 # Copy the Felix launcher distribution built using ./gradlew dist
-COPY ./build/launcher/gridappsd-launcher.jar /gridappsd/lib/gridappsd-launcher.jar
-COPY ./build/launcher/bundle /gridappsd/lib/bundle
-COPY ./build/launcher/config.properties /gridappsd/lib/config.properties
+# Note: Using /gridappsd/launcher to avoid overriding /gridappsd/lib which contains GridLAB-D modules
+COPY ./build/launcher/gridappsd-launcher.jar /gridappsd/launcher/gridappsd-launcher.jar
+COPY ./build/launcher/bundle /gridappsd/launcher/bundle
+COPY ./build/launcher/config.properties /gridappsd/launcher/config.properties
 
 WORKDIR /gridappsd
 

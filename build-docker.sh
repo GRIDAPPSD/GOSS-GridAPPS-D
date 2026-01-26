@@ -26,9 +26,8 @@ start_container() {
         docker network create ${NETWORK_NAME}
     fi
 
-    # Start container with the built artifacts mounted to /gridappsd/lib/
-    # This matches the expected structure: /gridappsd/lib/gridappsd-launcher.jar
-    # and /gridappsd/lib/bundle/
+    # Start container with the built artifacts mounted to /gridappsd/launcher/
+    # Note: Using /gridappsd/launcher to avoid overriding /gridappsd/lib which contains GridLAB-D modules
     echo "Starting container with local build mounted..."
     docker run -d \
         --name ${CONTAINER_NAME} \
@@ -36,9 +35,9 @@ start_container() {
         -p 61613:61613 \
         -p 61614:61614 \
         -p 61616:61616 \
-        -v "${SCRIPT_DIR}/build/launcher/gridappsd-launcher.jar:/gridappsd/lib/gridappsd-launcher.jar:ro" \
-        -v "${SCRIPT_DIR}/build/launcher/bundle:/gridappsd/lib/bundle:ro" \
-        -v "${SCRIPT_DIR}/build/launcher/config.properties:/gridappsd/lib/config.properties:ro" \
+        -v "${SCRIPT_DIR}/build/launcher/gridappsd-launcher.jar:/gridappsd/launcher/gridappsd-launcher.jar:ro" \
+        -v "${SCRIPT_DIR}/build/launcher/bundle:/gridappsd/launcher/bundle:ro" \
+        -v "${SCRIPT_DIR}/build/launcher/config.properties:/gridappsd/launcher/config.properties:ro" \
         -e "GRIDAPPSD_BLAZEGRAPH_HOST=blazegraph" \
         -e "GRIDAPPSD_MYSQL_HOST=mysql" \
         -e "GRIDAPPSD_INFLUXDB_HOST=influxdb" \
@@ -61,15 +60,15 @@ start_container() {
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "Container is running. Updating artifacts..."
 
-    # Copy built artifacts to running container's lib/ directory
+    # Copy built artifacts to running container's launcher/ directory
     echo "Copying launcher JAR to container..."
-    docker cp build/launcher/gridappsd-launcher.jar ${CONTAINER_NAME}:/gridappsd/lib/gridappsd-launcher.jar
+    docker cp build/launcher/gridappsd-launcher.jar ${CONTAINER_NAME}:/gridappsd/launcher/gridappsd-launcher.jar
 
     echo "Copying bundles to container..."
-    docker cp build/launcher/bundle/. ${CONTAINER_NAME}:/gridappsd/lib/bundle/
+    docker cp build/launcher/bundle/. ${CONTAINER_NAME}:/gridappsd/launcher/bundle/
 
     echo "Copying config.properties to container..."
-    docker cp build/launcher/config.properties ${CONTAINER_NAME}:/gridappsd/lib/config.properties
+    docker cp build/launcher/config.properties ${CONTAINER_NAME}:/gridappsd/launcher/config.properties
 else
     # Container not running - start it with mounts
     start_container
