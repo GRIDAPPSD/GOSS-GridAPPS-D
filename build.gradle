@@ -159,7 +159,6 @@ task assembleLauncher(type: Copy) {
 }
 
 // Task to copy configuration files
-// Use -PconfigDir=local-conf for local development, defaults to conf (Docker)
 task copyConfig(type: Copy) {
     group = 'GridAPPS-D'
     description = 'Copies configuration files to the launcher directory'

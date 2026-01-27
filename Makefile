@@ -5,9 +5,9 @@
         run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
-        format format-check run-local run-local-bg
+        format format-check
 
-# Configuration directory: 'conf' (default, Docker) or 'local-conf' (local development)
+# Configuration directory
 CONFIG ?= conf
 
 # Default target
@@ -31,10 +31,8 @@ help:
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
-	@echo "  make run          - Run GridAPPS-D (foreground, Docker config)"
-	@echo "  make run-bg       - Run GridAPPS-D in background (Docker config)"
-	@echo "  make run-local    - Run GridAPPS-D (foreground, local dev config)"
-	@echo "  make run-local-bg - Run GridAPPS-D in background (local dev config)"
+	@echo "  make run          - Run GridAPPS-D (foreground)"
+	@echo "  make run-bg       - Run GridAPPS-D in background"
 	@echo "  make run-stop     - Stop background GridAPPS-D process"
 	@echo "  make run-log      - Tail the background log file"
 	@echo ""
@@ -191,12 +189,6 @@ run: dist
 	@rm -rf build/launcher/felix-cache
 	cd build/launcher && java -jar gridappsd-launcher.jar
 
-# Run with local dev config (foreground)
-run-local:
-	$(MAKE) dist CONFIG=local-conf
-	@rm -rf build/launcher/felix-cache
-	cd build/launcher && java -jar gridappsd-launcher.jar
-
 # Run in background with logging
 GRIDAPPSD_LOG ?= gridappsd.out
 GRIDAPPSD_PID = .gridappsd.pid
@@ -223,10 +215,6 @@ run-bg: dist
 			rm -f $(GRIDAPPSD_PID); \
 			exit 1; \
 		fi
-
-# Run with local dev config in background
-run-local-bg:
-	$(MAKE) run-bg CONFIG=local-conf
 
 run-stop:
 	@if [ -f $(GRIDAPPSD_PID) ]; then \

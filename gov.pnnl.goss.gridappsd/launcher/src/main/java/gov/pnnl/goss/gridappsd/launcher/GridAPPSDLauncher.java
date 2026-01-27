@@ -219,7 +219,7 @@ public class GridAPPSDLauncher {
     /**
      * Resolve FileInstall directory, checking multiple locations.
      * This handles both local development (conf next to launcher) and
-     * Docker deployment (conf at /gridappsd/conf, launcher at /gridappsd/lib).
+     * Docker deployment (conf at /gridappsd/conf, launcher at /gridappsd/launcher).
      */
     private File resolveFileInstallDir(String path) {
         // First, try relative to baseDir (normal case for local development)
@@ -228,7 +228,7 @@ public class GridAPPSDLauncher {
             return resolved;
         }
 
-        // For Docker: if baseDir is /gridappsd/lib and path is "conf",
+        // For Docker: if baseDir is /gridappsd/launcher and path is "conf",
         // try /gridappsd/conf (parent directory + conf)
         File parentConf = new File(baseDir.getParentFile(), path);
         if (parentConf.exists() && parentConf.isDirectory()) {
