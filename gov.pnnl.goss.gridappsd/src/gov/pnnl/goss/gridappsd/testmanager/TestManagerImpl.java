@@ -503,7 +503,7 @@ public class TestManagerImpl implements TestManager {
     @Override
     public void compareRunningSimulationInputWithExpected(TestConfig testConfig, String simulationId,
             JsonObject expectedResults, String expectedOrSimulationIdTwo) {
-        client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput + "." + simulationId,
+        client.subscribe(GridAppsDConstants.topic_simulationInput + "." + simulationId,
 
                 new GossResponseEvent() {
 
@@ -686,7 +686,7 @@ public class TestManagerImpl implements TestManager {
 
     public void checkForStoppedSimulation(TestConfig testConfig, String simulationId) {
         // BASE_SIMULATION_STATUS_TOPIC = "/topic/goss.gridappsd.simulation.log"
-        client.subscribe("/topic/" + GridAppsDConstants.topic_applicationLog + "." + simulationId,
+        client.subscribe(GridAppsDConstants.topic_applicationLog + "." + simulationId,
 
                 new GossResponseEvent() {
                     public void onMessage(Serializable message) {
@@ -726,7 +726,7 @@ public class TestManagerImpl implements TestManager {
     }
 
     private void forwardSimInputToRuleEngine(Client client, String simulationID, int rulePort) {
-        client.subscribe("/topic/" + GridAppsDConstants.topic_simulationInput + "." + simulationID,
+        client.subscribe(GridAppsDConstants.topic_simulationInput + "." + simulationID,
                 new GossResponseEvent() {
                     public void onMessage(Serializable message) {
                         JsonObject jsonObject = CompareResults.getSimulationJson(message.toString());

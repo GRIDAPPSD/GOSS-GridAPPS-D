@@ -183,7 +183,7 @@ public class LogDataManagerMySQL implements LogDataManager, DataManagerHandler {
                 preparedStatement.setString(4, log_message);
                 preparedStatement.setString(5, log_level.toString());
                 preparedStatement.setString(6, process_status.toString());
-                preparedStatement.setString(7, username);
+                preparedStatement.setString(7, username != null ? username : "system");
                 preparedStatement.setString(8, process_type);
 
                 preparedStatement.executeUpdate();

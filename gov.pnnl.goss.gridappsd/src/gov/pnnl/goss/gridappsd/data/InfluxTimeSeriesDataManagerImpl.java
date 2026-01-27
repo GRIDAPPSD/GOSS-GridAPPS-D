@@ -139,7 +139,7 @@ public class InfluxTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
         // Subscribe to simulation output topics
         try {
-            this.subscribeAndStoreDataFromTopic("/topic/goss.gridappsd.*.output", null, null, null);
+            this.subscribeAndStoreDataFromTopic("goss.gridappsd.*.output", null, null, null);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -638,41 +638,41 @@ public class InfluxTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
     @Override
     public void storeSimulationOutput(String simulationId) throws Exception {
-        subscribeAndStoreDataFromTopic("/topic/" + GridAppsDConstants.topic_simulation + ".output." + simulationId,
+        subscribeAndStoreDataFromTopic(GridAppsDConstants.topic_simulation + ".output." + simulationId,
                 "simulation", null, simulationId);
     }
 
     @Override
     public void storeSimulationInput(String simulationId) throws Exception {
-        subscribeAndStoreDataFromTopic("/topic/" + GridAppsDConstants.topic_simulation + ".input." + simulationId,
+        subscribeAndStoreDataFromTopic(GridAppsDConstants.topic_simulation + ".input." + simulationId,
                 "simulation", null, simulationId);
     }
 
     @Override
     public void storeServiceOutput(String simulationId, String serviceId, String instanceId) throws Exception {
         subscribeAndStoreDataFromTopic(
-                "/topic/" + GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".output",
+                GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".output",
                 serviceId, instanceId, simulationId);
     }
 
     @Override
     public void storeServiceInput(String simulationId, String serviceId, String instanceId) throws Exception {
         subscribeAndStoreDataFromTopic(
-                "/topic/" + GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".input",
+                GridAppsDConstants.topic_simulation + "." + serviceId + "." + simulationId + ".input",
                 serviceId, instanceId, simulationId);
     }
 
     @Override
     public void storeAppOutput(String simulationId, String appId, String instanceId) throws Exception {
         subscribeAndStoreDataFromTopic(
-                "/topic/" + GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".output", appId,
+                GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".output", appId,
                 instanceId, simulationId);
     }
 
     @Override
     public void storeAppInput(String simulationId, String appId, String instanceId) throws Exception {
         subscribeAndStoreDataFromTopic(
-                "/topic/" + GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".input", appId,
+                GridAppsDConstants.topic_simulation + "." + appId + "." + simulationId + ".input", appId,
                 instanceId, simulationId);
     }
 }

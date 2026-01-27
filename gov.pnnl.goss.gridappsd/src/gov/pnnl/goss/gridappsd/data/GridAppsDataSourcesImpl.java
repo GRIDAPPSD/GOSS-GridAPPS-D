@@ -39,6 +39,11 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd.data;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -101,14 +106,58 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources {
     public void start() {
         log.debug("Starting " + this.getClass().getName());
 
-        // Only register datasource if configuration has been provided
-        // Configuration is typically provided via OSGi ConfigAdmin or config files
+        // Try to load configuration from file if not already set
+        if (datasourceProperties == null) {
+            loadConfigurationFromFile();
+        }
+
+        // Register datasource if configuration is available
         if (datasourceProperties != null) {
             registerDataSource();
         } else {
             log.info(
                     "No datasource configuration provided yet - datasource will be registered when configuration is available");
         }
+    }
+
+    /**
+     * Loads datasource configuration from the standard OSGi config file location.
+     * This is a fallback for when ConfigAdmin doesn't automatically load the
+     * config.
+     */
+    private void loadConfigurationFromFile() {
+        // Try multiple possible config file locations
+        String[] configPaths = {
+                "conf/pnnl.goss.sql.datasource.gridappsd.cfg",
+                "launcher/conf/pnnl.goss.sql.datasource.gridappsd.cfg",
+                "/gridappsd/conf/pnnl.goss.sql.datasource.gridappsd.cfg",
+                "/gridappsd/launcher/conf/pnnl.goss.sql.datasource.gridappsd.cfg"
+        };
+
+        for (String configPath : configPaths) {
+            Path path = Paths.get(configPath);
+            if (Files.exists(path)) {
+                try (FileInputStream fis = new FileInputStream(path.toFile())) {
+                    Properties props = new Properties();
+                    props.load(fis);
+
+                    // Convert to the format expected by registerDataSource
+                    datasourceProperties = new Properties();
+                    String datasourceName = props.getProperty("name", CONFIG_PID);
+                    datasourceProperties.put(DataSourceBuilder.DATASOURCE_NAME, datasourceName);
+                    datasourceProperties.put(DataSourceBuilder.DATASOURCE_USER, props.getProperty("username"));
+                    datasourceProperties.put(DataSourceBuilder.DATASOURCE_PASSWORD, props.getProperty("password"));
+                    datasourceProperties.put(DataSourceBuilder.DATASOURCE_URL, props.getProperty("url"));
+                    datasourceProperties.put("driverClassName", props.getProperty("driver"));
+
+                    log.info("Loaded datasource configuration from: " + path.toAbsolutePath());
+                    return;
+                } catch (IOException e) {
+                    log.warn("Failed to load config from " + configPath + ": " + e.getMessage());
+                }
+            }
+        }
+        log.warn("No datasource configuration file found in any of the expected locations");
     }
 
     // TODO: Felix DM ConfigurationDependency removed - needs OSGi DS replacement

@@ -63,6 +63,7 @@ import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
+import pnnl.goss.core.server.ServerControl;
 // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
 //import pnnl.goss.core.security.JWTAuthenticationToken;
 //import pnnl.goss.core.security.SecurityConfig;
@@ -85,6 +86,11 @@ public class LogManagerImpl implements LogManager {
 
     @Reference
     ClientFactory clientFactory;
+
+    // This reference ensures the broker is started before LogManager tries to
+    // connect
+    @Reference
+    ServerControl serverControl;
 
     // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
     // @Reference
@@ -120,7 +126,7 @@ public class LogManagerImpl implements LogManager {
                     "system", "manager");
             client = clientFactory.create(PROTOCOL.STOMP, credentials);
 
-            client.subscribe("/topic/" + GridAppsDConstants.topic_simulationLog + ">", new GossResponseEvent() {
+            client.subscribe(GridAppsDConstants.topic_simulationLog + ">", new GossResponseEvent() {
 
                 @Override
                 public void onMessage(Serializable message) {
@@ -128,7 +134,7 @@ public class LogManagerImpl implements LogManager {
                 }
             });
 
-            client.subscribe("/topic/" + GridAppsDConstants.topic_platformLog, new GossResponseEvent() {
+            client.subscribe(GridAppsDConstants.topic_platformLog, new GossResponseEvent() {
 
                 @Override
                 public void onMessage(Serializable message) {
@@ -282,7 +288,7 @@ public class LogManagerImpl implements LogManager {
                 processStatus,
                 true,
                 process_type);
-        String topic = "/topic/" + GridAppsDConstants.topic_platformLog;
+        String topic = GridAppsDConstants.topic_platformLog;
         if (processId != null) {
             topic = GridAppsDConstants.topic_simulationLog + processId;
         }

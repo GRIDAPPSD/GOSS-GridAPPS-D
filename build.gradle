@@ -198,12 +198,10 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect GOSS bundles from GOSS-Repository snapshot directory (local development)
-    // Use fileTree to collect all versioned JARs from the snapshot directory structure
-    from('../GOSS-Repository/snapshot') {
-        include 'pnnl.goss.core.*/*.jar'
-        // Include version 12.0.0-SNAPSHOT (Java 21 compatible, local development)
-        include '**/pnnl.goss.core.*-12.0.0-SNAPSHOT.jar'
+    // Collect GOSS bundles from GOSS-Repository release directory
+    // Only include version 12.1.0 (Java 21 compatible release)
+    from('../GOSS-Repository/release') {
+        include '**/pnnl.goss.core.*-12.1.0.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
         // Exclude test and development bundles - these should not be deployed
@@ -386,6 +384,10 @@ task collectBundles(type: Copy) {
 
             // OSGI JDBC service
             'org.osgi:org.osgi.service.jdbc:1.0.0',
+
+            // Database drivers
+            'com.mysql:mysql-connector-j:9.1.0',
+            'com.h2database:h2:2.3.232',
 
             // Javax annotation (GOSS uses 1.3.2 per bnd.bnd)
             'javax.annotation:javax.annotation-api:1.3.2',

@@ -251,10 +251,12 @@ public class ServiceManagerInterfaceTests {
     // ========== stopServiceInstance() tests ==========
 
     /**
-     * Test that stopServiceInstance throws exception for non-existent instance.
+     * Test that stopServiceInstance handles non-existent instance gracefully. It
+     * should log a warning and return without throwing an exception.
      */
-    @Test(expected = NullPointerException.class)
-    public void stopServiceInstance_throwsForNonExistentInstance() {
+    @Test
+    public void stopServiceInstance_handlesNonExistentInstanceGracefully() {
+        // Should not throw - just logs a warning and returns
         serviceManager.stopServiceInstance("nonexistent-instance");
     }
 
