@@ -80,7 +80,7 @@ services:
   gridappsd:
     image: gridappsd/gridappsd:local
     container_name: gridappsd
-    restart: unless-stopped
+    restart: "no"
     ports:
       - 61613:61613
       - 61614:61614
@@ -100,7 +100,7 @@ services:
       retries: 3
       start_period: 60s
     environment:
-      - PATH=/home/gridappsd/.local/bin:/gridappsd/bin:/gridappsd/lib:/gridappsd/services/fncsgossbridge/service:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+      - PATH=/home/gridappsd/.local/bin:/gridappsd/bin:/gridappsd/launcher:/gridappsd/services/fncsgossbridge/service:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
       - LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/helics/install/lib64:/usr/local/lib64:/usr/local/lib
       - AUTOSTART=${AUTOSTART:-1}
       - DEBUG=1
@@ -108,8 +108,8 @@ services:
       - RESTART_DELAY=5
     volumes:
       # Mount local build output for development - allows quick iteration without rebuilding Docker image
-      # Note: Mount entire lib directory to ensure Class-Path resolution works correctly
-      - ../build/launcher:/gridappsd/lib
+      # Note: Mount to /gridappsd/launcher to avoid overriding /gridappsd/lib which contains GridLAB-D modules
+      - ../build/launcher:/gridappsd/launcher
       # Mount source for reference during debugging
       - ../gov.pnnl.goss.gridappsd/src:/gridappsd/src:ro
     depends_on:
