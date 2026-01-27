@@ -214,7 +214,7 @@ public class SimulationProcess extends Thread {
             // Subscribe to fncs-goss-bridge output topic
             GossFncsResponseEvent gossFncsResponseEvent = new GossFncsResponseEvent(logManager, isInitialized,
                     isFinished, simulationId);
-            client.subscribe("/topic/" + GridAppsDConstants.topic_COSIM_output + "." + simulationId,
+            client.subscribe(GridAppsDConstants.topic_COSIM_output + "." + simulationId,
                     gossFncsResponseEvent);
 
             logManager.info(ProcessStatus.RUNNING, simulationId,
@@ -252,7 +252,8 @@ public class SimulationProcess extends Thread {
             }
 
             // call to stop the simulation
-            client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId, "{\"command\":  \"stop\"}");
+            client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId,
+                    "{\"command\":  \"stop\"}");
             logManager.info(ProcessStatus.COMPLETE, simulationId, "Simulation " + simulationId + " complete");
         } catch (Exception e) {
             log.error("Error during simulation", e);

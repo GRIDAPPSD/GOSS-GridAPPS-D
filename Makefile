@@ -1,7 +1,7 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration test-simulation test-container \
+.PHONY: help build clean dist test test-unit test-integration test-simulation test-container test-stomp-topics \
         run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
         cache-clear goss goss-build goss-test commit push version release snapshot \
         release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
@@ -28,6 +28,7 @@ help:
 	@echo "  make test-integration  - Run integration tests (requires MySQL, Blazegraph)"
 	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
 	@echo "  make test-container    - Run container-based tests using Testcontainers (auto-starts Docker)"
+	@echo "  make test-stomp-topics - Run STOMP topic prefix tests in Docker (requires running container)"
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
@@ -183,6 +184,17 @@ test-check:
 	@echo ""
 	@echo "To start services: make docker-up"
 	@echo "For backport testing: make docker-up VERSION=v2025.09.0"
+
+# Run STOMP topic prefix tests inside Docker container
+# Verifies that /topic/ prefix is required for STOMP pub/sub messaging
+test-stomp-topics:
+	@echo "Running STOMP topic prefix tests..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	docker exec gridappsd bash -c "cd /gridappsd/services/helicsgossbridge && python -m pytest tests/test_stomp_topic_prefix.py -v"
 
 # Run with Docker config (foreground)
 run: dist

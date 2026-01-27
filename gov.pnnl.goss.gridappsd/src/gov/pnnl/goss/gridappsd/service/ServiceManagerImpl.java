@@ -454,6 +454,10 @@ public class ServiceManagerImpl implements ServiceManager {
     public void stopServiceInstance(String instanceId) {
         instanceId = instanceId.trim();
         ServiceInstance instance = serviceInstances.get(instanceId);
+        if (instance == null) {
+            logManager.warn(ProcessStatus.RUNNING, null, "Service instance not found: " + instanceId);
+            return;
+        }
         instance.getProcess().destroy();
         try {
             instance.getProcess().waitFor(10, TimeUnit.MILLISECONDS);
