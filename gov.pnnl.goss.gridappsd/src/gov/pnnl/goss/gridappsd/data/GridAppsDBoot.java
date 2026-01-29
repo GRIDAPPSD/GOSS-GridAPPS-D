@@ -35,6 +35,8 @@ import gov.pnnl.goss.gridappsd.api.TestManager;
 
 import gov.pnnl.goss.gridappsd.app.AppManagerImpl;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
+import gov.pnnl.goss.gridappsd.data.conversion.ProvenLoadScheduleToGridlabdLoadScheduleConverter;
+import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
 import gov.pnnl.goss.gridappsd.distributed.FieldBusManagerImpl;
 import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.role.RoleManagerImpl;
@@ -268,6 +270,9 @@ public class GridAppsDBoot {
                 log.info("Late-bound LogManager to DataManagerImpl");
             }
             log.info("Late-bound DataManager to ConfigurationManager and TestManager");
+
+            // Register data format converters (SCR doesn't load them)
+            registerDataConverters(dm);
         }
 
         // Try to get PowergridModelDataManager from the service registry
@@ -285,6 +290,41 @@ public class GridAppsDBoot {
                     log.info("Late-bound PowergridModelDataManager (from lookup) to ConfigurationManager");
                 }
             }
+        }
+    }
+
+    /**
+     * Register data format converters with the DataManager. These converters
+     * transform data between formats (e.g., Proven timeseries to GridLAB-D format).
+     * SCR fails to load these components, so we register them manually.
+     */
+    private void registerDataConverters(DataManager dm) {
+        try {
+            // Register weather converter: PROVEN_WEATHER -> GRIDLABD_WEATHER
+            ProvenWeatherToGridlabdWeatherConverter weatherConverter = new ProvenWeatherToGridlabdWeatherConverter(
+                    logManager, dm);
+            dm.registerConverter(
+                    ProvenWeatherToGridlabdWeatherConverter.INPUT_FORMAT,
+                    ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT,
+                    weatherConverter);
+            log.info("Registered ProvenWeatherToGridlabdWeatherConverter: {} -> {}",
+                    ProvenWeatherToGridlabdWeatherConverter.INPUT_FORMAT,
+                    ProvenWeatherToGridlabdWeatherConverter.OUTPUT_FORMAT);
+
+            // Register load schedule converter: PROVEN_loadprofile ->
+            // GRIDLABD_LOAD_SCHEDULE
+            ProvenLoadScheduleToGridlabdLoadScheduleConverter loadScheduleConverter = new ProvenLoadScheduleToGridlabdLoadScheduleConverter(
+                    logManager, dm);
+            dm.registerConverter(
+                    ProvenLoadScheduleToGridlabdLoadScheduleConverter.INPUT_FORMAT,
+                    ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT,
+                    loadScheduleConverter);
+            log.info("Registered ProvenLoadScheduleToGridlabdLoadScheduleConverter: {} -> {}",
+                    ProvenLoadScheduleToGridlabdLoadScheduleConverter.INPUT_FORMAT,
+                    ProvenLoadScheduleToGridlabdLoadScheduleConverter.OUTPUT_FORMAT);
+
+        } catch (Exception e) {
+            log.error("Failed to register data converters", e);
         }
     }
 }

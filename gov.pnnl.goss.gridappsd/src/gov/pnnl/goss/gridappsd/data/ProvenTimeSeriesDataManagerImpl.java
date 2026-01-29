@@ -211,15 +211,18 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     String key = entry.getKey();
                     Object value = entry.getValue();
 
-                    // Handle time fields - input is in microseconds, InfluxDB needs nanoseconds
-                    // Microseconds have 16 digits, nanoseconds have 19 digits
+                    // Handle time fields - detect format by digit count and convert to nanoseconds
+                    // - 19+ digits: Already nanoseconds (weather format: ms + "000000") - use
+                    // directly
+                    // - 16-18 digits: Microseconds - multiply by 1000
+                    // - 13-15 digits: Milliseconds (zipload format) - multiply by 1,000,000
                     if ("startTime".equals(key)) {
-                        long timeUs = Long.parseLong(value.toString());
-                        long timeNs = timeUs * 1000; // Convert microseconds to nanoseconds
+                        String timeStr = value.toString();
+                        long timeNs = convertToNanoseconds(timeStr);
                         query.append("time >= ").append(timeNs);
                     } else if ("endTime".equals(key)) {
-                        long timeUs = Long.parseLong(value.toString());
-                        long timeNs = timeUs * 1000; // Convert microseconds to nanoseconds
+                        String timeStr = value.toString();
+                        long timeNs = convertToNanoseconds(timeStr);
                         query.append("time <= ").append(timeNs);
                     } else if (value instanceof String) {
                         query.append(key).append(" = '").append(value).append("'");
@@ -231,6 +234,36 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
         }
 
         return query.toString();
+    }
+
+    /**
+     * Convert a time string to nanoseconds based on its digit count.
+     *
+     * The handlers send time values in different formats: - Weather:
+     * c.getTimeInMillis() + "000000" = 19+ digits (already nanoseconds) - Zipload:
+     * c.getTimeInMillis() = 13 digits (milliseconds)
+     *
+     * InfluxDB expects nanoseconds, so we need to detect the format and convert
+     * accordingly.
+     *
+     * @param timeStr
+     *            The time string to convert
+     * @return Time value in nanoseconds
+     */
+    private long convertToNanoseconds(String timeStr) {
+        int length = timeStr.length();
+        long timeValue = Long.parseLong(timeStr);
+
+        if (length >= 19) {
+            // Already nanoseconds (weather format: ms + "000000")
+            return timeValue;
+        } else if (length >= 16) {
+            // Microseconds - multiply by 1000
+            return timeValue * 1000;
+        } else {
+            // Milliseconds (zipload format) - multiply by 1,000,000
+            return timeValue * 1_000_000;
+        }
     }
 
     @Override
