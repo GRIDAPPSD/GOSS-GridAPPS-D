@@ -198,17 +198,18 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect GOSS bundles from GOSS-Repository release directory
+    // Collect GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
+    // BND downloads these from https://github.com/GridOPTICS/GOSS-Repository on first build
     // Only include version 12.1.0 (Java 21 compatible release)
-    from('../GOSS-Repository/release') {
-        include '**/pnnl.goss.core.*-12.1.0.jar'
+    from('cnf/cache/7.1.0/GOSS Release') {
+        include 'pnnl.goss.core.*-12.1.0.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
         // Exclude test and development bundles - these should not be deployed
-        exclude '**/pnnl.goss.core.itests*'
-        exclude '**/pnnl.goss.core.testutil*'
-        exclude '**/pnnl.goss.core.runner*'
-        exclude '**/pnnl.goss.core.client-all*'
+        exclude 'pnnl.goss.core.itests*'
+        exclude 'pnnl.goss.core.testutil*'
+        exclude 'pnnl.goss.core.runner*'
+        exclude 'pnnl.goss.core.client-all*'
     }
 
     // Collect CIMHub library from BND cache
@@ -528,8 +529,8 @@ project(':gov.pnnl.goss.gridappsd') {
         // GridAPPS-D bundles from this project
         bundleDirs = [
             file('generated'),
-            // GOSS bundles from GOSS-Repository (local clone)
-            file('../../GOSS-Repository/release')
+            // GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
+            file("${rootProject.projectDir}/cnf/cache/7.1.0/GOSS Release")
         ]
         configDir = file('conf')
     }
