@@ -13,7 +13,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Build with Gradle
-        run: ./gradlew export
+        run: ./gradlew export dist
 
 #      - uses: actions/upload-artifact@v2
 #        with:
