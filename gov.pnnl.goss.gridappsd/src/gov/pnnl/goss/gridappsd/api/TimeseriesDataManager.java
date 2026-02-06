@@ -6,28 +6,28 @@ import gov.pnnl.goss.gridappsd.dto.RequestTimeseriesData;
 import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 
 public interface TimeseriesDataManager {
-//	public enum ResultFormat {
-//	    JSON, XML, CSV
-//	}
-	
-	Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception;
-	
-	void storeSimulationOutput(String simulationId) throws Exception;
-	
-	void storeSimulationInput(String simulationId) throws Exception;
+    // public enum ResultFormat {
+    // JSON, XML, CSV
+    // }
 
-	void storeServiceOutput(String simulationId, String serviceId,
-			String instanceId) throws Exception;
+    Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception;
 
-	void storeServiceInput(String simulationId, String serviceId,
-			String instanceId) throws Exception;
+    void storeSimulationOutput(String simulationId) throws Exception;
 
-	void storeAppOutput(String simulationId, String appId, String instanceId)
-			throws Exception;
+    void storeSimulationInput(String simulationId) throws Exception;
 
-	void storeAppInput(String simulationId, String appId, String instanceId)
-			throws Exception;
+    void storeServiceOutput(String simulationId, String serviceId,
+            String instanceId) throws Exception;
 
-	void storeAllData(SimulationContext simulationContext) throws Exception;
+    void storeServiceInput(String simulationId, String serviceId,
+            String instanceId) throws Exception;
+
+    void storeAppOutput(String simulationId, String appId, String instanceId)
+            throws Exception;
+
+    void storeAppInput(String simulationId, String appId, String instanceId)
+            throws Exception;
+
+    void storeAllData(SimulationContext simulationContext) throws Exception;
 
 }

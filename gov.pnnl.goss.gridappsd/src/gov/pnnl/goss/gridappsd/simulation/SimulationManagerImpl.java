@@ -47,9 +47,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.Activate;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.slf4j.Logger;
@@ -69,149 +69,185 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
-import pnnl.goss.core.security.SecurityConfig;
+// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+//import pnnl.goss.core.security.SecurityConfig;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.server.ServerControl;
 
-
 /**
- * This represents Internal Function 405 Simulation Control Manager.
- * This is the management function that controls the running/execution of the Distribution Simulator (401).
+ * This represents Internal Function 405 Simulation Control Manager. This is the
+ * management function that controls the running/execution of the Distribution
+ * Simulator (401).
+ *
  * @author shar064
  */
 
-@Component
-public class SimulationManagerImpl implements SimulationManager{
+@Component(service = SimulationManager.class)
+public class SimulationManagerImpl implements SimulationManager {
 
-	private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
-	final static int MAX_INIT_ATTEMPTS = 120;
+    private static Logger log = LoggerFactory.getLogger(SimulationManagerImpl.class);
+    final static int MAX_INIT_ATTEMPTS = 120;
 
-	Client client = null;
+    Client client = null;
 
-	@ServiceDependency
-	private volatile ClientFactory clientFactory;
+    @Reference
+    private volatile ClientFactory clientFactory;
 
-	@ServiceDependency
-	ServerControl serverControl;
+    @Reference
+    ServerControl serverControl;
 
-	@ServiceDependency
-	private volatile ServiceManager serviceManager;
-	
-	@ServiceDependency
-	private volatile AppManager appManager;
-	
-	@ServiceDependency
-    private volatile SecurityConfig securityConfig;
-	
-	@ServiceDependency
-	LogManager logManager;
-	
-	private Map<String, SimulationContext> simContexts  = new HashMap<String, SimulationContext>();
-//	private Map<String, SimulationProcess> simProcesses = new HashMap<String, SimulationProcess>();
+    @Reference
+    private volatile ServiceManager serviceManager;
 
-	private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
+    @Reference
+    private volatile AppManager appManager;
 
-	private Random randPort = new Random();
+    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+    // @Reference
+    // private volatile SecurityConfig securityConfig;
 
-	public SimulationManagerImpl(){ }
+    @Reference
+    LogManager logManager;
 
+    private Map<String, SimulationContext> simContexts = new HashMap<String, SimulationContext>();
+    // private Map<String, SimulationProcess> simProcesses = new HashMap<String,
+    // SimulationProcess>();
 
-	public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl,
-			LogManager logManager) {
-		this.clientFactory = clientFactory;
-		this.serverControl = serverControl;
-		this.logManager = logManager;
-		//this.configurationManager = configurationManager;
-	}
-	@Start
-	public void start() throws Exception{
-		
-		Credentials credentials = new UsernamePasswordCredentials(
-				securityConfig.getManagerUser(), securityConfig.getManagerPassword());
-		client = clientFactory.create(PROTOCOL.STOMP, credentials);
-		logManager.info(ProcessStatus.STARTED, null, this.getClass().getSimpleName()+" Started");
-	}
+    private Hashtable<Integer, AtomicInteger> simulationPorts = new Hashtable<Integer, AtomicInteger>();
 
-	/**
-	 * This method is called by Process Manager to start a simulation
-	 * @param simulationId
-	 * @param simulationFile
-	 */
-	@Override
-	public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,  Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig){
-		//TODO: remove simulationContext parameter after refactoring service manager
+    private Random randPort = new Random();
 
-			try {
-				logManager.info(ProcessStatus.STARTING, simulationId, "Starting simulation "+simulationId);
-			} catch (Exception e2) {
-				log.warn("Error while reporting status "+e2.getMessage());
-			}
-			
-			simContexts.put(simContext.getSimulationId(), simContext);
-			
-			SimulationProcess simProc = new SimulationProcess(simContext, serviceManager, 
-						simulationConfig, simulationId, logManager, appManager, client, securityConfig, simulationContext, powerSystemConfig);
-//			simProcesses.put(simContext.getSimulationId(), simProc);
-			simProc.start();
-	}
-	@Override
-	public void pauseSimulation(String simulationId){
-		//NOt implementing yet
-		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"pause\"}");
-	}
-	@Override
-	public void resumeSimulation(String simulationId){
-		//Not implementing yet
-		//client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\": \"resume\"}");
+    public SimulationManagerImpl() {
+    }
 
-	}
-	@Override
-	public void endSimulation(String simulationId){
-		client.publish(GridAppsDConstants.topic_COSIM_input+"."+simulationId, "{\"command\": \"stop\"}");
+    public SimulationManagerImpl(ClientFactory clientFactory, ServerControl serverControl,
+            LogManager logManager) {
+        this.clientFactory = clientFactory;
+        this.serverControl = serverControl;
+        this.logManager = logManager;
+        // this.configurationManager = configurationManager;
+    }
 
-	}
-	
-	
-	public void removeSimulation(String simulationId){
-		endSimulation(simulationId);
-	}
+    // Setter methods for manual dependency injection (used by GridAppsDBoot)
+    public void setClientFactory(ClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
 
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
 
-	/*private String getPath(String key){
-		String path = configurationManager.getConfigurationProperty(key);
-		if(path==null){
-			log.warn("Configuration property not found, defaulting to .: "+key);
-			path = ".";
-		}
-		return path;
-	}*/
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
 
-	
-	public Map<String, SimulationContext> getSimContexts() {
-		return simContexts;
-	}
+    public void setAppManager(AppManager appManager) {
+        this.appManager = appManager;
+    }
 
-	@Override
-	public SimulationContext getSimulationContextForId(String simulationId){
-		return this.simContexts.get(simulationId);
-	}
+    public void setConfigurationManager(gov.pnnl.goss.gridappsd.api.ConfigurationManager configurationManager) {
+        // ConfigurationManager reference is not stored but might be needed for future
+    }
 
-	public int assignSimulationPort(String simulationId) throws Exception {
-		Integer simIdKey = new Integer(simulationId);
-		if (!simulationPorts.containsKey(simIdKey)) {
-			int tempPort = 49152 + randPort.nextInt(16384);
-			AtomicInteger tempPortObj = new AtomicInteger(tempPort);
-			while (simulationPorts.containsValue(tempPortObj)) {
-				int newTempPort = 49152 + randPort.nextInt(16384);
-				tempPortObj.set(newTempPort);
-			}
-			simulationPorts.put(simIdKey, tempPortObj);
-			return tempPortObj.get();
-			//TODO: test host:port is available
-		} else {
-			throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
-					+ "simulation in progress.");
-		}
-	}
+    @Activate
+    public void start() throws Exception {
+
+        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+        // Credentials credentials = new UsernamePasswordCredentials(
+        // securityConfig.getManagerUser(), securityConfig.getManagerPassword());
+        Credentials credentials = new UsernamePasswordCredentials(
+                "system", "manager");
+        client = clientFactory.create(PROTOCOL.STOMP, credentials);
+        logManager.info(ProcessStatus.STARTED, null, this.getClass().getSimpleName() + " Started");
+    }
+
+    /**
+     * This method is called by Process Manager to start a simulation
+     *
+     * @param simulationId
+     * @param simulationFile
+     */
+    @Override
+    public void startSimulation(String simulationId, SimulationConfig simulationConfig, SimulationContext simContext,
+            Map<String, Object> simulationContext, PowerSystemConfig powerSystemConfig) {
+        // TODO: remove simulationContext parameter after refactoring service manager
+
+        try {
+            logManager.info(ProcessStatus.STARTING, simulationId, "Starting simulation " + simulationId);
+        } catch (Exception e2) {
+            log.warn("Error while reporting status " + e2.getMessage());
+        }
+
+        simContexts.put(simContext.getSimulationId(), simContext);
+
+        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+        // SimulationProcess simProc = new SimulationProcess(simContext, serviceManager,
+        // simulationConfig, simulationId, logManager, appManager, client,
+        // securityConfig, simulationContext, powerSystemConfig);
+        SimulationProcess simProc = new SimulationProcess(simContext, serviceManager,
+                simulationConfig, simulationId, logManager, appManager, client, simulationContext, powerSystemConfig);
+        // simProcesses.put(simContext.getSimulationId(), simProc);
+        simProc.start();
+    }
+
+    @Override
+    public void pauseSimulation(String simulationId) {
+        // NOt implementing yet
+        // client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":
+        // \"pause\"}");
+    }
+
+    @Override
+    public void resumeSimulation(String simulationId) {
+        // Not implementing yet
+        // client.publish(GridAppsDConstants.topic_FNCS_input, "{\"command\":
+        // \"resume\"}");
+
+    }
+
+    @Override
+    public void endSimulation(String simulationId) {
+        client.publish(GridAppsDConstants.topic_COSIM_input + "." + simulationId,
+                "{\"command\": \"stop\"}");
+
+    }
+
+    public void removeSimulation(String simulationId) {
+        endSimulation(simulationId);
+    }
+
+    /*
+     * private String getPath(String key){ String path =
+     * configurationManager.getConfigurationProperty(key); if(path==null){
+     * log.warn("Configuration property not found, defaulting to .: "+key); path =
+     * "."; } return path; }
+     */
+
+    public Map<String, SimulationContext> getSimContexts() {
+        return simContexts;
+    }
+
+    @Override
+    public SimulationContext getSimulationContextForId(String simulationId) {
+        return this.simContexts.get(simulationId);
+    }
+
+    public int assignSimulationPort(String simulationId) throws Exception {
+        Integer simIdKey = Integer.valueOf(simulationId);
+        if (!simulationPorts.containsKey(simIdKey)) {
+            int tempPort = 49152 + randPort.nextInt(16384);
+            AtomicInteger tempPortObj = new AtomicInteger(tempPort);
+            while (simulationPorts.containsValue(tempPortObj)) {
+                int newTempPort = 49152 + randPort.nextInt(16384);
+                tempPortObj.set(newTempPort);
+            }
+            simulationPorts.put(simIdKey, tempPortObj);
+            return tempPortObj.get();
+            // TODO: test host:port is available
+        } else {
+            throw new Exception("The simulation id already exists. This indicates that the simulation id is part of a"
+                    + "simulation in progress.");
+        }
+    }
 
 }

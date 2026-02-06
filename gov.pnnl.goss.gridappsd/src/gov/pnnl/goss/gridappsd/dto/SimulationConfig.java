@@ -1,42 +1,42 @@
 /*******************************************************************************
  * Copyright  2017, Battelle Memorial Institute All rights reserved.
- * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity 
- * lawfully obtaining a copy of this software and associated documentation files (hereinafter the 
- * Software) to redistribute and use the Software in source and binary forms, with or without modification. 
- * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+ * Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or entity
+ * lawfully obtaining a copy of this software and associated documentation files (hereinafter the
+ * Software) to redistribute and use the Software in source and binary forms, with or without modification.
+ * Such person or entity may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and may permit others to do so, subject to the following conditions:
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the 
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the
  * following disclaimers.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and 
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and
  * the following disclaimer in the documentation and/or other materials provided with the distribution.
- * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any 
+ * Other than as used herein, neither the name Battelle Memorial Institute or Battelle may be used in any
  * form whatsoever without the express written consent of Battelle.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
- * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE 
- * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+ * BATTELLE OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * General disclaimer for use with OSS licenses
- * 
- * This material was prepared as an account of work sponsored by an agency of the United States Government. 
- * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any 
- * of their employees, nor any jurisdiction or organization that has cooperated in the development of these 
- * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for 
- * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process 
+ *
+ * This material was prepared as an account of work sponsored by an agency of the United States Government.
+ * Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any
+ * of their employees, nor any jurisdiction or organization that has cooperated in the development of these
+ * materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for
+ * the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process
  * disclosed, or represents that its use would not infringe privately owned rights.
- * 
- * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, 
- * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United 
- * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed 
+ *
+ * Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer,
+ * or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United
+ * States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed
  * herein do not necessarily state or reflect those of the United States Government or any agency thereof.
- * 
- * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the 
+ *
+ * PACIFIC NORTHWEST NATIONAL LABORATORY operated by BATTELLE for the
  * UNITED STATES DEPARTMENT OF ENERGY under Contract DE-AC05-76RL01830
- ******************************************************************************/ 
+ ******************************************************************************/
 package gov.pnnl.goss.gridappsd.dto;
 
 import java.io.Serializable;
@@ -46,112 +46,119 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+public class SimulationConfig implements Serializable {
+    private static final long serialVersionUID = -2995486912804104569L;
 
-public class SimulationConfig  implements Serializable {
-	private static final long serialVersionUID = -2995486912804104569L;
+    public static final int DEFAULT_SIMULATION_BROKER_PORT = 5570;
+    public static final String DEFAULT_SIMULATION_BROKER_LOCATION = "127.0.0.1";
 
-	public static final int DEFAULT_SIMULATION_BROKER_PORT = 5570;
-	public static final String DEFAULT_SIMULATION_BROKER_LOCATION = "127.0.0.1";
+    // how long the simulation should last (in seconds), default 1 day
+    public int duration = 86400;
+    // simulation id (auto-generated by process manager)
+    public String simulation_id;
+    // user friendly name for the simulation
+    public String simulation_name;
+    // time that you want the simulation to start, expected epoch time
+    public long start_time;
 
-	//how long the simulation should last (in seconds), default 1 day 
-	public int duration = 86400;
-	//simulation id (auto-generated by process manager)
-	public String simulation_id;
-	//user friendly name for the simulation
-	public String simulation_name;
-	//time that you want the simulation to start, expected epoch time
-	public long start_time;
-	
-	//Slow simulator down to realtime if true.  If false it will run as fast as the simulator allows
-	public boolean run_realtime = true;
+    // Slow simulator down to realtime if true. If false it will run as fast as the
+    // simulator allows
+    public boolean run_realtime = true;
 
-	//instruct simulation to pause automatically after publishing measurements if true.
-	public boolean pause_after_measurements = false;
+    // instruct simulation to pause automatically after publishing measurements if
+    // true.
+    public boolean pause_after_measurements = false;
 
-	//the port number that the helics_broker will be operating under
-	public int simulation_broker_port = DEFAULT_SIMULATION_BROKER_PORT;
-	//the ip location for the helics_broker
-	public String simulation_broker_location = DEFAULT_SIMULATION_BROKER_LOCATION;
-	
+    // the port number that the helics_broker will be operating under
+    public int simulation_broker_port = DEFAULT_SIMULATION_BROKER_PORT;
+    // the ip location for the helics_broker
+    public String simulation_broker_location = DEFAULT_SIMULATION_BROKER_LOCATION;
 
-	//public List<SimulatorConfig> simulator_configs = new ArrayList<SimulatorConfig>();
-	
+    // public List<SimulatorConfig> simulator_configs = new
+    // ArrayList<SimulatorConfig>();
 
-	public int getDuration() {
-		return duration;
-	}
-	public void setDuration(int duration) {
-		this.duration = duration;
-	}
-	public String getSimulation_id() {
-		return simulation_id;
-	}
-	public void setSimulation_id(String simulation_id) {
-		this.simulation_id = simulation_id;
-	}
-	
-	public String getSimulation_name() {
-		return simulation_name;
-	}
-	public void setSimulation_name(String simulation_name) {
-		this.simulation_name = simulation_name;
-	}
-	public long getStart_time() {
-		return start_time;
-	}
-	public void setStart_time(long start_time) {
-		this.start_time = start_time;
-	}
+    public int getDuration() {
+        return duration;
+    }
 
-	public boolean isRun_realtime() {
-		return run_realtime;
-	}
-	public void setRun_realtime(boolean run_realtime) {
-		this.run_realtime = run_realtime;
-	}
-	
-	public boolean isPause_after_measurements() {
-		return pause_after_measurements;
-	}
-	public void setPause_after_measurements(boolean pause_after_measurements) {
-		this.pause_after_measurements = pause_after_measurements;
-	}
-	public int getSimulation_broker_port() {
-		return simulation_broker_port;
-	}
-	public void setSimulation_broker_port(int simulation_broker_port) {
-		this.simulation_broker_port = simulation_broker_port;
-	}
-	public String getSimulation_broker_location() {
-		return simulation_broker_location;
-	}
-	public void setSimulation_broker_location(String simulation_broker_location) {
-		this.simulation_broker_location = simulation_broker_location;
-	}
-	/*public void addSimulatorConfig(SimulatorConfig simulatorConfig) {
-		if (simulatorConfig != null) {
-			this.simulator_configs.add(simulatorConfig);
-		}
-	}
-	public List<SimulatorConfig> getSimulator_configs() {
-		return simulator_configs;
-	}
-	public void setSimulator_configs(List<SimulatorConfig> simulator_configs) {
-		this.simulator_configs = simulator_configs;
-	}*/
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
 
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-	
-	public static SimulationConfig parse(String jsonString){
-		Gson  gson = new Gson();
-		SimulationConfig obj = gson.fromJson(jsonString, SimulationConfig.class);
-		if(obj.simulation_name==null)
-			throw new JsonSyntaxException("Expected attribute simulation_name not found");
-		return obj;
-	}
+    public String getSimulation_id() {
+        return simulation_id;
+    }
+
+    public void setSimulation_id(String simulation_id) {
+        this.simulation_id = simulation_id;
+    }
+
+    public String getSimulation_name() {
+        return simulation_name;
+    }
+
+    public void setSimulation_name(String simulation_name) {
+        this.simulation_name = simulation_name;
+    }
+
+    public long getStart_time() {
+        return start_time;
+    }
+
+    public void setStart_time(long start_time) {
+        this.start_time = start_time;
+    }
+
+    public boolean isRun_realtime() {
+        return run_realtime;
+    }
+
+    public void setRun_realtime(boolean run_realtime) {
+        this.run_realtime = run_realtime;
+    }
+
+    public boolean isPause_after_measurements() {
+        return pause_after_measurements;
+    }
+
+    public void setPause_after_measurements(boolean pause_after_measurements) {
+        this.pause_after_measurements = pause_after_measurements;
+    }
+
+    public int getSimulation_broker_port() {
+        return simulation_broker_port;
+    }
+
+    public void setSimulation_broker_port(int simulation_broker_port) {
+        this.simulation_broker_port = simulation_broker_port;
+    }
+
+    public String getSimulation_broker_location() {
+        return simulation_broker_location;
+    }
+
+    public void setSimulation_broker_location(String simulation_broker_location) {
+        this.simulation_broker_location = simulation_broker_location;
+    }
+    /*
+     * public void addSimulatorConfig(SimulatorConfig simulatorConfig) { if
+     * (simulatorConfig != null) { this.simulator_configs.add(simulatorConfig); } }
+     * public List<SimulatorConfig> getSimulator_configs() { return
+     * simulator_configs; } public void setSimulator_configs(List<SimulatorConfig>
+     * simulator_configs) { this.simulator_configs = simulator_configs; }
+     */
+
+    @Override
+    public String toString() {
+        Gson gson = new Gson();
+        return gson.toJson(this);
+    }
+
+    public static SimulationConfig parse(String jsonString) {
+        Gson gson = new Gson();
+        SimulationConfig obj = gson.fromJson(jsonString, SimulationConfig.class);
+        if (obj.simulation_name == null)
+            throw new JsonSyntaxException("Expected attribute simulation_name not found");
+        return obj;
+    }
 }

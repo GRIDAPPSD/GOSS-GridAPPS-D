@@ -4,11 +4,11 @@ if [ "$1" = "gridappsd" ]; then
   # Install application python requirements
   for reqfile in `ls /gridappsd/services/*/requirements.txt 2>/dev/null`; do
     echo "[Entrypoint] Installing requirements $reqfile"
-    sudo pip install -q --disable-pip-version-check -r $reqfile
+    sudo pip install -q --disable-pip-version-check --root-user-action=ignore -r $reqfile
   done
   for reqfile in `ls /gridappsd/applications/*/requirements.txt 2>/dev/null`; do
     echo "[Entrypoint] Installing requirements $reqfile"
-    sudo pip install -q --disable-pip-version-check -r $reqfile
+    sudo pip install -q --disable-pip-version-check --root-user-action=ignore -r $reqfile
   done
 
 

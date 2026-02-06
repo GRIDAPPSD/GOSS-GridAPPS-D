@@ -1,0 +1,125 @@
+# GridAPPS-D Docker Compose for Development and Testing
+#
+# This simplified compose file is designed for local development and testing.
+# It uses ${GRIDAPPSD_TAG} to specify the version of dependency containers.
+#
+# Usage:
+#   make docker-up                    # Start with default (develop) version
+#   make docker-up VERSION=v2025.09.0 # Start with specific version for backport testing
+#   make docker-down                  # Stop all containers
+#
+# The gridappsd container always uses the locally-built :local image.
+# Supporting containers use the specified VERSION tag.
+
+services:
+  mysql:
+    image: mysql/mysql-server:5.7
+    container_name: mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ugridappsd", "-pgridappsd1234"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+      start_period: 30s
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_PORT: 3306
+    volumes:
+      - ./mysql-init.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - mysql-data:/var/lib/mysql
+
+  blazegraph:
+    image: gridappsd/blazegraph${GRIDAPPSD_TAG}
+    container_name: blazegraph
+    ports:
+      - 8889:8080
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  redis:
+    image: redis:3.2.11-alpine
+    container_name: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    entrypoint: redis-server --appendonly yes
+
+  influxdb:
+    image: gridappsd/influxdb${GRIDAPPSD_TAG}
+    container_name: influxdb
+    ports:
+      - 8086:8086
+    environment:
+      INFLUXDB_DB: "proven"
+
+  proven:
+    image: gridappsd/proven${GRIDAPPSD_TAG}
+    container_name: proven
+    ports:
+      - 18080:8080
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    environment:
+      - PROVEN_SERVICES_PORT=18080
+      - PROVEN_SWAGGER_HOST_PORT=localhost:18080
+      - PROVEN_USE_IDB=true
+      - PROVEN_IDB_URL=http://influxdb:8086
+      - PROVEN_IDB_DB=proven
+      - PROVEN_IDB_RP=autogen
+      - PROVEN_IDB_USERNAME=root
+      - PROVEN_IDB_PASSWORD=root
+      - PROVEN_T3DIR=/proven
+
+  gridappsd:
+    image: gridappsd/gridappsd:local
+    container_name: gridappsd
+    restart: "no"
+    ports:
+      - 61613:61613
+      - 61614:61614
+      - 61616:61616
+      - 20000-20020:20000-20020
+      - 8000:8000
+      - 8888:8888
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    working_dir: /gridappsd
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/61616' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    environment:
+      - PATH=/home/gridappsd/.local/bin:/gridappsd/bin:/gridappsd/launcher:/gridappsd/services/fncsgossbridge/service:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+      - LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/helics/install/lib64:/usr/local/lib64:/usr/local/lib
+      - AUTOSTART=${AUTOSTART:-1}
+      - DEBUG=1
+      - MAX_RESTARTS=5
+      - RESTART_DELAY=5
+    volumes:
+      # Mount local build output for development - allows quick iteration without rebuilding Docker image
+      # Note: Mount to /gridappsd/launcher to avoid overriding /gridappsd/lib which contains GridLAB-D modules
+      - ../build/launcher:/gridappsd/launcher
+      # Mount source for reference during debugging
+      - ../gov.pnnl.goss.gridappsd/src:/gridappsd/src:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      blazegraph:
+        condition: service_started
+      redis:
+        condition: service_started
+
+volumes:
+  mysql-data:
+  redis-data:

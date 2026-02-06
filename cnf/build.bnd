@@ -32,8 +32,8 @@
 ## Java Compiler Options
 #java:                  java
 #javac:                 javac
-javac.source:          1.8
-javac.target:          1.8
+javac.source:          21
+javac.target:          21
 #javac.debug:           on
 
 ## Bnd Options
@@ -55,5 +55,3 @@ javac.target:          1.8
 # Git-Descriptor:       ${system-allow-fail;git describe --dirty --always}
 # Git-SHA:              ${system-allow-fail;git rev-list -1 HEAD}
 # -diffignore:          Git-Descriptor,Git-SHA
--plugin: ${ext.repositories.-plugin}
--plugin.dmannotations = org.apache.felix.dm.annotation.plugin.bnd.AnnotationPlugin;path:=${plugin-dir}/org.apache.felix.dependencymanager.annotation-3.2.0.jar;build-import-export-service=false

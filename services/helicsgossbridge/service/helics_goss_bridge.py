@@ -120,7 +120,7 @@ class RegulatingControlModeKind(IntEnum):
     timeScheduled = 5
     temperature = 6
     powerFactor = 7
-    
+
 
 class HelicsGossBridge(object):
     '''
@@ -282,10 +282,10 @@ class HelicsGossBridge(object):
             }
         }
     }
-    
-    
+
+
     def __init__(self, simulation_id, broker_port, simulation_request):
-        
+
         self._simulation_id = simulation_id
         self._broker_port = broker_port
         self._simulation_request = simulation_request
@@ -296,105 +296,105 @@ class HelicsGossBridge(object):
         self._register_with_goss()
         # register with HELICS
         self._register_with_helics()
-        
-    
-    
+
+
+
     def get_simulation_id(self):
         return self._simulation_id
-    
-    
+
+
     def get_broker_port(self):
         return self._broker_port
-    
-    
+
+
     def get_simulation_request(self):
         return self._simulation_request
-    
-    
+
+
     def get_gad_connection(self):
         return self._gad_connection
-    
-    
+
+
     def get_helics_configuration(self):
         return self._helics_configuration
-    
-    
+
+
     def get_helics_federate(self):
         return self._helics_federate
-    
-    
+
+
     def get_is_initialized(self):
         return self._is_initialized
-    
-    
+
+
     def get_simulation_manager_input_topic(self):
         return self._simulation_manager_input_topic
-    
-    
+
+
     def get_simulation_command_queue(self):
         return self._simulation_command_queue
-    
-        
+
+
     def get_start_simulation(self):
         return self._start_simulation
-    
-    
+
+
     def get_filter_all_commands(self):
         return self._filter_all_commands
-    
-    
+
+
     def get_filter_all_measurements(self):
         return self._filter_all_measurements
-    
-    
+
+
     def get_command_filter(self):
         return self._command_filter
-    
-    
+
+
     def get_measurement_filter(self):
         return self._measurement_filter
-    
-    
+
+
     def get_stop_simulation(self):
         return self._stop_simulation
-    
-    
+
+
     def get_simulation_finished(self):
         return self._simulation_finished
-    
-    
+
+
     def get_pause_simulation(self):
         return self._pause_simulation
-    
-    
+
+
     def get_simulation_time(self):
         return self._simulation_time
-    
-    
+
+
     def get_pause_simulation_at(self):
         return self._pause_simulation_at
-    
-    
+
+
     def get_object_property_to_measurement_id(self):
         return self._object_property_to_measurement_id
-    
-    
+
+
     def get_object_mrid_to_name(self):
         return self._object_mrid_to_name
-    
-    
+
+
     def get_model_mrid(self):
         return self._model_mrid
-    
-    
+
+
     def get_difference_attribute_map(self):
         return self._difference_attribute_map
-    
-        
+
+
     def on_message(self, headers, msg):
         message = {}
         federate_state = helics.helicsFederateGetState(self._helics_federate)
-        
+
         try:
             message_dict = {
                 'received message': {
@@ -521,9 +521,9 @@ class HelicsGossBridge(object):
             self._stop_simulation = True
             if federate_state == 2:
                 helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
-            self._close_helics_connection()          
-    
-    
+            self._close_helics_connection()
+
+
     def on_error(self, headers, message):
         message_str = 'Error in HelicsGossBridge: '+str(message)
         log.error(message_str)
@@ -531,16 +531,16 @@ class HelicsGossBridge(object):
         self._stop_simulation = True
         helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
         self._close_helics_connection()
-        
-        
+
+
     def on_disconnected(self):
         self._stop_simulation = True
         helics.helicsFederateGlobalError(self._helics_federate,
                                          1,
                                          "HelicsGossBridge instance lost connection to GOSS bus.")
         self._close_helics_connection()
-            
-            
+
+
     def run_simulation(self):
         simulation_output_topic = topics.simulation_output_topic(self._simulation_id)
         message_str = 'Running simulation for simulation_request:' \
@@ -650,8 +650,8 @@ class HelicsGossBridge(object):
                                                  1,
                                                  "Stopping the simulation prematurely at operator's request!")
                 self._close_helics_connection()
-    
-            
+
+
     def _register_with_goss(self):
         try:
             self._gad_connection = GridAPPSD(self._simulation_id)
@@ -660,8 +660,8 @@ class HelicsGossBridge(object):
             self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input."+self._simulation_id, self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
-            
-            
+
+
     def _register_with_helics(self):
         try:
             self._helics_configuration = {
@@ -693,13 +693,13 @@ class HelicsGossBridge(object):
             err_msg = f"An error occurred when trying to register with the HELICS broker!{traceback.format_exc()}"
             log.error(err_msg, exc_info=True)
             self._gad_connection.send_simulation_status("ERROR", err_msg, "ERROR")
-    
-    
+
+
     def _close_helics_connection(self):
         helics.helicsFederateDisconnect(self._helics_federate)
         helics.helicsCloseLibrary()
-    
-    
+
+
     def _get_gld_object_name(self, object_mrid):
         prefix = ""
         for k in self._object_mrid_to_name.keys():
@@ -727,10 +727,10 @@ class HelicsGossBridge(object):
         object_name = prefix + object_base_name
         return object_name
 
-    
+
     def _publish_to_helics_bus(self, goss_message, command_filter):
         """publish a message received from the GOSS bus to the HELICS bus.
-    
+
         Function arguments:
             goss_message -- Type: string. Description: The message from the GOSS bus
                 as a json string. It must not be an empty string. Default: None.
@@ -1007,15 +1007,15 @@ class HelicsGossBridge(object):
                       f"{traceback.format_exc()}"
             self._gad_connection.send_simulation_status("ERROR",err_msg,"ERROR")
             raise RuntimeError(err_msg)
-        
-    
+
+
     def _get_helics_bus_messages(self, measurement_filter, pause_after_measurements = False):
         """ retrieve the measurment dictionary from the HELICS message bus
-    
+
         Function arguments:
             measurement_filter -- Type: list. Description: The list of
                 measurement id's to filter from the simulator output.
-            pause_after_measurements -- Type: bool. Description: boolean for automatically pausing the simulation after 
+            pause_after_measurements -- Type: bool. Description: boolean for automatically pausing the simulation after
                 publishing measurements.
         Function returns:
             helics_output -- Type: string. Description: The json structured output
@@ -1045,7 +1045,7 @@ class HelicsGossBridge(object):
                 message_str = 'helics_output has no messages'
             log.debug(message_str)
             self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
-            
+
             cim_output = {}
             if has_message:
                 t_now = datetime.utcnow()
@@ -1069,7 +1069,7 @@ class HelicsGossBridge(object):
                     else:
                         federateMrid = helics_message_source.split("/")[0]
                         helics_output_dict = json.loads(helics_output)
-                        
+
                         sim_dict = helics_output_dict.get(federateMrid, None)
                         if sim_dict == None:
                             sim_dict = helics_output_dict
@@ -1211,11 +1211,11 @@ class HelicsGossBridge(object):
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             return {}
-    
-    
+
+
     def _done_with_time_step(self, current_time):
         """tell the helics_broker to move to the next time step.
-    
+
         Function arguments:
             current_time -- Type: integer. Description: the current time in seconds.
                 It must not be none.
@@ -1242,12 +1242,12 @@ class HelicsGossBridge(object):
             message_str = 'Error in HELICS time request '+str(traceback.format_exc())
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
-        
-            
+
+
     def _create_cim_object_map(self, map_file_dir: Path = None):
         self._object_property_to_measurement_id = {}
         self._object_mrid_to_name = {}
-        
+
         try:
             for modelMrid, graphModel in self._graphModels["distributionModels"].items():
                 map_file_dir = f"/tmp/gridappsd_tmp/{self._simulation_id}/{modelMrid}/model_dict.json"
@@ -1854,7 +1854,7 @@ def getEqPhases(cimObj: cim.PowerSystemResource) -> str:
                         f"{type(cimObj)}")
     phases.sort()
     phaseStr = "".join(phases)
-    return phaseStr  
+    return phaseStr
 
 
 def _getEquipmentContainer(cimMrid: str, dbConnection: BlazegraphConnection):
