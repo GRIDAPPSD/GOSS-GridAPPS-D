@@ -46,6 +46,7 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 import gov.pnnl.goss.gridappsd.api.AppManager;
@@ -111,6 +112,8 @@ public class ProcessManagerImpl implements ProcessManager {
     // @ServiceDependency
     // private volatile RoleManager roleManager;
 
+    private Client client;
+
     ProcessNewSimulationRequest newSimulationProcess = null;
 
     public ProcessManagerImpl() {
@@ -149,7 +152,7 @@ public class ProcessManagerImpl implements ProcessManager {
 
             // Credentials credentials = new UsernamePasswordCredentials(
             // GridAppsDConstants.username, GridAppsDConstants.password);
-            Client client = clientFactory.create(PROTOCOL.STOMP, credentials);
+            client = clientFactory.create(PROTOCOL.STOMP, credentials);
 
             logMessageObj.setLogLevel(LogLevel.DEBUG);
             logMessageObj.setSource(this.getClass().getName());
@@ -189,6 +192,17 @@ public class ProcessManagerImpl implements ProcessManager {
             logManager.error(ProcessStatus.ERROR, null, e.getMessage());
         }
 
+    }
+
+    @Deactivate
+    public void stop() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (Exception e) {
+            // Suppress errors during shutdown
+        }
     }
 
     /**

@@ -68,6 +68,7 @@ import jakarta.jms.Destination;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
 import org.apache.http.auth.Credentials;
@@ -778,14 +779,26 @@ public class AppManagerImpl implements AppManager {
         return list;
     }
 
-    // TODO: finalize() deprecated in Java 21 - implement proper cleanup mechanism
-    // Resource cleanup should be handled via AutoCloseable/try-with-resources or
-    // explicit shutdown hooks
-    // @Override
-    // protected void finalize() throws Throwable {
-    // super.finalize();
-    // for (AppInstance instance : appInstances.values()) {
-    // instance.getProcess().destroyForcibly();
-    // }
-    // }
+    @Deactivate
+    public void stop() {
+        // Destroy any running app processes
+        for (AppInstance instance : appInstances.values()) {
+            try {
+                if (instance.getProcess() != null) {
+                    instance.getProcess().destroyForcibly();
+                }
+            } catch (Exception e) {
+                // Suppress errors during shutdown
+            }
+        }
+        appInstances.clear();
+
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (Exception e) {
+            // Suppress errors during shutdown
+        }
+    }
 }

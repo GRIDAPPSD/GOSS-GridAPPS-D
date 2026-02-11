@@ -48,6 +48,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
 import org.apache.http.auth.Credentials;
@@ -159,6 +160,19 @@ public class SimulationManagerImpl implements SimulationManager {
                 "system", "manager");
         client = clientFactory.create(PROTOCOL.STOMP, credentials);
         logManager.info(ProcessStatus.STARTED, null, this.getClass().getSimpleName() + " Started");
+    }
+
+    @Deactivate
+    public void stop() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (Exception e) {
+            // Suppress errors during shutdown
+        }
+        simContexts.clear();
+        simulationPorts.clear();
     }
 
     /**

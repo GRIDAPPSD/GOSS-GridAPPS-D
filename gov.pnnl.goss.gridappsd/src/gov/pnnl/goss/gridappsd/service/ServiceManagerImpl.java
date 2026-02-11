@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
 
@@ -508,6 +509,21 @@ public class ServiceManagerImpl implements ServiceManager {
                 }
             }
         }.start();
+    }
+
+    @Deactivate
+    public void stop() {
+        // Destroy any running service processes
+        for (ServiceInstance instance : serviceInstances.values()) {
+            try {
+                if (instance.getProcess() != null) {
+                    instance.getProcess().destroyForcibly();
+                }
+            } catch (Exception e) {
+                // Suppress errors during shutdown
+            }
+        }
+        serviceInstances.clear();
     }
 
     public String getFieldModelMrid() {

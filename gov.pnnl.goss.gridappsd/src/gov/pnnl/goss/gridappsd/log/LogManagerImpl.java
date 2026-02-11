@@ -44,6 +44,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
 import org.apache.http.auth.Credentials;
@@ -146,6 +147,18 @@ public class LogManagerImpl implements LogManager {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Deactivate
+    public void stop() {
+        try {
+            if (client != null) {
+                client.close();
+                client = null;
+            }
+        } catch (Exception e) {
+            // Suppress errors during shutdown
         }
     }
 
@@ -324,44 +337,47 @@ public class LogManagerImpl implements LogManager {
             return;
         }
 
-        switch (logMessage.getLogLevel()) {
-            case TRACE :
-                if (log.isTraceEnabled() && topic != null) {
-                    logLevel = LogLevel.TRACE;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-            case DEBUG :
-                if (log.isDebugEnabled() && topic != null) {
-                    logLevel = LogLevel.DEBUG;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-            case INFO :
-                if (log.isInfoEnabled() && topic != null) {
-                    logLevel = LogLevel.INFO;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-            case WARN :
-                if (log.isWarnEnabled() && topic != null) {
-                    logLevel = LogLevel.WARN;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-            case ERROR :
-                if (log.isErrorEnabled() && topic != null) {
-                    logLevel = LogLevel.ERROR;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-            case FATAL :
-                if (log.isErrorEnabled() && topic != null) {
-                    logLevel = LogLevel.FATAL;
-                    client.publish(topic, logMessage.toString());
-                }
-                break;
-
+        try {
+            switch (logMessage.getLogLevel()) {
+                case TRACE :
+                    if (log.isTraceEnabled() && topic != null) {
+                        logLevel = LogLevel.TRACE;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+                case DEBUG :
+                    if (log.isDebugEnabled() && topic != null) {
+                        logLevel = LogLevel.DEBUG;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+                case INFO :
+                    if (log.isInfoEnabled() && topic != null) {
+                        logLevel = LogLevel.INFO;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+                case WARN :
+                    if (log.isWarnEnabled() && topic != null) {
+                        logLevel = LogLevel.WARN;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+                case ERROR :
+                    if (log.isErrorEnabled() && topic != null) {
+                        logLevel = LogLevel.ERROR;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+                case FATAL :
+                    if (log.isErrorEnabled() && topic != null) {
+                        logLevel = LogLevel.FATAL;
+                        client.publish(topic, logMessage.toString());
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            // Suppress publish errors during shutdown when broker is stopping
         }
 
     }

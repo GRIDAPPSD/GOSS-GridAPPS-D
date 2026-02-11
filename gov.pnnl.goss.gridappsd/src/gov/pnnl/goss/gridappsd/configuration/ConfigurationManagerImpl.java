@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
 import org.slf4j.Logger;
@@ -159,6 +160,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         } else {
             log.info("ConfigurationManager started without full configuration (waiting for Config Admin)");
         }
+    }
+
+    @Deactivate
+    public void stop() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (Exception e) {
+            // Suppress errors during shutdown
+        }
+        configHandlers.clear();
     }
 
     @org.osgi.service.component.annotations.Modified

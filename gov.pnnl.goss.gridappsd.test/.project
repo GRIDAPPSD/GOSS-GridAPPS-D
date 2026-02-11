@@ -17,8 +17,8 @@
 		</buildCommand>
 	</buildSpec>
 	<natures>
-		<nature>bndtools.core.bndnature</nature>
 		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
+		<nature>bndtools.core.bndnature</nature>
 	</natures>
 	<filteredResources>
 		<filter>
