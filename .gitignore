@@ -25,6 +25,7 @@ cnf/Local/index.xml
 
 # Gradle build output
 build/
+bin/
 
 # BND generated files
 cnf/ext/felix.xml

@@ -45,8 +45,12 @@ import gov.pnnl.goss.gridappsd.simulation.SimulationManagerImpl;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bootstrap component for GridAPPS-D services.
@@ -290,6 +294,69 @@ public class GridAppsDBoot {
                     log.info("Late-bound PowergridModelDataManager (from lookup) to ConfigurationManager");
                 }
             }
+        }
+
+        // Load configuration from ConfigAdmin (populated by FileInstall from
+        // pnnl.goss.gridappsd.cfg)
+        // This is needed because we bypassed SCR and created ConfigurationManager
+        // manually
+        loadConfigAdminProperties();
+    }
+
+    /**
+     * Load configuration properties from ConfigAdmin service. FileInstall reads
+     * pnnl.goss.gridappsd.cfg and stores it in ConfigAdmin. Since we bypassed SCR,
+     * we need to pull the config manually.
+     */
+    private void loadConfigAdminProperties() {
+        try {
+            // Look up ConfigurationAdmin service
+            ServiceReference<?> caRef = bundleContext
+                    .getServiceReference("org.osgi.service.cm.ConfigurationAdmin");
+            if (caRef == null) {
+                log.warn("ConfigurationAdmin service not available - configuration properties not loaded");
+                return;
+            }
+
+            Object configAdmin = bundleContext.getService(caRef);
+            if (configAdmin == null) {
+                log.warn("ConfigurationAdmin service is null");
+                return;
+            }
+
+            // Use reflection to call getConfiguration("pnnl.goss.gridappsd")
+            // to avoid compile-time dependency on org.osgi.service.cm package
+            java.lang.reflect.Method getConfig = configAdmin.getClass()
+                    .getMethod("getConfiguration", String.class, String.class);
+            Object configuration = getConfig.invoke(configAdmin, "pnnl.goss.gridappsd", null);
+
+            if (configuration != null) {
+                java.lang.reflect.Method getProps = configuration.getClass().getMethod("getProperties");
+                Object propsObj = getProps.invoke(configuration);
+
+                if (propsObj instanceof Dictionary) {
+                    @SuppressWarnings("unchecked")
+                    Dictionary<String, Object> props = (Dictionary<String, Object>) propsObj;
+                    Map<String, Object> configMap = new HashMap<>();
+                    Enumeration<String> keys = props.keys();
+                    while (keys.hasMoreElements()) {
+                        String key = keys.nextElement();
+                        configMap.put(key, props.get(key));
+                    }
+
+                    if (!configMap.isEmpty()) {
+                        configurationManager.start(configMap);
+                        log.info("Loaded {} configuration properties from ConfigAdmin", configMap.size());
+                    } else {
+                        log.warn("ConfigAdmin has empty configuration for pnnl.goss.gridappsd");
+                    }
+                } else {
+                    log.warn("ConfigAdmin configuration not yet available for pnnl.goss.gridappsd"
+                            + " (FileInstall may not have loaded the .cfg file yet)");
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error loading configuration from ConfigAdmin: " + e.getMessage());
         }
     }
 
