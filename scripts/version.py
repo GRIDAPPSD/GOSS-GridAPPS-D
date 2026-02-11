@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-GridAPPS-D and GOSS Version Management Script
+GridAPPS-D Version Management Script
 
 Commands:
-  show         - Display versions of all bundles (GridAPPS-D and GOSS)
+  show         - Display versions of all bundles
   release      - Set release version (removes -SNAPSHOT)
   snapshot     - Set snapshot version (adds -SNAPSHOT)
   bump-patch   - Bump patch version (x.y.Z) and set as snapshot
@@ -87,10 +87,9 @@ def extract_bundle_info(bnd_file: Path) -> tuple[str, str] | None:
     return (full_name, version)
 
 
-def show_versions(gridappsd_root: Path, goss_root: Path | None) -> None:
-    """Display versions of all bundles."""
+def show_versions(gridappsd_root: Path) -> None:
+    """Display versions of all GridAPPS-D bundles."""
 
-    # GridAPPS-D bundles
     print(f"\n{Colors.CYAN}{'=' * 70}{Colors.NC}")
     print(f"{Colors.CYAN}GridAPPS-D Bundle Versions{Colors.NC}")
     print(f"{Colors.CYAN}{'=' * 70}{Colors.NC}")
@@ -115,44 +114,6 @@ def show_versions(gridappsd_root: Path, goss_root: Path | None) -> None:
 
     gridappsd_total = sum(len(v) for v in gridappsd_versions.values())
     print(f"\n  Total: {gridappsd_total} bundle(s)")
-
-    # GOSS bundles
-    if goss_root and goss_root.is_dir():
-        print(f"\n{Colors.MAGENTA}{'=' * 70}{Colors.NC}")
-        print(f"{Colors.MAGENTA}GOSS Framework Bundle Versions{Colors.NC}")
-        print(f"{Colors.MAGENTA}{'=' * 70}{Colors.NC}")
-
-        goss_files = find_bnd_files(goss_root)
-        goss_versions: dict[str, list[str]] = {}
-
-        for bnd_file in goss_files:
-            info = extract_bundle_info(bnd_file)
-            if info:
-                name, version = info
-                if version not in goss_versions:
-                    goss_versions[version] = []
-                goss_versions[version].append(name)
-
-        for version in sorted(goss_versions.keys()):
-            is_snapshot = '-SNAPSHOT' in version
-            version_color = Colors.YELLOW if is_snapshot else Colors.GREEN
-            print(f"\n{version_color}{version}{Colors.NC}:")
-            for name in sorted(goss_versions[version]):
-                print(f"  - {name}")
-
-        goss_total = sum(len(v) for v in goss_versions.values())
-        print(f"\n  Total: {goss_total} bundle(s)")
-    else:
-        log_warn(f"GOSS directory not found: {goss_root}")
-
-    # Summary
-    print(f"\n{Colors.CYAN}{'=' * 70}{Colors.NC}")
-    print(f"{Colors.CYAN}Summary{Colors.NC}")
-    print(f"{Colors.CYAN}{'=' * 70}{Colors.NC}")
-    print(f"  GridAPPS-D bundles: {gridappsd_total}")
-    if goss_root and goss_root.is_dir():
-        print(f"  GOSS bundles:       {goss_total}")
-        print(f"  Total:              {gridappsd_total + goss_total}")
     print()
 
 
@@ -182,10 +143,10 @@ def get_current_version(gridappsd_root: Path) -> str | None:
         info = extract_bundle_info(bnd_file)
         if info:
             _, version = info
-            # Strip -SNAPSHOT suffix for comparison
-            base_version = version.replace('-SNAPSHOT', '')
-            # Skip timestamp-based versions
-            if '${tstamp}' not in base_version:
+            # Strip -SNAPSHOT suffix and .${tstamp} qualifier for comparison
+            base_version = version.replace('-SNAPSHOT', '').replace('.${tstamp}', '')
+            # Must be a valid x.y.z version
+            if re.match(r'^\d+\.\d+\.\d+$', base_version):
                 versions.add(base_version)
 
     if len(versions) == 0:
@@ -215,8 +176,8 @@ def bump_version(version: str, bump_type: str) -> str:
     return '.'.join(str(p) for p in parts)
 
 
-def set_version(gridappsd_root: Path, goss_root: Path | None, version: str, snapshot: bool = False) -> None:
-    """Set version for all bundles."""
+def set_version(gridappsd_root: Path, version: str, snapshot: bool = False) -> None:
+    """Set version for all GridAPPS-D bundles."""
     # Validate version format
     if not re.match(r'^\d+\.\d+\.\d+$', version):
         log_error(f"Invalid version format: {version}")
@@ -233,7 +194,6 @@ def set_version(gridappsd_root: Path, goss_root: Path | None, version: str, snap
     log_info(f"Setting {action} version: {full_version}")
     print()
 
-    # Update GridAPPS-D bundles
     print(f"{Colors.CYAN}GridAPPS-D bundles:{Colors.NC}")
     gridappsd_files = find_bnd_files(gridappsd_root)
     gridappsd_count = 0
@@ -246,24 +206,8 @@ def set_version(gridappsd_root: Path, goss_root: Path | None, version: str, snap
                 print(f"  {Colors.GREEN}✓{Colors.NC} {name}: {old_version} -> {full_version}")
                 gridappsd_count += 1
 
-    # Update GOSS bundles if requested
-    goss_count = 0
-    if goss_root and goss_root.is_dir():
-        print(f"\n{Colors.MAGENTA}GOSS bundles:{Colors.NC}")
-        goss_files = find_bnd_files(goss_root)
-
-        for bnd_file in goss_files:
-            info = extract_bundle_info(bnd_file)
-            if info:
-                name, old_version = info
-                if update_version(bnd_file, full_version):
-                    print(f"  {Colors.GREEN}✓{Colors.NC} {name}: {old_version} -> {full_version}")
-                    goss_count += 1
-
     print()
     log_info(f"Updated {gridappsd_count} GridAPPS-D bundle(s)")
-    if goss_root and goss_root.is_dir():
-        log_info(f"Updated {goss_count} GOSS bundle(s)")
 
     if not snapshot:
         print()
@@ -276,7 +220,7 @@ def set_version(gridappsd_root: Path, goss_root: Path | None, version: str, snap
         print()
 
 
-def do_bump(gridappsd_root: Path, goss_root: Path | None, bump_type: str) -> int:
+def do_bump(gridappsd_root: Path, bump_type: str) -> int:
     """Bump version and set as snapshot."""
     current = get_current_version(gridappsd_root)
     if not current:
@@ -285,13 +229,13 @@ def do_bump(gridappsd_root: Path, goss_root: Path | None, bump_type: str) -> int
 
     new_version = bump_version(current, bump_type)
     log_info(f"Bumping {bump_type} version: {current} -> {new_version}-SNAPSHOT")
-    set_version(gridappsd_root, goss_root, new_version, snapshot=True)
+    set_version(gridappsd_root, new_version, snapshot=True)
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description='GridAPPS-D and GOSS Version Management',
+        description='GridAPPS-D Version Management',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
@@ -302,7 +246,6 @@ Examples:
   %(prog)s bump-minor              # 2.0.0 -> 2.1.0-SNAPSHOT
   %(prog)s bump-major              # 2.0.0 -> 3.0.0-SNAPSHOT
   %(prog)s next-snapshot           # After release: bump patch to next snapshot
-  %(prog)s show --no-goss          # Show only GridAPPS-D versions
 
 Typical release workflow:
   1. %(prog)s show                  # Verify current version (e.g., 2.0.0-SNAPSHOT)
@@ -313,18 +256,6 @@ Typical release workflow:
 '''
     )
 
-    parser.add_argument(
-        '--goss-dir',
-        type=Path,
-        default=None,
-        help='Path to GOSS directory (default: ../GOSS)'
-    )
-    parser.add_argument(
-        '--no-goss',
-        action='store_true',
-        help='Skip GOSS bundles'
-    )
-
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
     # show command
@@ -333,60 +264,39 @@ Typical release workflow:
     # release command
     release_parser = subparsers.add_parser('release', help='Set release version (removes -SNAPSHOT)')
     release_parser.add_argument('version', help='Version number (e.g., 2.0.0)')
-    release_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
 
     # snapshot command
     snapshot_parser = subparsers.add_parser('snapshot', help='Set snapshot version (adds -SNAPSHOT)')
     snapshot_parser.add_argument('version', help='Version number (e.g., 2.1.0)')
-    snapshot_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
 
     # bump commands
-    bump_patch_parser = subparsers.add_parser('bump-patch', help='Bump patch version (x.y.Z) and set as snapshot')
-    bump_patch_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
-
-    bump_minor_parser = subparsers.add_parser('bump-minor', help='Bump minor version (x.Y.0) and set as snapshot')
-    bump_minor_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
-
-    bump_major_parser = subparsers.add_parser('bump-major', help='Bump major version (X.0.0) and set as snapshot')
-    bump_major_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
-
-    next_snapshot_parser = subparsers.add_parser('next-snapshot', help='Bump patch version after a release (alias for bump-patch)')
-    next_snapshot_parser.add_argument('--gridappsd-only', action='store_true', help='Only update GridAPPS-D bundles')
+    subparsers.add_parser('bump-patch', help='Bump patch version (x.y.Z) and set as snapshot')
+    subparsers.add_parser('bump-minor', help='Bump minor version (x.Y.0) and set as snapshot')
+    subparsers.add_parser('bump-major', help='Bump major version (X.0.0) and set as snapshot')
+    subparsers.add_parser('next-snapshot', help='Bump patch version after a release (alias for bump-patch)')
 
     args = parser.parse_args()
 
-    # Find root directories
+    # Find root directory
     script_dir = Path(__file__).parent.resolve()
     gridappsd_root = script_dir.parent
-
-    if args.no_goss:
-        goss_root = None
-    elif args.goss_dir:
-        goss_root = args.goss_dir.resolve()
-    else:
-        goss_root = gridappsd_root.parent / 'GOSS'
 
     if not args.command:
         parser.print_help()
         return 1
 
     if args.command == 'show':
-        show_versions(gridappsd_root, goss_root)
+        show_versions(gridappsd_root)
     elif args.command == 'release':
-        goss_for_update = None if getattr(args, 'gridappsd_only', False) else goss_root
-        set_version(gridappsd_root, goss_for_update, args.version, snapshot=False)
+        set_version(gridappsd_root, args.version, snapshot=False)
     elif args.command == 'snapshot':
-        goss_for_update = None if getattr(args, 'gridappsd_only', False) else goss_root
-        set_version(gridappsd_root, goss_for_update, args.version, snapshot=True)
+        set_version(gridappsd_root, args.version, snapshot=True)
     elif args.command in ('bump-patch', 'next-snapshot'):
-        goss_for_update = None if getattr(args, 'gridappsd_only', False) else goss_root
-        return do_bump(gridappsd_root, goss_for_update, 'patch')
+        return do_bump(gridappsd_root, 'patch')
     elif args.command == 'bump-minor':
-        goss_for_update = None if getattr(args, 'gridappsd_only', False) else goss_root
-        return do_bump(gridappsd_root, goss_for_update, 'minor')
+        return do_bump(gridappsd_root, 'minor')
     elif args.command == 'bump-major':
-        goss_for_update = None if getattr(args, 'gridappsd_only', False) else goss_root
-        return do_bump(gridappsd_root, goss_for_update, 'major')
+        return do_bump(gridappsd_root, 'major')
 
     return 0
 

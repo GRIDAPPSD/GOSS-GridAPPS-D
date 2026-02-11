@@ -3,8 +3,8 @@
 
 .PHONY: help build clean dist test test-unit test-integration test-simulation test-container test-stomp-topics \
         run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
-        cache-clear goss goss-build goss-test commit push version release snapshot \
-        release-snapshot release-release check-api bump-patch bump-minor bump-major next-snapshot \
+        cache-clear update-dependencies commit push version release snapshot \
+        check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check
 
 # Configuration directory
@@ -49,10 +49,6 @@ help:
 	@echo "  make docker-status   - Show container status"
 	@echo "  make docker-versions - List available Docker Hub versions"
 	@echo ""
-	@echo "GOSS targets:"
-	@echo "  make goss         - Build GOSS framework"
-	@echo "  make goss-test    - Run GOSS tests"
-	@echo ""
 	@echo "Version targets:"
 	@echo "  make version      - Show versions of all bundles (GridAPPS-D + GOSS)"
 	@echo "  make check-api    - Analyze API changes and suggest version bump type"
@@ -65,11 +61,8 @@ help:
 	@echo "  make bump-minor       - Bump minor version (e.g., 2.0.0 -> 2.1.0-SNAPSHOT)"
 	@echo "  make bump-major       - Bump major version (e.g., 2.0.0 -> 3.0.0-SNAPSHOT)"
 	@echo ""
-	@echo "Repository targets (local GOSS-Repository):"
-	@echo "  make release-snapshot - Build GOSS and push snapshots to ../GOSS-Repository"
-	@echo "  make release-release  - Build GOSS and push releases to ../GOSS-Repository"
-	@echo ""
 	@echo "Utility targets:"
+	@echo "  make update-dependencies - Refresh BND repository indexes to pick up new GOSS versions"
 	@echo "  make cache-clear  - Clear all Gradle/BND caches and stop daemons (fixes build issues)"
 	@echo "  make commit       - Stage and commit changes"
 	@echo "  make push         - Push to remote"
@@ -312,41 +305,35 @@ docker-run:
 docker-stop:
 	cd ../gridappsd-docker && docker compose down
 
-# GOSS framework targets
-GOSS_DIR = ../GOSS
-
-goss:
-	cd $(GOSS_DIR) && ./gradlew build
-
-goss-test:
-	cd $(GOSS_DIR) && ./gradlew check
-
-goss-clean:
-	cd $(GOSS_DIR) && ./gradlew clean
+# Refresh BND repository indexes to discover new GOSS bundle versions
+# Clears the URL cache (index metadata) and GOSS JAR cache, then rebuilds
+update-dependencies:
+	@echo "Clearing BND URL cache (forces re-fetch of repository indexes)..."
+	rm -rf ~/.bnd/urlcache
+	@echo "Clearing cached GOSS bundles..."
+	rm -rf "cnf/cache/7.1.0/GOSS Release"
+	rm -rf "cnf/cache/7.1.0/GOSS Dependencies"
+	@echo "Refreshing dependencies..."
+	./gradlew build --refresh-dependencies
+	@echo "Dependencies updated."
 
 # Utility targets
 cache-clear:
 	@echo "Stopping Gradle daemons..."
 	./gradlew --stop || true
-	cd $(GOSS_DIR) && ./gradlew --stop || true
 	@echo "Clearing BND caches..."
 	rm -rf ~/.bnd/cache ~/.bnd/urlcache
 	rm -rf cnf/cache
-	rm -rf $(GOSS_DIR)/cnf/cache
 	@echo "Clearing Gradle caches..."
 	rm -rf ~/.gradle/caches/modules-2/files-2.1/bnd*
 	rm -rf ~/.gradle/caches/modules-2/files-2.1/biz.aQute*
 	rm -rf ~/.gradle/caches/modules-2/files-2.1/com.diffplug*
 	@echo "Clearing local Gradle caches..."
 	rm -rf .gradle
-	rm -rf $(GOSS_DIR)/.gradle
 	rm -rf buildSrc/.gradle
-	rm -rf $(GOSS_DIR)/buildSrc/.gradle
 	@echo "Clearing build directories..."
 	rm -rf build
 	rm -rf */build
-	rm -rf $(GOSS_DIR)/build
-	rm -rf $(GOSS_DIR)/*/build
 	@echo "Caches cleared. Run './gradlew build' to rebuild."
 
 # Git targets
@@ -383,40 +370,19 @@ ifndef VERSION
 endif
 	@python3 scripts/version.py snapshot $(VERSION)
 
-# Repository release targets
-GOSS_REPO_DIR = ../GOSS-Repository
-
-release-snapshot: goss
-	@echo "Pushing GOSS snapshot bundles to GOSS-Repository..."
-	cd $(GOSS_DIR) && python3 push-to-local-goss-repository.py --snapshot
-	@echo ""
-	@echo "Generating repository indexes..."
-	cd $(GOSS_REPO_DIR) && ./generate-repository-index.sh snapshot
-
-release-release: goss
-	@echo "Pushing GOSS release bundles to GOSS-Repository..."
-	cd $(GOSS_DIR) && python3 push-to-local-goss-repository.py --release
-	@echo ""
-	@echo "Generating repository indexes..."
-	cd $(GOSS_REPO_DIR) && ./generate-repository-index.sh release
-
 # API change detection
 check-api:
 	@python3 scripts/check-api.py
 
 # Version bumping commands
 bump-patch:
-	@python3 scripts/version.py bump-patch --gridappsd-only
-
+	@python3 scripts/version.py bump-patch
 bump-minor:
-	@python3 scripts/version.py bump-minor --gridappsd-only
-
+	@python3 scripts/version.py bump-minor
 bump-major:
-	@python3 scripts/version.py bump-major --gridappsd-only
-
+	@python3 scripts/version.py bump-major
 next-snapshot:
-	@python3 scripts/version.py next-snapshot --gridappsd-only
-
+	@python3 scripts/version.py next-snapshot
 # Code formatting targets (uses Spotless with Eclipse formatter)
 format:
 	@echo "Formatting Java files..."

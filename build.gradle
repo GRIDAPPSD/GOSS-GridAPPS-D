@@ -200,9 +200,9 @@ task collectBundles(type: Copy) {
 
     // Collect GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
     // BND downloads these from https://github.com/GridOPTICS/GOSS-Repository on first build
-    // Only include version 12.1.0 (Java 21 compatible release)
+    // Only include version 13.0.0 (Java 21 compatible release)
     from('cnf/cache/7.1.0/GOSS Release') {
-        include 'pnnl.goss.core.*-12.1.0.jar'
+        include 'pnnl.goss.core.*-13.0.0.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
         // Exclude test and development bundles - these should not be deployed
@@ -413,7 +413,11 @@ task collectBundles(type: Copy) {
             'jakarta.resource:jakarta.resource-api:2.1.0',
 
             // Commons BeanUtils dependencies
-            'commons-collections:commons-collections:3.2.2'
+            'commons-collections:commons-collections:3.2.2',
+
+            // Nimbus JOSE+JWT (required by goss-core-security for JWT token signing/verification)
+            'com.nimbusds:nimbus-jose-jwt:9.41.2',
+            'net.jcip:jcip-annotations:1.0'
 
             // NOTE: Jena deps (dexx, jsonld-java, commons-csv, thrift, xerces) are now embedded in gridappsd-jena
             // NOTE: POI deps (xmlsec, bouncycastle, xmlbeans, commons-codec/collections4) are now embedded in gridappsd-poi

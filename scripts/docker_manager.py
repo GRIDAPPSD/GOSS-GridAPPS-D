@@ -16,6 +16,7 @@ Usage:
 import argparse
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -124,10 +125,13 @@ def cmd_up(args):
 
     env = {"GRIDAPPSD_TAG": tag}
 
-    # Set autostart if requested
+    # Set autostart mode
     if args.autostart:
         env["AUTOSTART"] = "1"
         info("AUTOSTART=1 enabled - GridAPPS-D will start automatically")
+    else:
+        env["AUTOSTART"] = "0"
+        info("AUTOSTART=0 - container will wait (use 'docker exec -it gridappsd bash' to start manually)")
 
     # Pull images if requested
     if args.pull:
@@ -138,58 +142,110 @@ def cmd_up(args):
     info("Starting containers...")
     run_compose(["up", "-d"], env=env)
 
-    # Wait for health checks
-    if not args.no_wait:
-        info("Waiting for services to be healthy...")
-        wait_for_healthy()
+    # Read port mappings from compose config
+    config = get_compose_config(env)
+    gridappsd_ports = get_service_ports(config, "gridappsd")
+    blazegraph_ports = get_service_ports(config, "blazegraph")
+    proven_ports = get_service_ports(config, "proven")
 
-    success("Containers started successfully!")
+    # Wait for STOMP and OpenWire ports to become reachable
+    stomp_port = gridappsd_ports.get(61613)
+    openwire_port = gridappsd_ports.get(61616)
+    check_ports = []
+    if stomp_port:
+        check_ports.append(("STOMP", stomp_port))
+    if openwire_port:
+        check_ports.append(("OpenWire", openwire_port))
+
+    if check_ports:
+        info("Waiting for services to be ready...")
+        all_ready = wait_for_ports(check_ports, timeout=120)
+        if all_ready:
+            success("All services are ready!")
+        else:
+            warn("Some services did not become ready. Check logs with: make docker-logs")
+    else:
+        warn("Could not determine gridappsd ports from compose config.")
+
+    # Print endpoints using configured ports
     print()
     print("Available endpoints:")
-    print(f"  STOMP:      tcp://localhost:61613")
-    print(f"  WebSocket:  ws://localhost:61614")
-    print(f"  OpenWire:   tcp://localhost:61616")
-    print(f"  Blazegraph: http://localhost:8889/bigdata/")
-    print(f"  Proven:     http://localhost:18080/")
+    if gridappsd_ports.get(61613):
+        print(f"  STOMP:      tcp://localhost:{gridappsd_ports[61613]}")
+    if gridappsd_ports.get(61614):
+        print(f"  WebSocket:  ws://localhost:{gridappsd_ports[61614]}")
+    if gridappsd_ports.get(61616):
+        print(f"  OpenWire:   tcp://localhost:{gridappsd_ports[61616]}")
+    if blazegraph_ports.get(8080):
+        print(f"  Blazegraph: http://localhost:{blazegraph_ports[8080]}/bigdata/")
+    if proven_ports.get(8080):
+        print(f"  Proven:     http://localhost:{proven_ports[8080]}/")
     print()
-    print("To view logs: make docker-logs")
-    print("To stop:      make docker-down")
+    print("Check status: make docker-status")
+    print("View logs:    make docker-logs")
+    print("Stop:         make docker-down")
 
-def wait_for_healthy(timeout: int = 120):
-    """Wait for gridappsd container to be healthy."""
+
+def get_compose_config(env: dict = None) -> dict:
+    """Get the resolved docker compose config as a dict."""
+    compose_cmd = get_compose_command()
+    docker_dir = get_docker_dir()
+    cmd = compose_cmd + ["-f", str(docker_dir / "docker-compose.yml"), "config", "--format", "json"]
+
+    full_env = os.environ.copy()
+    if env:
+        full_env.update(env)
+
+    result = subprocess.run(cmd, capture_output=True, text=True, env=full_env)
+    if result.returncode != 0:
+        return {}
+    return json.loads(result.stdout)
+
+
+def get_service_ports(config: dict, service: str) -> dict[int, int]:
+    """Extract port mappings for a service from resolved compose config.
+
+    Returns a dict mapping container_port -> host_port.
+    """
+    ports = {}
+    svc = config.get("services", {}).get(service, {})
+    for mapping in svc.get("ports", []):
+        if isinstance(mapping, dict):
+            # Compose config format: {"published": 61613, "target": 61613, ...}
+            container_port = int(mapping.get("target", 0))
+            host_port = int(mapping.get("published", 0))
+            if container_port and host_port:
+                ports[container_port] = host_port
+        elif isinstance(mapping, str):
+            # Simple "host:container" format
+            parts = str(mapping).split(":")
+            if len(parts) == 2:
+                ports[int(parts[1])] = int(parts[0])
+    return ports
+
+
+def wait_for_ports(ports: list[tuple[str, int]], timeout: int = 120) -> bool:
+    """Wait for TCP ports to become reachable on localhost."""
     start_time = time.time()
+    pending = dict(ports)  # name -> port
 
-    while time.time() - start_time < timeout:
-        result = subprocess.run(
-            ["docker", "inspect", "--format", "{{.State.Health.Status}}", "gridappsd"],
-            capture_output=True,
-            text=True
-        )
-        status = result.stdout.strip()
+    while pending and (time.time() - start_time) < timeout:
+        for name, port in list(pending.items()):
+            try:
+                with socket.create_connection(("localhost", port), timeout=2):
+                    elapsed = int(time.time() - start_time)
+                    info(f"{name} (port {port}) is ready  [{elapsed}s]")
+                    del pending[name]
+            except (ConnectionRefusedError, OSError):
+                pass
+        if pending:
+            time.sleep(3)
 
-        if status == "healthy":
-            success("GridAPPS-D is healthy!")
-            return
-        elif status == "unhealthy":
-            warn("GridAPPS-D container is unhealthy. Check logs with: make docker-logs")
-            return
+    for name, port in pending.items():
+        warn(f"{name} (port {port}) not reachable after {timeout}s")
 
-        # Check if container is running at all
-        result = subprocess.run(
-            ["docker", "inspect", "--format", "{{.State.Running}}", "gridappsd"],
-            capture_output=True,
-            text=True
-        )
-        if result.stdout.strip() != "true":
-            error("GridAPPS-D container is not running!")
-            sys.exit(1)
+    return len(pending) == 0
 
-        time.sleep(5)
-        print(".", end="", flush=True)
-
-    print()
-    warn(f"Timeout waiting for healthy status after {timeout}s")
-    warn("Container may still be starting. Check logs with: make docker-logs")
 
 def cmd_down(args):
     """Stop containers."""
@@ -290,11 +346,6 @@ Examples:
         "--pull", "-p",
         action="store_true",
         help="Pull latest images before starting"
-    )
-    up_parser.add_argument(
-        "--no-wait",
-        action="store_true",
-        help="Don't wait for containers to be healthy"
     )
     up_parser.add_argument(
         "--force", "-f",

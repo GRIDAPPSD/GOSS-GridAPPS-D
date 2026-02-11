@@ -2,7 +2,7 @@
 #  OSGi TEST BUNDLE 
 #
 
-Bundle-Version:1.0.0.${tstamp}
+Bundle-Version: 1.0.0-SNAPSHOT
 Bundle-Description: \
 	This bundle is an OSGi test bundle that tests the GridAPPS-D platform implementation. \
 	It provides comprehensive integration and unit tests for the GridAPPS-D services, \
@@ -22,12 +22,12 @@ Private-Package:  \
 	junit:junit;version=4.13.2,\
 	org.mockito:mockito-core;version=5.14.2,\
 	org.apache.felix:org.apache.felix.configadmin;version=1.9.26,\
-	pnnl.goss.core.core-api;version='[11,12)',\
-	pnnl.goss.core.goss-client;version='[11,12)',\
+	pnnl.goss.core.core-api;version='[13.0,14)',\
+	pnnl.goss.core.goss-client;version='[13.0,14)',\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
-	pnnl.goss.core.goss-core-server;version='[11,12)',\
-	pnnl.goss.core.goss-core-server-api;version='[11,12)',\
-	pnnl.goss.core.goss-core-security;version='[11,12)',\
+	pnnl.goss.core.goss-core-server;version='[13.0,14)',\
+	pnnl.goss.core.goss-core-server-api;version='[13.0,14)',\
+	pnnl.goss.core.goss-core-security;version='[13.0,14)',\
 	org.slf4j:slf4j-api;version=2.0.16,\
 	org.apache.httpcomponents:httpclient;version=4.5.14,\
 	org.apache.httpcomponents:httpcore;version=4.4.16,\
@@ -53,10 +53,10 @@ Private-Package:  \
 	org.apache.felix:org.apache.felix.configadmin;version='[1.9,2)',\
 	org.apache.httpcomponents:httpclient;version='[4.5,5)',\
 	org.apache.httpcomponents:httpcore;version='[4.4,5)',\
-	pnnl.goss.core.core-api;version='[11,12)',\
-	pnnl.goss.core.goss-core-exceptions;version='[11,12)',\
-	pnnl.goss.core.goss-core-security;version='[11,12)',\
-	pnnl.goss.core.goss-core-server-api;version='[11,12)',\
+	pnnl.goss.core.core-api;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-exceptions;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-security;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-server-api;version='[13.0.0,13.0.1)',\
 	org.slf4j:slf4j-api;version='[2.0,3)',\
 	junit:junit;version='[4.13,5)',\
 	org.hamcrest:hamcrest;version='[2.2,3)',\

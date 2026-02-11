@@ -102,8 +102,9 @@ org.glassfish.hk2:hk2-locator:2.6.1
 org.glassfish.hk2:hk2-utils:2.6.1
 org.glassfish.hk2:osgi-resource-locator:1.0.3
 
-# Nimbus JOSE JWT
+# Nimbus JOSE JWT (required by goss-core-security for token signing/verification)
 com.nimbusds:nimbus-jose-jwt:9.41.2
+net.jcip:jcip-annotations:1.0
 
 # Jackson
 com.fasterxml.jackson.core:jackson-core:2.18.1
