@@ -1,7 +1,7 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration test-simulation test-container test-stomp-topics \
+.PHONY: help build clean dist test test-unit test-integration test-simulation test-simulation-python test-container test-stomp-topics test-blazegraph \
         run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
         cache-clear update-dependencies commit push version release snapshot \
         check-api bump-patch bump-minor bump-major next-snapshot \
@@ -29,6 +29,8 @@ help:
 	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
 	@echo "  make test-container    - Run container-based tests using Testcontainers (auto-starts Docker)"
 	@echo "  make test-stomp-topics - Run STOMP topic prefix tests in Docker (requires running container)"
+	@echo "  make test-blazegraph   - Run Blazegraph query tests via gridappsd-python (requires running container)"
+	@echo "  make test-simulation-python - Run 30s simulation test via gridappsd-python (requires running container)"
 	@echo "  make test-check        - Check if integration test services are available"
 	@echo ""
 	@echo "Run targets:"
@@ -188,6 +190,30 @@ test-stomp-topics:
 		exit 1; \
 	fi
 	docker exec gridappsd bash -c "cd /gridappsd/services/helicsgossbridge && python -m pytest tests/test_stomp_topic_prefix.py -v"
+
+# Run Blazegraph query tests via gridappsd-python inside the Docker container
+# Verifies data can be retrieved from Blazegraph through the GridAPPS-D message bus
+test-blazegraph:
+	@echo "Running Blazegraph query tests via gridappsd-python..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	docker cp tests/test_blazegraph_queries.py gridappsd:/tmp/test_blazegraph_queries.py
+	docker exec gridappsd python -m pytest /tmp/test_blazegraph_queries.py -v
+
+# Run a short simulation test via gridappsd-python inside the Docker container
+# Starts a 30-second GridLAB-D simulation on the IEEE 13 node model and verifies output
+test-simulation-python:
+	@echo "Running simulation test via gridappsd-python (30s simulation)..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	docker cp tests/test_simulation.py gridappsd:/tmp/test_simulation.py
+	docker exec gridappsd python -m pytest /tmp/test_simulation.py -v
 
 # Run with Docker config (foreground)
 run: dist

@@ -1,0 +1,86 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ develop, java-update ]
+  pull_request:
+    branches: [ develop, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  blazegraph-tests:
+    name: Blazegraph & Simulation Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Build distribution
+      run: ./gradlew dist --no-daemon
+      env:
+        GRADLE_OPTS: -Xmx2g -Dorg.gradle.daemon=false
+
+    - name: Build Docker image
+      run: make docker
+
+    - name: Start containers
+      run: make docker-up
+      env:
+        AUTOSTART: 1
+
+    - name: Wait for platform ready
+      run: |
+        echo "Waiting for GridAPPS-D platform to finish initialization..."
+        for i in $(seq 1 30); do
+          if docker exec gridappsd python3 -c "
+        from gridappsd import GridAPPSD
+        g = GridAPPSD(username='system', password='manager', stomp_address='localhost', stomp_port='61613')
+        r = g.get_response('goss.gridappsd.process.request.status.platform', '{}', timeout=5)
+        g.disconnect()
+        assert r is not None
+        " 2>/dev/null; then
+            echo "Platform is ready after ${i} attempts"
+            exit 0
+          fi
+          echo "Attempt $i/30 - platform not ready yet, waiting 10s..."
+          sleep 10
+        done
+        echo "Platform did not become ready in time"
+        docker logs gridappsd --tail 50
+        exit 1
+      timeout-minutes: 6
+
+    - name: Run Blazegraph query tests
+      run: make test-blazegraph
+
+    - name: Run STOMP topic tests
+      run: make test-stomp-topics
+
+    - name: Run simulation test (30s GridLAB-D)
+      run: make test-simulation-python
+      timeout-minutes: 12
+      continue-on-error: true
+
+    - name: Show container logs on failure
+      if: failure()
+      run: docker logs gridappsd --tail 100
+
+    - name: Stop containers
+      if: always()
+      run: make docker-down
