@@ -13,7 +13,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Build with Gradle
-        run: ./gradlew dist
+        run: ./gradlew export dist
 
 #      - uses: actions/upload-artifact@v2
 #        with:
@@ -71,7 +71,7 @@ jobs:
           BUILD_VERSION="${TIMESTAMP}_${GITHASH}${BRANCH:+:$TAG}"
           echo "BUILD_VERSION $BUILD_VERSION"
           echo "TAG ${IMAGE}:${TIMESTAMP}_${GITHASH}"
-          docker build --build-arg VERSION="${TAG}" --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:${TIMESTAMP}_${GITHASH} .
+          docker build --build-arg GRIDAPPSD_BASE_VERSION=:java-update --build-arg VERSION="${TAG}" --build-arg TIMESTAMP="${BUILD_VERSION}" -t ${IMAGE}:${TIMESTAMP}_${GITHASH} .
           status=$?
           if [ $status -ne 0 ]; then
             echo "Error: status $status"
