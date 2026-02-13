@@ -80,7 +80,7 @@ public class GridAppsDBoot {
     // dependency
     // through GridAppsDataSourcesImpl -> ConfigurationManager
     // Make it optional so we can bootstrap first
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+    // @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     private volatile LogDataManager logDataManager;
 
     // These services will become available AFTER we register ConfigurationManager
