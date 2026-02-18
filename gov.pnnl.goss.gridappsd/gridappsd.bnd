@@ -1,4 +1,4 @@
-Bundle-Version: 1.0.0.${tstamp}
+Bundle-Version: 1.0.0-SNAPSHOT
 
 Private-Package: \
 	gov.pnnl.goss.gridappsd.configuration,\
@@ -15,6 +15,7 @@ Private-Package: \
 	gov.pnnl.goss.gridappsd.service,\
 	gov.pnnl.goss.gridappsd.testmanager,\
 	gov.pnnl.goss.gridappsd.distributed
-Export-Package: \
-	gov.pnnl.goss.gridappsd.dto,\
-	gov.pnnl.goss.gridappsd.api
+
+# Don't export packages that are already exported by gridappsd.api bundle
+# Import them instead to avoid split package problem
+-exportcontents:

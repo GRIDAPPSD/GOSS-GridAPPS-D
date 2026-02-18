@@ -2,20 +2,20 @@ package gov.pnnl.goss.gridappsd.dto;
 
 import java.util.HashMap;
 
-public class TimeSeriesKeyValuePair{
-	
-	HashMap<String,Object> keyValuePair;
+public class TimeSeriesKeyValuePair {
 
-	public HashMap<String, Object> getKeyValuePair() {
-		return keyValuePair;
-	}
+    HashMap<String, Object> keyValuePair;
 
-	public void setKeyValuePair(HashMap<String, Object> keyValuePair) {
-		this.keyValuePair = keyValuePair;
-	}
-	
-	public Object getValue(String key){
-		return keyValuePair.get(key);
-	}
-	
+    public HashMap<String, Object> getKeyValuePair() {
+        return keyValuePair;
+    }
+
+    public void setKeyValuePair(HashMap<String, Object> keyValuePair) {
+        this.keyValuePair = keyValuePair;
+    }
+
+    public Object getValue(String key) {
+        return keyValuePair.get(key);
+    }
+
 }

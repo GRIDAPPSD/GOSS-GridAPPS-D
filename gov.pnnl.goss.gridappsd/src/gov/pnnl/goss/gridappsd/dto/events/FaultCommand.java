@@ -6,29 +6,28 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 public class FaultCommand extends BaseEventCommand implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1611073142106355216L;
-	public Fault message;
+    /**
+     *
+     */
+    private static final long serialVersionUID = -1611073142106355216L;
+    public Fault message;
 
+    @Override
+    public String toString() {
+        Gson gson = new Gson();
+        return gson.toJson(this);
+    }
 
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
-	
-	public JsonElement toJsonElement() {
-		Gson  gson = new Gson();
-		return gson.toJsonTree(this);
-	}
+    public JsonElement toJsonElement() {
+        Gson gson = new Gson();
+        return gson.toJsonTree(this);
+    }
 
-	public static FaultCommand parse(String jsonString){
-		Gson  gson = new Gson();
-		FaultCommand obj = gson.fromJson(jsonString, FaultCommand.class);
-		if(obj.command==null)
-			throw new RuntimeException("Expected attribute object not found");
-		return obj;
-	}
+    public static FaultCommand parse(String jsonString) {
+        Gson gson = new Gson();
+        FaultCommand obj = gson.fromJson(jsonString, FaultCommand.class);
+        if (obj.command == null)
+            throw new RuntimeException("Expected attribute object not found");
+        return obj;
+    }
 }

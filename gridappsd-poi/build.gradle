@@ -1,0 +1,111 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+description = 'Apache POI Wrapper Bundle for GridAPPS-D - embeds all POI dependencies'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    embed
+    implementation.extendsFrom(embed)
+}
+
+dependencies {
+    // Apache POI core components for Excel handling
+    embed 'org.apache.poi:poi:3.17'
+    embed 'org.apache.poi:poi-ooxml:3.17'
+    embed 'org.apache.poi:poi-ooxml-schemas:3.17'
+
+    // POI transitive dependencies
+    embed 'org.apache.xmlbeans:xmlbeans:2.6.0'
+    embed 'org.apache.commons:commons-collections4:4.1'
+    embed 'commons-codec:commons-codec:1.10'  // POI 3.17 uses 1.10
+
+    // XML Security (needed by POI for signed documents)
+    embed 'org.apache.santuario:xmlsec:2.1.0'
+
+    // Bouncy Castle (needed by xmlsec)
+    embed 'org.bouncycastle:bcprov-jdk15on:1.58'
+    embed 'org.bouncycastle:bcpkix-jdk15on:1.58'
+
+    // Curve25519 (needed by POI)
+    embed 'com.github.virtuald:curvesapi:1.04'
+
+    // SLF4J API (don't embed implementation, let OSGi provide it)
+    compileOnly 'org.slf4j:slf4j-api:2.0.16'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+shadowJar {
+    archiveBaseName.set('gridappsd-poi')
+    archiveVersion.set('3.17.0')
+    archiveClassifier.set('')
+
+    // Relocate packages to avoid conflicts with other bundles
+    // Don't relocate org.apache.poi - we want to export it as-is
+    relocate 'org.apache.xmlbeans', 'poi.shaded.xmlbeans'
+    relocate 'org.apache.santuario', 'poi.shaded.santuario'
+    relocate 'org.apache.xml.security', 'poi.shaded.xml.security'
+    relocate 'org.bouncycastle', 'poi.shaded.bouncycastle'
+    // Don't relocate commons-codec as it's widely used
+    // Don't relocate commons-collections4 as it's widely used
+
+    // Merge service files for ServiceLoader
+    mergeServiceFiles()
+
+    // Generate OSGi manifest
+    manifest {
+        attributes(
+            'Bundle-ManifestVersion': '2',
+            'Bundle-SymbolicName': 'gridappsd-poi',
+            'Bundle-Name': 'Apache POI Wrapper Bundle for GridAPPS-D',
+            'Bundle-Version': '3.17.0',
+            'Bundle-Vendor': 'PNNL',
+            // Export only the POI packages that GridAPPS-D uses
+            'Export-Package': 'org.apache.poi.ss.usermodel;version="3.17.0",' +
+                             'org.apache.poi.hssf.usermodel;version="3.17.0",' +
+                             'org.apache.poi.xssf.usermodel;version="3.17.0",' +
+                             'org.apache.poi.ss.util;version="3.17.0"',
+            // Import from OSGi environment
+            'Import-Package': 'org.slf4j;version="[1.7,3)";resolution:=optional,' +
+                             'javax.xml.parsers,' +
+                             'javax.xml.transform,' +
+                             'javax.xml.transform.dom,' +
+                             'javax.xml.transform.stream,' +
+                             'javax.xml.stream,' +
+                             'javax.xml.stream.events,' +
+                             'javax.xml.namespace,' +
+                             'javax.xml.xpath,' +
+                             'javax.xml.datatype,' +
+                             'javax.xml.validation,' +
+                             'org.w3c.dom,' +
+                             'org.w3c.dom.ls,' +
+                             'org.xml.sax,' +
+                             'org.xml.sax.helpers',
+            // Embed everything else
+            'Bundle-ClassPath': '.',
+            'Require-Capability': 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"'
+        )
+    }
+
+    // Exclude duplicate META-INF files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/NOTICE*'
+    exclude 'META-INF/LICENSE*'
+    exclude 'META-INF/DEPENDENCIES'
+    exclude 'META-INF/maven/**'
+}
+
+// Make shadow the default jar task
+jar.enabled = false
+assemble.dependsOn shadowJar

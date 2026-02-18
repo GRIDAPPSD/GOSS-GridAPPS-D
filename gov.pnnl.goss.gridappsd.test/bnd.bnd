@@ -2,80 +2,66 @@
 #  OSGi TEST BUNDLE 
 #
 
-Bundle-Version:1.0.0.${tstamp}
+Bundle-Version: 1.0.0-SNAPSHOT
 Bundle-Description: \
- 	This bundle is an OSGi test bundle that tests the enRoute Blog Manager API. Projects\
- 	that provide this API should configure their bnd.bnd file to run this test so that\
- 	the providers can test their conformance. This bundle requires DSTest to run so this\
- 	bundle should be included. \
-	\
-	${warning;Please update this Bundle-Description in gov.pnnl.goss.gridappsd.test/bnd.bnd}
+	This bundle is an OSGi test bundle that tests the GridAPPS-D platform implementation. \
+	It provides comprehensive integration and unit tests for the GridAPPS-D services, \
+	including application management, configuration management, data management, \
+	simulation management, and test management components.
 
 
 Private-Package:  \
 	gov.pnnl.goss.gridappsd.test
 
-Test-Cases: ${test-cases}
-
+# Test cases are automatically discovered by the test framework
+# Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.Test}
 
 -includeresource: {readme.md}
 
 -buildpath: \
-	osgi.enroute.base.api;version=1.0,\
-	osgi.enroute.junit.wrapper;version=4.12,\
-	org.mockito.mockito-all,\
-	org.amdatu.testing.configurator;version='[3.1,4)',\
-	org.apache.felix.dependencymanager;version='[4,5)',\
-	org.apache.felix.configadmin,\
-	pnnl.goss.core.core-api;version=latest,\
-	pnnl.goss.core.goss-client;version=latest,\
+	junit:junit;version=4.13.2,\
+	org.mockito:mockito-core;version=5.14.2,\
+	org.apache.felix:org.apache.felix.configadmin;version=1.9.26,\
+	pnnl.goss.core.core-api;version='[13.0,14)',\
+	pnnl.goss.core.goss-client;version='[13.0,14)',\
 	gov.pnnl.goss.gridappsd.gridappsd;version=latest,\
-	pnnl.goss.core.goss-core-server,\
-	pnnl.goss.core.goss-core-server-api,\
-	pnnl.goss.core.goss-core-security,\
-	org.amdatu.configurator.api,\
-	slf4j.api,\
-	org.apache.httpcomponents.httpclient,\
-	javax.jms-api,\
+	pnnl.goss.core.goss-core-server;version='[13.0,14)',\
+	pnnl.goss.core.goss-core-server-api;version='[13.0,14)',\
+	pnnl.goss.core.goss-core-security;version='[13.0,14)',\
+	org.slf4j:slf4j-api;version=2.0.16,\
+	org.apache.httpcomponents:httpclient;version=4.5.14,\
+	org.apache.httpcomponents:httpcore;version=4.4.16,\
+	jakarta.jms:jakarta.jms-api;version=3.1.0,\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
-	com.google.gson,\
-	org.fusesource.stompjms.stompjms-client
+	com.google.code.gson:gson;version=2.11.0,\
+	org.fusesource.stompjms:stompjms-client;version=1.19
 	
 
 -runrequires: \
 	osgi.identity;filter:='(osgi.identity=gov.pnnl.goss.gridappsd.test)'
 
+# Using Logback instead of Felix Log for Java 21 compatibility
 -runbundles: \
 	gov.pnnl.goss.gridappsd.test;version=snapshot,\
-	org.apache.felix.log;version='[1.0.1,1.0.2)',\
-	org.mockito.mockito-core;version='[1.10.19,1.10.20)',\
-	org.objenesis;version='[2.2.0,2.2.1)',\
-	ch.qos.logback.core;version='[1.1.2,1.1.3)',\
-	com.springsource.javax.jms;version='[1.1.0,1.1.1)',\
-	log4j;version='[1.2.17,1.2.18)',\
-	org.amdatu.testing.configurator;version='[3.1.0,3.1.1)',\
-	org.apache.activemq.shiro;version='[5.11.1,5.11.2)',\
-	org.apache.commons.logging;version='[1.2.0,1.2.1)',\
-	org.apache.felix.configadmin;version='[1.8.10,1.8.11)',\
-	org.apache.felix.dependencymanager;version='[4.3.0,4.3.1)',\
-	org.apache.httpcomponents.httpclient;version='[4.5.0,4.5.1)',\
-	org.apache.httpcomponents.httpcore;version='[4.4.4,4.4.5)',\
-	org.apache.shiro.core;version='[1.2.3,1.2.4)',\
-	pnnl.goss.core.core-api;version='[4.0.2,4.0.3)',\
-	pnnl.goss.core.goss-core-exceptions;version='[2.1.0,2.1.1)',\
-	pnnl.goss.core.goss-core-security;version='[2.1.9,2.1.10)',\
-	pnnl.goss.core.goss-core-server-api;version='[2.0.11,2.0.12)',\
-	slf4j.api;version='[1.7.21,1.7.22)',\
-	slf4j.log4j12;version='[1.6.1,1.6.2)',\
-	com.springsource.org.junit;version='[4.11.0,4.11.1)',\
-	org.osgi.service.metatype;version='[1.3.0,1.3.1)',\
-	osgi.enroute.hamcrest.wrapper;version='[1.3.0,1.3.1)',\
-	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)',\
-	com.google.gson;version=latest,\
+	ch.qos.logback:logback-classic;version='[1.5,2)',\
+	ch.qos.logback:logback-core;version='[1.5,2)',\
+	org.mockito:mockito-core;version='[5.14,6)',\
+	org.objenesis:objenesis;version='[3.4,4)',\
+	jakarta.jms:jakarta.jms-api;version='[3.1,4)',\
+	org.apache.activemq:activemq-osgi;version='[6.2,7)',\
+	commons-logging:commons-logging;version='[1.2,2)',\
+	org.apache.felix:org.apache.felix.configadmin;version='[1.9,2)',\
+	org.apache.httpcomponents:httpclient;version='[4.5,5)',\
+	org.apache.httpcomponents:httpcore;version='[4.4,5)',\
+	pnnl.goss.core.core-api;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-exceptions;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-security;version='[13.0.0,13.0.1)',\
+	pnnl.goss.core.goss-core-server-api;version='[13.0.0,13.0.1)',\
+	org.slf4j:slf4j-api;version='[2.0,3)',\
+	junit:junit;version='[4.13,5)',\
+	org.hamcrest:hamcrest;version='[2.2,3)',\
+	com.google.code.gson:gson;version='[2.11,3)',\
 	gov.pnnl.goss.gridappsd.gridappsd.api;version=latest,\
-	javax.jms-api;version=latest,\
-	org.fusesource.stompjms.stompjms-client;version=latest,\
-	pnnl.goss.core.core-api;version=latest,\
-	org.apache.activemq.activemq-osgi;version=latest
--runfw: org.apache.felix.framework;version='[5.2.0,5.2.0]'
--runee: JavaSE-1.8
+	org.fusesource.stompjms:stompjms-client;version='[1.19,2)'
+-runfw: org.apache.felix.framework;version='[7.0.5,8)'
+-runee: JavaSE-21

@@ -1,35 +1,613 @@
 /*
- * Master Gradle build script
- *
- * Depends on bndPlugin property set by settings.gradle.
- * and bnd_* values from gradle.properties.
+ * Master Gradle build script for GridAPPS-D
+ * Updated for JDK 21 compatibility
  */
 
-import aQute.bnd.build.Workspace
-import aQute.bnd.osgi.Constants
-
-/* Add bnd gradle plugin as a script dependency */
-buildscript {
-  dependencies {
-    classpath bndPlugin
-  }
+plugins {
+    id 'biz.aQute.bnd' version '7.1.0' apply false
+    id 'com.diffplug.spotless' version '6.25.0' apply false
 }
 
-/* Initialize the bnd workspace */
-Workspace.setDriver(Constants.BNDDRIVER_GRADLE)
-Workspace.addGestalt(Constants.GESTALT_BATCH, null)
-ext.bndWorkspace = new Workspace(rootDir, bnd_cnf).setOffline(gradle.startParameter.offline)
+allprojects {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
 
-ext.cnf = rootProject.project(bnd_cnf)
-
-/* Configure the subprojects */
 subprojects {
-  def bndProject = bndWorkspace.getProject(name)
-  if (bndProject != null) {
-    plugins.apply 'biz.aQute.bnd'
-  }
+    apply plugin: 'java'
+
+    // Eclipse plugin for IDE support (VSCode, Eclipse)
+    // Generates .classpath and .project files with proper dependency resolution
+    // Usage: ./gradlew eclipse
+    //        ./gradlew :gov.pnnl.goss.gridappsd:eclipse  (single project)
+    // After running, reload your IDE to pick up the new classpath
+    apply plugin: 'eclipse'
+
+    // Configure Eclipse to use a separate output directory to avoid conflicts with BND
+    eclipse {
+        classpath {
+            // Use 'bin' directory for Eclipse output to avoid conflict with BND's 'generated' directory
+            defaultOutputDir = file('bin/default')
+
+            // Remove duplicate bin/bin_test entries that BND adds as library references
+            // These conflict with the source output directories
+            file {
+                whenMerged { cp ->
+                    cp.entries.removeAll { entry ->
+                        entry.kind == 'lib' && (
+                            entry.path.endsWith('/bin') ||
+                            entry.path.endsWith('/bin_test')
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Apply BND plugin only to OSGi bundle projects (projects with bnd.bnd file)
+    // Skip wrapper bundles (gridappsd-proven, gridappsd-jena, gridappsd-poi) that use Shadow
+    if (project.file('bnd.bnd').exists()) {
+        apply plugin: 'biz.aQute.bnd'
+
+        // When BND is applied, it modifies the jar task to output to the project directory.
+        // All Eclipse tasks must declare explicit dependencies to avoid Gradle validation errors.
+        ['eclipseClasspath', 'eclipseJdt', 'eclipseProject'].each { taskName ->
+            tasks.named(taskName) {
+                inputs.files(tasks.named('jar'))
+            }
+        }
+    }
+    apply plugin: 'com.diffplug.spotless'
+
+    // Add Testcontainers dependencies for container-based integration tests
+    dependencies {
+        testImplementation 'org.testcontainers:testcontainers:1.19.3'
+        testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    }
+
+    // Spotless configuration for code formatting
+    spotless {
+        java {
+            // Use Eclipse formatter if available
+            if (rootProject.file('.settings/eclipse-java-formatter.xml').exists()) {
+                eclipse().configFile(rootProject.file('.settings/eclipse-java-formatter.xml'))
+            }
+
+            // Ensure files end with a newline
+            endWithNewline()
+
+            // Remove trailing whitespace
+            trimTrailingWhitespace()
+
+            // Target all Java files
+            target 'src/**/*.java', 'test/**/*.java'
+
+            // Exclude generated files
+            targetExclude 'build/**', 'bin/**', 'generated/**'
+        }
+    }
+
+    // Explicit Java toolchain configuration for JDK 21
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    // Configure encoding
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    // Configure test JVM arguments for Java 21 module system
+    tasks.withType(Test) {
+        jvmArgs = [
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.time=ALL-UNNAMED',
+            // Allow Mockito's ByteBuddy agent to attach dynamically (required for inline mocking)
+            '-XX:+EnableDynamicAgentLoading'
+        ]
+
+        // Support for running ONLY integration tests via property
+        // Usage: ./gradlew test -PonlyIntegrationTests
+        if (project.hasProperty('onlyIntegrationTests')) {
+            include '**/*IntegrationTest.class'
+            include '**/*IntegrationTests.class'
+        }
+        // By default, exclude integration tests from the normal build
+        // Integration tests require a running GridAPPS-D platform and message bus
+        // Run with: ./gradlew test -PincludeIntegrationTests to include them
+        else if (!project.hasProperty('includeIntegrationTests')) {
+            exclude '**/*IntegrationTest.class'
+            exclude '**/*IntegrationTests.class'
+        }
+    }
+
+    // Print build info
+    def javaVersion = System.getProperty('java.version')
+    println "Building ${project.name} with Java ${javaVersion} (target: ${java.targetCompatibility})"
 }
 
-task wrapper(type: Wrapper) {
-  jarFile = rootProject.file('.gradle-wrapper/gradle-wrapper.jar')
+// Custom task to build and assemble the Felix launcher distribution
+task assembleLauncher(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Assembles the Felix launcher distribution with all bundles'
+
+    dependsOn ':gov.pnnl.goss.gridappsd:jar'
+
+    into "$buildDir/launcher"
+
+    // Copy launcher class and resources
+    from('gov.pnnl.goss.gridappsd/launcher') {
+        include 'config.properties'
+        into '.'
+    }
+
+    doLast {
+        println "Launcher distribution assembled in: $buildDir/launcher"
+        println "Bundle directory: $buildDir/launcher/bundle"
+    }
+}
+
+// Task to copy configuration files
+task copyConfig(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Copies configuration files to the launcher directory'
+
+    def configDir = project.hasProperty('configDir') ? project.configDir : 'conf'
+
+    from("gov.pnnl.goss.gridappsd/${configDir}") {
+        include '*.cfg'
+        include '*.properties'
+    }
+
+    into "$buildDir/launcher/conf"
+
+    doLast {
+        println "Configuration files copied from: gov.pnnl.goss.gridappsd/${configDir}"
+        println "Configuration files copied to: $buildDir/launcher/conf"
+    }
+}
+
+// Task to collect all bundle JARs
+task collectBundles(type: Copy) {
+    group = 'GridAPPS-D'
+    description = 'Collects all OSGi bundles into the launcher bundle directory'
+
+    // Only depend on production JAR, skip test modules
+    dependsOn ':gov.pnnl.goss.gridappsd:jar'
+    dependsOn ':gridappsd-proven:shadowJar'
+    dependsOn ':gridappsd-jena:shadowJar'
+    dependsOn ':gridappsd-poi:shadowJar'
+    dependsOn assembleLauncher
+    dependsOn copyConfig
+
+    into "$buildDir/launcher/bundle"
+
+    // Collect GridAPPS-D bundles
+    from(project(':gov.pnnl.goss.gridappsd').jar) {
+        include '*.jar'
+    }
+
+    // Collect GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
+    // BND downloads these from https://github.com/GridOPTICS/GOSS-Repository on first build
+    // Only include version 13.0.0 (Java 21 compatible release)
+    from('cnf/cache/7.1.0/GOSS Release') {
+        include 'pnnl.goss.core.*-13.0.0.jar'
+        exclude '*-sources.jar'
+        exclude '*-javadoc.jar'
+        // Exclude test and development bundles - these should not be deployed
+        exclude 'pnnl.goss.core.itests*'
+        exclude 'pnnl.goss.core.testutil*'
+        exclude 'pnnl.goss.core.runner*'
+        exclude 'pnnl.goss.core.client-all*'
+    }
+
+    // Collect CIMHub library from BND cache
+    from('cnf/cache/7.1.0/CIMHub') {
+        include 'cimhub.lib-2.0.3.jar'
+    }
+
+    // Collect gridappsd-jena wrapper bundle (uber JAR with all Jena dependencies embedded)
+    from('gridappsd-jena/build/libs') {
+        include 'gridappsd-jena-3.7.0.jar'
+    }
+
+    // Collect gridappsd-proven wrapper bundle (uber JAR with all Proven dependencies embedded)
+    from('gridappsd-proven/build/libs') {
+        include 'gridappsd-proven-0.5.0.jar'
+    }
+
+    // Collect gridappsd-poi wrapper bundle (uber JAR with all POI dependencies embedded)
+    from('gridappsd-poi/build/libs') {
+        include 'gridappsd-poi-3.17.0.jar'
+    }
+
+    // Download Maven dependencies matching GOSS build dependencies from libraries.bnd
+    // Prefer Maven Central over GOSS-Repository for consistency with GOSS build
+    doFirst {
+        def felixDeps = [
+            // Core Felix framework (needed on classpath for ServiceLoader, skipped during bundle installation)
+            'org.apache.felix:org.apache.felix.framework:7.0.5',
+
+            // OSGi Service APIs
+            'org.osgi:org.osgi.service.component:1.5.1',
+            'org.osgi:org.osgi.util.promise:1.3.0',
+            'org.osgi:org.osgi.util.function:1.2.0',
+
+            // Felix OSGi bundles
+            'org.apache.felix:org.apache.felix.scr:2.2.10',
+            'org.apache.felix:org.apache.felix.configadmin:1.9.26',
+            'org.apache.felix:org.apache.felix.fileinstall:3.7.4',  // Monitors conf/ and loads .cfg files into ConfigAdmin
+            'org.apache.felix:org.apache.felix.gogo.command:1.1.2',
+            'org.apache.felix:org.apache.felix.gogo.runtime:1.1.6',
+            'org.apache.felix:org.apache.felix.gogo.shell:1.1.4',
+            // Felix HTTP with Jetty 11.x (compatible with our Jetty 11.x WebSocket dependencies)
+            // Using the "light" variant which does NOT embed Jetty, letting us use our own Jetty 11.x jars
+            'org.apache.felix:org.apache.felix.http.servlet-api:2.1.0',
+            'org.apache.felix:org.apache.felix.http.jetty:5.1.8:light',
+            'org.apache.felix:org.apache.felix.dependencymanager:4.6.1',
+            'org.apache.felix:org.apache.felix.metatype:1.2.4',
+
+            // Jetty 11.x WebSocket support (required by ActiveMQ 6.2.0 for ws:// transport)
+            'org.eclipse.jetty.websocket:websocket-jetty-server:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-jetty-api:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-jetty-common:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-core-server:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-core-common:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-servlet:11.0.24',
+            'org.eclipse.jetty:jetty-servlet:11.0.24',
+            'org.eclipse.jetty:jetty-server:11.0.24',
+            'org.eclipse.jetty:jetty-http:11.0.24',
+            'org.eclipse.jetty:jetty-io:11.0.24',
+            'org.eclipse.jetty:jetty-util:11.0.24',
+            'org.eclipse.jetty:jetty-security:11.0.24',
+            'org.eclipse.jetty:jetty-webapp:11.0.24',
+            'org.eclipse.jetty:jetty-xml:11.0.24',
+
+            // Pax Logging (OSGi-native logging framework)
+            // Provides SLF4J 2.x API + Log4j2 backend with properties-based configuration
+            // See: https://github.com/ops4j/org.ops4j.pax.logging
+            'org.ops4j.pax.logging:pax-logging-api:2.2.8',
+            'org.ops4j.pax.logging:pax-logging-log4j2:2.2.8',
+
+            // Apache Aries SPI Fly (OSGi ServiceLoader support)
+            // Required by Shiro 2.0 crypto-hash which uses ServiceLoader for hash algorithms
+            'org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.7',
+            'org.ow2.asm:asm:9.7',
+            'org.ow2.asm:asm-commons:9.7',
+            'org.ow2.asm:asm-tree:9.7',
+            'org.ow2.asm:asm-analysis:9.7',
+            'org.ow2.asm:asm-util:9.7',
+
+            // Jackson (GridAPPS-D requires 2.18.1+ per bnd.bnd)
+            'com.fasterxml.jackson.core:jackson-core:2.18.1',
+            'com.fasterxml.jackson.core:jackson-databind:2.18.1',
+            'com.fasterxml.jackson.core:jackson-annotations:2.18.1',
+
+            // GSON (GOSS uses 2.11.0 per bnd.bnd)
+            'com.google.code.gson:gson:2.11.0',
+
+            // ActiveMQ OSGi bundles (GOSS uses 6.2.0 for Jakarta EE support)
+            'org.apache.activemq:activemq-osgi:6.2.0',
+            'org.apache.activemq:activemq-client:6.2.0',
+            'org.apache.activemq:activemq-shiro:6.2.0',
+            'org.fusesource.hawtbuf:hawtbuf:1.11',
+            'org.fusesource.hawtdispatch:hawtdispatch:1.22',
+            'org.fusesource.stompjms:stompjms-client:1.19',
+
+            // Shiro 2.0.0 (required by ActiveMQ 6.2.0 and GOSS for Jakarta EE support)
+            'org.apache.shiro:shiro-core:2.0.0',
+            'org.apache.shiro:shiro-lang:2.0.0',
+            'org.apache.shiro:shiro-web:2.0.0',
+            'org.apache.shiro:shiro-cache:2.0.0',
+            'org.apache.shiro:shiro-event:2.0.0',
+            'org.apache.shiro:shiro-crypto-core:2.0.0',
+            'org.apache.shiro:shiro-crypto-hash:2.0.0',
+            'org.apache.shiro:shiro-crypto-cipher:2.0.0',
+            'org.apache.shiro:shiro-config-core:2.0.0',
+            'org.apache.shiro:shiro-config-ogdl:2.0.0',
+
+            // Commons BeanUtils (required by Shiro config-ogdl)
+            'commons-beanutils:commons-beanutils:1.9.4',
+            'commons-collections:commons-collections:3.2.2',
+
+            // OWASP Encoder (required by Shiro 2.0 web module)
+            'org.owasp.encoder:encoder:1.3.1',
+
+            // HTTP Components (GOSS uses 4.5.14 per bnd.bnd)
+            'org.apache.httpcomponents:httpclient:4.5.14',
+            'org.apache.httpcomponents:httpcore:4.4.16',
+            'org.apache.httpcomponents:httpclient-osgi:4.5.14',
+            'org.apache.httpcomponents:httpcore-osgi:4.4.16',
+
+            // Commons libraries (GOSS versions per bnd.bnd)
+            'commons-io:commons-io:2.16.1',
+            'commons-lang:commons-lang:2.6',
+            'org.apache.commons:commons-lang3:3.17.0',
+            'commons-pool:commons-pool:1.6',
+            'org.apache.commons:commons-pool2:2.12.0',
+            'commons-dbcp:commons-dbcp:1.4',
+            'commons-logging:commons-logging:1.2',
+            'org.apache.commons:commons-math3:3.6.1',
+
+            // Guava (required by GridAPPS-D for RuntimeTypeAdapterFactory)
+            'com.google.guava:guava:33.3.1-jre',
+            'com.google.guava:failureaccess:1.0.2',
+
+            // Jettison (required by GridAPPS-D ProcessEvent for JSON processing)
+            'org.codehaus.jettison:jettison:1.5.4',
+
+            // XStream (GOSS uses 1.4.20 per bnd.bnd)
+            'com.thoughtworks.xstream:xstream:1.4.20',
+
+            // NOTE: Apache Jena 3.7.0 is included from BND cache above, not Maven Central
+            // Maven Central version requires dexx-collections dependency that isn't an OSGi bundle
+
+            // Spring (GOSS uses 6.1.13 per bnd.bnd)
+            'org.springframework:spring-beans:6.1.13',
+            'org.springframework:spring-context:6.1.13',
+            'org.springframework:spring-core:6.1.13',
+
+            // Jakarta JMS API (GOSS uses 3.1.0 for Jakarta EE)
+            'jakarta.jms:jakarta.jms-api:3.1.0',
+
+            // Jakarta Transaction API (replaces Geronimo JTA)
+            'jakarta.transaction:jakarta.transaction-api:2.0.1',
+
+            // Jakarta XML Binding (replaces javax.xml.bind)
+            'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2',
+            'jakarta.activation:jakarta.activation-api:2.1.3',
+
+            // Jakarta RESTful WS API (replaces JAX-RS)
+            'jakarta.ws.rs:jakarta.ws.rs-api:4.0.0',
+
+            // Legacy JMS API (still needed by some bundles)
+            'javax.jms:javax.jms-api:2.0.1',
+
+            // NOTE: Removed geronimo-jta_1.1_spec - it conflicts with Felix framework's
+            // javax.transaction.xa export, causing "uses constraint violation" errors.
+            // javax.transaction.xa is now exported from the system packages instead.
+
+            // javax.el for CDI (required by javax.enterprise.cdi-api)
+            'javax.el:javax.el-api:3.0.0',
+
+            // NOTE: Xerces/xmlresolver now embedded in gridappsd-jena
+
+            // Database drivers
+            'com.mysql:mysql-connector-j:9.1.0',
+
+            // Javax annotation (GOSS uses 1.3.2 per bnd.bnd)
+            'javax.annotation:javax.annotation-api:1.3.2',
+
+            // Jakarta annotation (needed by ActiveMQ 6.2.0)
+            'jakarta.annotation:jakarta.annotation-api:2.1.1',
+
+            // Javax inject (needed by javax.enterprise.cdi-api) - use ServiceMix bundle
+            'org.apache.servicemix.bundles:org.apache.servicemix.bundles.javax-inject:1_3',
+
+            // HawtDispatch transport (needed by stompjms-client)
+            'org.fusesource.hawtdispatch:hawtdispatch-transport:1.22',
+
+            // Jakarta CDI API (needed by Jakarta Transaction) - per GOSS libraries.bnd
+            'jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.1',
+            'jakarta.inject:jakarta.inject-api:2.0.1',
+            'jakarta.interceptor:jakarta.interceptor-api:2.1.0',
+            'jakarta.enterprise:jakarta.enterprise.lang-model:4.0.1',
+            'jakarta.el:jakarta.el-api:5.0.1',
+
+            // Jakarta Resource (needed by ActiveMQ 6.2.0 OSGi)
+            'jakarta.resource:jakarta.resource-api:2.1.0',
+
+            // Commons BeanUtils dependencies
+            'commons-collections:commons-collections:3.2.2',
+
+            // Nimbus JOSE+JWT (required by goss-core-security for JWT token signing/verification)
+            'com.nimbusds:nimbus-jose-jwt:9.41.2',
+            'net.jcip:jcip-annotations:1.0'
+
+            // NOTE: Jena deps (dexx, jsonld-java, commons-csv, thrift, xerces) are now embedded in gridappsd-jena
+            // NOTE: POI deps (xmlsec, bouncycastle, xmlbeans, commons-codec/collections4) are now embedded in gridappsd-poi
+            // NOTE: Proven deps (Jersey, JAX-RS 2.x, JAXB, HK2, Hazelcast) are now embedded in gridappsd-proven
+        ]
+
+        def destDir = file("$buildDir/launcher/bundle")
+        destDir.mkdirs()
+
+        // Download Maven dependencies
+        felixDeps.each { dep ->
+            def parts = dep.split(':')
+            def group = parts[0].replace('.', '/')
+            def artifact = parts[1]
+            def version = parts[2]
+            def jarName = "${artifact}-${version}.jar"
+            def url = "https://repo1.maven.org/maven2/${group}/${artifact}/${version}/${jarName}"
+            def destFile = new File(destDir, jarName)
+
+            if (!destFile.exists()) {
+                println "Downloading ${jarName}..."
+                new URL(url).withInputStream { input ->
+                    destFile.withOutputStream { output ->
+                        output << input
+                    }
+                }
+            }
+        }
+    }
+
+    doLast {
+        def bundleCount = fileTree("$buildDir/launcher/bundle").include('*.jar').files.size()
+        println "Collected ${bundleCount} bundles"
+    }
+}
+
+// Task to compile launcher
+task compileLauncher(type: JavaCompile) {
+    group = 'GridAPPS-D'
+    description = 'Compiles the Felix launcher'
+
+    source = fileTree('gov.pnnl.goss.gridappsd/launcher/src/main/java')
+    destinationDirectory = file("$buildDir/launcher-classes")
+    classpath = files("$buildDir/launcher/bundle/org.apache.felix.framework-7.0.5.jar")
+    sourceCompatibility = '21'
+    targetCompatibility = '21'
+
+    dependsOn collectBundles
+
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+// Task to create launcher JAR
+task launcherJar(type: Jar) {
+    group = 'GridAPPS-D'
+    description = 'Creates the launcher JAR file'
+
+    archiveFileName = 'gridappsd-launcher.jar'
+    destinationDirectory = file("$buildDir/launcher")
+
+    from("$buildDir/launcher-classes")
+
+    // Must depend on collectBundles so bundles exist when manifest is generated
+    dependsOn compileLauncher
+    dependsOn collectBundles
+
+    // Generate Class-Path at execution time, after bundles are copied
+    doFirst {
+        def bundleJars = fileTree("$buildDir/launcher/bundle").include('*.jar').files.collect {
+            "bundle/${it.name}"
+        }.join(' ')
+        manifest {
+            attributes(
+                'Main-Class': 'gov.pnnl.goss.gridappsd.launcher.GridAPPSDLauncher',
+                'Class-Path': bundleJars
+            )
+        }
+        println "Manifest Class-Path includes ${fileTree("$buildDir/launcher/bundle").include('*.jar').files.size()} bundles"
+    }
+
+    doLast {
+        println "Launcher JAR created: ${archiveFile.get()}"
+    }
+}
+
+// Main distribution task
+task dist {
+    group = 'GridAPPS-D'
+    description = 'Creates complete GridAPPS-D distribution'
+
+    dependsOn launcherJar
+
+    doLast {
+        println ""
+        println "============================================"
+        println "GridAPPS-D Distribution Ready"
+        println "============================================"
+        println "Location: $buildDir/launcher"
+        println ""
+        println "To run GridAPPS-D:"
+        println "  cd $buildDir/launcher"
+        println "  java -jar gridappsd-launcher.jar"
+        println "============================================"
+    }
+}
+
+// Apply BndRunnerPlugin to project with .bndrun files
+project(':gov.pnnl.goss.gridappsd') {
+    apply plugin: com.pnnl.goss.gradle.BndRunnerPlugin
+
+    bndRunner {
+        // GridAPPS-D bundles from this project
+        bundleDirs = [
+            file('generated'),
+            // GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
+            file("${rootProject.projectDir}/cnf/cache/7.1.0/GOSS Release")
+        ]
+        configDir = file('conf')
+    }
+}
+
+// Skip testOSGi for test project - it requires full OSGi runtime with many transitive dependencies
+// The unit tests (test task) provide sufficient coverage
+project(':gov.pnnl.goss.gridappsd.test') {
+    tasks.matching { it.name == 'testOSGi' }.configureEach {
+        enabled = false
+    }
+}
+
+// Container-based integration tests using Testcontainers
+// These tests spin up Docker containers using docker-compose.yml
+// Run with: ./gradlew containerTest
+project(':gov.pnnl.goss.gridappsd') {
+    // Base configuration shared by all container tests
+    def containerTestJvmArgs = [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.time=ALL-UNNAMED'
+    ]
+
+    // Messaging tests - auto-manages containers via Testcontainers
+    // Run with: ./gradlew messagingTest
+    tasks.register('messagingTest', Test) {
+        description = 'Run messaging integration tests (auto-starts containers via Testcontainers)'
+        group = 'verification'
+
+        useJUnitPlatform {
+            includeTags 'messaging'
+        }
+
+        systemProperty 'junit.jupiter.execution.timeout.default', '5m'
+        systemProperty 'testcontainers.reuse.enable', 'true'
+        workingDir = rootProject.projectDir
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        jvmArgs = containerTestJvmArgs
+    }
+
+    // Simulation tests - requires pre-started containers (make docker-up)
+    // Run with: make docker-up && ./gradlew simulationTest && make docker-down
+    tasks.register('simulationTest', Test) {
+        description = 'Run simulation integration tests (requires: make docker-up first)'
+        group = 'verification'
+
+        useJUnitPlatform {
+            includeTags 'simulation'
+        }
+
+        systemProperty 'junit.jupiter.execution.timeout.default', '10m'
+        workingDir = rootProject.projectDir
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        jvmArgs = containerTestJvmArgs
+    }
+
+    // All container tests - for backward compatibility
+    // Note: This may have port conflicts if both messaging and simulation tests run together
+    // Run with: ./gradlew containerTest
+    tasks.register('containerTest', Test) {
+        description = 'Run all container-based integration tests'
+        group = 'verification'
+
+        useJUnitPlatform {
+            includeTags 'container'
+        }
+
+        systemProperty 'junit.jupiter.execution.timeout.default', '5m'
+        systemProperty 'testcontainers.reuse.enable', 'true'
+        workingDir = rootProject.projectDir
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        jvmArgs = containerTestJvmArgs
+    }
 }
