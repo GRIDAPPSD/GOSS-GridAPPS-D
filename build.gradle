@@ -383,12 +383,8 @@ task collectBundles(type: Copy) {
 
             // NOTE: Xerces/xmlresolver now embedded in gridappsd-jena
 
-            // OSGI JDBC service
-            'org.osgi:org.osgi.service.jdbc:1.0.0',
-
             // Database drivers
             'com.mysql:mysql-connector-j:9.1.0',
-            'com.h2database:h2:2.3.232',
 
             // Javax annotation (GOSS uses 1.3.2 per bnd.bnd)
             'javax.annotation:javax.annotation-api:1.3.2',

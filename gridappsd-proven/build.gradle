@@ -107,9 +107,21 @@ shadowJar {
                              'gov.pnnl.proven.message;version="0.5.0",' +
                              'gov.pnnl.proven.message.exception;version="0.5.0",' +
                              'gridappsd.proven.osgi;version="0.5.0"',
-            // Import SLF4J and OSGi framework from OSGi environment
+            // Import SLF4J, OSGi framework, and JDK packages needed by shaded Jersey/HK2
             'Import-Package': 'org.slf4j;version="[1.7,3)",' +
-                             'org.osgi.framework;version="[1.8,2)"',
+                             'org.osgi.framework;version="[1.8,2)",' +
+                             'javax.net.ssl,' +
+                             'javax.net,' +
+                             'javax.crypto,' +
+                             'javax.crypto.spec,' +
+                             'javax.security.auth.x500,' +
+                             'javax.xml.parsers,' +
+                             'javax.xml.transform,' +
+                             'javax.xml.transform.dom,' +
+                             'javax.xml.transform.stream,' +
+                             'javax.xml.namespace,' +
+                             'javax.naming,' +
+                             'javax.naming.spi',
             // Embed everything else
             'Bundle-ClassPath': '.',
             'Require-Capability': 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"'

@@ -80,36 +80,56 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
     Gson gson = new Gson();
 
     // Simple HTTP client for Proven REST API (avoids Jersey/HK2 issues)
-    private ProvenHttpClient provenClient;
-    private String provenBaseUri;
+    // Lazily initialized because config may not be available at activation time
+    // (GridAppsDBoot registers ConfigurationManager with empty config, then loads
+    // real config from ConfigAdmin ~2s later)
+    private volatile ProvenHttpClient provenClient;
+    private volatile boolean provenInitAttempted = false;
 
     @Activate
     public void start() {
         logManager.debug(ProcessStatus.RUNNING, null, "Starting " + this.getClass().getSimpleName());
-
         dataManager.registerDataManagerHandler(this, DATA_MANAGER_TYPE);
+    }
 
-        // Get Proven configuration
-        provenBaseUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
+    /**
+     * Lazily initialize the Proven HTTP client on first use. Config properties may
+     * not be available at @Activate time due to GridAppsDBoot loading ConfigAdmin
+     * properties asynchronously.
+     */
+    private synchronized ProvenHttpClient getProvenClient() {
+        if (provenClient != null) {
+            return provenClient;
+        }
+        if (provenInitAttempted) {
+            return null;
+        }
+
+        String provenBaseUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_PATH);
+        if (provenBaseUri == null || provenBaseUri.trim().isEmpty()) {
+            logManager.warn(ProcessStatus.RUNNING, null,
+                    "Proven service is not configured (proven.path not set) - timeseries data will not be available");
+            provenInitAttempted = true;
+            return null;
+        }
+
         String provenWriteUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_WRITE_PATH);
         String provenQueryUri = configManager.getConfigurationProperty(GridAppsDConstants.PROVEN_QUERY_PATH);
         String provenAdvancedQueryUri = configManager
                 .getConfigurationProperty(GridAppsDConstants.PROVEN_ADVANCED_QUERY_PATH);
 
-        // Initialize simple HTTP client
-        provenClient = new ProvenHttpClient();
-        provenClient.setQueryUri(provenQueryUri);
-        provenClient.setAdvancedQueryUri(provenAdvancedQueryUri);
-        provenClient.setWriteUri(provenWriteUri);
+        ProvenHttpClient client = new ProvenHttpClient();
+        client.setQueryUri(provenQueryUri);
+        client.setAdvancedQueryUri(provenAdvancedQueryUri);
+        client.setWriteUri(provenWriteUri);
+
         // Derive influxql endpoint from base URI
         String influxqlUri = provenBaseUri.replace("/provenMessage", "/influxql");
         if (!influxqlUri.endsWith("/influxql")) {
-            // If base path doesn't end with provenMessage, construct from base
             influxqlUri = provenBaseUri.replaceAll("/[^/]+$", "/influxql");
         }
-        provenClient.setInfluxqlUri(influxqlUri);
+        client.setInfluxqlUri(influxqlUri);
 
-        // Check Proven availability
         if (ProvenHttpClient.isProvenAvailable(provenBaseUri)) {
             logManager.debug(ProcessStatus.RUNNING, null, "Proven service is available at " + provenBaseUri);
         } else {
@@ -117,12 +137,16 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     "Proven service is not available at " + provenBaseUri + " - timeseries data will not be stored");
         }
 
+        provenClient = client;
+
         try {
             this.subscribeAndStoreDataFromTopic("goss.gridappsd.*.output", null, null, null);
         } catch (Exception e) {
             logManager.error(ProcessStatus.RUNNING, null, "Error subscribing to output topics: " + e.getMessage());
             e.printStackTrace();
         }
+
+        return provenClient;
     }
 
     @Override
@@ -153,13 +177,19 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
     @Override
     public Serializable query(RequestTimeseriesData requestTimeseriesData) throws Exception {
+        ProvenHttpClient client = getProvenClient();
+        if (client == null) {
+            throw new Exception(
+                    "Proven timeseries service is not configured. Set proven.path in pnnl.goss.gridappsd.cfg");
+        }
+
         JsonElement response;
 
         try {
             // Build InfluxQL query from the request
             String influxQuery = buildInfluxQuery(requestTimeseriesData);
             logManager.debug(ProcessStatus.RUNNING, null, "Executing InfluxQL query: " + influxQuery);
-            response = provenClient.sendInfluxQuery(influxQuery);
+            response = client.sendInfluxQuery(influxQuery);
         } catch (Exception e) {
             logManager.error(ProcessStatus.RUNNING, null, "Error querying Proven: " + e.getMessage());
             throw e;
@@ -268,6 +298,11 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
 
     @Override
     public void storeAllData(SimulationContext simulationContext) throws Exception {
+        if (getProvenClient() == null) {
+            logManager.warn(ProcessStatus.RUNNING, null,
+                    "Proven not configured - skipping timeseries data storage for simulation");
+            return;
+        }
         String simulationId = simulationContext.getSimulationId();
 
         storeSimulationInput(simulationId);
@@ -312,8 +347,11 @@ public class ProvenTimeSeriesDataManagerImpl implements TimeseriesDataManager, D
                     }
 
                     if (measurementName != null) {
-                        provenClient.sendBulkData(dataString, measurementName, instanceId, simulationId,
-                                new Date().getTime());
+                        ProvenHttpClient pc = getProvenClient();
+                        if (pc != null) {
+                            pc.sendBulkData(dataString, measurementName, instanceId, simulationId,
+                                    new Date().getTime());
+                        }
                     }
                 } catch (Exception e) {
                     StringWriter sw = new StringWriter();
