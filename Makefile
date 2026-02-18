@@ -278,7 +278,7 @@ run-log:
 
 # Docker targets
 DOCKER_TAG ?= local
-BASE_VERSION ?= rc2
+BASE_VERSION ?= java-update
 VERSION ?= develop
 
 docker:

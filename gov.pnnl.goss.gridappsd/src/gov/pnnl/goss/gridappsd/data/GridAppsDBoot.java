@@ -76,11 +76,10 @@ public class GridAppsDBoot {
     @Reference
     private volatile ServerControl serverControl;
 
-    // LogDataManager is loaded by SCR (from data/ package) but has a circular
-    // dependency
-    // through GridAppsDataSourcesImpl -> ConfigurationManager
-    // Make it optional so we can bootstrap first
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+    // LogDataManager is loaded by SCR (from data/ package) and depends on
+    // GridAppsDataSources which blocks until MySQL is reachable.
+    // Mandatory ref ensures GridAppsDBoot waits for MySQL before bootstrapping.
+    @Reference
     private volatile LogDataManager logDataManager;
 
     // These services will become available AFTER we register ConfigurationManager
@@ -132,15 +131,14 @@ public class GridAppsDBoot {
 
     private void bootstrapManagers() {
         // Create LogManager first - many other components depend on it
-        // LogDataManager may not be available yet due to circular dependencies
+        // LogDataManager is guaranteed available (mandatory @Reference, waits for
+        // MySQL)
         logManager = new LogManagerImpl();
         logManager.setClientFactory(clientFactory);
-        if (logDataManager != null) {
-            logManager.setLogDataManager(logDataManager);
-        }
+        logManager.setLogDataManager(logDataManager);
         logManager.start();
         registrations.add(bundleContext.registerService(LogManager.class, logManager, new Hashtable<>()));
-        log.info("Registered LogManagerImpl (LogDataManager may be bound later)");
+        log.info("Registered LogManagerImpl with LogDataManager");
 
         // Create RoleManager
         roleManager = new RoleManagerImpl();
@@ -210,13 +208,11 @@ public class GridAppsDBoot {
         testManager = new TestManagerImpl();
         testManager.setClientFactory(clientFactory);
         testManager.setLogManager(logManager);
-        if (logDataManager != null) {
-            testManager.setLogDataManager(logDataManager);
-        }
+        testManager.setLogDataManager(logDataManager);
         testManager.setSimulationManager(simulationManager);
         testManager.start();
         registrations.add(bundleContext.registerService(TestManager.class, testManager, new Hashtable<>()));
-        log.info("Registered TestManagerImpl (some deps may be bound later)");
+        log.info("Registered TestManagerImpl");
 
         // Create FieldBusManager - depends on LogManager, ServiceManager, ClientFactory
         fieldBusManager = new FieldBusManagerImpl();
@@ -235,23 +231,8 @@ public class GridAppsDBoot {
     private void lateBindDependencies() {
         log.info("Late-binding optional dependencies...");
 
-        // Try to get LogDataManager from the service registry
-        if (logDataManager != null) {
-            logManager.setLogDataManager(logDataManager);
-            testManager.setLogDataManager(logDataManager);
-            log.info("Late-bound LogDataManager to LogManager and TestManager");
-        } else {
-            // Try to look it up from the service registry
-            ServiceReference<LogDataManager> ldmRef = bundleContext.getServiceReference(LogDataManager.class);
-            if (ldmRef != null) {
-                LogDataManager ldm = bundleContext.getService(ldmRef);
-                if (ldm != null) {
-                    logManager.setLogDataManager(ldm);
-                    testManager.setLogDataManager(ldm);
-                    log.info("Late-bound LogDataManager (from lookup) to LogManager and TestManager");
-                }
-            }
-        }
+        // LogDataManager is now a mandatory @Reference — already bound at bootstrap
+        // time.
 
         // Try to get DataManager from the service registry and bind LogManager to it
         DataManager dm = null;
