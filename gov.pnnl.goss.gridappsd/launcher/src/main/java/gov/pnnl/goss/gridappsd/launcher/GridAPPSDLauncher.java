@@ -152,7 +152,24 @@ public class GridAPPSDLauncher {
             config.put(BUNDLE_DIR, "bundle");
         }
         if (!config.containsKey("org.osgi.framework.system.packages.extra")) {
-            config.put("org.osgi.framework.system.packages.extra", "sun.misc");
+            config.put("org.osgi.framework.system.packages.extra",
+                    "sun.misc" +
+                    ",javax.net.ssl" +
+                    ",javax.net" +
+                    ",javax.security.auth.x500" +
+                    ",javax.crypto" +
+                    ",javax.crypto.spec" +
+                    ",javax.xml.parsers" +
+                    ",javax.xml.transform" +
+                    ",javax.xml.transform.dom" +
+                    ",javax.xml.transform.stream" +
+                    ",javax.xml.namespace" +
+                    ",javax.xml.xpath" +
+                    ",javax.xml.datatype" +
+                    ",javax.xml.validation" +
+                    ",org.w3c.dom" +
+                    ",org.xml.sax" +
+                    ",org.xml.sax.helpers");
         }
 
         // Resolve relative paths to absolute paths based on baseDir
@@ -457,6 +474,11 @@ public class GridAPPSDLauncher {
                 System.out.println("  Started: " + bundle.getSymbolicName());
             } catch (BundleException e) {
                 System.err.println("  Failed to start " + bundle.getSymbolicName() + ": " + e.getMessage());
+                Throwable cause = e.getCause();
+                while (cause != null) {
+                    System.err.println("    Caused by: " + cause);
+                    cause = cause.getCause();
+                }
             }
         }
     }
