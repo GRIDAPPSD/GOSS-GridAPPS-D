@@ -29,6 +29,8 @@ help:
 	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
 	@echo "  make test-container    - Run container-based tests using Testcontainers (auto-starts Docker)"
 	@echo "  make test-stomp-topics - Run STOMP topic prefix tests in Docker (requires running container)"
+	@echo "  make test-stomp-token  - Run STOMP token auth tests in Docker (requires running container)"
+	@echo "  make test-token-auth   - Run STOMP+WS token auth tests from host (requires running container)"
 	@echo "  make test-blazegraph   - Run Blazegraph query tests via gridappsd-python (requires running container)"
 	@echo "  make test-simulation-python - Run 30s simulation test via gridappsd-python (requires running container)"
 	@echo "  make test-check        - Check if integration test services are available"
@@ -190,6 +192,30 @@ test-stomp-topics:
 		exit 1; \
 	fi
 	docker exec gridappsd bash -c "cd /gridappsd/services/helicsgossbridge && python -m pytest tests/test_stomp_topic_prefix.py -v"
+
+# Run STOMP token auth tests inside the Docker container
+# Verifies JWT token request/response and token-based authentication
+test-stomp-token:
+	@echo "Running STOMP token auth tests..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	docker exec gridappsd pip install -q --root-user-action=ignore "stomp.py>=8.2.0"
+	docker cp tests/test_stomp_token_auth.py gridappsd:/tmp/test_stomp_token_auth.py
+	docker exec gridappsd python -m pytest /tmp/test_stomp_token_auth.py -v
+
+# Run STOMP + WebSocket token auth tests from the host via pixi
+# Connects to the running Docker container's exposed ports
+test-token-auth:
+	@echo "Running STOMP + WebSocket token auth tests from host..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	pixi run test-token-auth
 
 # Run Blazegraph query tests via gridappsd-python inside the Docker container
 # Verifies data can be retrieved from Blazegraph through the GridAPPS-D message bus

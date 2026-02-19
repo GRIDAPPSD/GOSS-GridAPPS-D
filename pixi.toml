@@ -1,0 +1,19 @@
+[workspace]
+authors = ["Craig <3979063+craig8@users.noreply.github.com>"]
+channels = ["conda-forge"]
+name = "gridappsd-tests"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+test-stomp-token = "pytest tests/test_stomp_token_auth.py -v"
+test-stomp-token-standalone = "python tests/test_stomp_token_auth.py"
+test-token-auth = "pytest tests/test_token_auth.py -v"
+test-token-auth-standalone = "python tests/test_token_auth.py"
+test-blazegraph = "pytest tests/test_blazegraph_queries.py -v"
+test-simulation = "pytest tests/test_simulation.py -v"
+
+[dependencies]
+"stomp.py" = ">=8.2.0,<9"
+"websocket-client" = ">=1.7.0,<2"
+pytest = ">=9.0.2,<10"

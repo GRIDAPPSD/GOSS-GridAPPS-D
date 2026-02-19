@@ -200,9 +200,9 @@ task collectBundles(type: Copy) {
 
     // Collect GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
     // BND downloads these from https://github.com/GridOPTICS/GOSS-Repository on first build
-    // Only include version 13.0.0 (Java 21 compatible release)
+    // Only include version 14.x (Java 21 compatible release)
     from('cnf/cache/7.1.0/GOSS Release') {
-        include 'pnnl.goss.core.*-13.0.0.jar'
+        include 'pnnl.goss.core.*-14.*.jar'
         exclude '*-sources.jar'
         exclude '*-javadoc.jar'
         // Exclude test and development bundles - these should not be deployed
