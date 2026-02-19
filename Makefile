@@ -217,6 +217,16 @@ test-token-auth:
 	fi
 	pixi run test-token-auth
 
+# Run power grid model query tests over STOMP and WebSocket with JWT auth
+test-powergrid-query:
+	@echo "Running power grid model query tests over STOMP + WebSocket..."
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	pixi run test-powergrid-query
+
 # Run Blazegraph query tests via gridappsd-python inside the Docker container
 # Verifies data can be retrieved from Blazegraph through the GridAPPS-D message bus
 test-blazegraph:

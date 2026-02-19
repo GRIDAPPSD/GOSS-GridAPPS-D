@@ -10,6 +10,8 @@ test-stomp-token = "pytest tests/test_stomp_token_auth.py -v"
 test-stomp-token-standalone = "python tests/test_stomp_token_auth.py"
 test-token-auth = "pytest tests/test_token_auth.py -v"
 test-token-auth-standalone = "python tests/test_token_auth.py"
+test-powergrid-query = "pytest tests/test_ws_powergrid_query.py -v"
+test-powergrid-query-standalone = "python tests/test_ws_powergrid_query.py"
 test-blazegraph = "pytest tests/test_blazegraph_queries.py -v"
 test-simulation = "pytest tests/test_simulation.py -v"
 
