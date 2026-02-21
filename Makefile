@@ -2,8 +2,8 @@
 # Common build and development tasks
 
 .PHONY: help build clean dist test test-unit test-integration test-simulation test-simulation-python test-container test-stomp-topics test-blazegraph \
-        run run-bg run-stop run-log docker docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
-        cache-clear update-dependencies commit push version release snapshot \
+        run run-bg run-stop run-log docker docker-local-goss goss-build should-version-bump docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
+        cache-clear show-dependencies update-dependencies commit push version release snapshot \
         check-api bump-patch bump-minor bump-major next-snapshot \
         format format-check
 
@@ -15,61 +15,65 @@ help:
 	@echo "GridAPPS-D Build System"
 	@echo "======================="
 	@echo ""
-	@echo "Build targets:"
-	@echo "  make build        - Build the project (compile only)"
-	@echo "  make dist         - Build distribution (launcher JAR + bundles)"
-	@echo "  make clean        - Clean build artifacts"
-	@echo "  make format       - Format all Java files using Spotless"
-	@echo "  make format-check - Check formatting without making changes"
+	@echo "BUILD"
+	@echo "  build              Compile the project"
+	@echo "  dist               Build distribution (launcher JAR + bundles)"
+	@echo "  goss-build         Build GOSS from local ../GOSS checkout"
+	@echo "  clean              Clean build artifacts"
+	@echo "  format             Format all Java files (Spotless)"
+	@echo "  format-check       Check formatting without changes"
 	@echo ""
-	@echo "Test targets:"
-	@echo "  make test              - Run all tests (unit + integration if services available)"
-	@echo "  make test-unit         - Run unit tests only (no external dependencies)"
-	@echo "  make test-integration  - Run integration tests (requires MySQL, Blazegraph)"
-	@echo "  make test-simulation   - Run simulation test in Docker (requires running container)"
-	@echo "  make test-container    - Run container-based tests using Testcontainers (auto-starts Docker)"
-	@echo "  make test-stomp-topics - Run STOMP topic prefix tests in Docker (requires running container)"
-	@echo "  make test-stomp-token  - Run STOMP token auth tests in Docker (requires running container)"
-	@echo "  make test-token-auth   - Run STOMP+WS token auth tests from host (requires running container)"
-	@echo "  make test-blazegraph   - Run Blazegraph query tests via gridappsd-python (requires running container)"
-	@echo "  make test-simulation-python - Run 30s simulation test via gridappsd-python (requires running container)"
-	@echo "  make test-check        - Check if integration test services are available"
+	@echo "DOCKER — Build"
+	@echo "  docker             Build Docker image (gridappsd/gridappsd:local)"
+	@echo "  docker-local-goss  Build local GOSS + GridAPPS-D Docker image"
+	@echo "                       Options: GOSS_DIR=/path/to/GOSS"
 	@echo ""
-	@echo "Run targets:"
-	@echo "  make run          - Run GridAPPS-D (foreground)"
-	@echo "  make run-bg       - Run GridAPPS-D in background"
-	@echo "  make run-stop     - Stop background GridAPPS-D process"
-	@echo "  make run-log      - Tail the background log file"
+	@echo "DOCKER — Run"
+	@echo "  docker-up          Start all containers (auto-runs GridAPPS-D)"
+	@echo "                       Options: AUTOSTART=0  (wait mode, don't auto-run)"
+	@echo "                                VERSION=v2025.09.0  (pin dependency versions)"
+	@echo "  docker-down        Stop all containers"
+	@echo "  docker-clean       Stop containers and remove data volumes"
+	@echo "  docker-shell       Open bash shell in gridappsd container"
+	@echo "  docker-logs        Tail gridappsd logs"
+	@echo "  docker-status      Show container status"
+	@echo "  docker-versions    List available Docker Hub versions"
 	@echo ""
-	@echo "Docker targets:"
-	@echo "  make docker          - Build Docker image (gridappsd/gridappsd:local)"
-	@echo "  make docker BASE_VERSION=<tag>  - Build using specific base image tag"
-	@echo "  make docker-up       - Start containers with auto-run (AUTOSTART=1 by default)"
-	@echo "  make docker-up AUTOSTART=0         - Start containers without auto-run (wait mode)"
-	@echo "  make docker-up VERSION=v2025.09.0  - Start with specific version for backport testing"
-	@echo "  make docker-down     - Stop containers"
-	@echo "  make docker-shell    - Open bash shell in gridappsd container"
-	@echo "  make docker-logs     - Tail gridappsd logs"
-	@echo "  make docker-status   - Show container status"
-	@echo "  make docker-versions - List available Docker Hub versions"
+	@echo "TEST — Local  (no Docker needed)"
+	@echo "  test               Run all tests"
+	@echo "  test-unit          Unit tests only (no external dependencies)"
+	@echo "  test-integration   Integration tests (requires MySQL, Blazegraph)"
+	@echo "  test-container     Container-based tests via Testcontainers (auto-starts Docker)"
+	@echo "  test-check         Check if integration services are available"
 	@echo ""
-	@echo "Version targets:"
-	@echo "  make version      - Show versions of all bundles (GridAPPS-D + GOSS)"
-	@echo "  make check-api    - Analyze API changes and suggest version bump type"
-	@echo "  make release VERSION=x.y.z  - Set release version"
-	@echo "  make snapshot VERSION=x.y.z - Set snapshot version"
+	@echo "TEST — Requires running containers  (make docker-up first)"
+	@echo "  test-simulation         Simulation test (runs in container)"
+	@echo "  test-simulation-python  30s simulation test (runs in container)"
+	@echo "  test-stomp-topics       STOMP topic prefix tests (runs in container)"
+	@echo "  test-stomp-token        STOMP token auth tests (runs in container)"
+	@echo "  test-token-auth         STOMP+WS token auth tests (runs from host)"
+	@echo "  test-powergrid-query    Power grid model query tests (runs from host)"
+	@echo "  test-blazegraph         Blazegraph query tests (runs in container)"
 	@echo ""
-	@echo "Version bumping:"
-	@echo "  make next-snapshot    - Bump patch version after release (e.g., 2.0.0 -> 2.0.1-SNAPSHOT)"
-	@echo "  make bump-patch       - Same as next-snapshot"
-	@echo "  make bump-minor       - Bump minor version (e.g., 2.0.0 -> 2.1.0-SNAPSHOT)"
-	@echo "  make bump-major       - Bump major version (e.g., 2.0.0 -> 3.0.0-SNAPSHOT)"
+	@echo "RUN  (without Docker)"
+	@echo "  run                Run GridAPPS-D in foreground"
+	@echo "  run-bg             Run GridAPPS-D in background"
+	@echo "  run-stop           Stop background process"
+	@echo "  run-log            Tail the background log"
 	@echo ""
-	@echo "Utility targets:"
-	@echo "  make update-dependencies - Refresh BND repository indexes to pick up new GOSS versions"
-	@echo "  make cache-clear  - Clear all Gradle/BND caches and stop daemons (fixes build issues)"
-	@echo "  make commit       - Stage and commit changes"
-	@echo "  make push         - Push to remote"
+	@echo "VERSION"
+	@echo "  version            Show bundle versions (GridAPPS-D + GOSS)"
+	@echo "  check-api          Analyze API changes and suggest bump type"
+	@echo "  release            Set release version       (VERSION=x.y.z)"
+	@echo "  snapshot           Set snapshot version      (VERSION=x.y.z)"
+	@echo "  bump-patch         Bump patch  (2.0.0 -> 2.0.1-SNAPSHOT)"
+	@echo "  bump-minor         Bump minor  (2.0.0 -> 2.1.0-SNAPSHOT)"
+	@echo "  bump-major         Bump major  (2.0.0 -> 3.0.0-SNAPSHOT)"
+	@echo ""
+	@echo "UTILITY"
+	@echo "  show-dependencies    List runtime bundle JARs and versions (requires: make dist)"
+	@echo "  update-dependencies  Refresh BND repo indexes for new GOSS versions"
+	@echo "  cache-clear          Clear Gradle/BND caches and stop daemons"
 	@echo ""
 
 # Build targets
@@ -108,10 +112,10 @@ test-integration:
 # Run simulation integration test inside Docker container
 # This is the only practical way to run simulation tests since they require
 # GridLAB-D, FNCS/HELICS bridge, and other simulators only available in Docker
-# Usage: make test-simulation [SIMULATION_DURATION=10] [VERSION=develop]
+# Usage: make test-simulation [SIMULATION_DURATION=120] [VERSION=develop]
 # Note: Requires gridappsd/gridappsd:local image built with 'make docker'
 #       Start containers with: make docker-up [VERSION=v2025.09.0]
-SIMULATION_DURATION ?= 10
+SIMULATION_DURATION ?= 120
 test-simulation:
 	@echo "Running simulation integration test inside Docker container..."
 	@echo "Duration: $(SIMULATION_DURATION) seconds"
@@ -316,12 +320,66 @@ run-log:
 DOCKER_TAG ?= local
 BASE_VERSION ?= java-update
 VERSION ?= develop
+# Set USE_LOCAL_GOSS=1 to use locally-built GOSS bundles from ../GOSS
+USE_LOCAL_GOSS ?= 0
+GOSS_DIR ?=
+
+LOCAL_GOSS_FLAGS =
+ifneq ($(USE_LOCAL_GOSS),0)
+LOCAL_GOSS_FLAGS += --local-goss
+ifneq ($(GOSS_DIR),)
+LOCAL_GOSS_FLAGS += --goss-dir $(GOSS_DIR)
+endif
+endif
 
 docker:
-	./build-gridappsd-container --base-version $(BASE_VERSION) --output-version $(DOCKER_TAG)
+	./build-gridappsd-container --base-version $(BASE_VERSION) --output-version $(DOCKER_TAG) $(LOCAL_GOSS_FLAGS)
+
+docker-local-goss: goss-build
+	$(MAKE) docker USE_LOCAL_GOSS=1
+
+# Build GOSS from local checkout (defaults to ../GOSS)
+GOSS_BUILD_DIR = $(if $(GOSS_DIR),$(GOSS_DIR),$(CURDIR)/../GOSS)
+GOSS_REPO_DIR = $(CURDIR)/../GOSS-Repository
+
+goss-build: should-version-bump
+	@if [ ! -d "$(GOSS_BUILD_DIR)" ]; then \
+		echo "ERROR: GOSS directory not found: $(GOSS_BUILD_DIR)"; \
+		echo "Either clone GOSS next to GOSS-GridAPPS-D or set GOSS_DIR:"; \
+		echo "  make docker-local-goss GOSS_DIR=/path/to/GOSS"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(GOSS_BUILD_DIR)/gradlew" ]; then \
+		echo "ERROR: $(GOSS_BUILD_DIR) does not appear to be a GOSS checkout (no gradlew found)"; \
+		exit 1; \
+	fi
+	@echo "Building GOSS from $(GOSS_BUILD_DIR)..."
+	cd "$(GOSS_BUILD_DIR)" && ./gradlew build
+
+# Check if local GOSS version has already been released to GOSS-Repository
+# Warns (does not fail) so you can still rebuild the same version intentionally
+should-version-bump:
+	@if [ ! -d "$(GOSS_BUILD_DIR)" ]; then exit 0; fi
+	@LOCAL_VER=$$(grep -m1 'Bundle-Version:' "$(GOSS_BUILD_DIR)/pnnl.goss.core/core-api.bnd" 2>/dev/null | sed 's/.*: *//'); \
+	if [ -z "$$LOCAL_VER" ]; then exit 0; fi; \
+	if echo "$$LOCAL_VER" | grep -q 'SNAPSHOT'; then \
+		echo "GOSS version: $$LOCAL_VER (snapshot — OK)"; \
+		exit 0; \
+	fi; \
+	if [ -d "$(GOSS_REPO_DIR)/release/pnnl.goss.core.core-api" ] && \
+	   ls "$(GOSS_REPO_DIR)/release/pnnl.goss.core.core-api/pnnl.goss.core.core-api-$$LOCAL_VER.jar" >/dev/null 2>&1; then \
+		echo ""; \
+		echo "WARNING: GOSS $$LOCAL_VER has already been released to GOSS-Repository."; \
+		echo "  Your local changes will shadow the released version."; \
+		echo "  Consider bumping the version first:"; \
+		echo "    cd $(GOSS_BUILD_DIR) && make next-snapshot"; \
+		echo ""; \
+	else \
+		echo "GOSS version: $$LOCAL_VER (not yet released — OK)"; \
+	fi
 
 docker-build:
-	./gradlew clean dist
+	./gradlew clean dist $(if $(filter-out 0,$(USE_LOCAL_GOSS)),-PuseLocalGoss)
 	docker build \
 		--build-arg GRIDAPPSD_BASE_VERSION=:$(BASE_VERSION) \
 		--build-arg TIMESTAMP=$$(date +%Y%m%d%H%M%S) \
@@ -367,17 +425,34 @@ docker-run:
 docker-stop:
 	cd ../gridappsd-docker && docker compose down
 
+# Show runtime bundle JARs and versions that will be loaded by the launcher
+# Requires: make dist (to build the launcher distribution first)
+show-dependencies:
+	@if [ ! -d "build/launcher/bundle" ]; then \
+		echo "No launcher build found. Run 'make dist' first."; \
+		exit 1; \
+	fi
+	@echo "Runtime Bundle JARs (build/launcher/bundle/)"
+	@echo "============================================="
+	@ls -1 build/launcher/bundle/*.jar | xargs -I{} basename {} | sort
+	@echo ""
+	@echo "Total: $$(ls -1 build/launcher/bundle/*.jar | wc -l) JARs"
+
 # Refresh BND repository indexes to discover new GOSS bundle versions
-# Clears the URL cache (index metadata) and GOSS JAR cache, then rebuilds
+# Clears URL cache, JAR cache, and Gradle caches, then rebuilds
 update-dependencies:
 	@echo "Clearing BND URL cache (forces re-fetch of repository indexes)..."
 	rm -rf ~/.bnd/urlcache
 	@echo "Clearing cached GOSS bundles..."
 	rm -rf "cnf/cache/7.1.0/GOSS Release"
 	rm -rf "cnf/cache/7.1.0/GOSS Dependencies"
+	@echo "Clearing Gradle dependency cache..."
+	rm -rf .gradle
 	@echo "Refreshing dependencies..."
 	./gradlew build --refresh-dependencies
-	@echo "Dependencies updated."
+	@echo ""
+	@echo "Dependencies updated. Cached GOSS versions:"
+	@ls cnf/cache/7.1.0/GOSS\ Release/*.jar 2>/dev/null | xargs -I{} basename {} | sort || echo "  (none)"
 
 # Utility targets
 cache-clear:

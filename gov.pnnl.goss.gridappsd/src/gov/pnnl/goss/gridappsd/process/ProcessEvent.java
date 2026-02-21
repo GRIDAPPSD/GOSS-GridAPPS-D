@@ -86,9 +86,6 @@ import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Response;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
-// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-//import pnnl.goss.core.security.JWTAuthenticationToken;
-//import pnnl.goss.core.security.SecurityConfig;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +95,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 
 /**
@@ -128,19 +124,8 @@ public class ProcessEvent implements GossResponseEvent {
     ServiceManager serviceManager;
     DataManager dataManager;
     TestManager testManager;
-    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-    // SecurityConfig securityConfig;
     FieldBusManager fieldBusManager;
 
-    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-    // public ProcessEvent(ProcessManagerImpl processManager,
-    // Client client, ProcessNewSimulationRequest newSimulationProcess,
-    // ConfigurationManager configurationManager, SimulationManager
-    // simulationManager,
-    // AppManager appManager, LogManager logManager, ServiceManager serviceManager,
-    // DataManager dataManager, TestManager testManager, SecurityConfig
-    // securityConfig,
-    // FieldBusManager fieldBusManager){
     public ProcessEvent(ProcessManagerImpl processManager,
             Client client, ProcessNewSimulationRequest newSimulationProcess,
             ConfigurationManager configurationManager, SimulationManager simulationManager,
@@ -157,8 +142,6 @@ public class ProcessEvent implements GossResponseEvent {
         this.serviceManager = serviceManager;
         this.dataManager = dataManager;
         this.testManager = testManager;
-        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-        // this.securityConfig = securityConfig;
         this.fieldBusManager = fieldBusManager;
     }
 
@@ -179,27 +162,16 @@ public class ProcessEvent implements GossResponseEvent {
 
         String username = token;
 
-        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-        //// If it looks like a token
-        // if(token!=null && token.length()>250){
-        //
-        // //Verify Token, throw exception if it cannot be verified
-        // boolean valid = securityConfig.validateToken(token);
-        // if(!valid){
-        // logManager.error(ProcessStatus.ERROR, processId,"Failure to validate
-        // authentication token:"+token);
-        // //TODO, USERNAME WOULD STILL BE THE FULL TOKEN HERE, HOW DO WE WANT TO
-        // ADDRESS THAT?
-        // sendError(client, event.getReplyDestination(), "Failure to validate
-        // authentication token", processId, username);
-        // return;
-        // }
-        // //Get username from token
-        // JWTAuthenticationToken tokenObj = securityConfig.parseToken(token);
-        // username = tokenObj.getSub();
-        //
-        //
-        // }
+        // If the username is a JWT token, extract the actual username from it
+        if (token != null && token.length() > 250) {
+            try {
+                SignedJWT signed = SignedJWT.parse(token);
+                username = signed.getJWTClaimsSet().getSubject();
+            } catch (Exception e) {
+                log.warn("Failed to extract username from token, using 'system'");
+                username = "system";
+            }
+        }
 
         logManager.debug(ProcessStatus.RUNNING, processId, "Received message: " + event.getData() + " on topic "
                 + event.getDestination() + " from user " + username);

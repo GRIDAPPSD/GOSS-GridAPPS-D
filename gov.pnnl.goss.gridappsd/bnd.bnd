@@ -3,14 +3,14 @@
 	org.osgi:osgi.core;version='8.0.0',\
 	org.osgi:osgi.cmpn;version='7.0.0',\
 	org.osgi:org.osgi.service.component.annotations;version='1.5.1',\
-	pnnl.goss.core.core-api;version='[14.0,15)',\
-	pnnl.goss.core.goss-core-security;version='[14.0,15)',\
-	pnnl.goss.core.goss-core-server-api;version='[14.0,15)',\
-	pnnl.goss.core.goss-client;version='[14.0,15)',\
-	pnnl.goss.core.goss-core-server;version='[14.0,15)',\
-	pnnl.goss.core.goss-core-server-registry;version='[14.0,15)',\
-	pnnl.goss.core.security-propertyfile;version='[14.0,15)',\
-	pnnl.goss.core.security-jwt;version='[14.0,15)',\
+	pnnl.goss.core.core-api;version=latest,\
+	pnnl.goss.core.goss-core-security;version=latest,\
+	pnnl.goss.core.goss-core-server-api;version=latest,\
+	pnnl.goss.core.goss-client;version=latest,\
+	pnnl.goss.core.goss-core-server;version=latest,\
+	pnnl.goss.core.goss-core-server-registry;version=latest,\
+	pnnl.goss.core.security-propertyfile;version=latest,\
+	pnnl.goss.core.security-jwt;version=latest,\
 	jakarta.jms:jakarta.jms-api;version='3.1.0',\
 	org.slf4j:slf4j-api;version='2.0.16',\
 	org.apache.activemq:activemq-osgi;version='6.2.0',\
@@ -67,7 +67,7 @@
 -runbundles: \
 	ch.qos.logback.classic;version='[1.5,2)',\
 	ch.qos.logback.core;version='[1.5,2)',\
-	pnnl.goss.core.security-jwt;version='[14.0,15)'
+	pnnl.goss.core.security-jwt;version=latest
 -runrequires: osgi.identity;filter:='(osgi.identity=httpcore)'
 
 -sources: true

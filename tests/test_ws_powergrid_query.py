@@ -169,27 +169,20 @@ def send_powergrid_query(conn_factory, host, port, token, query_body,
     """
     Send a power grid model query using JWT auth, return the response.
 
-    This replicates the exact STOMP frame a JS frontend sends:
-        destination: goss.gridappsd.process.request.data.powergridmodel
-        GOSS_HAS_SUBJECT: true
-        GOSS_SUBJECT: <jwt-token>
-        reply-to: <reply-destination>
+    Appends a UUID suffix to reply_to to avoid collisions between tests.
     """
     conn = conn_factory(host, port)
     listener = ResponseListener()
     conn.set_listener("query_listener", listener)
 
-    # Connect with the JWT token
     conn.connect(token, "", wait=True)
     assert conn.is_connected(), "Failed to connect with JWT token"
     log.info("Connected with JWT token")
 
-    # Subscribe to the reply destination
     reply_dest = f"/queue/{reply_to}-{uuid.uuid4().hex[:8]}"
     conn.subscribe(destination=reply_dest, id="query-sub-1", ack="auto")
     time.sleep(0.3)
 
-    # Send the query - same headers as the JS frontend
     conn.send(
         destination=POWERGRID_TOPIC,
         body=query_body,
@@ -200,6 +193,55 @@ def send_powergrid_query(conn_factory, host, port, token, query_body,
         },
     )
     log.info("Sent powergrid query to %s (reply-to: %s)", POWERGRID_TOPIC, reply_dest)
+
+    got_response = listener.wait(QUERY_TIMEOUT_S)
+    response = listener.response
+
+    try:
+        conn.disconnect()
+    except Exception:
+        pass
+
+    return got_response, response, listener.error
+
+
+def send_powergrid_query_exact_reply(conn_factory, host, port, token, query_body,
+                                     reply_to="feeder-models"):
+    """
+    Send a power grid model query using the exact reply-to destination
+    a JS frontend would use (no UUID suffix).
+
+    Replicates the exact STOMP frame:
+        >>> SEND
+        destination:goss.gridappsd.process.request.data.powergridmodel
+        GOSS_HAS_SUBJECT:true
+        GOSS_SUBJECT:<jwt-token>
+        reply-to:feeder-models
+        content-length:701
+    """
+    conn = conn_factory(host, port)
+    listener = ResponseListener()
+    conn.set_listener("query_listener", listener)
+
+    conn.connect(token, "", wait=True)
+    assert conn.is_connected(), "Failed to connect with JWT token"
+    log.info("Connected with JWT token")
+
+    # Subscribe to the exact reply-to destination -- no UUID, just like the browser
+    conn.subscribe(destination=reply_to, id="query-sub-1", ack="auto")
+    time.sleep(0.3)
+
+    # Send with the exact headers the JS frontend sends
+    conn.send(
+        destination=POWERGRID_TOPIC,
+        body=query_body,
+        headers={
+            "GOSS_HAS_SUBJECT": "true",
+            "GOSS_SUBJECT": token,
+            "reply-to": reply_to,
+        },
+    )
+    log.info("Sent powergrid query to %s (reply-to: %s)", POWERGRID_TOPIC, reply_to)
 
     got_response = listener.wait(QUERY_TIMEOUT_S)
     response = listener.response
@@ -254,6 +296,26 @@ class TestWsPowergridQuery:
         log.info("WS: received powergrid response: %s", json.dumps(data)[:500])
 
         # Verify response structure - should contain feeder data
+        assert "data" in data or "results" in data or "head" in data, (
+            f"Expected query results in response, got keys: {list(data.keys())}"
+        )
+
+    def test_02b_query_feeder_models_exact_reply_to(self):
+        """Send feeder query with exact reply-to:feeder-models (mirrors JS frontend)."""
+        token = TestWsPowergridQuery._token
+        assert token is not None, "Depends on test_01 for JWT token"
+
+        got_response, response, error = send_powergrid_query_exact_reply(
+            create_ws_connection, self.host, self.port, token, FEEDER_QUERY,
+            reply_to="feeder-models",
+        )
+        assert got_response, f"Should get query response within {QUERY_TIMEOUT_S}s"
+        assert error is None, f"Query error: {error}"
+        assert response is not None, "Response must not be None"
+
+        data = json.loads(response)
+        log.info("WS: feeder query (exact reply-to) response: %s", json.dumps(data)[:500])
+
         assert "data" in data or "results" in data or "head" in data, (
             f"Expected query results in response, got keys: {list(data.keys())}"
         )
