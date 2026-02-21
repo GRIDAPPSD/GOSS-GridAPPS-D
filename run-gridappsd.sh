@@ -24,6 +24,12 @@ if [ "${AUTOSTART:-0}" != "0" ]; then
   JAVA_OPTIONS=" -Dgosh.args=--nointeractive "
 fi
 
+# If OpenTelemetry Java agent is available, enable it
+if [ -f /gridappsd/otel/opentelemetry-javaagent.jar ]; then
+  JAVA_OPTIONS="$JAVA_OPTIONS -javaagent:/gridappsd/otel/opentelemetry-javaagent.jar"
+  echo "OpenTelemetry Java agent enabled"
+fi
+
 # If the DEBUG environmental variable is set and is not 0
 # then expose the port for remote debugging.
 # Note: address=*:8000 is required for Java 9+ to accept connections from outside the container

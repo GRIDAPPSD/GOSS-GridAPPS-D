@@ -1,6 +1,13 @@
 #!/bin/bash
 
 if [ "$1" = "gridappsd" ]; then
+  # Copy user-provided configuration overrides into /gridappsd/conf
+  # This preserves defaults while letting users override specific files
+  if [ -d /conf ] && [ "$(ls -A /conf 2>/dev/null)" ]; then
+    echo "[Entrypoint] Copying configuration overrides from /conf to /gridappsd/conf"
+    cp -rv /conf/* /gridappsd/conf/
+  fi
+
   # Install application python requirements
   for reqfile in `ls /gridappsd/services/*/requirements.txt 2>/dev/null`; do
     echo "[Entrypoint] Installing requirements $reqfile"

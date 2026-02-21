@@ -44,6 +44,8 @@ import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 import gov.pnnl.goss.gridappsd.simulation.SimulationManagerImpl;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -51,6 +53,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+
+import org.osgi.framework.Bundle;
 
 /**
  * Bootstrap component for GridAPPS-D services.
@@ -282,6 +286,11 @@ public class GridAppsDBoot {
         // This is needed because we bypassed SCR and created ConfigurationManager
         // manually
         loadConfigAdminProperties();
+
+        // Bootstrap UserRepositoryImpl from security-jwt bundle if SCR failed to
+        // activate it. This component provides the token authentication service that
+        // the viz UI needs to log in.
+        bootstrapUserRepository();
     }
 
     /**
@@ -339,6 +348,151 @@ public class GridAppsDBoot {
         } catch (Exception e) {
             log.warn("Error loading configuration from ConfigAdmin: " + e.getMessage());
         }
+    }
+
+    /**
+     * Ensure UserRepositoryImpl from the security-jwt bundle is activated.
+     *
+     * UserRepositoryImpl is a delayed DS component (no immediate=true). SCR
+     * registers the service reference lazily but only instantiates and activates
+     * the component when someone actually fetches the service. Since no other
+     * component has a {@code @Reference UserRepository}, the activate() method
+     * (which subscribes to the token topic) never runs.
+     *
+     * This method triggers lazy activation by fetching the service. If SCR hasn't
+     * registered it at all, it falls back to manual instantiation via reflection.
+     */
+    private void bootstrapUserRepository() {
+        try {
+            // Check if SCR has registered UserRepository (possibly as a lazy/delayed
+            // service)
+            ServiceReference<?>[] existingRefs = bundleContext.getAllServiceReferences(
+                    "pnnl.goss.core.security.jwt.UserRepository", null);
+            if (existingRefs != null && existingRefs.length > 0) {
+                // Trigger lazy activation by actually fetching the service.
+                // This causes SCR to instantiate UserRepositoryImpl and call activate().
+                Object userRepo = bundleContext.getService(existingRefs[0]);
+                if (userRepo != null) {
+                    log.info("Triggered lazy activation of UserRepositoryImpl (SCR delayed component)");
+                    return;
+                }
+            }
+
+            // Fallback: manually bootstrap if SCR didn't register the component at all
+            log.info("UserRepository not registered by SCR - manually bootstrapping via reflection");
+
+            // Find the security-jwt bundle
+            Bundle securityJwtBundle = null;
+            for (Bundle b : bundleContext.getBundles()) {
+                if ("pnnl.goss.core.security-jwt".equals(b.getSymbolicName())) {
+                    securityJwtBundle = b;
+                    break;
+                }
+            }
+            if (securityJwtBundle == null) {
+                log.warn("security-jwt bundle not found - UserRepository will not be available");
+                return;
+            }
+            if (securityJwtBundle.getState() != Bundle.ACTIVE) {
+                log.warn("security-jwt bundle is not ACTIVE (state={}) - cannot bootstrap UserRepository",
+                        securityJwtBundle.getState());
+                return;
+            }
+
+            // Load UserRepositoryImpl class from the security-jwt bundle's classloader
+            Class<?> userRepoClass = securityJwtBundle
+                    .loadClass("pnnl.goss.core.security.jwt.UserRepositoryImpl");
+            Object userRepo = userRepoClass.getDeclaredConstructor().newInstance();
+
+            // Set clientFactory field
+            Field cfField = userRepoClass.getDeclaredField("clientFactory");
+            cfField.setAccessible(true);
+            cfField.set(userRepo, clientFactory);
+
+            // Look up and set SecurityConfig (GOSS core version)
+            ServiceReference<?>[] scRefs = bundleContext.getAllServiceReferences(
+                    "pnnl.goss.core.security.SecurityConfig", null);
+            if (scRefs == null || scRefs.length == 0) {
+                log.warn("SecurityConfig service not found - cannot bootstrap UserRepository");
+                return;
+            }
+            Object secConfig = bundleContext.getService(scRefs[0]);
+            Field scField = userRepoClass.getDeclaredField("securityConfig");
+            scField.setAccessible(true);
+            scField.set(userRepo, secConfig);
+
+            // Look up and set RoleManager (GOSS core version, not GridAPPS-D version)
+            ServiceReference<?>[] rmRefs = bundleContext.getAllServiceReferences(
+                    "pnnl.goss.core.security.RoleManager", null);
+            if (rmRefs == null || rmRefs.length == 0) {
+                log.warn("RoleManager (core) service not found - cannot bootstrap UserRepository");
+                return;
+            }
+            Object roleMgr = bundleContext.getService(rmRefs[0]);
+            Field rmField = userRepoClass.getDeclaredField("roleManager");
+            rmField.setAccessible(true);
+            rmField.set(userRepo, roleMgr);
+
+            // Load configuration properties for pnnl.goss.core.security.userfile
+            Map<String, Object> configProps = loadConfigByPid("pnnl.goss.core.security.userfile");
+            if (configProps == null || configProps.isEmpty()) {
+                log.warn("Config pnnl.goss.core.security.userfile not available - cannot bootstrap UserRepository");
+                return;
+            }
+
+            // Call activate(Map<String, Object> properties)
+            Method activateMethod = userRepoClass.getMethod("activate", Map.class);
+            activateMethod.invoke(userRepo, configProps);
+
+            // Register the service using the interface name as string
+            // (since UserRepository is a Private-Package class)
+            registrations.add(bundleContext.registerService(
+                    "pnnl.goss.core.security.jwt.UserRepository", userRepo, new Hashtable<>()));
+            log.info("Manually bootstrapped and registered UserRepositoryImpl - token service is active");
+
+        } catch (Exception e) {
+            log.error("Failed to bootstrap UserRepository", e);
+        }
+    }
+
+    /**
+     * Load configuration properties from ConfigAdmin for a given PID.
+     */
+    private Map<String, Object> loadConfigByPid(String pid) {
+        try {
+            ServiceReference<?> caRef = bundleContext
+                    .getServiceReference("org.osgi.service.cm.ConfigurationAdmin");
+            if (caRef == null)
+                return null;
+
+            Object configAdmin = bundleContext.getService(caRef);
+            if (configAdmin == null)
+                return null;
+
+            Method getConfig = configAdmin.getClass()
+                    .getMethod("getConfiguration", String.class, String.class);
+            Object configuration = getConfig.invoke(configAdmin, pid, null);
+
+            if (configuration != null) {
+                Method getProps = configuration.getClass().getMethod("getProperties");
+                Object propsObj = getProps.invoke(configuration);
+
+                if (propsObj instanceof Dictionary) {
+                    @SuppressWarnings("unchecked")
+                    Dictionary<String, Object> props = (Dictionary<String, Object>) propsObj;
+                    Map<String, Object> configMap = new HashMap<>();
+                    Enumeration<String> keys = props.keys();
+                    while (keys.hasMoreElements()) {
+                        String key = keys.nextElement();
+                        configMap.put(key, props.get(key));
+                    }
+                    return configMap;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error loading config for PID {}: {}", pid, e.getMessage());
+        }
+        return null;
     }
 
     /**
