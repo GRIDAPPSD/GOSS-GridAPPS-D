@@ -2,7 +2,7 @@
 #  OSGi TEST BUNDLE 
 #
 
-Bundle-Version: 1.0.0-SNAPSHOT
+Bundle-Version: 2.1.0
 Bundle-Description: \
 	This bundle is an OSGi test bundle that tests the GridAPPS-D platform implementation. \
 	It provides comprehensive integration and unit tests for the GridAPPS-D services, \
