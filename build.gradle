@@ -198,18 +198,51 @@ task collectBundles(type: Copy) {
         include '*.jar'
     }
 
-    // Collect GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
-    // BND downloads these from https://github.com/GridOPTICS/GOSS-Repository on first build
-    // Only include version 13.0.0 (Java 21 compatible release)
-    from('cnf/cache/7.1.0/GOSS Release') {
-        include 'pnnl.goss.core.*-13.0.0.jar'
-        exclude '*-sources.jar'
-        exclude '*-javadoc.jar'
-        // Exclude test and development bundles - these should not be deployed
-        exclude 'pnnl.goss.core.itests*'
-        exclude 'pnnl.goss.core.testutil*'
-        exclude 'pnnl.goss.core.runner*'
-        exclude 'pnnl.goss.core.client-all*'
+    // Collect GOSS bundles: use local build or remote GOSS-Repository
+    // Switch with: ./gradlew dist -PuseLocalGoss   (or set in gradle.properties)
+    // Local GOSS dir can be overridden: -PgossDir=/path/to/GOSS
+    if (project.hasProperty('useLocalGoss')) {
+        def gossDir = project.hasProperty('gossDir') ?
+            project.property('gossDir') : "${rootProject.projectDir}/../GOSS"
+        def gossGenerated = "${gossDir}/pnnl.goss.core/generated"
+        from(gossGenerated) {
+            include 'pnnl.goss.core.*.jar'
+            exclude 'pnnl.goss.core.itests*'
+            exclude 'pnnl.goss.core.testutil*'
+            exclude 'pnnl.goss.core.runner*'
+            exclude 'pnnl.goss.core.client-all*'
+        }
+        doFirst {
+            def genDir = file(gossGenerated)
+            if (!genDir.directory) {
+                throw new GradleException(
+                    "Local GOSS directory not found: ${gossGenerated}\n" +
+                    "Build GOSS first:  cd ${gossDir} && ./gradlew build\n" +
+                    "Or set a custom path:  ./gradlew dist -PuseLocalGoss -PgossDir=/path/to/GOSS")
+            }
+            def jars = genDir.listFiles()?.findAll { it.name.startsWith('pnnl.goss.core.') && it.name.endsWith('.jar') }
+            if (!jars) {
+                throw new GradleException(
+                    "No GOSS bundles found in: ${gossGenerated}\n" +
+                    "Build GOSS first:  cd ${gossDir} && ./gradlew build")
+            }
+            println "Using LOCAL GOSS bundles from: ${gossGenerated} (${jars.size()} JARs)"
+        }
+    } else {
+        // Default: BND cache (auto-populated from GOSS-Repository via repositories.bnd)
+        // Only include version 15.x (Java 21 compatible release with reply-to normalization)
+        from('cnf/cache/7.1.0/GOSS Release') {
+            include 'pnnl.goss.core.*-15.*.jar'
+            exclude '*-sources.jar'
+            exclude '*-javadoc.jar'
+            exclude 'pnnl.goss.core.itests*'
+            exclude 'pnnl.goss.core.testutil*'
+            exclude 'pnnl.goss.core.runner*'
+            exclude 'pnnl.goss.core.client-all*'
+        }
+        doFirst {
+            println "Using REMOTE GOSS bundles from: cnf/cache/7.1.0/GOSS Release"
+        }
     }
 
     // Collect CIMHub library from BND cache
@@ -297,9 +330,10 @@ task collectBundles(type: Copy) {
             // GSON (GOSS uses 2.11.0 per bnd.bnd)
             'com.google.code.gson:gson:2.11.0',
 
-            // ActiveMQ OSGi bundles (GOSS uses 6.2.0 for Jakarta EE support)
+            // ActiveMQ OSGi bundle (GOSS uses 6.2.0 for Jakarta EE support)
+            // NOTE: Do NOT add activemq-client here - it duplicates classes from activemq-osgi
+            // and causes ClassCastException due to split classloaders (app vs OSGi bundle)
             'org.apache.activemq:activemq-osgi:6.2.0',
-            'org.apache.activemq:activemq-client:6.2.0',
             'org.apache.activemq:activemq-shiro:6.2.0',
             'org.fusesource.hawtbuf:hawtbuf:1.11',
             'org.fusesource.hawtdispatch:hawtdispatch:1.22',
@@ -481,18 +515,19 @@ task launcherJar(type: Jar) {
     dependsOn compileLauncher
     dependsOn collectBundles
 
-    // Generate Class-Path at execution time, after bundles are copied
+    // Only include Felix framework on the system classpath.
+    // All other JARs are loaded as OSGi bundles by Felix's bundle classloaders.
+    // Including them on the system classpath causes ClassCastExceptions when
+    // the same class is loaded by both the app classloader and a bundle classloader
+    // (e.g., ActiveMQ TcpTransportFactory vs TransportFactory).
     doFirst {
-        def bundleJars = fileTree("$buildDir/launcher/bundle").include('*.jar').files.collect {
-            "bundle/${it.name}"
-        }.join(' ')
         manifest {
             attributes(
                 'Main-Class': 'gov.pnnl.goss.gridappsd.launcher.GridAPPSDLauncher',
-                'Class-Path': bundleJars
+                'Class-Path': 'bundle/org.apache.felix.framework-7.0.5.jar'
             )
         }
-        println "Manifest Class-Path includes ${fileTree("$buildDir/launcher/bundle").include('*.jar').files.size()} bundles"
+        println "Manifest Class-Path: bundle/org.apache.felix.framework-7.0.5.jar (Felix only - bundles loaded via OSGi)"
     }
 
     doLast {
@@ -526,11 +561,12 @@ project(':gov.pnnl.goss.gridappsd') {
     apply plugin: com.pnnl.goss.gradle.BndRunnerPlugin
 
     bndRunner {
-        // GridAPPS-D bundles from this project
+        def gossBundle = rootProject.hasProperty('useLocalGoss') ?
+            file("${rootProject.hasProperty('gossDir') ? rootProject.property('gossDir') : "${rootProject.projectDir}/../GOSS"}/pnnl.goss.core/generated") :
+            file("${rootProject.projectDir}/cnf/cache/7.1.0/GOSS Release")
         bundleDirs = [
             file('generated'),
-            // GOSS bundles from BND cache (auto-populated from GOSS-Repository via repositories.bnd)
-            file("${rootProject.projectDir}/cnf/cache/7.1.0/GOSS Release")
+            gossBundle
         ]
         configDir = file('conf')
     }
