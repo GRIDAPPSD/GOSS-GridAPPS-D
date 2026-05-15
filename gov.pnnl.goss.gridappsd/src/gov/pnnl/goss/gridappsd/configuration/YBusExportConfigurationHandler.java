@@ -78,196 +78,205 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
-
 @Component(service = ConfigurationHandler.class)
 public class YBusExportConfigurationHandler implements ConfigurationHandler {
 
-	private static Logger log = LoggerFactory.getLogger(YBusExportConfigurationHandler.class);
+    private static Logger log = LoggerFactory.getLogger(YBusExportConfigurationHandler.class);
 
-	@Reference
-	private volatile ConfigurationManager configManager;
+    @Reference
+    private volatile ConfigurationManager configManager;
 
-	@Reference
-	private volatile SimulationManager simulationManager;
+    @Reference
+    private volatile SimulationManager simulationManager;
 
-	@Reference
-	private volatile DataManager dataManager;
+    @Reference
+    private volatile DataManager dataManager;
 
-	@Reference
-	private volatile PowergridModelDataManager powergridModelManager;
+    @Reference
+    private volatile PowergridModelDataManager powergridModelManager;
 
-	@Reference
-	volatile LogManager logManager;
+    @Reference
+    volatile LogManager logManager;
 
-	public static final String TYPENAME = "YBus Export";
-	public static final String DIRECTORY = "directory";
-	public static final String SIMULATIONID = "simulation_id";
-	public static final String MODELID = "model_id";
-	public static final String ZFRACTION = "z_fraction";
-	public static final String IFRACTION = "i_fraction";
-	public static final String PFRACTION = "p_fraction";
-	public static final String SCHEDULENAME = "schedule_name";
-	public static final String LOADSCALINGFACTOR = "load_scaling_factor";
+    public static final String TYPENAME = "YBus Export";
+    public static final String DIRECTORY = "directory";
+    public static final String SIMULATIONID = "simulation_id";
+    public static final String MODELID = "model_id";
+    public static final String ZFRACTION = "z_fraction";
+    public static final String IFRACTION = "i_fraction";
+    public static final String PFRACTION = "p_fraction";
+    public static final String SCHEDULENAME = "schedule_name";
+    public static final String LOADSCALINGFACTOR = "load_scaling_factor";
 
-	public YBusExportConfigurationHandler() {
-	}
+    public YBusExportConfigurationHandler() {
+    }
 
-	public YBusExportConfigurationHandler(LogManager logManager) {
+    public YBusExportConfigurationHandler(LogManager logManager) {
 
-	}
+    }
 
-	@Activate
-	public void start() {
+    @Activate
+    public void start() {
 
-		if (configManager != null) {
-			configManager.registerConfigurationHandler(TYPENAME, this);
-		} else {
-			// TODO send log message and exception
-			log.warn("No Config manager avilable for " + getClass());
-		}
-	}
+        if (configManager != null) {
+            configManager.registerConfigurationHandler(TYPENAME, this);
+        } else {
+            // TODO send log message and exception
+            log.warn("No Config manager avilable for " + getClass());
+        }
+    }
 
-	@Override 
-	public void generateConfig(Properties parameters, PrintWriter out,
-			String processId, String username) throws Exception {
- 
-	  YBusExportResponse response = new YBusExportResponse(); 
-	  String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null); 
-	  String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-	  File baseDSSdir = null;
-	 
- 
-	  if(simulationId!=null) {
-		  
-		  SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
-		  if(simulationContext==null) 
-			  throw new Exception("Simulation context not found for simulation_id = "+simulationId);
-		  
-		  if(modelId==null)
-			  modelId = simulationContext.getRequest().getPower_system_config().get(0).getLine_name();
-		  
-		  
-		  for (PowerSystemConfig powerSystemConfig : simulationContext.getRequest().getPower_system_config())
-			  if(powerSystemConfig.getLine_name().equalsIgnoreCase(modelId)) {
-				  ModelCreationConfig modelCreationConfig = powerSystemConfig.getSimulator_config().getModel_creation_config();
-				  parameters.put("i_fraction", Double.toString(modelCreationConfig.getiFraction())); 
-				  parameters.put("z_fraction", Double.toString(modelCreationConfig.getzFraction())); 
-				  parameters.put("p_fraction", Double.toString(modelCreationConfig.getpFraction()));
-				  parameters.put("load_scaling_factor", Double.toString(modelCreationConfig.getLoadScalingFactor()));
-				  parameters.put("schedule_name", modelCreationConfig.getScheduleName()); 
-				  parameters.put("model_id", modelId);
-				  parameters.put("directory",simulationContext.getSimulationDir());
-				  parameters.put("simulation_start_time",simulationContext.getRequest().getSimulation_config().getStart_time());
-				  parameters.put("simulation_duration",simulationContext.getRequest().
-				  getSimulation_config().getDuration());
-				  break;
-			  }
-				  
-		  
-		  baseDSSdir = new File(simulationContext.getSimulationDir());
-		  
-	  } else { 
-		  
-		  modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
- 
-		  simulationId = processId;
-		 
-		  if(modelId==null) 
-			  throw new Exception("Model Id or simulation Id not provided in request parameters.");
-		 
-		  baseDSSdir = new File(configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH),"models/"+modelId);
-		 
-		  parameters.put("i_fraction", GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0)); 
-		  parameters.put("z_fraction",GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0));
-		  parameters.put("p_fraction", GridAppsDConstants.getDoubleProperty(parameters,PFRACTION, 0)); 
-		  parameters.put("load_scaling_factor", GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1));
-		  parameters.put("schedule_name", GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, ""));
-		  parameters.put("model_id", modelId); parameters.put("directory",baseDSSdir);
-	  }
- 
-	  File yparsePath = new File(baseDSSdir.getAbsolutePath()+File.separator+"base_ysparse.csv");
-	  File nodeListPath = new File(baseDSSdir.getAbsolutePath()+File.separator+"base_nodelist.csv"); File
-	  summaryPath = new File(baseDSSdir.getAbsolutePath()+File.separator+"base_summary.csv");
-	 
-	  if(yparsePath.exists() && nodeListPath.exists() && summaryPath.exists()) {
-		  
-		  response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
-		  response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
-		  response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
-		  out.print(response);
-	 
-	  } else {
-	 
-	  if(!baseDSSdir.exists()){ baseDSSdir.mkdirs(); }
-	 
-	 
-		  File commandFile = new File(baseDSSdir,"opendsscmdInput.txt"); 
-		  File dssBaseFile = new File(baseDSSdir,"model_base.dss");
-		  
-		  parameters.put(DIRECTORY, baseDSSdir.getAbsolutePath());
-		 
-		  if(!dssBaseFile.exists()) { PrintWriter basePrintWriter = new PrintWriter(new
-		  StringWriter()); DSSAllConfigurationHandler dssAllConfigurationHandler =new
-		  DSSAllConfigurationHandler(logManager, simulationManager, configManager);
-		  dssAllConfigurationHandler.generateConfig(parameters, basePrintWriter,
-		  processId, username); }
-		 
-		 
-		  if(!dssBaseFile.exists()) throw new
-		  Exception("Error: Could not create DSS base file to export YBus matrix");
-		 
-		  logManager.debug(ProcessStatus.RUNNING,
-		  simulationId,"Generating commands file for opendsscmd");
-		 
-		 
-		  //Create file with commands for opendsscmd 
-		  PrintWriter fileWriter = new PrintWriter(commandFile); 
-		  fileWriter.println("redirect model_base.dss"); 
-		  // transformer winding ratios must be consistent with base voltages for state estimation 
-		  // regulators should be at tap 0; in case LDC is active, we cannot use a no-load solution
-		  fileWriter.println("batchedit transformer..* wdg=2 tap=1");
-		  fileWriter.println("batchedit regcontrol..* enabled=false"); 
-		  // remove source injections from the Y matrix on solve
-		  fileWriter.println("batchedit vsource..* enabled=false");
-		  fileWriter.println("batchedit isource..* enabled=false"); 
-		  // remove PC elements from the Y matrix on solve
-		  fileWriter.println("batchedit load..* enabled=false");
-		  fileWriter.println("batchedit generator..* enabled=false");
-		  fileWriter.println("batchedit pvsystem..* enabled=false");
-		  fileWriter.println("batchedit storage..* enabled=false"); 
-		  // solve the system  in unloaded condition with regulator taps locked fileWriter.println("solve");
-		  fileWriter.println("export y triplet base_ysparse.csv");
-		  fileWriter.println("export ynodelist base_nodelist.csv");
-		  fileWriter.println("export summary base_summary.csv"); fileWriter.flush();
-		  fileWriter.close();
-		 
-		  logManager.debug(ProcessStatus.RUNNING, simulationId,
-		  "Finished generating commands file for opendsscmd");
-		 
-		  logManager.debug(ProcessStatus.RUNNING, simulationId,
-		  "Generating Y Bus matrix");
-		 
-		  ProcessBuilder processServiceBuilder = new ProcessBuilder();
-		  processServiceBuilder.directory(baseDSSdir); List<String> commands = new
-		  ArrayList<String>(); commands.add("opendsscmd");
-		  commands.add(commandFile.getName());
-		 
-		  processServiceBuilder.command(new ArrayList<>(Arrays.asList("opendsscmd",
-		  commandFile.getName()))); processServiceBuilder.redirectErrorStream(true);
-		  processServiceBuilder.redirectOutput(); Process process =
-		  processServiceBuilder.start(); process.waitFor();
-		 
-		  response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
-		  response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
-		  response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
-		 
-		  logManager.debug(ProcessStatus.RUNNING, simulationId,
-		  "Finished generating Y Bus matrix");
-		 
-		  out.print(response); 
-	  
-	  }
- 
-  }
+    @Override
+    public void generateConfig(Properties parameters, PrintWriter out,
+            String processId, String username) throws Exception {
+
+        YBusExportResponse response = new YBusExportResponse();
+        String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+        String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+        File baseDSSdir = null;
+
+        if (simulationId != null) {
+
+            SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+            if (simulationContext == null)
+                throw new Exception("Simulation context not found for simulation_id = " + simulationId);
+
+            if (modelId == null)
+                modelId = simulationContext.getRequest().getPower_system_config().get(0).getLine_name();
+
+            for (PowerSystemConfig powerSystemConfig : simulationContext.getRequest().getPower_system_config())
+                if (powerSystemConfig.getLine_name().equalsIgnoreCase(modelId)) {
+                    ModelCreationConfig modelCreationConfig = powerSystemConfig.getSimulator_config()
+                            .getModel_creation_config();
+                    parameters.put("i_fraction", Double.toString(modelCreationConfig.getiFraction()));
+                    parameters.put("z_fraction", Double.toString(modelCreationConfig.getzFraction()));
+                    parameters.put("p_fraction", Double.toString(modelCreationConfig.getpFraction()));
+                    parameters.put("load_scaling_factor", Double.toString(modelCreationConfig.getLoadScalingFactor()));
+                    parameters.put("schedule_name", modelCreationConfig.getScheduleName());
+                    parameters.put("model_id", modelId);
+                    parameters.put("directory", simulationContext.getSimulationDir());
+                    parameters.put("simulation_start_time",
+                            simulationContext.getRequest().getSimulation_config().getStart_time());
+                    parameters.put("simulation_duration",
+                            simulationContext.getRequest().getSimulation_config().getDuration());
+                    break;
+                }
+
+            baseDSSdir = new File(simulationContext.getSimulationDir());
+
+        } else {
+
+            modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+
+            simulationId = processId;
+
+            if (modelId == null)
+                throw new Exception("Model Id or simulation Id not provided in request parameters.");
+
+            baseDSSdir = new File(configManager.getConfigurationProperty(GridAppsDConstants.GRIDAPPSD_TEMP_PATH),
+                    "models/" + modelId);
+
+            parameters.put("i_fraction", GridAppsDConstants.getDoubleProperty(parameters, IFRACTION, 0));
+            parameters.put("z_fraction", GridAppsDConstants.getDoubleProperty(parameters, ZFRACTION, 0));
+            parameters.put("p_fraction", GridAppsDConstants.getDoubleProperty(parameters, PFRACTION, 0));
+            parameters.put("load_scaling_factor",
+                    GridAppsDConstants.getDoubleProperty(parameters, LOADSCALINGFACTOR, 1));
+            parameters.put("schedule_name", GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, ""));
+            parameters.put("model_id", modelId);
+            parameters.put("directory", baseDSSdir);
+        }
+
+        File yparsePath = new File(baseDSSdir.getAbsolutePath() + File.separator + "base_ysparse.csv");
+        File nodeListPath = new File(baseDSSdir.getAbsolutePath() + File.separator + "base_nodelist.csv");
+        File summaryPath = new File(baseDSSdir.getAbsolutePath() + File.separator + "base_summary.csv");
+
+        if (yparsePath.exists() && nodeListPath.exists() && summaryPath.exists()) {
+
+            response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
+            response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
+            response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
+            out.print(response);
+
+        } else {
+
+            if (!baseDSSdir.exists()) {
+                baseDSSdir.mkdirs();
+            }
+
+            File commandFile = new File(baseDSSdir, "opendsscmdInput.txt");
+            File dssBaseFile = new File(baseDSSdir, "model_base.dss");
+
+            parameters.put(DIRECTORY, baseDSSdir.getAbsolutePath());
+
+            if (!dssBaseFile.exists()) {
+                PrintWriter basePrintWriter = new PrintWriter(new StringWriter());
+                DSSAllConfigurationHandler dssAllConfigurationHandler = new DSSAllConfigurationHandler(logManager,
+                        simulationManager, configManager);
+                dssAllConfigurationHandler.generateConfig(parameters, basePrintWriter,
+                        processId, username);
+            }
+
+            if (!dssBaseFile.exists())
+                throw new Exception("Error: Could not create DSS base file to export YBus matrix");
+
+            logManager.debug(ProcessStatus.RUNNING,
+                    simulationId, "Generating commands file for opendsscmd");
+
+            // Create file with commands for opendsscmd
+            PrintWriter fileWriter = new PrintWriter(commandFile);
+            fileWriter.println("redirect model_base.dss");
+            // transformer winding ratios must be consistent with base voltages for state
+            // estimation
+            // regulators should be at tap 0; in case LDC is active, we cannot use a no-load
+            // solution
+            fileWriter.println("batchedit transformer..* wdg=2 tap=1");
+            fileWriter.println("batchedit regcontrol..* enabled=false");
+            // remove source injections from the Y matrix on solve
+            fileWriter.println("batchedit vsource..* enabled=false");
+            fileWriter.println("batchedit isource..* enabled=false");
+            // remove PC elements from the Y matrix on solve
+            fileWriter.println("batchedit load..* enabled=false");
+            fileWriter.println("batchedit generator..* enabled=false");
+            fileWriter.println("batchedit pvsystem..* enabled=false");
+            fileWriter.println("batchedit storage..* enabled=false");
+            // solve the system in unloaded condition with regulator taps locked
+            // fileWriter.println("solve");
+            fileWriter.println("export y triplet base_ysparse.csv");
+            fileWriter.println("export ynodelist base_nodelist.csv");
+            fileWriter.println("export summary base_summary.csv");
+            fileWriter.flush();
+            fileWriter.close();
+
+            logManager.debug(ProcessStatus.RUNNING, simulationId,
+                    "Finished generating commands file for opendsscmd");
+
+            logManager.debug(ProcessStatus.RUNNING, simulationId,
+                    "Generating Y Bus matrix");
+
+            ProcessBuilder processServiceBuilder = new ProcessBuilder();
+            processServiceBuilder.directory(baseDSSdir);
+            List<String> commands = new ArrayList<String>();
+            commands.add("opendsscmd");
+            commands.add(commandFile.getName());
+
+            processServiceBuilder.command(new ArrayList<>(Arrays.asList("opendsscmd",
+                    commandFile.getName())));
+            processServiceBuilder.redirectErrorStream(true);
+            processServiceBuilder.redirectOutput();
+            Process process = processServiceBuilder.start();
+            process.waitFor();
+
+            response.setyParse(Files.readAllLines(Paths.get(yparsePath.getPath())));
+            response.setNodeList(Files.readAllLines(Paths.get(nodeListPath.getPath())));
+            response.setSummary(Files.readAllLines(Paths.get(summaryPath.getPath())));
+
+            logManager.debug(ProcessStatus.RUNNING, simulationId,
+                    "Finished generating Y Bus matrix");
+
+            out.print(response);
+
+        }
+
+    }
 
 }
