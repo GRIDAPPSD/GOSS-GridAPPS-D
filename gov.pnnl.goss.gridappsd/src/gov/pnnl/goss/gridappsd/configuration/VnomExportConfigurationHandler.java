@@ -114,6 +114,18 @@ public class VnomExportConfigurationHandler extends BaseConfigurationHandler imp
     public VnomExportConfigurationHandler(LogManager logManager) {
 
     }
+    
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+    
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+    
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
 
     @Activate
     public void start() {

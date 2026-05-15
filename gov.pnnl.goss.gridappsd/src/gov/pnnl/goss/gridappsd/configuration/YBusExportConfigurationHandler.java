@@ -59,17 +59,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.Activate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
 import gov.pnnl.goss.gridappsd.api.SimulationManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
@@ -90,12 +88,6 @@ public class YBusExportConfigurationHandler extends BaseConfigurationHandler imp
     private volatile SimulationManager simulationManager;
 
     @Reference
-    private volatile DataManager dataManager;
-
-    @Reference
-    private volatile PowergridModelDataManager powergridModelManager;
-
-    @Reference
     volatile LogManager logManager;
 
     public static final String TYPENAME = "YBus Export";
@@ -113,6 +105,18 @@ public class YBusExportConfigurationHandler extends BaseConfigurationHandler imp
 
     public YBusExportConfigurationHandler(LogManager logManager) {
 
+    }
+    
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
+    
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
+    
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
     }
 
     @Activate
