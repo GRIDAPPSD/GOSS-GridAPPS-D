@@ -79,7 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
-public class VnomExportConfigurationHandler implements ConfigurationHandler {
+public class VnomExportConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler{
 
     private static Logger log = LoggerFactory.getLogger(VnomExportConfigurationHandler.class);
 

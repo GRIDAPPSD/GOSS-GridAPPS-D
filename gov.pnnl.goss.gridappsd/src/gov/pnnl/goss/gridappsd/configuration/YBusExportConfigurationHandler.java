@@ -79,7 +79,7 @@ import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component(service = ConfigurationHandler.class)
-public class YBusExportConfigurationHandler implements ConfigurationHandler {
+public class YBusExportConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
 
     private static Logger log = LoggerFactory.getLogger(YBusExportConfigurationHandler.class);
 
