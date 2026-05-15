@@ -65,9 +65,8 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.server.ServerControl;
-// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-//import pnnl.goss.core.security.JWTAuthenticationToken;
-//import pnnl.goss.core.security.SecurityConfig;
+
+import com.nimbusds.jwt.SignedJWT;
 
 /**
  * This class implements functionalities for Internal Function 409 Log Manager.
@@ -92,10 +91,6 @@ public class LogManagerImpl implements LogManager {
     // connect
     @Reference
     ServerControl serverControl;
-
-    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-    // @Reference
-    // SecurityConfig securityConfig;
 
     Client client;
 
@@ -172,19 +167,16 @@ public class LogManagerImpl implements LogManager {
         String username = event.getUsername();
         LogMessage logMessage = LogMessage.parse(event.getData().toString());
 
-        // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-        //// If it is a token instead of username
-        // if(username!=null && username.length()>250){ //if it is a token
-        // boolean valid = securityConfig.validateToken(username);
-        // if(!valid){
-        // this.error(ProcessStatus.ERROR, logMessage.getProcessId(),"Failure to
-        // validate authentication token:"+username);
-        // return;
-        // }
-        // //Get username from token
-        // JWTAuthenticationToken tokenObj = securityConfig.parseToken(username);
-        // username = tokenObj.getSub();
-        // }
+        // If the username is a JWT token, extract the actual username from it
+        if (username != null && username.length() > 250) {
+            try {
+                SignedJWT signed = SignedJWT.parse(username);
+                username = signed.getJWTClaimsSet().getSubject();
+            } catch (Exception e) {
+                log.warn("Failed to extract username from token, using 'system'");
+                username = "system";
+            }
+        }
         logToConsole(LogMessage.parse(event.getData().toString()), username, null);
     }
 

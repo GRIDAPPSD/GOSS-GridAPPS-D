@@ -41,6 +41,8 @@ package gov.pnnl.goss.gridappsd.data;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.Socket;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -95,6 +97,9 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources {
 
     Properties datasourceProperties;
 
+    private static final int MAX_RETRIES = 30;
+    private static final int RETRY_INTERVAL_SECONDS = 5;
+
     // These are the datasources that this module has registered.
     private List<String> registeredDatasources = new ArrayList<>();
 
@@ -111,13 +116,78 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources {
             loadConfigurationFromFile();
         }
 
-        // Register datasource if configuration is available
-        if (datasourceProperties != null) {
-            registerDataSource();
-        } else {
-            log.info(
-                    "No datasource configuration provided yet - datasource will be registered when configuration is available");
+        if (datasourceProperties == null) {
+            log.info("No datasource configuration provided yet"
+                    + " - datasource will be registered when configuration is available");
+            return;
         }
+
+        // Fail fast on config errors (e.g., missing datasource name)
+        String datasourceName = datasourceProperties.getProperty(DataSourceBuilder.DATASOURCE_NAME);
+        if (datasourceName == null) {
+            throw new RuntimeException("No datasource name provided when registering data source");
+        }
+
+        // Try to register immediately — works when MySQL is already available
+        // or when running in tests with mocked dependencies
+        try {
+            registerDataSource();
+            return;
+        } catch (Exception e) {
+            log.info("Initial datasource registration failed ({}), will wait for MySQL",
+                    e.getMessage());
+        }
+
+        // MySQL not ready yet — block until it is. SCR dependency chain ensures
+        // nothing downstream (LogDataManager, LogManager, GridAppsDBoot) activates
+        // until this component finishes starting.
+        waitForMySQL();
+        registerDataSource();
+    }
+
+    /**
+     * Block until MySQL is reachable by polling the host/port from the JDBC URL.
+     * This is called from @Activate so that SCR holds off activating dependent
+     * components until the database is actually available.
+     */
+    private void waitForMySQL() {
+        String url = datasourceProperties.getProperty(DataSourceBuilder.DATASOURCE_URL);
+        String host = "mysql";
+        int port = 3306;
+
+        if (url != null) {
+            try {
+                String stripped = url.replace("jdbc:mysql://", "http://");
+                URI uri = URI.create(stripped);
+                if (uri.getHost() != null) {
+                    host = uri.getHost();
+                }
+                if (uri.getPort() > 0) {
+                    port = uri.getPort();
+                }
+            } catch (Exception e) {
+                log.debug("Could not parse JDBC URL, using defaults: {}", e.getMessage());
+            }
+        }
+
+        log.info("Waiting for MySQL at {}:{}...", host, port);
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try (Socket socket = new Socket(host, port)) {
+                log.info("MySQL is reachable at {}:{} (attempt {})", host, port, attempt);
+                return;
+            } catch (IOException e) {
+                log.info("MySQL not yet reachable at {}:{} (attempt {}/{}) - retrying in {}s",
+                        host, port, attempt, MAX_RETRIES, RETRY_INTERVAL_SECONDS);
+                try {
+                    Thread.sleep(RETRY_INTERVAL_SECONDS * 1000L);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting for MySQL", ie);
+                }
+            }
+        }
+        throw new RuntimeException(
+                "MySQL not reachable at " + host + ":" + port + " after " + MAX_RETRIES + " attempts");
     }
 
     /**
@@ -191,10 +261,7 @@ public class GridAppsDataSourcesImpl implements GridAppsDataSources {
             try {
                 datasourceBuilder.create(datasourceName, datasourceProperties);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-
-                // TODO use logmanager to log error
-                e.printStackTrace();
+                throw new RuntimeException("Failed to create datasource: " + e.getMessage(), e);
             }
             registeredDatasources.add(datasourceName);
         }

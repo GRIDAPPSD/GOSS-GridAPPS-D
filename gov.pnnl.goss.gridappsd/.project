@@ -27,6 +27,7 @@
 		</buildCommand>
 	</buildSpec>
 	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
 		<nature>bndtools.core.bndnature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>

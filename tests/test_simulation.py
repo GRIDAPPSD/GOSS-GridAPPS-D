@@ -33,7 +33,7 @@ PASSWORD = "manager"
 # IEEE 13 Node Test Feeder - smallest standard model
 IEEE13_MRID = "49AD8E07-3BF9-A4E2-CB8F-C3722F837B62"
 
-SIMULATION_DURATION = 30  # seconds
+SIMULATION_DURATION = 120  # seconds
 
 
 def build_simulation_request(model_mrid, duration=SIMULATION_DURATION):
@@ -173,7 +173,7 @@ class TestSimulationStartup:
 
     def test_start_simulation_returns_id(self, gapps, model_mrid):
         """Start a simulation and verify it returns a simulation ID."""
-        request = build_simulation_request(model_mrid, duration=10)
+        request = build_simulation_request(model_mrid)
         response = gapps.get_response(
             t.REQUEST_SIMULATION, json.dumps(request), timeout=60
         )

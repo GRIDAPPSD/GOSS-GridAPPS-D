@@ -61,6 +61,10 @@ if __name__ == '__main__':
                         help="The output tag version for local development (default: local)")
     parser.add_argument("--pull", action="store_true",
                         help="Force pull base image from registry even if it exists locally")
+    parser.add_argument("--local-goss", "--local_goss", dest="local_goss", action="store_true",
+                        help="Use locally-built GOSS bundles from ../GOSS/pnnl.goss.core/generated/")
+    parser.add_argument("--goss-dir", "--goss_dir", dest="goss_dir", default=None,
+                        help="Path to local GOSS checkout (default: ../GOSS)")
 
     opts = parser.parse_args()
 
@@ -81,7 +85,14 @@ if __name__ == '__main__':
         else:
             print(f"Using local image gridappsd/gridappsd_base:{opts.base_version}")
 
+    gradle_props = ""
+    if opts.local_goss:
+        gradle_props += " -PuseLocalGoss"
+        if opts.goss_dir:
+            gradle_props += f" -PgossDir={opts.goss_dir}"
+        print(f"Using LOCAL GOSS bundles{f' from {opts.goss_dir}' if opts.goss_dir else ' from ../GOSS'}")
+
     execute("./gradlew clean")
     shutil.rmtree("build/launcher", ignore_errors=True)
-    execute("./gradlew dist")
+    execute(f"./gradlew dist{gradle_props}")
     execute(f"docker build --build-arg GRIDAPPSD_BASE_VERSION=:{opts.base_version} --build-arg TIMESTAMP=$(date +%Y%m%d%H%M%S) --network=host -t gridappsd/gridappsd:{opts.output_version} .", shell=True)

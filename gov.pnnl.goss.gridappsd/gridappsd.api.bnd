@@ -1,4 +1,4 @@
-Bundle-Version: 2.0.0-SNAPSHOT
+Bundle-Version: 2.1.0
 Export-Package: \
 	gov.pnnl.goss.gridappsd.dto.field;version="1.0.0",\
 	gov.pnnl.goss.gridappsd.api;version="1.0.0",\

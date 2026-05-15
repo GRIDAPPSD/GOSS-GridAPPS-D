@@ -393,6 +393,10 @@ class HelicsGossBridge(object):
 
     def on_message(self, headers, msg):
         message = {}
+        log.info("on_message received: headers=%s, msg=%s", headers, str(msg)[:500])
+        if self._helics_federate is None:
+            log.debug("Ignoring message received before HELICS federate is initialized")
+            return
         federate_state = helics.helicsFederateGetState(self._helics_federate)
 
         try:

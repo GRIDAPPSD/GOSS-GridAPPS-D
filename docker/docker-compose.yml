@@ -112,6 +112,9 @@ services:
       - ../build/launcher:/gridappsd/launcher
       # Mount source for reference during debugging
       - ../gov.pnnl.goss.gridappsd/src:/gridappsd/src:ro
+      # Mount configuration overrides - files here are copied over /gridappsd/conf at startup
+      # Uncomment and point to your local conf directory to override specific config files
+      # - ./conf:/conf:ro
     depends_on:
       mysql:
         condition: service_healthy

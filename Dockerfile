@@ -79,6 +79,10 @@ WORKDIR /gridappsd
 # Create symlink for backwards compatibility (must be after WORKDIR)
 RUN ln -s run-gridappsd.sh run-docker.sh
 
+# Volume for user-provided configuration overrides
+# Mount config files here and they will be copied over /gridappsd/conf at startup
+VOLUME /conf
+
 # Exposed ports: ActiveMQ (61616), STOMP (61613, 61614), Dynamic app ports (8000-9000)
 EXPOSE 61616 61613 61614 8000-9000
 
