@@ -300,6 +300,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             ochreAll.setSimulationManager(simulationManager);
             ochreAll.start();
             log.info("Registered OchreAllConfigurationHandler");
+            
+            //YBus Export handler
+            YBusExportConfigurationHandler ybusHandler = new YBusExportConfigurationHandler();
+            ybusHandler.setConfigManager(this);
+            ybusHandler.setLogManager(logManager);
+            ybusHandler.setSimulationManager(simulationManager);
+            ybusHandler.start();
+            log.info("Registered YBusExportConfigurationHandler");
+            
+            //VNom handler
+            VnomExportConfigurationHandler vnomHandler = new VnomExportConfigurationHandler();
+            vnomHandler.setConfigManager(this);
+            vnomHandler.setLogManager(logManager);
+            vnomHandler.setSimulationManager(simulationManager);
+            vnomHandler.start();
+            log.info("Registered VnomExportConfigurationHandler");
 
             log.info("All built-in configuration handlers registered successfully");
         } catch (Exception e) {

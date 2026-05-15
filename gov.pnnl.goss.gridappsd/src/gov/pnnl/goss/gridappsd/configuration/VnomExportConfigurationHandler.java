@@ -49,19 +49,6 @@
 
 package gov.pnnl.goss.gridappsd.configuration;
 
-import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
-import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
-import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.LogManager;
-import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
-import gov.pnnl.goss.gridappsd.api.SimulationManager;
-import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
-import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
-import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
-import gov.pnnl.goss.gridappsd.dto.SimulationContext;
-import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
-import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -72,11 +59,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.Activate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import gov.pnnl.goss.gridappsd.api.ConfigurationHandler;
+import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
+import gov.pnnl.goss.gridappsd.api.LogManager;
+import gov.pnnl.goss.gridappsd.api.SimulationManager;
+import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
+import gov.pnnl.goss.gridappsd.dto.ModelCreationConfig;
+import gov.pnnl.goss.gridappsd.dto.PowerSystemConfig;
+import gov.pnnl.goss.gridappsd.dto.SimulationContext;
+import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
+import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
 public class VnomExportConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler{
@@ -88,12 +86,6 @@ public class VnomExportConfigurationHandler extends BaseConfigurationHandler imp
 
     @Reference
     private volatile SimulationManager simulationManager;
-
-    @Reference
-    private volatile DataManager dataManager;
-
-    @Reference
-    private volatile PowergridModelDataManager powergridModelManager;
 
     @Reference
     volatile LogManager logManager;
