@@ -1,4 +1,4 @@
-ARG GRIDAPPSD_BASE_VERSION=:java-update
+ARG GRIDAPPSD_BASE_VERSION=:develop
 FROM gridappsd/gridappsd_base${GRIDAPPSD_BASE_VERSION}
 
 # Install additional utilities (killall is in psmisc)
