@@ -1,7 +1,6 @@
 -buildpath: \
 	biz.aQute.bnd:biz.aQute.bnd.annotation;version='6.4.0',\
 	org.osgi:osgi.core;version='8.0.0',\
-	org.osgi:osgi.cmpn;version='7.0.0',\
 	org.osgi:org.osgi.service.component.annotations;version='1.5.1',\
 	pnnl.goss.core.core-api;version=latest,\
 	pnnl.goss.core.goss-core-security;version=latest,\
