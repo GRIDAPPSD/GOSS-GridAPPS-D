@@ -244,7 +244,7 @@ public class YBusExportConfigurationHandler extends BaseConfigurationHandler imp
             fileWriter.println("batchedit pvsystem..* enabled=false");
             fileWriter.println("batchedit storage..* enabled=false");
             // solve the system in unloaded condition with regulator taps locked
-            // fileWriter.println("solve");
+            fileWriter.println("solve");
             fileWriter.println("export y triplet base_ysparse.csv");
             fileWriter.println("export ynodelist base_nodelist.csv");
             fileWriter.println("export summary base_summary.csv");
