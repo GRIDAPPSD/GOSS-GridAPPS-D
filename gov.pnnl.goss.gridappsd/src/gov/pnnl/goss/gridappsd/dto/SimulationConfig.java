@@ -64,6 +64,8 @@ public class SimulationConfig implements Serializable {
     // Slow simulator down to realtime if true. If false it will run as fast as the
     // simulator allows
     public boolean run_realtime = true;
+    public int publish_period = 60;
+    public int interval = 60;
 
     // instruct simulation to pause automatically after publishing measurements if
     // true.
@@ -116,8 +118,24 @@ public class SimulationConfig implements Serializable {
     public void setRun_realtime(boolean run_realtime) {
         this.run_realtime = run_realtime;
     }
+    
+    public int getPublish_period() {
+		return publish_period;
+	}
 
-    public boolean isPause_after_measurements() {
+	public void setPublish_period(int publish_period) {
+		this.publish_period = publish_period;
+	}
+
+	public int getInterval() {
+		return interval;
+	}
+
+	public void setInterval(int interval) {
+		this.interval = interval;
+	}
+
+	public boolean isPause_after_measurements() {
         return pause_after_measurements;
     }
 
