@@ -475,9 +475,9 @@ public class ProcessNewSimulationRequest {
 
         params.put(GLDAllConfigurationHandler.SIMULATOR, simConfig.simulator);
         params.put(GLDAllConfigurationHandler.RUN_REALTIME, requestSimulation.getSimulation_config().run_realtime);
-        params.put(GLDAllConfigurationHandler.PUBLISH_PERIOD, requestSimulation.getSimulation_config().getPublish_period());
+        params.put(GLDAllConfigurationHandler.PUBLISH_PERIOD,
+                requestSimulation.getSimulation_config().getPublish_period());
         params.put(GLDAllConfigurationHandler.INTERVAL, requestSimulation.getSimulation_config().getInterval());
-        
 
         if (modelConfig.separated_loads_file != null) {
             params.put(GLDAllConfigurationHandler.SEPARATED_LOADS_FILE, modelConfig.separated_loads_file);

@@ -155,7 +155,6 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
     public static final String RUN_REALTIME = "run_realtime";
     public static final String PUBLISH_PERIOD = "publish_period";
     public static final String INTERVAL = "interval";
-    
 
     // public static final String CONFIGTARGET = "glm";
     public static final String CONFIGTARGET = "both"; // will build files for both glm and dss
@@ -476,7 +475,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         startupFileWriter.println("#set suppress_repeat_messages=1");
         startupFileWriter.println("#set relax_naming_rules=1");
         startupFileWriter.println("#set profiler=1");
-        startupFileWriter.println("#set minimum_timestep=0.1");
+        if(run_realtime)
+        		startupFileWriter.println("#set minimum_timestep=1");
+        else
+        		startupFileWriter.println("#set minimum_timestep="+interval);
         if (useHouses) {
             startupFileWriter.println("module residential {");
             startupFileWriter.println("     implicit_enduses NONE;");
@@ -505,9 +507,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
             if (run_realtime)
                 startupFileWriter.println("      publish_period 3;");
             else {
-              	startupFileWriter.println("      publish_period "+ publish_period+";");
+                startupFileWriter.println("      publish_period " + publish_period + ";");
             }
-                
+
             startupFileWriter.println("      configure model_outputs.json;");
             startupFileWriter.println("}");
 
@@ -528,7 +530,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         if (run_realtime)
             startupFileWriter.println("     interval 1;");
         else {
-        		startupFileWriter.println("     interval "+interval+";");
+            startupFileWriter.println("     interval " + interval + ";");
         }
         startupFileWriter.println("}");
         /*

@@ -118,24 +118,24 @@ public class SimulationConfig implements Serializable {
     public void setRun_realtime(boolean run_realtime) {
         this.run_realtime = run_realtime;
     }
-    
+
     public int getPublish_period() {
-		return publish_period;
-	}
+        return publish_period;
+    }
 
-	public void setPublish_period(int publish_period) {
-		this.publish_period = publish_period;
-	}
+    public void setPublish_period(int publish_period) {
+        this.publish_period = publish_period;
+    }
 
-	public int getInterval() {
-		return interval;
-	}
+    public int getInterval() {
+        return interval;
+    }
 
-	public void setInterval(int interval) {
-		this.interval = interval;
-	}
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
 
-	public boolean isPause_after_measurements() {
+    public boolean isPause_after_measurements() {
         return pause_after_measurements;
     }
 
