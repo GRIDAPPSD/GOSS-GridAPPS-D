@@ -505,8 +505,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
             if (run_realtime)
                 startupFileWriter.println("      publish_period 3;");
             else {
-              	publish_period = (publish_period > 60) ? publish_period : 60;
-            		startupFileWriter.println("      publish_period "+ publish_period+";");
+              	startupFileWriter.println("      publish_period "+ publish_period+";");
             }
                 
             startupFileWriter.println("      configure model_outputs.json;");
@@ -529,8 +528,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         if (run_realtime)
             startupFileWriter.println("     interval 1;");
         else {
-        		interval = (interval > 60) ? interval : 60;
-            startupFileWriter.println("     interval "+interval+";");
+        		startupFileWriter.println("     interval "+interval+";");
         }
         startupFileWriter.println("}");
         /*
