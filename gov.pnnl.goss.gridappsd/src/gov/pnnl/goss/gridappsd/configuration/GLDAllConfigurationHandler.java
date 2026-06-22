@@ -475,10 +475,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         startupFileWriter.println("#set suppress_repeat_messages=1");
         startupFileWriter.println("#set relax_naming_rules=1");
         startupFileWriter.println("#set profiler=1");
-        if(run_realtime)
-        		startupFileWriter.println("#set minimum_timestep=1");
+        if (run_realtime)
+            startupFileWriter.println("#set minimum_timestep=1");
         else
-        		startupFileWriter.println("#set minimum_timestep="+interval);
+            startupFileWriter.println("#set minimum_timestep=" + interval);
         if (useHouses) {
             startupFileWriter.println("module residential {");
             startupFileWriter.println("     implicit_enduses NONE;");
