@@ -122,11 +122,13 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
     public static final String USEHOUSES = "use_houses";
     public static final String SIMULATIONBROKERHOST = "simulation_broker_host";
     public static final String SIMULATIONBROKERPORT = "simulation_broker_port";
-
+    public static final String INTERVAL = "interval";
+    public static final String RUN_REALTIME = "run_realtime";
+    
     public static final String HELICS_PREFIX = "{\n"
             + "\t\"name\": \"MODEL_ID\",\n"
             + "\t\"log_level\": \"DATA\",\n"
-            + "\t\"period\": 1.0,\n"
+            + "\t\"period\": \"INTERVAL\",\n"
             + "\t\"broker\": \"BROKER_LOCATION:BROKER_PORT\",\n"
             + "\t\"endpoints\": [\n"
             + "\t\t{\n"
@@ -275,10 +277,15 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
                 throw new Exception(
                         "Missing parameter " + SIMULATIONBROKERPORT + "\nSimulation Parameters: " + parameters_list);
             }
+            
+            double interval = 1.0;
+            boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
+            if(!run_realtime)
+            		interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60.0")); 
             String brokerLocation = simulationBrokerHost;
             String brokerPort = String.valueOf(simulationBrokerPort);
             String HELICS_PREFIX1 = HELICS_PREFIX.replaceAll("BROKER_LOCATION", brokerLocation);
-            String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort);
+            String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort).replaceAll("INTERVAL", String.valueOf(interval));
             result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId).replaceAll("MODEL_ID", modelId)
                     + result.replaceAll("    ", "\t\t\t\t\t").replaceAll("  ", "\t\t\t\t").replaceAll("}", "\t\t\t}\n")
                     + HELICS_SUFFIX;
