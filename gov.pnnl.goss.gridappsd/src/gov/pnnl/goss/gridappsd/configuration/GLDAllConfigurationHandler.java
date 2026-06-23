@@ -374,6 +374,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT, "5570"));
         simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
+        simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
+                parameters.getProperty(INTERVAL, "60.0"));
+        simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
+                parameters.getProperty(RUN_REALTIME, "true"));
         GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
                 configManager, powergridModelManager, logManager);
         simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
