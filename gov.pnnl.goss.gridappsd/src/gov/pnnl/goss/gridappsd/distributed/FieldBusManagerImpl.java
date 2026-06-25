@@ -45,12 +45,11 @@ import pnnl.goss.core.Request.RESPONSE_FORMAT;
 // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
 //import pnnl.goss.core.security.SecurityConfig;
 
-@Component(service = FieldBusManager.class, configurationPid = "pnnl.goss.gridappsd")
+@Component(service = FieldBusManager.class, configurationPid = "pnnl.goss.gridappsd", immediate = true)
 public class FieldBusManagerImpl implements FieldBusManager {
 
-    private static final String CONFIG_PID = "pnnl.goss.gridappsd";
-    // Config delivery path: populated via applyConfig() from GridAppsDBoot's late-bind
-    // thread and via @Modified when DS manages this component.
+    // Config delivery path: populated via the DS @Activate entry point at activation
+    // and re-applied via @Modified when ConfigAdmin updates the PID at runtime.
     private volatile Map<String, Object> configurationMap = new HashMap<>();
 
     String topology_reponse;
@@ -98,38 +97,48 @@ public class FieldBusManagerImpl implements FieldBusManager {
     }
 
     @Activate
-    public void start() {
+    public void start(Map<String, Object> config) {
+        // DS delivers the pnnl.goss.gridappsd ConfigAdmin properties here at
+        // activation. Store them before reading getFieldModelMrid().
+        if (config != null && !config.isEmpty()) {
+            this.configurationMap = new HashMap<>(config);
+        }
         try {
             // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
             Credentials credentials = new UsernamePasswordCredentials("system", "manager");
             client = clientFactory.create(PROTOCOL.STOMP, credentials);
 
+            // Establish the simulation-output subscription unconditionally so output
+            // routing is ready as soon as topology is built. This runs regardless of
+            // whether the topology service or the mrid is available yet (M2: the old
+            // topology-service-null path returned before subscribing). The onMessage
+            // handler null-guards topology, so subscribing early is safe.
+            this.publishDeviceOutput();
+
             ServiceInfo serviceInfo = serviceManager.getService("gridappsd-topology-background-service");
             if (serviceInfo == null) {
                 logManager.warn(ProcessStatus.RUNNING, null,
-                        "Topology daemon service is not available, FieldBusManager registered but idle.");
+                        "Topology daemon service is not available; FieldBusManager subscribed but idle.");
                 return;
             }
 
             String mrid = getFieldModelMrid();
             if (mrid == null) {
-                // Fail-safe: stay registered and idle so a later config delivery via
-                // applyConfig() can initiate topology without a process restart.
-                // This happens when start() runs before FileInstall has loaded the
+                // Fail-safe: stay subscribed and idle so a later config delivery via
+                // @Modified can initiate topology without a process restart. This
+                // happens when activation runs before FileInstall has loaded the
                 // pnnl.goss.gridappsd.cfg file into ConfigAdmin (the common boot order).
                 logManager.warn(ProcessStatus.RUNNING, null,
-                        "Field model mrid not available; FieldBusManager registered but idle. "
+                        "Field model mrid not available; FieldBusManager subscribed but idle. "
                         + "Check conf/pnnl.goss.gridappsd.cfg for the field.model.mrid key.");
-                // Subscribe now so output routing is ready when topology is later built.
-                this.publishDeviceOutput();
                 return;
             }
 
             launchTopology(mrid);
-            this.publishDeviceOutput();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logManager.error(ProcessStatus.ERROR, null,
+                    "FieldBusManager activation failed: " + e.getMessage());
         }
     }
 
@@ -139,6 +148,13 @@ public class FieldBusManagerImpl implements FieldBusManager {
         RequestField requestField = RequestField.parse(request.toString());
 
         if (requestField.request_type.equals("get_context")) {
+
+            // Defensive guard (M-npe): topology is null during the idle window before
+            // the first config delivery with a valid field.model.mrid. No context to
+            // serve until topology is built.
+            if (topology == null) {
+                return null;
+            }
 
             if (requestField.areaId == null)
                 return topology.root.DistributionArea;
@@ -168,7 +184,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             JsonObject obj = new JsonObject();
 
             try {
-                if (topology.root.DistributionArea != null) {
+                if (topology != null && topology.root.DistributionArea != null) {
                     obj.addProperty("initialized", true);
                 } else {
                     obj.addProperty("initialized", false);
@@ -180,6 +196,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             return obj.toString();
         } else if (requestField.request_type.equals("start_publishing")) {
+
+            // Defensive guard (M-npe): nothing to publish until topology is built.
+            if (topology == null) {
+                return null;
+            }
 
             for (Substation substation : topology.root.DistributionArea.Substations) {
                 String topic = "goss.gridappsd.field." + (substation.id).trim().toUpperCase();
@@ -250,10 +271,12 @@ public class FieldBusManagerImpl implements FieldBusManager {
     }
 
     // Deliver (or re-deliver) ConfigAdmin properties to this manager.
-    // Called from GridAppsDBoot.loadConfigAdminProperties() on the late-bind thread,
-    // and re-invoked by @Modified when DS manages the component and the PID changes.
-    // Stores config and, when field.model.mrid is present, initiates or rebuilds topology.
-    public void applyConfig(Map<String, Object> config) {
+    // Invoked by @Modified when ConfigAdmin updates the PID at runtime (and by the
+    // legacy updated() path). Stores config and, when field.model.mrid is present,
+    // initiates or rebuilds topology. Synchronized because the read-modify-write of
+    // configurationMap and the topology teardown/rebuild must not interleave with a
+    // concurrent caller off the SCR-serialized DS thread (M1).
+    public synchronized void applyConfig(Map<String, Object> config) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -306,18 +329,21 @@ public class FieldBusManagerImpl implements FieldBusManager {
         topology.start();
     }
 
-    // Legacy Dictionary-based path. Kept for backward compatibility.
-    // The preferred entry point for manual bootstrap is applyConfig(Map).
-    public synchronized void updated(Dictionary<String, ?> config) {
-        if (config != null) {
-            Map<String, Object> map = new HashMap<>();
-            java.util.Enumeration<String> keys = config.keys();
-            while (keys.hasMoreElements()) {
-                String k = keys.nextElement();
-                map.put(k, config.get(k));
-            }
-            this.configurationMap = map;
+    // Legacy Dictionary-based config callback. Delegates to applyConfig so a delivery
+    // through this path rebuilds topology consistently with the DS @Modified path.
+    // Previously it stored config but never rebuilt, so a mrid change arriving here
+    // was silently dropped.
+    public void updated(Dictionary<String, ?> config) {
+        if (config == null) {
+            return;
         }
+        Map<String, Object> map = new HashMap<>();
+        java.util.Enumeration<String> keys = config.keys();
+        while (keys.hasMoreElements()) {
+            String k = keys.nextElement();
+            map.put(k, config.get(k));
+        }
+        applyConfig(map);
     }
 
     public String getFieldModelMrid() {
