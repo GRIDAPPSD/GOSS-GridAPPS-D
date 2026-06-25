@@ -112,11 +112,12 @@ public class FieldBusManagerComponentTests {
         manager.setLogManager(logManager);
         manager.setServiceManager(serviceManager);
 
-        // No config delivered: start() should log a warning and return without dying.
-        manager.start();
+        // No mrid in the delivered config: start(config) should log a warning and
+        // return without dying (subscribed but idle).
+        manager.start(new HashMap<>());
 
         // Manager is still "alive": accessor returns null but no exception was thrown.
-        assertNull("mrid must be null when start() ran without prior config delivery",
+        assertNull("mrid must be null when start() ran without a configured mrid",
                 manager.getFieldModelMrid());
 
         // Subsequent config delivery must work without a restart.
@@ -166,6 +167,68 @@ public class FieldBusManagerComponentTests {
         manager.applyConfig(config);
 
         assertEquals("stable-mrid", manager.getFieldModelMrid());
+    }
+
+    // --- DS @Activate entry point: config arrives natively at activation ---
+
+    @Test
+    public void activationViaDsEntryPointDeliversMridAndStaysSubscribed() {
+        ServiceInfo serviceInfo = Mockito.mock(ServiceInfo.class);
+        Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
+               .thenReturn(serviceInfo);
+
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("field.model.mrid", "activate-mrid-001");
+
+        // DS calls start(config) at activation; mrid arrives natively.
+        manager.start(config);
+
+        assertEquals("mrid delivered via the DS @Activate entry point must be visible",
+                "activate-mrid-001", manager.getFieldModelMrid());
+        // Subscription must be established at activation so output routing is ready.
+        Mockito.verify(client).subscribe(Mockito.anyString(),
+                Mockito.any(pnnl.goss.core.GossResponseEvent.class));
+    }
+
+    // --- M2: subscription is established even when the topology service is absent ---
+
+    @Test
+    public void subscriptionEstablishedWhenTopologyServiceNull() {
+        // Topology service absent: the old start() returned here WITHOUT subscribing.
+        Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
+               .thenReturn(null);
+
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        manager.start(new HashMap<>());
+
+        // The simulation-output subscription must still be established on this path.
+        Mockito.verify(client).subscribe(Mockito.anyString(),
+                Mockito.any(pnnl.goss.core.GossResponseEvent.class));
+    }
+
+    // --- M-npe: handleRequest tolerates a null topology (idle window) ---
+
+    @Test
+    public void handleRequestReturnsNullWhenTopologyNotBuilt() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        // No activation, no config: topology is null. A get_context request must not
+        // throw a NullPointerException; it returns null.
+        String request = "{\"request_type\":\"get_context\"}";
+        assertNull("handleRequest must not NPE when topology is null",
+                manager.handleRequest("queue", request));
     }
 
     @Test

@@ -12,6 +12,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -173,5 +175,32 @@ public class ServiceManagerComponentTests {
         manager.setClientFactory(clientFactory);
 
         assertNull(manager.getConfigurationProperty("services.path"));
+    }
+
+    // --- DS @Activate entry point: config arrives natively at activation ---
+
+    @Test
+    public void activationViaDsEntryPointDeliversConfig() throws Exception {
+        // A fresh temp services dir keeps scanForServices() side-effect free.
+        File tmpServices = Files.createTempDirectory("svc-mgr-test").toFile();
+        tmpServices.deleteOnExit();
+
+        ServiceManagerImpl manager = new ServiceManagerImpl();
+        manager.setLogManager(logManager);
+        manager.setClientFactory(clientFactory);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("services.path", tmpServices.getAbsolutePath());
+        config.put("field.model.mrid", "activate-mrid-001");
+
+        // DS calls start(config) at activation; config is delivered here, not pushed
+        // manually by GridAppsDBoot. After activation the accessors see the values.
+        manager.start(config);
+
+        assertEquals("mrid delivered via the DS @Activate entry point must be visible",
+                "activate-mrid-001", manager.getFieldModelMrid());
+        assertEquals("services.path delivered via @Activate must be visible",
+                tmpServices.getAbsolutePath(),
+                manager.getConfigurationProperty("services.path"));
     }
 }
