@@ -337,6 +337,13 @@ public class GridAppsDBoot {
                     if (!configMap.isEmpty()) {
                         configurationManager.start(configMap);
                         log.info("Loaded {} configuration properties from ConfigAdmin", configMap.size());
+                        // Forward the same config to FieldBusManager. Its start() runs before
+                        // FileInstall has loaded the .cfg file into ConfigAdmin, so this
+                        // late-bind delivery is the first opportunity to supply field.model.mrid.
+                        if (fieldBusManager != null) {
+                            fieldBusManager.applyConfig(configMap);
+                            log.info("Delivered config properties to FieldBusManager");
+                        }
                     } else {
                         log.warn("ConfigAdmin has empty configuration for pnnl.goss.gridappsd");
                     }
