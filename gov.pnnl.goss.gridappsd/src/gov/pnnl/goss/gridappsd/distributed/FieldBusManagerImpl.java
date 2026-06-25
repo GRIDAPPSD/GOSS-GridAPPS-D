@@ -48,7 +48,8 @@ import pnnl.goss.core.Request.RESPONSE_FORMAT;
 @Component(service = FieldBusManager.class, configurationPid = "pnnl.goss.gridappsd", immediate = true)
 public class FieldBusManagerImpl implements FieldBusManager {
 
-    // Config delivery path: populated via the DS @Activate entry point at activation
+    // Config delivery path: populated via the DS @Activate entry point at
+    // activation
     // and re-applied via @Modified when ConfigAdmin updates the PID at runtime.
     private volatile Map<String, Object> configurationMap = new HashMap<>();
 
@@ -134,7 +135,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
                 // pnnl.goss.gridappsd.cfg file into ConfigAdmin (the common boot order).
                 logManager.warn(ProcessStatus.RUNNING, null,
                         "Field model mrid not available; FieldBusManager subscribed but idle. "
-                        + "Check conf/pnnl.goss.gridappsd.cfg for the field.model.mrid key.");
+                                + "Check conf/pnnl.goss.gridappsd.cfg for the field.model.mrid key.");
                 return;
             }
 
@@ -336,7 +337,8 @@ public class FieldBusManagerImpl implements FieldBusManager {
         topology.start();
     }
 
-    // Legacy Dictionary-based config callback. Delegates to applyConfig so a delivery
+    // Legacy Dictionary-based config callback. Delegates to applyConfig so a
+    // delivery
     // through this path rebuilds topology consistently with the DS @Modified path.
     // Previously it stored config but never rebuilt, so a mrid change arriving here
     // was silently dropped.

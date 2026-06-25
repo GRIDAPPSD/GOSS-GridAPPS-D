@@ -106,15 +106,15 @@ public class YBusExportConfigurationHandler extends BaseConfigurationHandler imp
     public YBusExportConfigurationHandler(LogManager logManager) {
 
     }
-    
+
     public void setLogManager(LogManager logManager) {
         this.logManager = logManager;
     }
-    
+
     public void setConfigManager(ConfigurationManager configManager) {
         this.configManager = configManager;
     }
-    
+
     public void setSimulationManager(SimulationManager simulationManager) {
         this.simulationManager = simulationManager;
     }

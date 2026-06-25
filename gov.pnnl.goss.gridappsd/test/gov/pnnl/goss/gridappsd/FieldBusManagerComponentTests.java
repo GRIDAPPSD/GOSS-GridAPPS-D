@@ -31,20 +31,22 @@ import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Client.PROTOCOL;
 
 /**
- * Unit tests for FieldBusManagerImpl config-delivery fix (GADP-001, issue 1859).
+ * Unit tests for FieldBusManagerImpl config-delivery fix (GADP-001, issue
+ * 1859).
  *
- * These tests assert BEHAVIORAL invariants per the acceptance criteria:
- *   1. getFieldModelMrid() returns the configured value after config delivery.
- *   2. The manager stays registered and idle (not permanently dead) when
- *      start() runs before field.model.mrid is available.
- *   3. A live mrid change via applyConfig() is reflected in getFieldModelMrid()
- *      and initiates a topology rebuild.
+ * These tests assert BEHAVIORAL invariants per the acceptance criteria: 1.
+ * getFieldModelMrid() returns the configured value after config delivery. 2.
+ * The manager stays registered and idle (not permanently dead) when start()
+ * runs before field.model.mrid is available. 3. A live mrid change via
+ * applyConfig() is reflected in getFieldModelMrid() and initiates a topology
+ * rebuild.
  *
- * The topology background thread (TopologyRequestProcess) makes real STOMP calls.
- * In these unit tests the mock Client throws on getResponse(), which causes
- * the thread to exit immediately via its catch block. The assertions below are
- * on the main thread against state set BEFORE launchTopology() is called, so
- * the topology thread's early exit does not affect the assertion result.
+ * The topology background thread (TopologyRequestProcess) makes real STOMP
+ * calls. In these unit tests the mock Client throws on getResponse(), which
+ * causes the thread to exit immediately via its catch block. The assertions
+ * below are on the main thread against state set BEFORE launchTopology() is
+ * called, so the topology thread's early exit does not affect the assertion
+ * result.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class FieldBusManagerComponentTests {
@@ -64,9 +66,10 @@ public class FieldBusManagerComponentTests {
     @Before
     public void setUp() throws Exception {
         // Make clientFactory return the mock Client so topology threads exit fast
-        // (mock Client.getResponse returns null, causing the thread to bail via its catch block).
+        // (mock Client.getResponse returns null, causing the thread to bail via its
+        // catch block).
         Mockito.when(clientFactory.create(Mockito.any(PROTOCOL.class), Mockito.any()))
-               .thenReturn(client);
+                .thenReturn(client);
     }
 
     // --- Acceptance gate 1: getFieldModelMrid() non-null after config delivery ---
@@ -105,7 +108,7 @@ public class FieldBusManagerComponentTests {
         // Topology service IS present so start() does not bail before the mrid check.
         ServiceInfo serviceInfo = Mockito.mock(ServiceInfo.class);
         Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
-               .thenReturn(serviceInfo);
+                .thenReturn(serviceInfo);
 
         FieldBusManagerImpl manager = new FieldBusManagerImpl();
         manager.setClientFactory(clientFactory);
@@ -175,7 +178,7 @@ public class FieldBusManagerComponentTests {
     public void activationViaDsEntryPointDeliversMridAndStaysSubscribed() {
         ServiceInfo serviceInfo = Mockito.mock(ServiceInfo.class);
         Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
-               .thenReturn(serviceInfo);
+                .thenReturn(serviceInfo);
 
         FieldBusManagerImpl manager = new FieldBusManagerImpl();
         manager.setClientFactory(clientFactory);
@@ -195,13 +198,14 @@ public class FieldBusManagerComponentTests {
                 Mockito.any(pnnl.goss.core.GossResponseEvent.class));
     }
 
-    // --- M2: subscription is established even when the topology service is absent ---
+    // --- M2: subscription is established even when the topology service is absent
+    // ---
 
     @Test
     public void subscriptionEstablishedWhenTopologyServiceNull() {
         // Topology service absent: the old start() returned here WITHOUT subscribing.
         Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
-               .thenReturn(null);
+                .thenReturn(null);
 
         FieldBusManagerImpl manager = new FieldBusManagerImpl();
         manager.setClientFactory(clientFactory);
@@ -240,7 +244,8 @@ public class FieldBusManagerComponentTests {
 
         // Deliver a valid mrid so launchTopology() runs: topology != null but
         // root remains null because the background thread calls client.getResponse()
-        // which returns null (mock default), causing run() to exit before assigning root.
+        // which returns null (mock default), causing run() to exit before assigning
+        // root.
         Map<String, Object> config = new HashMap<>();
         config.put("field.model.mrid", "npe-guard-test-mrid");
         manager.applyConfig(config);

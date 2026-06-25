@@ -29,13 +29,13 @@ import pnnl.goss.core.ClientFactory;
 /**
  * Unit tests for ServiceManagerImpl config-delivery fix (GADP-001, issue 1859).
  *
- * These tests assert BEHAVIORAL invariants per the acceptance criteria:
- *   1. getFieldModelMrid() returns the configured value after config delivery.
- *   2. getFieldModelMrid() returns null before any config is delivered (fail-safe).
- *   3. A live config change via modified() (the DS @Modified callback) is
- *      reflected in getFieldModelMrid() without a restart.
- *   4. getConfigurationProperty() also reads from the delivered config, so
- *      services.path is available after delivery.
+ * These tests assert BEHAVIORAL invariants per the acceptance criteria: 1.
+ * getFieldModelMrid() returns the configured value after config delivery. 2.
+ * getFieldModelMrid() returns null before any config is delivered (fail-safe).
+ * 3. A live config change via modified() (the DS @Modified callback) is
+ * reflected in getFieldModelMrid() without a restart. 4.
+ * getConfigurationProperty() also reads from the delivered config, so
+ * services.path is available after delivery.
  *
  * ServiceManager does NOT rebuild topology; mrid is used lazily in
  * startServiceForSimultion() for (field_model_mrid) placeholder substitution.

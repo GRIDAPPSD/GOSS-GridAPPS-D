@@ -93,7 +93,8 @@ public class ServiceManagerImpl implements ServiceManager {
 
     private HashMap<String, ServiceInfo> services = new HashMap<String, ServiceInfo>();
 
-    // Config delivery path: populated via the DS @Activate entry point at activation
+    // Config delivery path: populated via the DS @Activate entry point at
+    // activation
     // and re-applied via @Modified when ConfigAdmin updates the PID at runtime.
     private volatile Map<String, Object> configurationMap = new HashMap<>();
 
