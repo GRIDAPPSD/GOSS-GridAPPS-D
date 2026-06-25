@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -125,7 +126,10 @@ public class ServiceManagerTests {
         // DS @Activate entry point now receives the config map directly.
         serviceManager.start(config);
 
-        assertTrue("ServiceManager should start without errors", true);
+        // Config must be retained after start: assert a supplied key equals its value.
+        assertEquals("services.path must be stored after start(config)",
+                parentDir.getAbsolutePath() + File.separator + "services",
+                serviceManager.getConfigurationProperty("services.path"));
     }
 
     /**

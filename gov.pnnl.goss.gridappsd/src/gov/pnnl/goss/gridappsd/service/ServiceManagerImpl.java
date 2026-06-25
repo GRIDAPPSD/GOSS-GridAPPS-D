@@ -508,7 +508,7 @@ public class ServiceManagerImpl implements ServiceManager {
     }
 
     // Legacy Dictionary-based path. Kept for backward compatibility.
-    // The preferred entry point for manual bootstrap is applyConfig(Map).
+    // Delegates to applyConfig() so logging and contract match the @Modified path.
     public synchronized void updated(Dictionary<String, ?> config) {
         if (config != null) {
             Map<String, Object> map = new HashMap<>();
@@ -517,7 +517,7 @@ public class ServiceManagerImpl implements ServiceManager {
                 String k = keys.nextElement();
                 map.put(k, config.get(k));
             }
-            this.configurationMap = map;
+            applyConfig(map);
         }
     }
 

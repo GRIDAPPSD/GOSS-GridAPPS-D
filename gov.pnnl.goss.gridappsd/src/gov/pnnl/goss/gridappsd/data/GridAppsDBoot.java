@@ -274,6 +274,7 @@ public class GridAppsDBoot {
                 if (pm != null) {
                     configurationManager.setPowergridModelManager(pm);
                     log.info("Late-bound PowergridModelDataManager (from lookup) to ConfigurationManager");
+                    bundleContext.ungetService(pmRef);
                 }
             }
         }
@@ -285,9 +286,12 @@ public class GridAppsDBoot {
         ServiceReference<ServiceManager> smRef = bundleContext.getServiceReference(ServiceManager.class);
         if (smRef != null) {
             ServiceManager sm = bundleContext.getService(smRef);
-            if (sm != null && simulationManager != null) {
-                simulationManager.setServiceManager(sm);
-                log.info("Late-bound DS-owned ServiceManager to SimulationManager");
+            if (sm != null) {
+                if (simulationManager != null) {
+                    simulationManager.setServiceManager(sm);
+                    log.info("Late-bound DS-owned ServiceManager to SimulationManager");
+                }
+                bundleContext.ungetService(smRef);
             }
         } else {
             log.warn("ServiceManager not yet registered by SCR; SimulationManager will lack a "
@@ -333,6 +337,7 @@ public class GridAppsDBoot {
             java.lang.reflect.Method getConfig = configAdmin.getClass()
                     .getMethod("getConfiguration", String.class, String.class);
             Object configuration = getConfig.invoke(configAdmin, "pnnl.goss.gridappsd", null);
+            bundleContext.ungetService(caRef); // release reference; configAdmin no longer needed
 
             if (configuration != null) {
                 java.lang.reflect.Method getProps = configuration.getClass().getMethod("getProperties");

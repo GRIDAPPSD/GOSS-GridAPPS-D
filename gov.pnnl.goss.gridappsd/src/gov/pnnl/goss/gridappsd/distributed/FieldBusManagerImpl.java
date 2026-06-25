@@ -99,9 +99,13 @@ public class FieldBusManagerImpl implements FieldBusManager {
     @Activate
     public void start(Map<String, Object> config) {
         // DS delivers the pnnl.goss.gridappsd ConfigAdmin properties here at
-        // activation. Store them before reading getFieldModelMrid().
-        if (config != null && !config.isEmpty()) {
-            this.configurationMap = new HashMap<>(config);
+        // activation. Store them before reading getFieldModelMrid(). Synchronized
+        // on this so the write is ordered with respect to the applyConfig() lock
+        // that the @Modified path holds (M1).
+        synchronized (this) {
+            if (config != null && !config.isEmpty()) {
+                this.configurationMap = new HashMap<>(config);
+            }
         }
         try {
             // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
@@ -150,9 +154,10 @@ public class FieldBusManagerImpl implements FieldBusManager {
         if (requestField.request_type.equals("get_context")) {
 
             // Defensive guard (M-npe): topology is null during the idle window before
-            // the first config delivery with a valid field.model.mrid. No context to
-            // serve until topology is built.
-            if (topology == null) {
+            // the first config delivery with a valid field.model.mrid, and root is null
+            // while the background TopologyRequestProcess is still fetching the response.
+            // Both states are normal; return null until topology is fully built.
+            if (topology == null || topology.root == null) {
                 return null;
             }
 
@@ -197,8 +202,9 @@ public class FieldBusManagerImpl implements FieldBusManager {
             return obj.toString();
         } else if (requestField.request_type.equals("start_publishing")) {
 
-            // Defensive guard (M-npe): nothing to publish until topology is built.
-            if (topology == null) {
+            // Defensive guard (M-npe): nothing to publish until topology is fully built.
+            // topology.root is null until the background fetch completes.
+            if (topology == null || topology.root == null) {
                 return null;
             }
 
@@ -309,7 +315,8 @@ public class FieldBusManagerImpl implements FieldBusManager {
                         new UsernamePasswordCredentials("system", "manager"));
                 this.publishDeviceOutput();
             } catch (Exception e) {
-                e.printStackTrace();
+                logManager.error(ProcessStatus.ERROR, null,
+                        "FieldBusManager config recovery failed: " + e.getMessage());
                 return;
             }
         }

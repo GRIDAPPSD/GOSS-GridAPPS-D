@@ -232,6 +232,31 @@ public class FieldBusManagerComponentTests {
     }
 
     @Test
+    public void handleRequestReturnsNullWhenTopologyRootNotYetSet() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        // Deliver a valid mrid so launchTopology() runs: topology != null but
+        // root remains null because the background thread calls client.getResponse()
+        // which returns null (mock default), causing run() to exit before assigning root.
+        Map<String, Object> config = new HashMap<>();
+        config.put("field.model.mrid", "npe-guard-test-mrid");
+        manager.applyConfig(config);
+
+        // get_context: must return null without NPE when topology.root is null.
+        String getCtxRequest = "{\"request_type\":\"get_context\"}";
+        assertNull("get_context must not NPE when topology.root is null",
+                manager.handleRequest("queue", getCtxRequest));
+
+        // start_publishing: same guard applies.
+        String startPubRequest = "{\"request_type\":\"start_publishing\"}";
+        assertNull("start_publishing must not NPE when topology.root is null",
+                manager.handleRequest("queue", startPubRequest));
+    }
+
+    @Test
     public void modifiedDelegatesToApplyConfig() {
         FieldBusManagerImpl manager = new FieldBusManagerImpl();
         manager.setClientFactory(clientFactory);
