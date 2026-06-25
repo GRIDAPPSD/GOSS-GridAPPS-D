@@ -344,6 +344,12 @@ public class GridAppsDBoot {
                             fieldBusManager.applyConfig(configMap);
                             log.info("Delivered config properties to FieldBusManager");
                         }
+                        // Also forward to ServiceManager so getFieldModelMrid() returns the
+                        // configured value for (field_model_mrid) placeholder substitution.
+                        if (serviceManager != null) {
+                            serviceManager.applyConfig(configMap);
+                            log.info("Delivered config properties to ServiceManager");
+                        }
                     } else {
                         log.warn("ConfigAdmin has empty configuration for pnnl.goss.gridappsd");
                     }
