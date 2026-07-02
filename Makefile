@@ -86,8 +86,7 @@ dist:
 clean:
 	./gradlew clean
 	rm -rf build/launcher
-	rm -rf felix-cache
-	rm -rf */felix-cache
+	rm -rf /gridappsd/felix-cache
 
 # Test targets
 # Run all tests (unit tests always run, integration tests skip if services unavailable)
@@ -257,7 +256,7 @@ test-simulation-python:
 
 # Run with Docker config (foreground)
 run: dist
-	@rm -rf build/launcher/felix-cache
+	@rm -rf /gridappsd/felix-cache
 	cd build/launcher && java -jar gridappsd-launcher.jar
 
 # Run in background with logging
@@ -270,7 +269,7 @@ run-bg: dist
 		echo "Use 'make run-stop' to stop it first"; \
 		exit 1; \
 	fi
-	@rm -rf build/launcher/felix-cache
+	@rm -rf /gridappsd/felix-cache
 	@echo "Starting GridAPPS-D in background..."
 	@echo "Log file: $(GRIDAPPSD_LOG)"
 	@nohup sh -c 'cd build/launcher && exec java -jar gridappsd-launcher.jar' > $(GRIDAPPSD_LOG) 2>&1 & \

@@ -15,7 +15,8 @@ docker exec gridappsd pkill -9 -f gridlabd 2>/dev/null
 sleep 2
 
 # Clear Felix cache to avoid stale bundle state issues
-rm -rf build/launcher/felix-cache 2>/dev/null
+# The live cache is /gridappsd/felix-cache inside the container (see config.properties)
+docker exec gridappsd rm -rf /gridappsd/felix-cache 2>/dev/null
 
 # Start GridAPPS-D in background
 echo "Starting GridAPPS-D..."
