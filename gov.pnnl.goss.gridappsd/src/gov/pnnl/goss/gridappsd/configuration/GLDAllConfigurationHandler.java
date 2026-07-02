@@ -377,7 +377,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
                 parameters.getProperty(INTERVAL, "60.0"));
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
-                parameters.getProperty(RUN_REALTIME, "true"));
+                Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
         GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
                 configManager, powergridModelManager, logManager);
         simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
