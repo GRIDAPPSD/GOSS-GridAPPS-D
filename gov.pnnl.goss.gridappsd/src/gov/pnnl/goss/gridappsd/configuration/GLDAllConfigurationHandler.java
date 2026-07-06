@@ -153,7 +153,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
     public static final String SEPARATED_LOADS_FILE = "separated_loads_file";
     public static final int TIMEFILTER_YEAR = 2013;
     public static final String RUN_REALTIME = "run_realtime";
-    public static final String TIMESTEP = "timestep";
+    public static final String PUBLISH_PERIOD = "publish_period";
+    public static final String INTERVAL = "interval";
 
     // public static final String CONFIGTARGET = "glm";
     public static final String CONFIGTARGET = "both"; // will build files for both glm and dss
@@ -373,6 +374,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT, "5570"));
         simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
+        simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
+                parameters.getProperty(INTERVAL, "60.0"));
+        simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
+                Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
         GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
                 configManager, powergridModelManager, logManager);
         simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
@@ -425,6 +430,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 
         boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
+        int publish_period = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, PUBLISH_PERIOD, "60"));
+        int interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
 
         double nominalv = 0;
 
@@ -472,7 +479,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         startupFileWriter.println("#set suppress_repeat_messages=1");
         startupFileWriter.println("#set relax_naming_rules=1");
         startupFileWriter.println("#set profiler=1");
-        startupFileWriter.println("#set minimum_timestep=0.1");
+        if (run_realtime)
+            startupFileWriter.println("#set minimum_timestep=1");
+        else
+            startupFileWriter.println("#set minimum_timestep=" + interval);
         if (useHouses) {
             startupFileWriter.println("module residential {");
             startupFileWriter.println("     implicit_enduses NONE;");
@@ -500,8 +510,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
                 startupFileWriter.println("      message_type JSON;");
             if (run_realtime)
                 startupFileWriter.println("      publish_period 3;");
-            else
-                startupFileWriter.println("      publish_period 60;");
+            else {
+                startupFileWriter.println("      publish_period " + publish_period + ";");
+            }
+
             startupFileWriter.println("      configure model_outputs.json;");
             startupFileWriter.println("}");
 
@@ -521,8 +533,9 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         startupFileWriter.println("     file " + modelId + ".csv;");
         if (run_realtime)
             startupFileWriter.println("     interval 1;");
-        else
-            startupFileWriter.println("     interval 60;");
+        else {
+            startupFileWriter.println("     interval " + interval + ";");
+        }
         startupFileWriter.println("}");
         /*
          * startupFileWriter.println("object multi_recorder {");
