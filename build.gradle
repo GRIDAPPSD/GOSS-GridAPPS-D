@@ -178,6 +178,24 @@ task copyConfig(type: Copy) {
     }
 }
 
+// Task to delete the bundle directory before collectBundles repopulates it.
+// collectBundles places jars two ways: declarative Copy specs (from(...)) and
+// raw file I/O in a doFirst block (the felixDeps Maven downloads below). A plain
+// Copy task, or even a type: Sync task, only reconciles the declarative specs;
+// it cannot see the felixDeps jars and would either leave stale versions behind
+// (Copy) or delete jars that are not covered by any from() spec (Sync). Wiring
+// this as an upstream dependency guarantees the directory is empty before either
+// writer runs, on every collectBundles/dist invocation, with or without a prior
+// make clean.
+task cleanBundleDir {
+    group = 'GridAPPS-D'
+    description = 'Deletes the launcher bundle directory so collectBundles cannot leave stale, differently-versioned bundles behind on a no-clean rebuild'
+
+    doLast {
+        delete "$buildDir/launcher/bundle"
+    }
+}
+
 // Task to collect all bundle JARs
 task collectBundles(type: Copy) {
     group = 'GridAPPS-D'
@@ -190,6 +208,7 @@ task collectBundles(type: Copy) {
     dependsOn ':gridappsd-poi:shadowJar'
     dependsOn assembleLauncher
     dependsOn copyConfig
+    dependsOn cleanBundleDir
 
     into "$buildDir/launcher/bundle"
 
