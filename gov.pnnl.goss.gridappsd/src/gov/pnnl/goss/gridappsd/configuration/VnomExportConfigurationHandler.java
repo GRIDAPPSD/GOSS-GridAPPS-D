@@ -77,7 +77,7 @@ import gov.pnnl.goss.gridappsd.dto.YBusExportResponse;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 
 @Component
-public class VnomExportConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler{
+public class VnomExportConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
 
     private static Logger log = LoggerFactory.getLogger(VnomExportConfigurationHandler.class);
 
@@ -106,15 +106,15 @@ public class VnomExportConfigurationHandler extends BaseConfigurationHandler imp
     public VnomExportConfigurationHandler(LogManager logManager) {
 
     }
-    
+
     public void setLogManager(LogManager logManager) {
         this.logManager = logManager;
     }
-    
+
     public void setConfigManager(ConfigurationManager configManager) {
         this.configManager = configManager;
     }
-    
+
     public void setSimulationManager(SimulationManager simulationManager) {
         this.simulationManager = simulationManager;
     }
