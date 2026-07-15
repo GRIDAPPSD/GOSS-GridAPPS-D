@@ -13,11 +13,12 @@ Arguments:
     output-version (str, optional): The output tag version for local development. Default is "local".
 
 Example:
-    python build-gridappsd-container.py --base-version rc2 --output-version local
+    python build-gridappsd-container --base-version rc2 --output-version local
 
 """
 
 import argparse
+from datetime import datetime
 import subprocess
 import shutil
 
@@ -95,4 +96,11 @@ if __name__ == '__main__':
     execute("./gradlew clean")
     shutil.rmtree("build/launcher", ignore_errors=True)
     execute(f"./gradlew dist{gradle_props}")
-    execute(f"docker build --build-arg GRIDAPPSD_BASE_VERSION=:{opts.base_version} --build-arg TIMESTAMP=$(date +%Y%m%d%H%M%S) --network=host -t gridappsd/gridappsd:{opts.output_version} .", shell=True)
+    execute([
+        "docker", "build",
+        "--build-arg", f"GRIDAPPSD_BASE_VERSION=:{opts.base_version}",
+        "--build-arg", f"TIMESTAMP={datetime.now().strftime('%Y%m%d%H%M%S')}",
+        "--network=host",
+        "-t", f"gridappsd/gridappsd:{opts.output_version}",
+        "."
+    ])
