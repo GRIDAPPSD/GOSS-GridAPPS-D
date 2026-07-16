@@ -89,10 +89,10 @@ EXPOSE 61616 61613 61614 8000-9000
 # Add gridappsd user and configure permissions
 # User may already exist in base image, so only create if not present
 RUN if ! id -u gridappsd > /dev/null 2>&1; then useradd -m gridappsd; fi \
-    && mkdir -p /home/gridappsd /gridappsd/log \
+    && mkdir -p /home/gridappsd /gridappsd/log /gridappsd/felix-cache \
     && if [ -d /etc/sudoers.d ]; then echo "gridappsd    ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/gridappsd; fi \
     && printf '[client]\nuser=gridappsd\npassword=gridappsd1234\ndatabase=gridappsd\nhost=mysql\n' > /home/gridappsd/.my.cnf \
-    && chown -R gridappsd:gridappsd /home/gridappsd /gridappsd/log /gridappsd/launcher
+    && chown -R gridappsd:gridappsd /home/gridappsd /gridappsd/log /gridappsd/launcher /gridappsd/felix-cache
 
 # Build timestamp - placed last to avoid cache busting
 ARG TIMESTAMP
