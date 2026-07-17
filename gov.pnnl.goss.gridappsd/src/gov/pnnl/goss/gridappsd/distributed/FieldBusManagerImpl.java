@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
@@ -44,11 +45,13 @@ import pnnl.goss.core.Request.RESPONSE_FORMAT;
 // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
 //import pnnl.goss.core.security.SecurityConfig;
 
-@Component(service = FieldBusManager.class)
+@Component(service = FieldBusManager.class, configurationPid = "pnnl.goss.gridappsd", immediate = true)
 public class FieldBusManagerImpl implements FieldBusManager {
 
-    private static final String CONFIG_PID = "pnnl.goss.gridappsd";
-    private Dictionary<String, ?> configurationProperties;
+    // Config delivery path: populated via the DS @Activate entry point at
+    // activation
+    // and re-applied via @Modified when ConfigAdmin updates the PID at runtime.
+    private volatile Map<String, Object> configurationMap = new HashMap<>();
 
     String topology_reponse;
     String topicPrefix = "goss.gridappsd.process.request.field";
@@ -95,42 +98,53 @@ public class FieldBusManagerImpl implements FieldBusManager {
     }
 
     @Activate
-    public void start() {
-
+    public void start(Map<String, Object> config) {
+        // DS delivers the pnnl.goss.gridappsd ConfigAdmin properties here at
+        // activation. Store them before reading getFieldModelMrid(). Synchronized
+        // on this so the write is ordered with respect to the applyConfig() lock
+        // that the @Modified path holds (M1).
+        synchronized (this) {
+            if (config != null && !config.isEmpty()) {
+                this.configurationMap = new HashMap<>(config);
+            }
+        }
         try {
-
             // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
-            // Credentials credentials = new
-            // UsernamePasswordCredentials(securityConfig.getManagerUser(),
-            // securityConfig.getManagerPassword());
-            Credentials credentials = new UsernamePasswordCredentials("system",
-                    "manager");
+            Credentials credentials = new UsernamePasswordCredentials("system", "manager");
             client = clientFactory.create(PROTOCOL.STOMP, credentials);
+
+            // Establish the simulation-output subscription unconditionally so output
+            // routing is ready as soon as topology is built. This runs regardless of
+            // whether the topology service or the mrid is available yet (M2: the old
+            // topology-service-null path returned before subscribing). The onMessage
+            // handler null-guards topology, so subscribing early is safe.
+            this.publishDeviceOutput();
 
             ServiceInfo serviceInfo = serviceManager.getService("gridappsd-topology-background-service");
             if (serviceInfo == null) {
                 logManager.warn(ProcessStatus.RUNNING, null,
-                        "Topology deamon service is not available. Stopping FieldBusManager.");
+                        "Topology daemon service is not available; FieldBusManager subscribed but idle.");
                 return;
             }
 
-            fieldModelId = getFieldModelMrid();
-            if (fieldModelId == null) {
+            String mrid = getFieldModelMrid();
+            if (mrid == null) {
+                // Fail-safe: stay subscribed and idle so a later config delivery via
+                // @Modified can initiate topology without a process restart. This
+                // happens when activation runs before FileInstall has loaded the
+                // pnnl.goss.gridappsd.cfg file into ConfigAdmin (the common boot order).
                 logManager.warn(ProcessStatus.RUNNING, null,
-                        "Field model mrid is not available. Stopping FieldBusManager. "
-                                + "Check conf/pnnl.goss.gridappsd.cfg file and add field.model.mrid key with value of deployed field model mrid. ");
+                        "Field model mrid not available; FieldBusManager subscribed but idle. "
+                                + "Check conf/pnnl.goss.gridappsd.cfg for the field.model.mrid key.");
                 return;
             }
 
-            topology = new TopologyRequestProcess(fieldModelId, client);
-            topology.start();
-
-            this.publishDeviceOutput();
+            launchTopology(mrid);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logManager.error(ProcessStatus.ERROR, null,
+                    "FieldBusManager activation failed: " + e.getMessage());
         }
-
     }
 
     @Override
@@ -139,6 +153,14 @@ public class FieldBusManagerImpl implements FieldBusManager {
         RequestField requestField = RequestField.parse(request.toString());
 
         if (requestField.request_type.equals("get_context")) {
+
+            // Defensive guard (M-npe): topology is null during the idle window before
+            // the first config delivery with a valid field.model.mrid, and root is null
+            // while the background TopologyRequestProcess is still fetching the response.
+            // Both states are normal; return null until topology is fully built.
+            if (topology == null || topology.root == null) {
+                return null;
+            }
 
             if (requestField.areaId == null)
                 return topology.root.DistributionArea;
@@ -168,7 +190,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             JsonObject obj = new JsonObject();
 
             try {
-                if (topology.root.DistributionArea != null) {
+                if (topology != null && topology.root.DistributionArea != null) {
                     obj.addProperty("initialized", true);
                 } else {
                     obj.addProperty("initialized", false);
@@ -180,6 +202,12 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             return obj.toString();
         } else if (requestField.request_type.equals("start_publishing")) {
+
+            // Defensive guard (M-npe): nothing to publish until topology is fully built.
+            // topology.root is null until the background fetch completes.
+            if (topology == null || topology.root == null) {
+                return null;
+            }
 
             for (Substation substation : topology.root.DistributionArea.Substations) {
                 String topic = "goss.gridappsd.field." + (substation.id).trim().toUpperCase();
@@ -198,6 +226,10 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             @Override
             public void onMessage(Serializable response) {
+                if (topology == null) {
+                    // Topology not yet initialized; simulation output cannot be routed.
+                    return;
+                }
 
                 DataResponse event = (DataResponse) response;
                 String simulationId = event.getDestination().substring(event.getDestination().lastIndexOf(".") + 1,
@@ -245,20 +277,87 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
     }
 
-    // TODO: @ConfigurationDependency migration - This method may need refactoring
-    // to use OSGi DS configuration
-    // Original: @ConfigurationDependency(pid = CONFIG_PID)
-    public synchronized void updated(Dictionary<String, ?> config) {
-        this.configurationProperties = config;
+    // Deliver (or re-deliver) ConfigAdmin properties to this manager.
+    // Invoked by @Modified when ConfigAdmin updates the PID at runtime (and by the
+    // legacy updated() path). Stores config and, when field.model.mrid is present,
+    // initiates or rebuilds topology. Synchronized because the read-modify-write of
+    // configurationMap and the topology teardown/rebuild must not interleave with a
+    // concurrent caller off the SCR-serialized DS thread (M1).
+    public synchronized void applyConfig(Map<String, Object> config) {
+        if (config == null || config.isEmpty()) {
+            return;
+        }
+
+        String oldMrid = getFieldModelMrid();
+        this.configurationMap = new HashMap<>(config);
+        String newMrid = getFieldModelMrid();
+
+        if (newMrid == null) {
+            return; // mrid still absent after config update
+        }
+
+        if (newMrid.equals(oldMrid) && topology != null) {
+            return; // mrid unchanged and topology already running; no rebuild needed
+        }
+
+        // Tear down existing topology before rebuilding to apply the new mrid.
+        if (topology != null) {
+            topology.interrupt();
+            topology = null;
+            logManager.warn(ProcessStatus.RUNNING, null,
+                    "Field model mrid changed; tearing down and rebuilding topology.");
+        }
+
+        // Create client if start() returned early because the topology service was
+        // not yet available. Also subscribe to simulation output in that case.
+        if (client == null) {
+            try {
+                client = clientFactory.create(PROTOCOL.STOMP,
+                        new UsernamePasswordCredentials("system", "manager"));
+                this.publishDeviceOutput();
+            } catch (Exception e) {
+                logManager.error(ProcessStatus.ERROR, null,
+                        "FieldBusManager config recovery failed: " + e.getMessage());
+                return;
+            }
+        }
+
+        launchTopology(newMrid);
+    }
+
+    @Modified
+    public void modified(Map<String, Object> config) {
+        // DS invokes this when ConfigAdmin updates PID pnnl.goss.gridappsd at runtime.
+        applyConfig(config);
+    }
+
+    private void launchTopology(String mrid) {
+        fieldModelId = mrid;
+        topology = new TopologyRequestProcess(mrid, client);
+        topology.start();
+    }
+
+    // Legacy Dictionary-based config callback. Delegates to applyConfig so a
+    // delivery
+    // through this path rebuilds topology consistently with the DS @Modified path.
+    // Previously it stored config but never rebuilt, so a mrid change arriving here
+    // was silently dropped.
+    public void updated(Dictionary<String, ?> config) {
+        if (config == null) {
+            return;
+        }
+        Map<String, Object> map = new HashMap<>();
+        java.util.Enumeration<String> keys = config.keys();
+        while (keys.hasMoreElements()) {
+            String k = keys.nextElement();
+            map.put(k, config.get(k));
+        }
+        applyConfig(map);
     }
 
     public String getFieldModelMrid() {
-        if (this.configurationProperties != null) {
-            Object value = this.configurationProperties.get("field.model.mrid");
-            if (value != null)
-                return value.toString();
-        }
-        return null;
+        Object value = configurationMap.get("field.model.mrid");
+        return value != null ? value.toString() : null;
     }
 
 }
