@@ -158,7 +158,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             // the first config delivery with a valid field.model.mrid, and root is null
             // while the background TopologyRequestProcess is still fetching the response.
             // Both states are normal; return null until topology is fully built.
-            if (topology == null || topology.root == null) {
+            if (!isTopologyReady()) {
                 return null;
             }
 
@@ -194,8 +194,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
                 // during the idle window before the background fetch populates it, and
                 // when the topology response never arrived. Not-initialized is the
                 // correct answer in both cases; do not dereference a null root.
-                if (topology != null && topology.root != null
-                        && topology.root.DistributionArea != null) {
+                if (isTopologyFullyInitialized()) {
                     obj.addProperty("initialized", true);
                 } else {
                     obj.addProperty("initialized", false);
@@ -210,7 +209,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             // Defensive guard (M-npe): nothing to publish until topology is fully built.
             // topology.root is null until the background fetch completes.
-            if (topology == null || topology.root == null) {
+            if (!isTopologyReady()) {
                 return null;
             }
 
@@ -231,7 +230,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             @Override
             public void onMessage(Serializable response) {
-                if (topology == null || topology.root == null) {
+                if (!isTopologyReady()) {
                     // Topology not yet initialized (or the topology response never
                     // arrived, GADP-005); simulation output cannot be routed. The
                     // fallback message-bus id below dereferences topology.root, so idle
@@ -368,6 +367,22 @@ public class FieldBusManagerImpl implements FieldBusManager {
         return value != null ? value.toString() : null;
     }
 
+    // True once the background TopologyRequestProcess has parsed a response into
+    // a non-null root. Callers that only need the root tree (get_context,
+    // start_publishing, publishDeviceOutput's onMessage) use this guard rather
+    // than repeating the topology/root null check at each call site.
+    private boolean isTopologyReady() {
+        return topology != null && topology.root != null;
+    }
+
+    // True once root AND its DistributionArea have both populated: the stricter
+    // guard used by is_initilized, which reports "initialized" only when the
+    // full tree that downstream callers expect to traverse is present, not just
+    // a root shell.
+    private boolean isTopologyFullyInitialized() {
+        return isTopologyReady() && topology.root.DistributionArea != null;
+    }
+
 }
 
 class TopologyRequest implements Serializable {
@@ -390,10 +405,9 @@ class TopologyRequestProcess extends Thread {
 
     static final String TOPOLOGY_REQUEST_TOPIC = "goss.gridappsd.request.data.cimtopology";
 
-    // Bounded retry: the topology background service is registered but may not yet
-    // answer on the request queue at startup (a boot-order race). Give it up to
-    // this
-    // many attempts, sleeping between them, before idling.
+    // Bounded retry: the topology background service is registered but may not
+    // yet answer on the request queue at startup (a boot-order race). Give it
+    // up to this many attempts, sleeping between them, before idling.
     static final int MAX_TOPOLOGY_ATTEMPTS = 6;
     static final long TOPOLOGY_RETRY_SLEEP_MS = 1000L;
 
@@ -427,17 +441,42 @@ class TopologyRequestProcess extends Thread {
                 this.getFieldMeasurementIds(fieldModelMrid);
             }
 
+        } catch (InterruptedException e) {
+            // Expected on legitimate teardown: applyConfig() calls topology.interrupt()
+            // when the field model mrid changes, which unblocks Thread.sleep here.
+            // Restore the interrupt flag so any caller further up the stack still
+            // observes it, and log at debug/info rather than treating it as an error.
+            Thread.currentThread().interrupt();
+            if (logManager != null) {
+                logManager.info(ProcessStatus.RUNNING, null,
+                        "TopologyRequestProcess interrupted for field model mrid "
+                                + sanitizeForLog(fieldModelMrid) + "; stopping.");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            if (logManager != null) {
+                logManager.error(ProcessStatus.ERROR, null,
+                        "TopologyRequestProcess failed for field model mrid "
+                                + sanitizeForLog(fieldModelMrid) + ": " + e.getMessage());
+            } else {
+                e.printStackTrace();
+            }
         }
 
     }
 
+    // Strip CR/LF from a value before it is interpolated into a log message
+    // (CWE-117 log injection). fieldModelMrid originates from ConfigAdmin config
+    // and is not otherwise validated, so sanitize at the point of logging rather
+    // than trusting the source.
+    private static String sanitizeForLog(String value) {
+        return value == null ? null : value.replace("\r", "").replace("\n", "");
+    }
+
     // Real bounded retry: request the topology, and while the response is null and
     // attempts remain, sleep BEFORE re-requesting so the background topology
-    // service
-    // has time to become ready. Replaces the earlier single-shot "if" that slept
-    // after its lone retry and so never actually waited for initialization.
+    // service has time to become ready. Replaces the earlier single-shot "if"
+    // that slept after its lone retry and so never actually waited for
+    // initialization.
     Serializable requestTopologyWithRetry(TopologyRequest request) throws Exception {
         Serializable topoResponse = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
                 RESPONSE_FORMAT.JSON);
@@ -462,7 +501,8 @@ class TopologyRequestProcess extends Thread {
             // config or topology event; do not crash the bundle (GADP-001 posture).
             if (logManager != null) {
                 logManager.warn(ProcessStatus.RUNNING, null,
-                        "Topology service returned no response for field model mrid " + fieldModelMrid
+                        "Topology service returned no response for field model mrid "
+                                + sanitizeForLog(fieldModelMrid)
                                 + " after " + MAX_TOPOLOGY_ATTEMPTS
                                 + " attempts; FieldBusManager subscribed but idle. "
                                 + "Check that gridappsd-topology-background-service is answering "
@@ -486,7 +526,21 @@ class TopologyRequestProcess extends Thread {
         // Idle guard (GADP-005): run() only calls this after root is populated, but
         // guard defensively so a null or partial root leaves the measurement maps
         // empty rather than dereferencing null.
-        if (root == null || root.DistributionArea == null || root.DistributionArea.Substations == null) {
+        if (root == null) {
+            return;
+        }
+        if (root.DistributionArea == null || root.DistributionArea.Substations == null) {
+            // Distinct from the never-arrived case above: the topology response
+            // parsed into a non-null root, but the expected DistributionArea /
+            // Substations shape is missing. Warn so this malformed-but-non-null
+            // condition is visible rather than silently leaving the measurement
+            // maps empty.
+            if (logManager != null) {
+                logManager.warn(ProcessStatus.RUNNING, null,
+                        "Topology response for field model mrid " + sanitizeForLog(fieldModelMrid)
+                                + " parsed but did not contain the expected DistributionArea/Substations "
+                                + "shape; field measurement ids not populated.");
+            }
             return;
         }
 
