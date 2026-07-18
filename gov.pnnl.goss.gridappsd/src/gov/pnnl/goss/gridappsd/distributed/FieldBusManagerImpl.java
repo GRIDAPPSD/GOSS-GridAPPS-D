@@ -158,7 +158,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             // the first config delivery with a valid field.model.mrid, and root is null
             // while the background TopologyRequestProcess is still fetching the response.
             // Both states are normal; return null until topology is fully built.
-            if (topology == null || topology.root == null) {
+            if (!isTopologyReady()) {
                 return null;
             }
 
@@ -190,7 +190,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
             JsonObject obj = new JsonObject();
 
             try {
-                if (topology != null && topology.root.DistributionArea != null) {
+                // Explicit null-guard on root (M-npe / GADP-005): topology.root is null
+                // during the idle window before the background fetch populates it, and
+                // when the topology response never arrived. Not-initialized is the
+                // correct answer in both cases; do not dereference a null root.
+                if (isTopologyFullyInitialized()) {
                     obj.addProperty("initialized", true);
                 } else {
                     obj.addProperty("initialized", false);
@@ -205,7 +209,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             // Defensive guard (M-npe): nothing to publish until topology is fully built.
             // topology.root is null until the background fetch completes.
-            if (topology == null || topology.root == null) {
+            if (!isTopologyReady()) {
                 return null;
             }
 
@@ -226,8 +230,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             @Override
             public void onMessage(Serializable response) {
-                if (topology == null) {
-                    // Topology not yet initialized; simulation output cannot be routed.
+                if (!isTopologyReady()) {
+                    // Topology not yet initialized (or the topology response never
+                    // arrived, GADP-005); simulation output cannot be routed. The
+                    // fallback message-bus id below dereferences topology.root, so idle
+                    // here rather than NPE.
                     return;
                 }
 
@@ -333,7 +340,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
     private void launchTopology(String mrid) {
         fieldModelId = mrid;
-        topology = new TopologyRequestProcess(mrid, client);
+        topology = new TopologyRequestProcess(mrid, client, logManager);
         topology.start();
     }
 
@@ -360,6 +367,22 @@ public class FieldBusManagerImpl implements FieldBusManager {
         return value != null ? value.toString() : null;
     }
 
+    // True once the background TopologyRequestProcess has parsed a response into
+    // a non-null root. Callers that only need the root tree (get_context,
+    // start_publishing, publishDeviceOutput's onMessage) use this guard rather
+    // than repeating the topology/root null check at each call site.
+    private boolean isTopologyReady() {
+        return topology != null && topology.root != null;
+    }
+
+    // True once root AND its DistributionArea have both populated: the stricter
+    // guard used by is_initilized, which reports "initialized" only when the
+    // full tree that downstream callers expect to traverse is present, not just
+    // a root shell.
+    private boolean isTopologyFullyInitialized() {
+        return isTopologyReady() && topology.root.DistributionArea != null;
+    }
+
 }
 
 class TopologyRequest implements Serializable {
@@ -380,72 +403,146 @@ class TopologyRequest implements Serializable {
 
 class TopologyRequestProcess extends Thread {
 
+    static final String TOPOLOGY_REQUEST_TOPIC = "goss.gridappsd.request.data.cimtopology";
+
+    // Bounded retry: the topology background service is registered but may not
+    // yet answer on the request queue at startup (a boot-order race). Give it
+    // up to this many attempts, sleeping between them, before idling.
+    static final int MAX_TOPOLOGY_ATTEMPTS = 6;
+    static final long TOPOLOGY_RETRY_SLEEP_MS = 1000L;
+
     String fieldModelMrid;
     Client client;
+    LogManager logManager;
     Root root = null;
     Map<String, ArrayList<FieldObject>> messageBus_measIds_map = new HashMap<String, ArrayList<FieldObject>>();
     Map<String, String> measId_messageBus_map = new HashMap<String, String>();
 
-    public TopologyRequestProcess(String fieldModelMrid, Client client) {
+    public TopologyRequestProcess(String fieldModelMrid, Client client, LogManager logManager) {
         this.fieldModelMrid = fieldModelMrid;
         this.client = client;
+        this.logManager = logManager;
     }
 
     @Override
     public void run() {
         try {
 
-            String topologyRequestTopic = "goss.gridappsd.request.data.cimtopology";
-            Gson gson = new Gson();
             TopologyRequest request = new TopologyRequest();
             request.mRID = fieldModelMrid;
 
-            Serializable topoResponse = client.getResponse(request.toString(), topologyRequestTopic,
-                    RESPONSE_FORMAT.JSON);
-            int attempt = 1;
-            if (topoResponse == null && attempt < 6) {
-                // May have to wait for Topology processor to initialize
-                topoResponse = client.getResponse(request.toString(), topologyRequestTopic,
-                        RESPONSE_FORMAT.JSON);
-                Thread.sleep(1000);
-                attempt++;
-            }
-            if (topoResponse != null && (topoResponse instanceof DataResponse)) {
-                String str = ((DataResponse) topoResponse).getData().toString();
-                root = gson.fromJson(str, Root.class);
-            } else {
-                root = gson.fromJson(topoResponse.toString(), Root.class);
+            Serializable topoResponse = requestTopologyWithRetry(request);
+
+            // Null-idle fail-safe (GADP-005): when the topology service never answers,
+            // handleTopologyResponse leaves root null and logs an actionable warning
+            // rather than dereferencing null. Parse and downstream measurement lookup
+            // run only when the response actually populated root.
+            if (handleTopologyResponse(topoResponse)) {
+                this.getFieldMeasurementIds(fieldModelMrid);
             }
 
-            /*
-             * feederList = root.feeders; if(root == null || feederList == null ||
-             * feederList.size() == 0){ throw new
-             * Exception("No Feeder available to create field message bus"); }
-             */
-
-            // NormalEnergizedFeeder feeder =
-            // root.DistributionArea.Substations.get(0).NormalEnergizedFeeder.get(0);
-
-            /*
-             * feeder.message_bus_id = feeder.id;
-             *
-             * int switch_area_index = 0; for (SwitchArea switchArea :
-             * feeder.FeederArea.SwitchAreas) { switchArea.message_bus_id = feeder.id + "."
-             * + switch_area_index; int secondary_area_index = 0; for (SecondaryArea
-             * secondaryArea : switchArea.SecondaryAreas) { secondaryArea.message_bus_id =
-             * feeder.id + "." + switch_area_index + "." + secondary_area_index;
-             * secondary_area_index++; } switch_area_index++; }
-             */
-
-            this.getFieldMeasurementIds(fieldModelMrid);
-
+        } catch (InterruptedException e) {
+            // Expected on legitimate teardown: applyConfig() calls topology.interrupt()
+            // when the field model mrid changes, which unblocks Thread.sleep here.
+            // Restore the interrupt flag so any caller further up the stack still
+            // observes it, and log at debug/info rather than treating it as an error.
+            Thread.currentThread().interrupt();
+            if (logManager != null) {
+                logManager.info(ProcessStatus.RUNNING, null,
+                        "TopologyRequestProcess interrupted for field model mrid "
+                                + sanitizeForLog(fieldModelMrid) + "; stopping.");
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            if (logManager != null) {
+                logManager.error(ProcessStatus.ERROR, null,
+                        "TopologyRequestProcess failed for field model mrid "
+                                + sanitizeForLog(fieldModelMrid) + ": " + e.getMessage());
+            } else {
+                e.printStackTrace();
+            }
         }
 
     }
 
+    // Strip CR/LF from a value before it is interpolated into a log message
+    // (CWE-117 log injection). fieldModelMrid originates from ConfigAdmin config
+    // and is not otherwise validated, so sanitize at the point of logging rather
+    // than trusting the source.
+    private static String sanitizeForLog(String value) {
+        return value == null ? null : value.replace("\r", "").replace("\n", "");
+    }
+
+    // Real bounded retry: request the topology, and while the response is null and
+    // attempts remain, sleep BEFORE re-requesting so the background topology
+    // service has time to become ready. Replaces the earlier single-shot "if"
+    // that slept after its lone retry and so never actually waited for
+    // initialization.
+    Serializable requestTopologyWithRetry(TopologyRequest request) throws Exception {
+        Serializable topoResponse = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
+                RESPONSE_FORMAT.JSON);
+        int attempt = 1;
+        while (topoResponse == null && attempt < MAX_TOPOLOGY_ATTEMPTS) {
+            Thread.sleep(TOPOLOGY_RETRY_SLEEP_MS);
+            topoResponse = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
+                    RESPONSE_FORMAT.JSON);
+            attempt++;
+        }
+        return topoResponse;
+    }
+
+    // Parse the topology response into root. Returns true when root was populated,
+    // false when the response was null (idle fail-safe: root stays null, a warning
+    // is logged, and the caller must NOT proceed to parse or measurement lookup).
+    // Extracted from run() so the null and valid-parse paths are unit-testable
+    // without the live STOMP client.getResponse() call.
+    boolean handleTopologyResponse(Serializable topoResponse) {
+        if (topoResponse == null) {
+            // Subscribed-but-idle: no topology available. Recoverable on a later
+            // config or topology event; do not crash the bundle (GADP-001 posture).
+            if (logManager != null) {
+                logManager.warn(ProcessStatus.RUNNING, null,
+                        "Topology service returned no response for field model mrid "
+                                + sanitizeForLog(fieldModelMrid)
+                                + " after " + MAX_TOPOLOGY_ATTEMPTS
+                                + " attempts; FieldBusManager subscribed but idle. "
+                                + "Check that gridappsd-topology-background-service is answering "
+                                + TOPOLOGY_REQUEST_TOPIC + ".");
+            }
+            return false;
+        }
+
+        Gson gson = new Gson();
+        if (topoResponse instanceof DataResponse) {
+            String str = ((DataResponse) topoResponse).getData().toString();
+            root = gson.fromJson(str, Root.class);
+        } else {
+            root = gson.fromJson(topoResponse.toString(), Root.class);
+        }
+        return root != null;
+    }
+
     public void getFieldMeasurementIds(String fieldModelMrid) {
+
+        // Idle guard (GADP-005): run() only calls this after root is populated, but
+        // guard defensively so a null or partial root leaves the measurement maps
+        // empty rather than dereferencing null.
+        if (root == null) {
+            return;
+        }
+        if (root.DistributionArea == null || root.DistributionArea.Substations == null) {
+            // Distinct from the never-arrived case above: the topology response
+            // parsed into a non-null root, but the expected DistributionArea /
+            // Substations shape is missing. Warn so this malformed-but-non-null
+            // condition is visible rather than silently leaving the measurement
+            // maps empty.
+            if (logManager != null) {
+                logManager.warn(ProcessStatus.RUNNING, null,
+                        "Topology response for field model mrid " + sanitizeForLog(fieldModelMrid)
+                                + " parsed but did not contain the expected DistributionArea/Substations "
+                                + "shape; field measurement ids not populated.");
+            }
+            return;
+        }
 
         try {
             for (Substation substation : root.DistributionArea.Substations) {
