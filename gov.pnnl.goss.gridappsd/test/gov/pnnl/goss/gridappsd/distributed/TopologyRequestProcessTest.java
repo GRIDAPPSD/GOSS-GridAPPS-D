@@ -13,6 +13,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.Serializable;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,6 +25,7 @@ import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.Request.RESPONSE_FORMAT;
 
 /**
  * Unit tests for TopologyRequestProcess response handling (GADP-005).
@@ -89,5 +92,94 @@ public class TopologyRequestProcessTest {
         org.junit.Assert.assertEquals("da-1", process.root.DistributionArea.id);
         // No warning is logged on the success path.
         Mockito.verify(logManager, Mockito.never()).warn(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    // --- Non-DataResponse valid-parse path: a raw JSON String response (not
+    // wrapped in DataResponse) must still parse into Root via toString(). ---
+
+    @Test
+    public void nonDataResponseStringParsesRootTree() throws Exception {
+        String topologyJson = "{\"DistributionArea\":{\"@id\":\"da-raw-1\",\"@type\":\"area\","
+                + "\"Substations\":[]}}";
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-raw-test", client, logManager);
+
+        boolean populated = process.handleTopologyResponse(topologyJson);
+
+        assertTrue("handleTopologyResponse must report root populated on a raw JSON String",
+                populated);
+        assertNotNull("root must be parsed from a non-DataResponse String", process.root);
+        assertNotNull("parsed root must carry its DistributionArea", process.root.DistributionArea);
+        org.junit.Assert.assertEquals("da-raw-1", process.root.DistributionArea.id);
+        // No warning is logged on the success path.
+        Mockito.verify(logManager, Mockito.never()).warn(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    // --- Bounded retry: requestTopologyWithRetry (GADP-005 fix round 2) ---
+
+    @Test
+    public void retrySucceedsImmediatelyWithoutSleepingOrRetrying() throws Exception {
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-immediate-success", client, logManager);
+        TopologyRequest request = new TopologyRequest();
+        request.mRID = "mrid-immediate-success";
+
+        Serializable result = process.requestTopologyWithRetry(request);
+
+        assertNotNull("first successful getResponse must be returned as-is", result);
+        org.junit.Assert.assertSame(dataResponse, result);
+        Mockito.verify(client, Mockito.times(1)).getResponse(Mockito.any(),
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON));
+    }
+
+    @Test
+    public void retryRecoversAfterTransientNullResponses() throws Exception {
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        // First two calls return null (service not yet answering); the third call
+        // succeeds. requestTopologyWithRetry must sleep between attempts and keep
+        // re-requesting rather than giving up on the first null.
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(null, null, dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-recovers", client, logManager);
+        TopologyRequest request = new TopologyRequest();
+        request.mRID = "mrid-recovers";
+
+        Serializable result = process.requestTopologyWithRetry(request);
+
+        assertNotNull("requestTopologyWithRetry must return the eventual non-null response", result);
+        org.junit.Assert.assertSame(dataResponse, result);
+        // Exactly 3 calls: the initial request plus 2 retries, no more (no
+        // busy-spin past the successful attempt).
+        Mockito.verify(client, Mockito.times(3)).getResponse(Mockito.any(),
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON));
+    }
+
+    @Test
+    public void retryExhaustsAttemptsAndReturnsNullWhenServiceNeverAnswers() throws Exception {
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(null);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-exhausted", client, logManager);
+        TopologyRequest request = new TopologyRequest();
+        request.mRID = "mrid-exhausted";
+
+        Serializable result = process.requestTopologyWithRetry(request);
+
+        assertNull("requestTopologyWithRetry must return null once attempts are exhausted", result);
+        // Exactly MAX_TOPOLOGY_ATTEMPTS calls: the initial request plus
+        // (MAX_TOPOLOGY_ATTEMPTS - 1) retries, no more.
+        Mockito.verify(client, Mockito.times(TopologyRequestProcess.MAX_TOPOLOGY_ATTEMPTS)).getResponse(
+                Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON));
+
+        // Feeding the exhausted (null) result into handleTopologyResponse exercises
+        // the full null-idle path this retry loop feeds into.
+        boolean populated = process.handleTopologyResponse(result);
+        assertFalse("null result after exhausted retries must leave root unpopulated", populated);
+        assertNull("root must remain null after exhausted retries", process.root);
     }
 }
