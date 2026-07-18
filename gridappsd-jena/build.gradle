@@ -24,23 +24,23 @@ dependencies {
 
     // Jena transitive dependencies
     embed 'org.apache.commons:commons-csv:1.5'  // Jena 3.7.0 uses 1.5
-    embed 'org.apache.thrift:libthrift:0.10.0'  // Jena 3.7.0 uses 0.10.0
+    embed 'org.apache.thrift:libthrift:0.23.0'  // Jena 3.7.0 uses 0.23.0
     embed 'com.github.andrewoma.dexx:collection:0.7'
     embed 'com.github.jsonld-java:jsonld-java:0.12.0'  // Jena 3.7.0 uses 0.12.0
     embed 'commons-codec:commons-codec:1.11'  // Jena 3.7.0 uses 1.11
-    embed 'org.apache.commons:commons-lang3:3.4'
+    embed 'org.apache.commons:commons-lang3:3.18.0'
 
     // HTTP components for remote SPARQL endpoints
     embed 'org.apache.httpcomponents:httpclient:4.5.5'
     embed 'org.apache.httpcomponents:httpcore:4.4.9'
 
     // Jackson for JSON parsing
-    embed 'com.fasterxml.jackson.core:jackson-core:2.9.5'
-    embed 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
-    embed 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
+    embed 'com.fasterxml.jackson.core:jackson-core:2.18.6'
+    embed 'com.fasterxml.jackson.core:jackson-databind:2.18.6'
+    embed 'com.fasterxml.jackson.core:jackson-annotations:2.18.6'
 
     // Xerces for XML parsing (Jena needs it)
-    embed 'xerces:xercesImpl:2.11.0'
+    embed 'xerces:xercesImpl:2.12.2'
     embed 'xml-apis:xml-apis:1.4.01'
 
     // SLF4J API (don't embed implementation, let OSGi provide it)
