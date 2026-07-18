@@ -16,9 +16,9 @@ configurations {
 
 dependencies {
     // Apache POI core components for Excel handling
-    embed 'org.apache.poi:poi:3.17'
-    embed 'org.apache.poi:poi-ooxml:3.17'
-    embed 'org.apache.poi:poi-ooxml-schemas:3.17'
+    embed 'org.apache.poi:poi:5.4.0'
+    embed 'org.apache.poi:poi-ooxml:5.4.0'
+    embed 'org.apache.poi:poi-ooxml-schemas:5.4.0'
 
     // POI transitive dependencies
     embed 'org.apache.xmlbeans:xmlbeans:2.6.0'
@@ -26,11 +26,11 @@ dependencies {
     embed 'commons-codec:commons-codec:1.10'  // POI 3.17 uses 1.10
 
     // XML Security (needed by POI for signed documents)
-    embed 'org.apache.santuario:xmlsec:2.1.0'
+    embed 'org.apache.santuario:xmlsec:2.2.6'
 
     // Bouncy Castle (needed by xmlsec)
-    embed 'org.bouncycastle:bcprov-jdk15on:1.58'
-    embed 'org.bouncycastle:bcpkix-jdk15on:1.58'
+    embed 'org.bouncycastle:bcprov-jdk15on:1.70'
+    embed 'org.bouncycastle:bcpkix-jdk15on:1.70'
 
     // Curve25519 (needed by POI)
     embed 'com.github.virtuald:curvesapi:1.04'
@@ -70,10 +70,10 @@ shadowJar {
             'Bundle-Version': '3.17.0',
             'Bundle-Vendor': 'PNNL',
             // Export only the POI packages that GridAPPS-D uses
-            'Export-Package': 'org.apache.poi.ss.usermodel;version="3.17.0",' +
-                             'org.apache.poi.hssf.usermodel;version="3.17.0",' +
-                             'org.apache.poi.xssf.usermodel;version="3.17.0",' +
-                             'org.apache.poi.ss.util;version="3.17.0"',
+            'Export-Package': 'org.apache.poi.ss.usermodel;version="5.4.0.0",' +
+                             'org.apache.poi.hssf.usermodel;version="5.4.0.0",' +
+                             'org.apache.poi.xssf.usermodel;version="5.4.0.0",' +
+                             'org.apache.poi.ss.util;version="5.4.0.0"',
             // Import from OSGi environment
             'Import-Package': 'org.slf4j;version="[1.7,3)";resolution:=optional,' +
                              'javax.xml.parsers,' +

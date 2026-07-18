@@ -53,10 +53,10 @@ dependencies {
     embed files('../cnf/cache/7.1.0/GOSS Dependencies/shacl-1.1.0.jar')
 
     // Hazelcast for proven-message serialization
-    embed 'com.hazelcast:hazelcast:3.9.3'
+    embed 'com.hazelcast:hazelcast:5.2.5'
 
     // Commons IO (proven-message needs it)
-    embed 'commons-io:commons-io:2.6'
+    embed 'commons-io:commons-io:2.14.0'
 
     // SLF4J API (don't embed implementation, let OSGi provide it)
     compileOnly 'org.slf4j:slf4j-api:2.0.16'
