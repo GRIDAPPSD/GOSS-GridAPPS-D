@@ -289,6 +289,12 @@ class HelicsGossBridge(object):
         self._simulation_id = simulation_id
         self._broker_port = broker_port
         self._simulation_request = simulation_request
+        self.run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime", 1)
+        self.simulation_length = int(self._simulation_request.get("simulation_config", {}).get("duration", 0))
+        self.simulation_start = int(self._simulation_request.get("simulation_config", {}).get("start_time", 0))
+        self.pause_after_measurements = \
+            self._simulation_request.get("simulation_config", {}).get("pause_after_measurements", False)
+        self.simulation_interval = int(self._simulation_request.get("simulation_config", {}).get("interval", 1))
         self._generate_cimgraph_models()
         # build GLD property names to CIM mrid map
         self._create_cim_object_map()
@@ -428,7 +434,7 @@ class HelicsGossBridge(object):
                 message['response'] = str(self._is_initialized)
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
-                self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id ,
+                self._gad_connection.send(f"{self._simulation_manager_input_topic}.{self._simulation_id}",
                                           json.dumps(message))
             elif json_msg.get('command', '') == 'update':
                 json_msg['input']["time_received"] = time.perf_counter()
@@ -546,21 +552,15 @@ class HelicsGossBridge(object):
 
 
     def run_simulation(self):
-        simulation_output_topic = topics.simulation_output_topic(self._simulation_id)
         message_str = 'Running simulation for simulation_request:' \
                       f'{json.dumps(self._simulation_request, indent=4, sort_keys=True)}'
         log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
-        run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime", 1)
-        simulation_length = self._simulation_request.get("simulation_config", {}).get("duration", 0)
-        simulation_start = self._simulation_request.get("simulation_config", {}).get("start_time", 0)
-        pause_after_measurements = \
-            self._simulation_request.get("simulation_config", {}).get("pause_after_measurements", False)
         try:
             message = {}
             message['command'] = 'nextTimeStep'
-            simulation_run_time_start = time.perf_counter()
-            for current_time in range(simulation_length):
+            simulation_run_time_start = time.perf_counter_ns()
+            for current_time in range(0, self.simulation_length, self.simulation_interval):
                 if self._stop_simulation == True:
                     break
                 begin_time_step = time.perf_counter()
@@ -583,11 +583,10 @@ class HelicsGossBridge(object):
                                                          "Stopping the simulation prematurely at operator's request!")
                     break
                 self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}",
-                                          json.dumps({"timestamp": current_time + simulation_start}))
+                                          json.dumps({"timestamp": current_time + self.simulation_start}))
                 #forward messages from HELICS to GOSS
                 if self._filter_all_measurements == False:
-                    message['output'] = self._get_helics_bus_messages(self._measurement_filter,
-                                                                      pause_after_measurements)
+                    message['output'] = self._get_helics_bus_messages(self._measurement_filter)
                 else:
                     message['output'] = {}
                 if self._simulation_time == self._pause_simulation_at:
@@ -600,10 +599,10 @@ class HelicsGossBridge(object):
                 while not self._simulation_command_queue.empty():
                     self._publish_to_helics_bus(self._simulation_command_queue.get(), self._command_filter)
                 self._done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message_str = 'incrementing to '+str(current_time + 1)
+                message_str = 'incrementing to '+str(current_time + self.simulation_interval)
                 log.debug(message_str)
                 self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
-                if run_realtime == True:
+                if self.run_realtime == True:
                     sleep_time = 1 - time.perf_counter() + begin_time_step
                     if sleep_time < 0:
                         warn_message = f"Simulation {self._simulation_id} is running slower than real time!!!. Time " \
@@ -617,11 +616,11 @@ class HelicsGossBridge(object):
                         time.sleep(sleep_time)
             if not self._stop_simulation:
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
-                self._simulation_time = current_time + 1
+                self._simulation_time = current_time + self.simulation_interval
             else:
                 self._simulation_time = current_time
             self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}",
-                                      json.dumps({"timestamp": self._simulation_time + simulation_start}))
+                                      json.dumps({"timestamp": self._simulation_time + self.simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
                 message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -632,13 +631,15 @@ class HelicsGossBridge(object):
                     helics.helicsFederateFinalize(self._helics_federate)
                 self._close_helics_connection()
             self._simulation_finished = True
-            log.debug(f"Simulation finished in {time.perf_counter() - simulation_run_time_start} seconds.")
+            logMsg = f"Simulation {self._simulation_id} finished in "
+            logMsg += f"{(time.perf_counter_ns() - simulation_run_time_start) * 1.0e-9} seconds."
+            log.debug(logMsg)
             message['command'] = 'simulationFinished'
             del message['output']
-            self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id, json.dumps(message))
-            log.info(f'Simulation {self._simulation_id} has finished.')
+            self._gad_connection.send(f"{self._simulation_manager_input_topic}.{self._simulation_id}",
+                                      json.dumps(message))
             self._gad_connection.send_simulation_status('COMPLETE',
-                                                        f'Simulation {self._simulation_id} has finished.',
+                                                        logMsg,
                                                         'INFO')
         except Exception as e:
             message_str = f'Error in run simulation {traceback.format_exc()}'
@@ -660,7 +661,17 @@ class HelicsGossBridge(object):
         try:
             self._gad_connection = GridAPPSD(self._simulation_id)
             log.debug("Successfully registered with the GridAPPS-D platform.")
-            self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
+            deconfliction_service_running = False
+            for serviceDict in self._simulation_request.get("service_configs", []):
+                if serviceDict.get("id", "") == "deconfliction-pipeline":
+                    self._gad_connection.subscribe(
+                        topics.service_output_topic('gridappsd-app-deconfliction-service', self._simulation_id),
+                        self.on_message
+                    )
+                    deconfliction_service_running = True
+                    break
+            if not deconfliction_service_running:
+                self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
             self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input."+self._simulation_id, self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
@@ -670,7 +681,7 @@ class HelicsGossBridge(object):
         try:
             self._helics_configuration = {
                 "name": f"HELICS_GOSS_Bridge_{self._simulation_id}",
-                "period": 1.0,
+                "period": float(self._simulation_request.get("simulation_config", {}).get("interval", 1.0)),
                 "coreinit": f"-logfile HELICS_GOSS_Bridge_{self._simulation_id}.log",
                 "log_level": "DATA",
                 "broker": f"127.0.0.1:{self._broker_port}",
@@ -861,10 +872,12 @@ class HelicsGossBridge(object):
                                     helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "RotatingMachine.p":
                                 for y in object_phases:
-                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "RotatingMachine.q":
                                 for y in object_phases:
-                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "ShuntCompensator.aVRDelay":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
                                     helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
@@ -874,7 +887,8 @@ class HelicsGossBridge(object):
                                 else:
                                     val = "OPEN"
                                 for y in object_phases:
-                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
                             elif cim_attribute == "Switch.open":
                                 if int(x.get("value")) == 1:
                                     val = "OPEN"
@@ -887,7 +901,8 @@ class HelicsGossBridge(object):
                                     helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.step":
                                 for y in object_phases:
-                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropCompensation":
                                 if int(x.get("value")) == 1:
                                     val = "LINE_DROP_COMP"
@@ -897,10 +912,12 @@ class HelicsGossBridge(object):
                                     f"{val}"
                             elif cim_attribute == "TapChanger.lineDropR":
                                 for y in object_phases:
-                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropX":
                                 for y in object_phases:
-                                  helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "PowerElectronicsConnection.p":
                                 helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
                                     float(x.get("value"))
@@ -1013,14 +1030,12 @@ class HelicsGossBridge(object):
             raise RuntimeError(err_msg)
 
 
-    def _get_helics_bus_messages(self, measurement_filter, pause_after_measurements = False):
+    def _get_helics_bus_messages(self, measurement_filter):
         """ retrieve the measurment dictionary from the HELICS message bus
 
         Function arguments:
             measurement_filter -- Type: list. Description: The list of
                 measurement id's to filter from the simulator output.
-            pause_after_measurements -- Type: bool. Description: boolean for automatically pausing the simulation after
-                publishing measurements.
         Function returns:
             helics_output -- Type: string. Description: The json structured output
                 from the simulation. If no output was sent from the simulation then
@@ -1199,7 +1214,7 @@ class HelicsGossBridge(object):
                 log.debug(f"measurement message recieved at timestep {current_time}.")
                 self._gad_connection.send(topics.simulation_output_topic(self._simulation_id),
                                           json.dumps(cim_output, indent=4, sort_keys=True))
-                if pause_after_measurements:
+                if self.pause_after_measurements:
                     self._pause_simulation = True
                     debugStr = "Simulation paused automatically after publishing measurements."
                     log.debug(debugStr)
@@ -1235,7 +1250,7 @@ class HelicsGossBridge(object):
                 raise ValueError(
                     'current_time must be an integer.\n'
                     + f'current_time = {current_time}')
-            time_request = float(current_time + 1)
+            time_request = float(current_time + self.simulation_interval)
             time_approved = helics.helicsFederateRequestTime(self._helics_federate, time_request)
             if time_approved != time_request:
                 raise RuntimeError(
@@ -1872,14 +1887,18 @@ def _getEquipmentContainer(cimMrid: str, dbConnection: BlazegraphConnection):
     return eqContainerMrid
 
 
-def _main(simulation_id, broker_port, simulation_request):
+def _main(simulation_id, broker_port, simulation_request, detachedRun):
     os.environ["GRIDAPPSD_APPLICATION_ID"] = "helics_goss_bridge.py"
     bridge = HelicsGossBridge(simulation_id, broker_port, simulation_request)
     simulation_started = False
     simulation_stopped = False
     while not simulation_stopped:
-        sim_is_initialized = bridge.get_is_initialized()
-        start_sim = bridge.get_start_simulation()
+        if not detachedRun:
+            sim_is_initialized = bridge.get_is_initialized()
+            start_sim = bridge.get_start_simulation()
+        else:
+            sim_is_initialized = True
+            start_sim = True
         stop_sim = bridge.get_stop_simulation()
         sim_finished = bridge.get_simulation_finished()
         if stop_sim or sim_finished:
@@ -1896,6 +1915,7 @@ if __name__ == '__main__':
     parser.add_argument("simulation_id", help="The simulation id to use for responses on the message bus.")
     parser.add_argument("broker_port", help="The port the helics broker is running on.")
     parser.add_argument("simulation_request", help="The simulation request.")
+    parser.add_argument("-d", "--detachedRun", action="store_true", help="Run the bridge detached from the Platform")
     args = parser.parse_args()
     sim_request = json.loads(args.simulation_request.replace("\'",""))
-    _main(args.simulation_id, args.broker_port, sim_request)
+    _main(args.simulation_id, args.broker_port, sim_request, args.detachedRun)
