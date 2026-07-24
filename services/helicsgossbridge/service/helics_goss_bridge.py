@@ -294,7 +294,10 @@ class HelicsGossBridge(object):
         self.simulation_start = int(self._simulation_request.get("simulation_config", {}).get("start_time", 0))
         self.pause_after_measurements = \
             self._simulation_request.get("simulation_config", {}).get("pause_after_measurements", False)
-        self.simulation_interval = int(self._simulation_request.get("simulation_config", {}).get("interval", 1))
+        if self.run_realtime:
+            self.simulation_interval = 1
+        else:
+            self.simulation_interval = int(self._simulation_request.get("simulation_config", {}).get("interval", 1))
         self._generate_cimgraph_models()
         # build GLD property names to CIM mrid map
         self._create_cim_object_map()
