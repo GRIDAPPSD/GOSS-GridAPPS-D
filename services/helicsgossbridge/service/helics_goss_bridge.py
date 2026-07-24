@@ -644,8 +644,8 @@ class HelicsGossBridge(object):
             self._gad_connection.send_simulation_status('COMPLETE',
                                                         logMsg,
                                                         'INFO')
-            self._gat_connection.send_simulation_status('COMPLETE',
-                                                        f"Simulation {self._simulation_id} compete",
+            self._gad_connection.send_simulation_status('COMPLETE',
+                                                        f"Simulation {self._simulation_id} complete",
                                                         'INFO')
         except Exception as e:
             message_str = f'Error in run simulation {traceback.format_exc()}'
