@@ -44,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -374,13 +375,19 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT, "5570"));
         simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
+        
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
-                parameters.getProperty(INTERVAL, "60.0"));
+        		GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
                 Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
-        GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
+        
+        configManager.generateConfiguration(GLDSimulationOutputConfigurationHandler.TYPENAME, simOutputParams,
+        		simulationOutputs, processId, username);
+        
+        
+        /*GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
                 configManager, powergridModelManager, logManager);
-        simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
+        simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);*/
 
         out.write(dir.getAbsolutePath());
 

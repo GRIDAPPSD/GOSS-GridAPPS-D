@@ -281,12 +281,11 @@ public class GLDSimulationOutputConfigurationHandler extends BaseConfigurationHa
             double interval = 1.0;
             boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
             if (!run_realtime)
-                interval = GridAppsDConstants.getDoubleProperty(parameters, INTERVAL, 60.0);
+                interval = Double.parseDouble(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
             String brokerLocation = simulationBrokerHost;
             String brokerPort = String.valueOf(simulationBrokerPort);
             String HELICS_PREFIX1 = HELICS_PREFIX.replaceAll("BROKER_LOCATION", brokerLocation);
-            String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort).replaceAll("INTERVAL",
-                    String.valueOf(interval));
+            String HELICS_PREFIX2 = HELICS_PREFIX1.replaceAll("BROKER_PORT", brokerPort).replaceAll("INTERVAL",String.valueOf(interval));
             result = HELICS_PREFIX2.replaceAll("PROCESS_ID", processId).replaceAll("MODEL_ID", modelId)
                     + result.replaceAll("    ", "\t\t\t\t\t").replaceAll("  ", "\t\t\t\t").replaceAll("}", "\t\t\t}\n")
                     + HELICS_SUFFIX;
