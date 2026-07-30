@@ -377,7 +377,7 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
         
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
-        		GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
+        		GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
                 Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
         
@@ -437,8 +437,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 
         boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
-        int publish_period = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, PUBLISH_PERIOD, "60"));
-        int interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
+        int publish_period = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, PUBLISH_PERIOD, "3"));
+        int interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
 
         double nominalv = 0;
 
