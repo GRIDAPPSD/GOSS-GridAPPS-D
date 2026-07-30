@@ -406,9 +406,17 @@ class TopologyRequestProcess extends Thread {
     static final String TOPOLOGY_REQUEST_TOPIC = "goss.gridappsd.request.data.cimtopology";
 
     // Bounded retry: the topology background service is registered but may not
-    // yet answer on the request queue at startup (a boot-order race). Give it
-    // up to this many attempts, sleeping between them, before idling.
-    static final int MAX_TOPOLOGY_ATTEMPTS = 6;
+    // yet answer on the request queue at startup (a boot-order race observed to
+    // last roughly 7 seconds; see GADP-051). Give it up to this many attempts,
+    // sleeping between them, before idling. Each attempt itself is bounded by
+    // TOPOLOGY_RESPONSE_TIMEOUT_MS (GossClient.getResponse's underlying JMS
+    // receive() was previously unbounded, so the very first attempt could block
+    // forever and the retry loop below would never actually run). Worst-case
+    // total wait: MAX_TOPOLOGY_ATTEMPTS * TOPOLOGY_RESPONSE_TIMEOUT_MS +
+    // (MAX_TOPOLOGY_ATTEMPTS - 1) * TOPOLOGY_RETRY_SLEEP_MS = 5*3000 + 4*1000 =
+    // 19s, comfortably covering the observed ~7s startup gap with margin.
+    static final int MAX_TOPOLOGY_ATTEMPTS = 5;
+    static final long TOPOLOGY_RESPONSE_TIMEOUT_MS = 3000L;
     static final long TOPOLOGY_RETRY_SLEEP_MS = 1000L;
 
     String fieldModelMrid;
@@ -474,17 +482,18 @@ class TopologyRequestProcess extends Thread {
 
     // Real bounded retry: request the topology, and while the response is null and
     // attempts remain, sleep BEFORE re-requesting so the background topology
-    // service has time to become ready. Replaces the earlier single-shot "if"
-    // that slept after its lone retry and so never actually waited for
-    // initialization.
+    // service has time to become ready. Each request itself is bounded by
+    // TOPOLOGY_RESPONSE_TIMEOUT_MS (GADP-051) rather than blocking indefinitely,
+    // so a not-yet-answerable service on the first attempt cannot starve every
+    // later attempt of the chance to retry.
     Serializable requestTopologyWithRetry(TopologyRequest request) throws Exception {
         Serializable topoResponse = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
-                RESPONSE_FORMAT.JSON);
+                RESPONSE_FORMAT.JSON, TOPOLOGY_RESPONSE_TIMEOUT_MS);
         int attempt = 1;
         while (topoResponse == null && attempt < MAX_TOPOLOGY_ATTEMPTS) {
             Thread.sleep(TOPOLOGY_RETRY_SLEEP_MS);
             topoResponse = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
-                    RESPONSE_FORMAT.JSON);
+                    RESPONSE_FORMAT.JSON, TOPOLOGY_RESPONSE_TIMEOUT_MS);
             attempt++;
         }
         return topoResponse;

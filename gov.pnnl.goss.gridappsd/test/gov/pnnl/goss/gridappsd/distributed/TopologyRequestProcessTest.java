@@ -121,7 +121,8 @@ public class TopologyRequestProcessTest {
     public void retrySucceedsImmediatelyWithoutSleepingOrRetrying() throws Exception {
         DataResponse dataResponse = Mockito.mock(DataResponse.class);
         Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
-                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(dataResponse);
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(dataResponse);
 
         TopologyRequestProcess process = new TopologyRequestProcess("mrid-immediate-success", client, logManager);
         TopologyRequest request = new TopologyRequest();
@@ -132,7 +133,8 @@ public class TopologyRequestProcessTest {
         assertNotNull("first successful getResponse must be returned as-is", result);
         org.junit.Assert.assertSame(dataResponse, result);
         Mockito.verify(client, Mockito.times(1)).getResponse(Mockito.any(),
-                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON));
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON),
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS));
     }
 
     @Test
@@ -142,7 +144,8 @@ public class TopologyRequestProcessTest {
         // succeeds. requestTopologyWithRetry must sleep between attempts and keep
         // re-requesting rather than giving up on the first null.
         Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
-                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(null, null, dataResponse);
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(null, null, dataResponse);
 
         TopologyRequestProcess process = new TopologyRequestProcess("mrid-recovers", client, logManager);
         TopologyRequest request = new TopologyRequest();
@@ -155,13 +158,15 @@ public class TopologyRequestProcessTest {
         // Exactly 3 calls: the initial request plus 2 retries, no more (no
         // busy-spin past the successful attempt).
         Mockito.verify(client, Mockito.times(3)).getResponse(Mockito.any(),
-                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON));
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON),
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS));
     }
 
     @Test
     public void retryExhaustsAttemptsAndReturnsNullWhenServiceNeverAnswers() throws Exception {
         Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
-                Mockito.eq(RESPONSE_FORMAT.JSON))).thenReturn(null);
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(null);
 
         TopologyRequestProcess process = new TopologyRequestProcess("mrid-exhausted", client, logManager);
         TopologyRequest request = new TopologyRequest();
@@ -174,12 +179,35 @@ public class TopologyRequestProcessTest {
         // (MAX_TOPOLOGY_ATTEMPTS - 1) retries, no more.
         Mockito.verify(client, Mockito.times(TopologyRequestProcess.MAX_TOPOLOGY_ATTEMPTS)).getResponse(
                 Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
-                Mockito.eq(RESPONSE_FORMAT.JSON));
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS));
 
         // Feeding the exhausted (null) result into handleTopologyResponse exercises
         // the full null-idle path this retry loop feeds into.
         boolean populated = process.handleTopologyResponse(result);
         assertFalse("null result after exhausted retries must leave root unpopulated", populated);
         assertNull("root must remain null after exhausted retries", process.root);
+    }
+
+    // --- Per-attempt timeout: requestTopologyWithRetry must call the bounded
+    // overload rather than the unbounded one (GADP-051 fix round 3) ---
+
+    @Test
+    public void requestUsesTheBoundedTimeoutOverloadNotTheUnboundedOne() throws Exception {
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-bounded-call", client, logManager);
+        TopologyRequest request = new TopologyRequest();
+        request.mRID = "mrid-bounded-call";
+
+        process.requestTopologyWithRetry(request);
+
+        // The unbounded 3-arg overload must never be called: a first attempt on
+        // that overload could block the retry loop forever if the topology
+        // service is not yet answerable (the exact GADP-051 boot-order race).
+        Mockito.verify(client, Mockito.never()).getResponse(Mockito.any(),
+                Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON));
     }
 }
