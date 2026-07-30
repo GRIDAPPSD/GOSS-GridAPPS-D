@@ -375,19 +375,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT, "5570"));
         simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
-        
+
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
-        		GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
+                GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
                 Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
-        
+
         configManager.generateConfiguration(GLDSimulationOutputConfigurationHandler.TYPENAME, simOutputParams,
-        		simulationOutputs, processId, username);
-        
-        
-        /*GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
-                configManager, powergridModelManager, logManager);
-        simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);*/
+                simulationOutputs, processId, username);
+
+        /*
+         * GLDSimulationOutputConfigurationHandler simulationOutputConfig = new
+         * GLDSimulationOutputConfigurationHandler( configManager,
+         * powergridModelManager, logManager);
+         * simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs,
+         * processId, username);
+         */
 
         out.write(dir.getAbsolutePath());
 
@@ -513,11 +516,10 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         if (GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)) {
             startupFileWriter.println("object helics_msg {");
             startupFileWriter.println("      name " + modelId + ";");
-            
+
             if (simulator.equalsIgnoreCase("gridlab-d"))
                 startupFileWriter.println("      message_type JSON;");
-            
-            
+
             startupFileWriter.println("      publish_period " + publish_period + ";");
             startupFileWriter.println("      configure model_outputs.json;");
             startupFileWriter.println("}");
