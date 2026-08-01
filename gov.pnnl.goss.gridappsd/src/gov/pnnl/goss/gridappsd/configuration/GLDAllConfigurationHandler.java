@@ -44,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -374,13 +375,22 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         simOutputParams.setProperty(SIMULATIONBROKERPORT, parameters.getProperty(SIMULATIONBROKERPORT, "5570"));
         simOutputParams.setProperty(GridAppsDConstants.GRIDLABD_INTERFACE, parameters
                 .getProperty(GridAppsDConstants.GRIDLABD_INTERFACE, GridAppsDConstants.GRIDLABD_INTERFACE_FNCS));
+
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.INTERVAL,
-                parameters.getProperty(INTERVAL, "60.0"));
+                GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
         simOutputParams.setProperty(GLDSimulationOutputConfigurationHandler.RUN_REALTIME,
                 Boolean.toString(GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true)));
-        GLDSimulationOutputConfigurationHandler simulationOutputConfig = new GLDSimulationOutputConfigurationHandler(
-                configManager, powergridModelManager, logManager);
-        simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs, processId, username);
+
+        configManager.generateConfiguration(GLDSimulationOutputConfigurationHandler.TYPENAME, simOutputParams,
+                simulationOutputs, processId, username);
+
+        /*
+         * GLDSimulationOutputConfigurationHandler simulationOutputConfig = new
+         * GLDSimulationOutputConfigurationHandler( configManager,
+         * powergridModelManager, logManager);
+         * simulationOutputConfig.generateConfig(simOutputParams, simulationOutputs,
+         * processId, username);
+         */
 
         out.write(dir.getAbsolutePath());
 
@@ -430,8 +440,8 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         String scheduleName = GridAppsDConstants.getStringProperty(parameters, SCHEDULENAME, null);
 
         boolean run_realtime = GridAppsDConstants.getBooleanProperty(parameters, RUN_REALTIME, true);
-        int publish_period = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, PUBLISH_PERIOD, "60"));
-        int interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "60"));
+        int publish_period = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, PUBLISH_PERIOD, "3"));
+        int interval = Integer.parseInt(GridAppsDConstants.getStringProperty(parameters, INTERVAL, "1"));
 
         double nominalv = 0;
 
@@ -506,14 +516,11 @@ public class GLDAllConfigurationHandler extends BaseConfigurationHandler impleme
         if (GridAppsDConstants.GRIDLABD_INTERFACE_HELICS.equals(gldInterface)) {
             startupFileWriter.println("object helics_msg {");
             startupFileWriter.println("      name " + modelId + ";");
+
             if (simulator.equalsIgnoreCase("gridlab-d"))
                 startupFileWriter.println("      message_type JSON;");
-            if (run_realtime)
-                startupFileWriter.println("      publish_period 3;");
-            else {
-                startupFileWriter.println("      publish_period " + publish_period + ";");
-            }
 
+            startupFileWriter.println("      publish_period " + publish_period + ";");
             startupFileWriter.println("      configure model_outputs.json;");
             startupFileWriter.println("}");
 

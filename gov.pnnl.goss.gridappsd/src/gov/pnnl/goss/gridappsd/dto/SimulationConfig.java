@@ -64,8 +64,8 @@ public class SimulationConfig implements Serializable {
     // Slow simulator down to realtime if true. If false it will run as fast as the
     // simulator allows
     public boolean run_realtime = true;
-    public int publish_period = 60;
-    public int interval = 60;
+    public int publish_period = 3;
+    public int interval = 1;
 
     // instruct simulation to pause automatically after publishing measurements if
     // true.
