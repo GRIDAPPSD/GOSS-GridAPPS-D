@@ -230,9 +230,9 @@ task collectBundles(type: Copy) {
         }
     } else {
         // Default: BND cache (auto-populated from GOSS-Repository via repositories.bnd)
-        // Only include version 15.x (Java 21 compatible release with reply-to normalization)
+        // Only include version 16.x (Java 21 compatible release with reply-to normalization)
         from('cnf/cache/7.1.0/GOSS Release') {
-            include 'pnnl.goss.core.*-15.*.jar'
+            include 'pnnl.goss.core.*-16.*.jar'
             exclude '*-sources.jar'
             exclude '*-javadoc.jar'
             exclude 'pnnl.goss.core.itests*'
