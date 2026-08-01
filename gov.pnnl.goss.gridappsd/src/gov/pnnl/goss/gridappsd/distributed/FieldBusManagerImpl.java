@@ -429,7 +429,8 @@ class TopologyRequestProcess extends Thread {
     // so the very first attempt could block forever and the retry loop below would
     // never actually run). Worst-case total wait at the ~60s default budget:
     // effectiveMaxAttempts * TOPOLOGY_RESPONSE_TIMEOUT_MS +
-    // (effectiveMaxAttempts - 1) * TOPOLOGY_RETRY_SLEEP_MS = 10*5000 + 9*1000 = 59s.
+    // (effectiveMaxAttempts - 1) * TOPOLOGY_RETRY_SLEEP_MS = 10*5000 + 9*1000 =
+    // 59s.
     // Widened from the original 19s window (5 attempts * 3000ms + 4*1000ms) because
     // a slow host, a cold JVM, or a heavier feeder's warmup can legitimately take
     // longer than 19s to start answering topology requests; the original window
