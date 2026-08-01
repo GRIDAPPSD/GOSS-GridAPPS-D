@@ -11,16 +11,23 @@ package gov.pnnl.goss.gridappsd;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
@@ -29,6 +36,8 @@ import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.ClientFactory;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.DataResponse;
+import pnnl.goss.core.GossResponseEvent;
 
 /**
  * Unit tests for FieldBusManagerImpl config-delivery fix (GADP-001, issue
@@ -275,5 +284,171 @@ public class FieldBusManagerComponentTests {
         manager.modified(config);
 
         assertEquals("mrid-via-modified", manager.getFieldModelMrid());
+    }
+
+    // --- GADP-051 review remediation item 4(a): isTopologyReady() guard inside
+    // publishDeviceOutput's onMessage handler, exercised with a real DataResponse
+    // while topology is NOT ready. ---
+
+    @Test
+    public void publishDeviceOutputOnMessageGatesPublishWhenTopologyNotReady() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        // Topology service absent so start() subscribes but never launches
+        // topology: isTopologyReady() (topology != null && topology.root != null)
+        // is false for the entire life of this manager.
+        Mockito.when(serviceManager.getService("gridappsd-topology-background-service"))
+                .thenReturn(null);
+        manager.start(new HashMap<>());
+
+        ArgumentCaptor<GossResponseEvent> eventCaptor = ArgumentCaptor.forClass(GossResponseEvent.class);
+        Mockito.verify(client).subscribe(Mockito.anyString(), eventCaptor.capture());
+        GossResponseEvent onMessage = eventCaptor.getValue();
+
+        DataResponse event = new DataResponse();
+        event.setDestination("goss.gridappsd.simulation.output.12345");
+        event.setData("{\"message\":{\"Measurements\":{\"meas-1\":1.0}}}");
+
+        // Driving a real DataResponse through onMessage while topology is not
+        // ready must gate the publish entirely: no exception (no NPE on the
+        // null topology dereference below the guard) and no client.publish call.
+        onMessage.onMessage(event);
+
+        Mockito.verify(client, Mockito.never()).publish(Mockito.anyString(), Mockito.any());
+    }
+
+    // --- GADP-051 review remediation item 4(b): isTopologyFullyInitialized()
+    // behind "is_initilized", driven across root==null, root!=null &&
+    // DistributionArea==null, and fully-populated states, value-asserting the
+    // "initialized" boolean in every branch. ---
+
+    @Test
+    public void isInitilizedReportsFalseWhenTopologyNeverBuilt() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        // No activation, no config: topology is null (root==null state).
+        String request = "{\"request_type\":\"is_initilized\"}";
+        String responseJson = (String) manager.handleRequest("queue", request);
+
+        JsonObject obj = JsonParser.parseString(responseJson).getAsJsonObject();
+        assertFalse("initialized must be exactly false when topology was never built",
+                obj.get("initialized").getAsBoolean());
+    }
+
+    @Test
+    public void isInitilizedReportsFalseWhenRootPopulatedButDistributionAreaMissing() throws Exception {
+        // client.getResponse returning a DataResponse whose data parses into a
+        // Root with a null DistributionArea reproduces root!=null &&
+        // DistributionArea==null without needing a live background thread: drive
+        // handleTopologyResponse directly against the manager's real topology
+        // instance via applyConfig + a synchronous stub, matching the pattern the
+        // pre-existing NPE-guard tests in this file already use for topology
+        // lifecycle setup.
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        DataResponse topoResponse = new DataResponse();
+        topoResponse.setData("{}"); // parses to a Root with DistributionArea == null
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.anyString(),
+                Mockito.any(pnnl.goss.core.Request.RESPONSE_FORMAT.class), Mockito.anyLong()))
+                .thenReturn(topoResponse);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("field.model.mrid", "root-no-distribution-area-mrid");
+        manager.applyConfig(config);
+
+        // Allow the background TopologyRequestProcess thread to parse the stubbed
+        // response into root before asserting; the thread's only work here is one
+        // synchronous getResponse() call plus a JSON parse, so this is not the
+        // long boot-order race the retry budget guards against.
+        Thread.sleep(500);
+
+        String request = "{\"request_type\":\"is_initilized\"}";
+        String responseJson = (String) manager.handleRequest("queue", request);
+
+        JsonObject obj = JsonParser.parseString(responseJson).getAsJsonObject();
+        assertFalse("initialized must be exactly false when root populated but DistributionArea is missing",
+                obj.get("initialized").getAsBoolean());
+    }
+
+    @Test
+    public void isInitilizedReportsTrueWhenTopologyFullyPopulated() throws Exception {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        DataResponse topoResponse = new DataResponse();
+        topoResponse.setData("{\"DistributionArea\":{\"@id\":\"da-1\",\"@type\":\"DistributionArea\","
+                + "\"Substations\":[]}}");
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.anyString(),
+                Mockito.any(pnnl.goss.core.Request.RESPONSE_FORMAT.class), Mockito.anyLong()))
+                .thenReturn(topoResponse);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("field.model.mrid", "fully-populated-mrid");
+        manager.applyConfig(config);
+
+        Thread.sleep(500);
+
+        String request = "{\"request_type\":\"is_initilized\"}";
+        String responseJson = (String) manager.handleRequest("queue", request);
+
+        JsonObject obj = JsonParser.parseString(responseJson).getAsJsonObject();
+        assertTrue("initialized must be exactly true once root and DistributionArea are both populated",
+                obj.get("initialized").getAsBoolean());
+    }
+
+    // --- GADP-051 review remediation item 4(c): the legacy updated(Dictionary)
+    // path, driven with a real Hashtable, must actually rebuild config (the
+    // exact regression this PR fixes: previously stored config but never
+    // rebuilt). ---
+
+    @Test
+    public void updatedWithRealHashtableRebuildsConfigAndMrid() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        Hashtable<String, Object> initial = new Hashtable<>();
+        initial.put("field.model.mrid", "mrid-via-updated-initial");
+        manager.updated(initial);
+
+        assertEquals("the legacy updated(Dictionary) path must deliver the mrid via applyConfig, "
+                + "not merely store it unapplied",
+                "mrid-via-updated-initial", manager.getFieldModelMrid());
+
+        Hashtable<String, Object> changed = new Hashtable<>();
+        changed.put("field.model.mrid", "mrid-via-updated-changed");
+        manager.updated(changed);
+
+        // The exact regression this PR fixes: a mrid CHANGE arriving through
+        // updated(Dictionary) must actually be reflected (rebuilt), not silently
+        // dropped because the old code stored config but never called applyConfig.
+        assertEquals("a changed mrid delivered via updated(Dictionary) must be rebuilt and visible",
+                "mrid-via-updated-changed", manager.getFieldModelMrid());
+    }
+
+    @Test
+    public void updatedWithNullDictionaryIsANoopAndDoesNotThrow() {
+        FieldBusManagerImpl manager = new FieldBusManagerImpl();
+        manager.setClientFactory(clientFactory);
+        manager.setLogManager(logManager);
+        manager.setServiceManager(serviceManager);
+
+        // Guard clause: a null Dictionary (ConfigurationAdmin can deliver this on
+        // deletion) must not throw and must not change the manager's state.
+        manager.updated(null);
+
+        assertNull("a null Dictionary delivery must remain a no-op", manager.getFieldModelMrid());
     }
 }
