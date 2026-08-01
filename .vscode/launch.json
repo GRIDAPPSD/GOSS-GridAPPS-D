@@ -1,0 +1,60 @@
+{
+    // Remote debugging configurations for GridAPPS-D running in Docker
+    // Prerequisites:
+    //   1. Start containers: make docker-up
+    //   2. Wait for GridAPPS-D to start (DEBUG=1 enables port 8000)
+    //   3. Select a configuration and press F5
+    //
+    // GOSS sources: If you have GOSS cloned at ../GOSS, use the "with GOSS sources"
+    // configuration to step into GOSS framework code.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug GridAPPS-D in Docker",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 8000,
+            "sourcePaths": [
+                "${workspaceFolder}/gov.pnnl.goss.gridappsd/src",
+                "${workspaceFolder}/gov.pnnl.goss.gridappsd.test/src"
+            ],
+            "projectName": "gov.pnnl.goss.gridappsd",
+            "timeout": 30000
+        },
+        {
+            // Use this configuration if you have GOSS sources at ../GOSS
+            // to step into GOSS framework code during debugging.
+            // Clone from: https://github.com/GRIDAPPSD/GOSS
+            "type": "java",
+            "name": "Debug GridAPPS-D in Docker (with GOSS sources)",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 8000,
+            "sourcePaths": [
+                "${workspaceFolder}/gov.pnnl.goss.gridappsd/src",
+                "${workspaceFolder}/gov.pnnl.goss.gridappsd.test/src",
+                "${workspaceFolder}/../GOSS/pnnl.goss.core/src",
+                "${workspaceFolder}/../GOSS/pnnl.goss.core.server/src",
+                "${workspaceFolder}/../GOSS/pnnl.goss.core.security/src"
+            ],
+            "projectName": "gov.pnnl.goss.gridappsd",
+            "timeout": 30000
+        },
+        {
+            "type": "java",
+            "name": "Debug Current Test File",
+            "request": "launch",
+            "mainClass": "",
+            "projectName": "gov.pnnl.goss.gridappsd",
+            "vmArgs": [
+                "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+                "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                "--add-opens", "java.base/java.io=ALL-UNNAMED",
+                "--add-opens", "java.base/java.time=ALL-UNNAMED",
+                "-XX:+EnableDynamicAgentLoading"
+            ]
+        }
+    ]
+}

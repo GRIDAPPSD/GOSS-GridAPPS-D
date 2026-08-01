@@ -44,6 +44,7 @@ Created on Mar 9, 2020
 
 import argparse
 import cmath
+from copy import deepcopy
 from datetime import datetime
 from enum import IntEnum
 import gzip
@@ -61,10 +62,15 @@ except:
 import sqlite3
 import sys
 import time
+from pathlib import Path
 
+import cimgraph.data_profile.cimhub_2023 as cim
 import helics
 import yaml
 
+from cimgraph import utils as cimUtils
+from cimgraph.databases import GridappsdConnection, BlazegraphConnection
+from cimgraph.models import FeederModel, GraphModel
 from gridappsd import GridAPPSD, utils, topics
 
 logConfig = {
@@ -114,7 +120,7 @@ class RegulatingControlModeKind(IntEnum):
     timeScheduled = 5
     temperature = 6
     powerFactor = 7
-    
+
 
 class HelicsGossBridge(object):
     '''
@@ -141,7 +147,9 @@ class HelicsGossBridge(object):
     _pause_simulation_at = -1
     _object_property_to_measurement_id = None
     _object_mrid_to_name = None
-    _model_mrid = None
+    _dbConnection = None
+    _graphModels = None
+    _model_mrids = []
     _difference_attribute_map = {
         "RegulatingControl.enabled" : {
             "capacitor" : {
@@ -242,7 +250,7 @@ class HelicsGossBridge(object):
         "TapChanger.step" : {
             "regulator" : {
                 "property" : ["tap_{}"],
-                "prefix" : "reg_"
+                "prefix" : "xf_"
             }
         },
         "TapChanger.lineDropCompensation" : {
@@ -274,117 +282,132 @@ class HelicsGossBridge(object):
             }
         }
     }
-    
-    
+
+
     def __init__(self, simulation_id, broker_port, simulation_request):
-        
+
         self._simulation_id = simulation_id
         self._broker_port = broker_port
         self._simulation_request = simulation_request
+        self.run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime", 1)
+        self.simulation_length = int(self._simulation_request.get("simulation_config", {}).get("duration", 0))
+        self.simulation_start = int(self._simulation_request.get("simulation_config", {}).get("start_time", 0))
+        self.pause_after_measurements = \
+            self._simulation_request.get("simulation_config", {}).get("pause_after_measurements", False)
+        if self.run_realtime:
+            self.simulation_interval = 1
+        else:
+            self.simulation_interval = int(self._simulation_request.get("simulation_config", {}).get("interval", 1))
+        self._generate_cimgraph_models()
+        # build GLD property names to CIM mrid map
+        self._create_cim_object_map()
         # register with GridAPPS-D
         self._register_with_goss()
         # register with HELICS
         self._register_with_helics()
-        # build GLD property names to CIM mrid map
-        self._create_cim_object_map()
-    
-    
+
+
+
     def get_simulation_id(self):
         return self._simulation_id
-    
-    
+
+
     def get_broker_port(self):
         return self._broker_port
-    
-    
+
+
     def get_simulation_request(self):
         return self._simulation_request
-    
-    
+
+
     def get_gad_connection(self):
         return self._gad_connection
-    
-    
+
+
     def get_helics_configuration(self):
         return self._helics_configuration
-    
-    
+
+
     def get_helics_federate(self):
         return self._helics_federate
-    
-    
+
+
     def get_is_initialized(self):
         return self._is_initialized
-    
-    
+
+
     def get_simulation_manager_input_topic(self):
         return self._simulation_manager_input_topic
-    
-    
+
+
     def get_simulation_command_queue(self):
         return self._simulation_command_queue
-    
-        
+
+
     def get_start_simulation(self):
         return self._start_simulation
-    
-    
+
+
     def get_filter_all_commands(self):
         return self._filter_all_commands
-    
-    
+
+
     def get_filter_all_measurements(self):
         return self._filter_all_measurements
-    
-    
+
+
     def get_command_filter(self):
         return self._command_filter
-    
-    
+
+
     def get_measurement_filter(self):
         return self._measurement_filter
-    
-    
+
+
     def get_stop_simulation(self):
         return self._stop_simulation
-    
-    
+
+
     def get_simulation_finished(self):
         return self._simulation_finished
-    
-    
+
+
     def get_pause_simulation(self):
         return self._pause_simulation
-    
-    
+
+
     def get_simulation_time(self):
         return self._simulation_time
-    
-    
+
+
     def get_pause_simulation_at(self):
         return self._pause_simulation_at
-    
-    
+
+
     def get_object_property_to_measurement_id(self):
         return self._object_property_to_measurement_id
-    
-    
+
+
     def get_object_mrid_to_name(self):
         return self._object_mrid_to_name
-    
-    
+
+
     def get_model_mrid(self):
         return self._model_mrid
-    
-    
+
+
     def get_difference_attribute_map(self):
         return self._difference_attribute_map
-    
-        
+
+
     def on_message(self, headers, msg):
         message = {}
+        log.info("on_message received: headers=%s, msg=%s", headers, str(msg)[:500])
+        if self._helics_federate is None:
+            log.debug("Ignoring message received before HELICS federate is initialized")
+            return
         federate_state = helics.helicsFederateGetState(self._helics_federate)
-        
+
         try:
             message_dict = {
                 'received message': {
@@ -414,14 +437,16 @@ class HelicsGossBridge(object):
                 message['response'] = str(self._is_initialized)
                 t_now = datetime.utcnow()
                 message['timestamp'] = int(time.mktime(t_now.timetuple()))
-                self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id , json.dumps(message))
+                self._gad_connection.send(f"{self._simulation_manager_input_topic}.{self._simulation_id}",
+                                          json.dumps(message))
             elif json_msg.get('command', '') == 'update':
                 json_msg['input']["time_received"] = time.perf_counter()
                 message['command'] = 'update'
                 if self._filter_all_commands == False:
                     self._simulation_command_queue.put(json.dumps(json_msg['input']))
             elif json_msg.get('command', '') == 'StartSimulation':
-                self._gad_connection.send_simulation_status('STARTED', f"Simulation {self._simulation_id} has started.", 'INFO')
+                self._gad_connection.send_simulation_status('STARTED', f"Simulation {self._simulation_id} has started.",
+                                                            'INFO')
                 if self._start_simulation == False:
                     self._start_simulation = True
             elif json_msg.get('command', '') == 'CommOutage':
@@ -465,7 +490,10 @@ class HelicsGossBridge(object):
             elif json_msg.get('command', '') == 'pause':
                 if self._pause_simulation == True:
                     log.warning('Pause command received but the simulation is already paused.')
-                    self._gad_connection.send_simulation_status('PAUSED', 'Pause command received but the simulation is already paused.', 'WARN')
+                    self._gad_connection.send_simulation_status('PAUSED',
+                                                                'Pause command received but the simulation is already '
+                                                                'paused.',
+                                                                'WARN')
                 else:
                     self._pause_simulation = True
                     log.info('The simulation has paused.')
@@ -473,7 +501,10 @@ class HelicsGossBridge(object):
             elif json_msg.get('command', '') == 'resume':
                 if self._pause_simulation == False:
                     log.warning('Resume command received but the simulation is already running.')
-                    self._gad_connection.send_simulation_status('RUNNING', 'Resume command received but the simulation is already running.', 'WARN')
+                    self._gad_connection.send_simulation_status('RUNNING',
+                                                                'Resume command received but the simulation is already '
+                                                                'running.',
+                                                                'WARN')
                 else:
                     self._pause_simulation = False
                     log.info('The simulation has resumed.')
@@ -481,7 +512,10 @@ class HelicsGossBridge(object):
             elif json_msg.get('command', '') == 'resumePauseAt':
                 if self._pause_simulation == False:
                     log.warning('The resumePauseAt command was received but the simulation is already running.')
-                    self._gad_connection.send_simulation_status('RUNNING', 'The resumePauseAt command was received but the simulation is already running.', 'WARN')
+                    self._gad_connection.send_simulation_status('RUNNING',
+                                                                'The resumePauseAt command was received but the '
+                                                                'simulation is already running.',
+                                                                'WARN')
                 else:
                     self._pause_simulation = False
                     log.info('The simulation has resumed.')
@@ -489,7 +523,10 @@ class HelicsGossBridge(object):
                     self._pause_simulation_at = self._simulation_time + json_msg.get('input', {}).get('pauseIn',-1)
             elif json_msg.get('command', '') == '':
                 log.warning('The message received did not have a command key. Ignoring malformed message.')
-                self._gad_connection.send_simulation_status('RUNNING', 'The message received did not have a command key. Ignoring malformed message.', 'WARN')
+                self._gad_connection.send_simulation_status('RUNNING',
+                                                            'The message received did not have a command key. Ignoring '
+                                                            'malformed message.',
+                                                            'WARN')
         except Exception as e:
             message_str = f'Error in processing command message:\n{msg}.\nError:\n{traceback.format_exc()}'
             log.error(message_str)
@@ -498,9 +535,8 @@ class HelicsGossBridge(object):
             if federate_state == 2:
                 helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
             self._close_helics_connection()
-            
-    
-    
+
+
     def on_error(self, headers, message):
         message_str = 'Error in HelicsGossBridge: '+str(message)
         log.error(message_str)
@@ -508,56 +544,49 @@ class HelicsGossBridge(object):
         self._stop_simulation = True
         helics.helicsFederateGlobalError(self._helics_federate, 1, message_str)
         self._close_helics_connection()
-        
-        
+
+
     def on_disconnected(self):
         self._stop_simulation = True
-        helics.helicsFederateGlobalError(self._helics_federate, 1, "HelicsGossBridge instance lost connection to GOSS bus.")
+        helics.helicsFederateGlobalError(self._helics_federate,
+                                         1,
+                                         "HelicsGossBridge instance lost connection to GOSS bus.")
         self._close_helics_connection()
-            
+
+
     def run_simulation(self):
-        simulation_output_topic = topics.simulation_output_topic(self._simulation_id)
-        run_realtime = self._simulation_request.get("simulation_config",{}).get("run_realtime",1)
-        simulation_length = self._simulation_request.get("simulation_config",{}).get("duration",0)
-        simulation_start = self._simulation_request.get("simulation_config",{}).get("start_time",0)
-        # New archiving variables set here
-        # Once the simulation_config is sent directly from the ui, then we can use these,
-        # Until then you can change the archive to have a default value for either the
-        # archive or the db_archive.  These will be off by default as is the current
-        # setup.
-        make_db_archive = self._simulation_request.get("simulation_config",{}).get("make_db_archive", False)
-        make_archive = self._simulation_request.get("simulation_config",{}).get("make_archive", False)
-        only_archive = self._simulation_request.get("simulation_config",{}).get("only_archive", False)
-        archive_db_file = None
-        if make_db_archive:
-            archive_db_file = f"/tmp/gridappsd_tmp/{self._simulation_id}/archive.sqlite"
-        archive_file = None
-        if make_archive:
-            archive_file = f"/tmp/gridappsd_tmp/{self._simulation_id}/archive.tar.gz"
-        targz_file = None
+        message_str = 'Running simulation for simulation_request:' \
+                      f'{json.dumps(self._simulation_request, indent=4, sort_keys=True)}'
+        log.debug(message_str)
+        self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
         try:
-            if archive_file:
-                targz_file = gzip.open(archive_file, "wb")
-            if archive_db_file:
-                create_db_connection(archive_db_file)
             message = {}
             message['command'] = 'nextTimeStep'
-            simulation_run_time_start = time.perf_counter()
-            for current_time in range(simulation_length):
+            simulation_run_time_start = time.perf_counter_ns()
+            for current_time in range(0, self.simulation_length, self.simulation_interval):
                 if self._stop_simulation == True:
                     break
                 begin_time_step = time.perf_counter()
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
                 if federate_state == 4:
-                    self._gad_connection.send_simulation_status("ERROR",f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.", "ERROR")
-                    log.error(f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.")
-                    raise RuntimeError(f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state for some unknown reason.")
+                    self._gad_connection.send_simulation_status("ERROR",
+                                                                "The HELICS co-simulation for simulation "
+                                                                f"{self._simulation_id} entered an error state for "
+                                                                "some unknown reason.",
+                                                                "ERROR")
+                    log.error(f"The HELICS co-simulation for simulation {self._simulation_id} entered an error state "
+                              "for some unknown reason.")
+                    raise RuntimeError(f"The HELICS co-simulation for simulation {self._simulation_id} entered an "
+                                       "error state for some unknown reason.")
                 self._simulation_time = current_time
                 if self._stop_simulation == True:
                     if federate_state == 2:
-                        helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
+                        helics.helicsFederateGlobalError(self._helics_federate,
+                                                         1,
+                                                         "Stopping the simulation prematurely at operator's request!")
                     break
-                self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}", json.dumps({"timestamp": current_time + simulation_start}))
+                self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}",
+                                          json.dumps({"timestamp": current_time + self.simulation_start}))
                 #forward messages from HELICS to GOSS
                 if self._filter_all_measurements == False:
                     message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -573,13 +602,14 @@ class HelicsGossBridge(object):
                 while not self._simulation_command_queue.empty():
                     self._publish_to_helics_bus(self._simulation_command_queue.get(), self._command_filter)
                 self._done_with_time_step(current_time) #current_time is incrementing integer 0 ,1, 2.... representing seconds
-                message_str = 'incrementing to '+str(current_time + 1)
+                message_str = 'incrementing to '+str(current_time + self.simulation_interval)
                 log.debug(message_str)
                 self._gad_connection.send_simulation_status('RUNNING', message_str, 'INFO')
-                if run_realtime == True:
+                if self.run_realtime == True:
                     sleep_time = 1 - time.perf_counter() + begin_time_step
                     if sleep_time < 0:
-                        warn_message = f"Simulation {self._simulation_id} is running slower than real time!!!. Time step took {1.0 - sleep_time} seconds to execute"
+                        warn_message = f"Simulation {self._simulation_id} is running slower than real time!!!. Time " \
+                                       f"step took {1.0 - sleep_time} seconds to execute"
                         log.warning(warn_message)
                         self._gad_connection.send_simulation_status('RUNNING', warn_message, 'WARN')
                     else:
@@ -589,10 +619,11 @@ class HelicsGossBridge(object):
                         time.sleep(sleep_time)
             if not self._stop_simulation:
                 federate_state = helics.helicsFederateGetState(self._helics_federate)
-                self._simulation_time = current_time + 1
+                self._simulation_time = current_time + self.simulation_interval
             else:
                 self._simulation_time = current_time
-            self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}", json.dumps({"timestamp": self._simulation_time + simulation_start}))
+            self._gad_connection.send(f"goss.gridappsd.cosim.timestamp.{self._simulation_id}",
+                                      json.dumps({"timestamp": self._simulation_time + self.simulation_start}))
             #forward messages from HELICS to GOSS
             if self._filter_all_measurements == False:
                 message['output'] = self._get_helics_bus_messages(self._measurement_filter)
@@ -603,12 +634,19 @@ class HelicsGossBridge(object):
                     helics.helicsFederateFinalize(self._helics_federate)
                 self._close_helics_connection()
             self._simulation_finished = True
-            log.debug(f"Simulation finished in {time.perf_counter() - simulation_run_time_start} seconds.")
+            logMsg = f"Simulation {self._simulation_id} finished in "
+            logMsg += f"{(time.perf_counter_ns() - simulation_run_time_start) * 1.0e-9} seconds."
+            log.debug(logMsg)
             message['command'] = 'simulationFinished'
             del message['output']
-            self._gad_connection.send(self._simulation_manager_input_topic+"."+self._simulation_id, json.dumps(message))
-            log.info(f'Simulation {self._simulation_id} has finished.')
-            self._gad_connection.send_simulation_status('COMPLETE', f'Simulation {self._simulation_id} has finished.', 'INFO')
+            self._gad_connection.send(f"{self._simulation_manager_input_topic}.{self._simulation_id}",
+                                      json.dumps(message))
+            self._gad_connection.send_simulation_status('COMPLETE',
+                                                        logMsg,
+                                                        'INFO')
+            self._gad_connection.send_simulation_status('COMPLETE',
+                                                        f"Simulation {self._simulation_id} complete",
+                                                        'INFO')
         except Exception as e:
             message_str = f'Error in run simulation {traceback.format_exc()}'
             log.error(message_str)
@@ -619,28 +657,39 @@ class HelicsGossBridge(object):
             self._close_helics_connection()
         finally:
             if self._stop_simulation:
-                helics.helicsFederateGlobalError(self._helics_federate, 1, "Stopping the simulation prematurely at operator's request!")
+                helics.helicsFederateGlobalError(self._helics_federate,
+                                                 1,
+                                                 "Stopping the simulation prematurely at operator's request!")
                 self._close_helics_connection()
-            if targz_file:
-                targz_file.close()
-    
-            
+
+
     def _register_with_goss(self):
         try:
             self._gad_connection = GridAPPSD(self._simulation_id)
             log.debug("Successfully registered with the GridAPPS-D platform.")
-            self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
+            deconfliction_service_running = False
+            for serviceDict in self._simulation_request.get("service_configs", []):
+                if serviceDict.get("id", "") == "deconfliction-pipeline":
+                    self._gad_connection.subscribe(
+                        topics.service_output_topic('gridappsd-app-deconfliction-service', self._simulation_id),
+                        self.on_message
+                    )
+                    deconfliction_service_running = True
+                    break
+            if not deconfliction_service_running:
+                self._gad_connection.subscribe(topics.simulation_input_topic(self._simulation_id), self.on_message)
             self._gad_connection.subscribe("/topic/goss.gridappsd.cosim.input."+self._simulation_id, self.on_message)
         except Exception as e:
             log.error("An error occurred when trying to register with the GridAPPS-D platform!", exc_info=True)
-            
-            
+
+
     def _register_with_helics(self):
         try:
             self._helics_configuration = {
                 "name": f"HELICS_GOSS_Bridge_{self._simulation_id}",
-                "period": 1.0,
-                "log_level": 7,
+                "period": float(self._simulation_request.get("simulation_config", {}).get("interval", 1.0)),
+                "coreinit": f"-logfile HELICS_GOSS_Bridge_{self._simulation_id}.log",
+                "log_level": "DATA",
                 "broker": f"127.0.0.1:{self._broker_port}",
                 "endpoints": [
                     {
@@ -665,18 +714,22 @@ class HelicsGossBridge(object):
             err_msg = f"An error occurred when trying to register with the HELICS broker!{traceback.format_exc()}"
             log.error(err_msg, exc_info=True)
             self._gad_connection.send_simulation_status("ERROR", err_msg, "ERROR")
-    
-    
+
+
     def _close_helics_connection(self):
-        helics.helicsFederateFree(self._helics_federate)
+        helics.helicsFederateDisconnect(self._helics_federate)
         helics.helicsCloseLibrary()
-    
-    
+
+
     def _get_gld_object_name(self, object_mrid):
         prefix = ""
-        stored_object = self._object_mrid_to_name.get(object_mrid)
+        for k in self._object_mrid_to_name.keys():
+            stored_object = self._object_mrid_to_name[k].get(object_mrid)
+            if stored_object is not None:
+                break
         if stored_object == None:
-            cim_object_dict = self._gad_connection.query_object_dictionary(model_id=self._model_mrid, object_id=object_mrid)
+            cim_object_dict = self._gad_connection.query_object_dictionary(model_id=self._model_mrid,
+                                                                           object_id=object_mrid)
             object_base_name = (cim_object_dict.get("data",[]))[0].get("IdentifiedObject.name","")
             object_type = (cim_object_dict.get("data",[]))[0].get("type","")
             if object_type == "LinearShuntCompensator":
@@ -688,17 +741,17 @@ class HelicsGossBridge(object):
             elif object_type in ["LoadBreakSwitch","Recloser","Breaker"]:
                 prefix = "sw_"
             elif object_type == "RatioTapChanger":
-                prefix = "reg_"
+                prefix = "xf_"
         else:
             object_base_name = stored_object.get("name","")
             prefix = stored_object.get("prefix","")
         object_name = prefix + object_base_name
         return object_name
 
-    
+
     def _publish_to_helics_bus(self, goss_message, command_filter):
         """publish a message received from the GOSS bus to the HELICS bus.
-    
+
         Function arguments:
             goss_message -- Type: string. Description: The message from the GOSS bus
                 as a json string. It must not be an empty string. Default: None.
@@ -711,7 +764,7 @@ class HelicsGossBridge(object):
             ValueError()
         """
         publish_to_helics_bus_start = time.perf_counter()
-        message_str = 'translating following message for HELICS simulation '+str(self._simulation_id)+' '+str(goss_message)
+        message_str = f'translating following message for HELICS simulation {self._simulation_id} {goss_message}'
         log.debug(message_str)
         self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
         if self._simulation_id == None or self._simulation_id == '' or not isinstance(self._simulation_id, str):
@@ -737,10 +790,13 @@ class HelicsGossBridge(object):
                     + f'\ngoss_message = {goss_message}')
             helics_input_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_input")
             helics_input_message = {}
-            helics_input_message["external_event_handler"] = {}
+            model_faults = {}
+            for k in self._object_mrid_to_name.keys():
+                helics_input_message[k] = {"external_event_handler": {}}
+                model_faults[k] = []
             forward_differences_list = test_goss_message_format["message"]["forward_differences"]
             reverse_differences_list = test_goss_message_format["message"]["reverse_differences"]
-            fault_list = []
+            modelMrid = None
             for x in forward_differences_list:
                 command_pair = {
                     "objectMRID": x.get("object", ""),
@@ -748,16 +804,25 @@ class HelicsGossBridge(object):
                 }
                 if x.get("attribute", "") != "IdentifiedObject.Fault":
                     if command_pair not in command_filter:
-                        object_name = (self._object_mrid_to_name.get(x.get("object",""),{})).get("name")
-                        object_phases = (self._object_mrid_to_name.get(x.get("object",""),{})).get("phases")
-                        object_total_phases = (self._object_mrid_to_name.get(x.get("object",""),{})).get("total_phases")
-                        object_type = (self._object_mrid_to_name.get(x.get("object",""),{})).get("type")
-                        object_name_prefix = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("prefix")
+                        for k in self._object_mrid_to_name.keys():
+                            object_name = (self._object_mrid_to_name[k].get(x.get("object",""),{})).get("name")
+                            object_phases = (self._object_mrid_to_name[k].get(x.get("object",""),{})).get("phases")
+                            object_total_phases = (self._object_mrid_to_name[k].get(x.get("object",""),{})).get("total_phases")
+                            object_type = (self._object_mrid_to_name[k].get(x.get("object",""),{})).get("type")
+                            if object_name is not None:
+                                modelMrid = k
+                                break
+                        object_name_prefix = ((self._difference_attribute_map.get(x.get("attribute", ""),
+                                                                                  {})).get(object_type,
+                                                                                           {})).get("prefix")
                         cim_attribute = x.get("attribute")
-                        object_property_list = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("property")
-                        phase_in_property = ((self._difference_attribute_map.get(x.get("attribute",""),{})).get(object_type,{})).get("phase_sensitive",False)
+                        object_property_list = ((self._difference_attribute_map.get(x.get("attribute", ""),
+                                                                                    {})).get(object_type,
+                                                                                             {})).get("property")
                         if cim_attribute != "Ochre.command":
-                            if object_name == None or object_phases == None or object_total_phases == None or object_type == None or object_name_prefix == None or cim_attribute == None or object_property_list == None:
+                            if object_name == None or object_phases == None or object_total_phases == None \
+                                    or object_type == None or object_name_prefix == None or cim_attribute == None \
+                                    or object_property_list == None:
                                 parsed_result = {
                                     "object_name":object_name,
                                     "object_phases":object_phases,
@@ -767,94 +832,121 @@ class HelicsGossBridge(object):
                                     "cim_attribute":cim_attribute,
                                     "object_property_list":object_property_list
                                 }
-                                raise RuntimeError(f"Forward difference command cannot be parsed correctly one or more of attributes needed was None.\ndifference:{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:{json.dumps(parsed_result,indent=4,sort_keys=True)}")
-                            if (object_name_prefix + object_name) not in helics_input_message.keys():
-                                helics_input_message[object_name_prefix + object_name] = {}
+                                raise RuntimeError("Forward difference command cannot be parsed correctly one or more "
+                                                   "of attributes needed was None.\ndifference:"
+                                                   f"{json.dumps(x,indent=4,sort_keys=True)}\nparsed result:"
+                                                   f"{json.dumps(parsed_result,indent=4,sort_keys=True)}")
+                            if (object_name_prefix + object_name) not in helics_input_message[modelMrid].keys():
+                                helics_input_message[modelMrid][object_name_prefix + object_name] = {}
                             if cim_attribute == "RegulatingControl.mode":
                                 try:
                                     val = RegulatingControlModeKind(int(x.get("value")))
                                 except:
-                                    val = RegulatingControlModeKind[x.get("value","").replace("RegulatingControlModeKind.","",1)]
+                                    val = RegulatingControlModeKind[x.get("value",
+                                                                          "").replace("RegulatingControlModeKind.",
+                                                                                      "",
+                                                                                      1)]
                                 if val == RegulatingControlModeKind.voltage:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VOLT"
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                        "VOLT"
                                 elif val == RegulatingControlModeKind.reactivePower:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "VAR"
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                        "VAR"
                                 elif val == RegulatingControlModeKind.currentFlow:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "CURRENT"
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                        "CURRENT"
                                 else:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
-                                    log.warning(f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}")
-                                    self._gad_connection.send_simulation_status("RUNNING", f"Unsupported capacitor control mode requested. The only supported control modes for capacitors are RegulatingControlModeKind.voltage: 0, RegulatingControlModeKind.reactivePower: 2, and RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to MANUAL.\nThe invalid control mode was {x.get('value')}","WARN")
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                        "MANUAL"
+                                    warnStr = "Unsupported capacitor control mode requested. The only supported " \
+                                              "control modes for capacitors are RegulatingControlModeKind.voltage: " \
+                                              "0, RegulatingControlModeKind.reactivePower: 2, and " \
+                                              "RegulatingControlModeKind.currentFlow: 3.\nSetting control mode to " \
+                                              f"MANUAL.\nThe invalid control mode was {x.get('value')}"
+                                    log.warning(warnStr)
+                                    self._gad_connection.send_simulation_status("RUNNING", warnStr, "WARN")
                             elif cim_attribute == "RegulatingControl.enabled":
                                 val = x.get("value")
                                 if val == False:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0]] = "MANUAL"
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                        "MANUAL"
                             elif cim_attribute == "RegulatingControl.targetDeadband":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "RegulatingControl.targetValue":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "RotatingMachine.p":
                                 for y in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "RotatingMachine.q":
                                 for y in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))/3.0
                             elif cim_attribute == "ShuntCompensator.aVRDelay":
                                 for y in self._difference_attribute_map[cim_attribute][object_type]["property"]:
-                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "ShuntCompensator.sections":
                                 if int(x.get("value")) == 1:
                                     val = "CLOSED"
                                 else:
                                     val = "OPEN"
                                 for y in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = f"{val}"
                             elif cim_attribute == "Switch.open":
                                 if int(x.get("value")) == 1:
                                     val = "OPEN"
                                 else:
                                     val = "CLOSED"
-                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                                helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                    f"{val}"
                             elif cim_attribute == "TapChanger.initialDelay":
                                 for y in object_property_list:
-                                    helics_input_message[object_name_prefix + object_name][y] = float(x.get("value"))
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][y] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.step":
                                 for y in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = int(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropCompensation":
                                 if int(x.get("value")) == 1:
                                     val = "LINE_DROP_COMP"
                                 else:
                                     val = "MANUAL"
-                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = f"{val}"
+                                helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                    f"{val}"
                             elif cim_attribute == "TapChanger.lineDropR":
                                 for y in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "TapChanger.lineDropX":
                                 for y in object_phases:
-                                  helics_input_message[object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
+                                    if y != "N":
+                                        helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format(y)] = float(x.get("value"))
                             elif cim_attribute == "PowerElectronicsConnection.p":
-                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                                helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                    float(x.get("value"))
                             elif cim_attribute == "PowerElectronicsConnection.q":
-                                helics_input_message[object_name_prefix + object_name][object_property_list[0]] = float(x.get("value"))
+                                helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0]] = \
+                                    float(x.get("value"))
                             elif cim_attribute == "EnergyConsumer.p":
                                 phase_count = len(object_phases)
                                 if "s1" in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format("1")] = float(x.get("value"))/2.0
                                 if "s2" in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format("2")] = float(x.get("value"))/2.0
                                 if "A" in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format("A")] = float(x.get("value"))/phase_count
                                 if "B" in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format("B")] = float(x.get("value"))/phase_count
                                 if "C" in object_phases:
-                                    helics_input_message[object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
-                            
+                                    helics_input_message[modelMrid][object_name_prefix + object_name][object_property_list[0].format("C")] = float(x.get("value"))/phase_count
                             else:
-                                log.warning(f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.")
-                                self._gad_connection.send_simulation_status("RUNNING", f"Attribute, {cim_attribute}, is not a supported attribute in the simulator at this current time. ignoring difference.", "WARN")
+                                warnStr = f"Attribute, {cim_attribute}, is not a supported attribute in the " \
+                                          "simulator at this current time. ignoring difference."
+                                log.warning(warnStr)
+                                self._gad_connection.send_simulation_status("RUNNING", warnStr, "WARN")
                         else:
                             if federate_state == 2:
                                 val = x.get("value")
@@ -862,8 +954,9 @@ class HelicsGossBridge(object):
                                 default_destination = helics.helicsEndpointGetDefaultDestination(helics_input_endpoint)
                                 ochre_destination = f"{house_id}/command_input"
                                 helics.helicsEndpointSetDefaultDestination(helics_input_endpoint, ochre_destination)
-                                log.info(f"Sending the following message to {ochre_destination}. {val}")
-                                self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to {ochre_destination}. {val}","INFO")
+                                infoStr = f"Sending the following message to {ochre_destination}. {val}"
+                                log.info(infoStr)
+                                self._gad_connection.send_simulation_status("RUNNING", infoStr,"INFO")
                                 helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
                                 helics.helicsMessageSetString(helics_msg, val)
                                 helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
@@ -872,6 +965,10 @@ class HelicsGossBridge(object):
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object","")
                     fault_object_mrid = (x.get("value",{})).get("ObjectMRID","")
+                    modelMrid = _getEquipmentContainer(fault_object_mrid)
+                    if modelMrid is None:
+                        raise RuntimeError(f"The cim object identified by mRID {fault_object_mrid} has no equipment "
+                                           "container defined!")
                     fault_val_dict["fault_object"] = self._get_gld_object_name(fault_object_mrid)
                     phases = (x.get("value",{})).get("PhaseCode","")
                     fault_kind_type = (x.get("value",{})).get("PhaseConnectedFaultKind","")
@@ -896,41 +993,52 @@ class HelicsGossBridge(object):
                         else:
                             fault_type = f"OC-{phases}"
                     fault_val_dict["type"] = fault_type
-                    fault_list.append(fault_val_dict)
+                    model_faults[modelMrid].append(fault_val_dict)
             for x in reverse_differences_list:
                 if x.get("attribute", "") == "IdentifiedObject.Fault":
                     fault_val_dict = {}
                     fault_val_dict["name"] = x.get("object", "")
-                    fault_list.append(fault_val_dict)
-            if len(fault_list) != 0:
-                helics_input_message["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
-            if helics_input_message["external_event_handler"] == {}:
-                del helics_input_message["external_event_handler"]
-            goss_message_converted = json.dumps(helics_input_message, indent=4, sort_keys=True)
-            log.info(f"Sending the following message to the simulator. {goss_message_converted}")
-            self._gad_connection.send_simulation_status("RUNNING", f"Sending the following message to the simulator. {goss_message_converted}","INFO")
-            if federate_state == 2 and helics_input_message != {}:
-                helics_msg = helics.helicsFederateCreateMessageObject(self._helics_federate)
-                helics.helicsMessageSetString(helics_msg, goss_message_converted)
-                helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
-            publish_to_helics_bus_finish = time.perf_counter()
-            publish_to_helics_profile = {
-                "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
-                "time_messege_processing": publish_to_helics_bus_finish - publish_to_helics_bus_start,
-                "total_time": publish_to_helics_bus_finish - test_goss_message_format.get("time_received",publish_to_helics_bus_start)
-            }
-            log.debug(f"Message Processing Profile: {json.dumps(publish_to_helics_profile, indent=4, sort_keys=True)}")
+                    objMrid = x.get("value", {}).get("ObjectMRID", "")
+                    modelMrid = _getEquipmentContainer(objMrid)
+                    model_faults[modelMrid].append(fault_val_dict)
+            for modelId, fault_list in model_faults.items():
+                if len(fault_list) != 0:
+                    helics_input_message[modelId]["external_event_handler"]["external_fault_event"] = json.dumps(fault_list)
+                if helics_input_message[modelId]["external_event_handler"] == {}:
+                    del helics_input_message[modelId]["external_event_handler"]
+            for modelId in helics_input_message.keys():
+                if len(helics_input_message[modelId]) > 0:
+                    goss_message_converted = json.dumps(helics_input_message[modelId], indent=4, sort_keys=True)
+                    infoStr = f"Sending the following message to federate {modelId}: {goss_message_converted}"
+                    log.info(infoStr)
+                    self._gad_connection.send_simulation_status("RUNNING", infoStr, "INFO")
+                    if federate_state == 2 and helics_input_message != {}:
+                        helics_msg = helics.helicsEndpointCreateMessage(helics_input_endpoint)
+                        helics.helicsMessageSetDestination(helics_msg, f"{modelId}/helics_input")
+                        helics.helicsMessageSetString(helics_msg, goss_message_converted)
+                        helics.helicsEndpointSendMessage(helics_input_endpoint, helics_msg)
+                        helics.helicsMessageFree(helics_msg)
+                    publish_to_helics_bus_finish = time.perf_counter()
+                    publish_to_helics_profile = {
+                        "time_between_receipt_of_message_and_processing": publish_to_helics_bus_start \
+                            - test_goss_message_format.get("time_received",publish_to_helics_bus_start),
+                        "time_messege_processing": publish_to_helics_bus_finish - publish_to_helics_bus_start,
+                        "total_time": publish_to_helics_bus_finish - test_goss_message_format.get("time_received",
+                                                                                                publish_to_helics_bus_start)
+                    }
+                    log.debug(f"Message Processing Profile: {json.dumps(publish_to_helics_profile, indent=4, sort_keys=True)}")
         except ValueError as ve:
             raise ValueError(ve)
         except Exception as ex:
-            err_msg = f"An error occured while trying to translate the update message received\n{traceback.format_exc()}"
+            err_msg = "An error occured while trying to translate the update message received\n" \
+                      f"{traceback.format_exc()}"
             self._gad_connection.send_simulation_status("ERROR",err_msg,"ERROR")
             raise RuntimeError(err_msg)
-        
-    
+
+
     def _get_helics_bus_messages(self, measurement_filter):
         """ retrieve the measurment dictionary from the HELICS message bus
-    
+
         Function arguments:
             measurement_filter -- Type: list. Description: The list of
                 measurement id's to filter from the simulator output.
@@ -945,6 +1053,7 @@ class HelicsGossBridge(object):
         objectName = ""
         objectType = ""
         propertyValue = ""
+        phases = ""
         get_helics_bus_messages_start = time.perf_counter()
         try:
             helics_message = None
@@ -954,14 +1063,14 @@ class HelicsGossBridge(object):
                     + f'simulation_id = {self._simulation_id}')
             helics_output_endpoint = helics.helicsFederateGetEndpoint(self._helics_federate, "helics_output")
             has_message = helics.helicsEndpointHasMessage(helics_output_endpoint)
-            pending_message_count = helics.helicsEndpointPendingMessagesCount(helics_output_endpoint)
+            pending_message_count = helics.helicsEndpointPendingMessageCount(helics_output_endpoint)
             if has_message:
                 message_str = f'helics_output has {pending_message_count} messages'
             else:
                 message_str = 'helics_output has no messages'
             log.debug(message_str)
             self._gad_connection.send_simulation_status('RUNNING', message_str, 'DEBUG')
-            
+
             cim_output = {}
             if has_message:
                 t_now = datetime.utcnow()
@@ -974,43 +1083,47 @@ class HelicsGossBridge(object):
                     }
                 }
                 for x in range(pending_message_count):
-                    helics_message = helics.helicsEndpointGetMessageObject(helics_output_endpoint)
+                    helics_message = helics.helicsEndpointGetMessage(helics_output_endpoint)
                     helics_output = helics.helicsMessageGetString(helics_message)
                     helics_message_source = helics.helicsMessageGetSource(helics_message)
                     if "status" in helics_message_source:
-                        ochre_simulation_output_topic = f"/topic/goss.gridappsd.simulation.ochre.output.{self._simulation_id}"
+                        ochre_simulation_output_topic = "/topic/goss.gridappsd.simulation.ochre.output." \
+                                                        f"{self._simulation_id}"
                         log.debug(f"ochre measurement message recieved at timestep {current_time}.")
                         self._gad_connection.send(ochre_simulation_output_topic, helics_output)
                     else:
+                        federateMrid = helics_message_source.split("/")[0]
                         helics_output_dict = json.loads(helics_output)
-                        
-                        sim_dict = helics_output_dict.get(self._simulation_id, None)
+
+                        sim_dict = helics_output_dict.get(federateMrid, None)
                         if sim_dict == None:
                             sim_dict = helics_output_dict
                         simulation_time = int(sim_dict.get("globals",{}).get("clock", 0))
                         if simulation_time != 0:
                             cim_measurements_dict["message"]["timestamp"] = simulation_time
-                        for x in self._object_property_to_measurement_id.keys():
+                        for x in self._object_property_to_measurement_id[federateMrid].keys():
                             objectName = x
                             gld_properties_dict = sim_dict.get(x,None)
                             if gld_properties_dict == None:
-                                err_msg = "All measurements for object {} are missing from the simulator output.".format(x)
+                                err_msg = f"All measurements for object {x} are missing from the simulator output."
                                 log.warning(err_msg)
                                 self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
                             else:
-                                for y in self._object_property_to_measurement_id.get(x,[]):
+                                for y in self._object_property_to_measurement_id[federateMrid].get(x,[]):
                                     measurement = {}
                                     property_name = y["property"]
                                     propertyName = property_name
                                     if y["measurement_mrid"] not in measurement_filter:
                                         measurement["measurement_mrid"] = y["measurement_mrid"]
                                         phases = y["phases"]
+                                        # conducting_equipment_type = type(y["power_system_resource"]).__name__
                                         conducting_equipment_type_str = y["conducting_equipment_type"]
                                         prop_val_str = gld_properties_dict.get(property_name, None)
                                         propertyValue = prop_val_str
                                         objectType = conducting_equipment_type_str
                                         if prop_val_str == None:
-                                            err_msg = f"{property_name} measurement for object {x} is missing from the simulator output."
+                                            err_msg = f"{property_name} measurement for object {x} is missing from " \
+                                                      "the simulator output."
                                             log.warning(err_msg)
                                             self._gad_connection.send_simulation_status('RUNNING', err_msg, 'WARN')
                                         else:
@@ -1045,7 +1158,9 @@ class HelicsGossBridge(object):
                                                     else:
                                                         measurement["value"] = 1
                                             elif conducting_equipment_type in ["PowerTransformer","TransformerTank"]:
-                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                                if property_name in ["power_in_"+phases,
+                                                                     "voltage_"+phases,
+                                                                     "current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
                                                     ang_deg = math.degrees(ang_rad)
@@ -1053,7 +1168,10 @@ class HelicsGossBridge(object):
                                                     measurement["angle"] = ang_deg
                                                 else:
                                                     measurement["value"] = int(val_str)
-                                            elif conducting_equipment_type in ["ACLineSegment", "EnergyConsumer","PowerElectronicsConnection","SynchronousMachine"]:
+                                            elif conducting_equipment_type in ["ACLineSegment",
+                                                                               "EnergyConsumer",
+                                                                               "PowerElectronicsConnection",
+                                                                               "SynchronousMachine"]:
                                                 if property_name == "state_of_charge":
                                                     measurement["value"] = float(val_str)*100.0
                                                 else:
@@ -1062,8 +1180,12 @@ class HelicsGossBridge(object):
                                                     ang_deg = math.degrees(ang_rad)
                                                     measurement["magnitude"] = mag
                                                     measurement["angle"] = ang_deg
-                                            elif conducting_equipment_type in ["LoadBreakSwitch", "Recloser", "Breaker"]:
-                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                            elif conducting_equipment_type in ["LoadBreakSwitch",
+                                                                               "Recloser",
+                                                                               "Breaker"]:
+                                                if property_name in ["power_in_"+phases,
+                                                                     "voltage_"+phases,
+                                                                     "current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
                                                     ang_deg = math.degrees(ang_rad)
@@ -1075,7 +1197,9 @@ class HelicsGossBridge(object):
                                                     else:
                                                         measurement["value"] = 1
                                             elif conducting_equipment_type == "RatioTapChanger":
-                                                if property_name in ["power_in_"+phases,"voltage_"+phases,"current_in_"+phases]:
+                                                if property_name in ["power_in_"+phases,
+                                                                     "voltage_"+phases,
+                                                                     "current_in_"+phases]:
                                                     val = complex(val_str)
                                                     (mag,ang_rad) = cmath.polar(val)
                                                     ang_deg = math.degrees(ang_rad)
@@ -1084,29 +1208,39 @@ class HelicsGossBridge(object):
                                                 else:
                                                     measurement["value"] = int(val_str)
                                             else:
-                                                log.warning(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
-                                                self._gad_connection.send_simulation_status('RUNNING', conducting_equipment_type+" not recognized", 'WARN')
-                                                raise RuntimeError(f"{conducting_equipment_type} is not a recognized conducting equipment type.")
+                                                warnStr = f"{conducting_equipment_type} is not a recognized " \
+                                                          "conducting equipment type."
+                                                log.warning(warnStr)
+                                                self._gad_connection.send_simulation_status('RUNNING', warnStr, 'WARN')
+                                                raise RuntimeError(warnStr)
                                                 # Should it raise runtime?
                                             # change to be a dictionary rather than an array
                                             cim_measurements_dict['message']["measurements"][measurement["measurement_mrid"]] = measurement
-                        cim_output = cim_measurements_dict
-                        log.debug(f"measurement message recieved at timestep {current_time}.")
-                        self._gad_connection.send(topics.simulation_output_topic(self._simulation_id), json.dumps(cim_output, indent=4, sort_keys=True))
-            log.debug(f"Message from simulation processing time: {time.perf_counter() - get_helics_bus_messages_start}.")
+                cim_output = cim_measurements_dict
+                log.debug(f"measurement message recieved at timestep {current_time}.")
+                self._gad_connection.send(topics.simulation_output_topic(self._simulation_id),
+                                          json.dumps(cim_output, indent=4, sort_keys=True))
+                if self.pause_after_measurements:
+                    self._pause_simulation = True
+                    debugStr = "Simulation paused automatically after publishing measurements."
+                    log.debug(debugStr)
+                    self._gad_connection.send_simulation_status('PAUSED', debugStr, 'INFO')
+            log.debug("Message from simulation processing time: "
+                      f"{time.perf_counter() - get_helics_bus_messages_start}.")
             return {}
         except ValueError as ve:
-            raise RuntimeError(f"{str(ve)}.\nObject Name: {objectName}\nObject Type: {objectType}\nProperty Name: {propertyName}\n Property Value{propertyValue}")
+            raise RuntimeError(f"{str(ve)}.\nObject Name: {objectName}\nObject Type: {objectType}\nProperty Name: "
+                               f"{propertyName}\nProperty Value: {propertyValue}\nCIM Measurement Phases: {phases}")
         except Exception as e:
             message_str = f'Error on get HELICS Bus Messages for {self._simulation_id} {traceback.format_exc()}'
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
             return {}
-    
-    
+
+
     def _done_with_time_step(self, current_time):
         """tell the helics_broker to move to the next time step.
-    
+
         Function arguments:
             current_time -- Type: integer. Description: the current time in seconds.
                 It must not be none.
@@ -1122,7 +1256,7 @@ class HelicsGossBridge(object):
                 raise ValueError(
                     'current_time must be an integer.\n'
                     + f'current_time = {current_time}')
-            time_request = float(current_time + 1)
+            time_request = float(current_time + self.simulation_interval)
             time_approved = helics.helicsFederateRequestTime(self._helics_federate, time_request)
             if time_approved != time_request:
                 raise RuntimeError(
@@ -1133,268 +1267,644 @@ class HelicsGossBridge(object):
             message_str = 'Error in HELICS time request '+str(traceback.format_exc())
             log.error(message_str)
             self._gad_connection.send_simulation_status('ERROR', message_str, 'ERROR')
-        
-            
-    def _create_cim_object_map(self,map_file=None):
-        if map_file == None:
-            map_file=f"/tmp/gridappsd_tmp/{self._simulation_id}/model_dict.json"
-        try:
-            with open(map_file, "r", encoding="utf-8") as file_input_stream:
-                file_dict = json.load(file_input_stream)
-            feeders = file_dict.get("feeders",[])
-            self._object_property_to_measurement_id = {}
-            self._object_mrid_to_name = {}
-            for x in feeders:
-                self._model_mrid = x.get("mRID","")
-                measurements = x.get("measurements",[])
-                capacitors = x.get("capacitors",[])
-                regulators = x.get("regulators",[])
-                switches = x.get("switches",[])
-                batteries = x.get("batteries", [])
-                solarpanels = x.get("solarpanels",[])
-                synchronousMachines = x.get("synchronousmachines", [])
-                breakers = x.get("breakers", [])
-                reclosers = x.get("reclosers", [])
-                energy_consumers = x.get("energyconsumers", [])
-                #TODO: add more object types to handle
-                for y in measurements:
-                    measurement_type = y.get("measurementType")
-                    phases = y.get("phases")
-                    if phases == "s1":
-                        phases = "1"
-                    elif phases == "s2":
-                        phases = "2"
-                    conducting_equipment_type = y.get("name")
-                    conducting_equipment_name = y.get("SimObject")
-                    connectivity_node = y.get("ConnectivityNode")
-                    measurement_mrid = y.get("mRID")
-                    if "LinearShuntCompensator" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "shunt_" + phases;
-                        elif measurement_type == "Pos":
-                            object_name = conducting_equipment_name;
-                            property_name = "switch" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = conducting_equipment_name;
-                            property_name = "voltage_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\nmeasurement_type = {measurement_type}.")
-                    elif "PowerTransformer" in conducting_equipment_type or "TransformerTank" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "power_in_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            property_name = "current_in_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerTransformer and TransformerTank are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
-                    elif "RatioTapChanger" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "power_in_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "Pos":
-                            object_name = conducting_equipment_name;
-                            property_name = "tap_" + phases;
-                        elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            property_name = "current_in_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\nmeasurement_type = {measurement_type}.")
-                    elif "ACLineSegment" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            if phases == "1":
-                                property_name = "power_in_A"
-                            elif phases == "2":
-                                property_name = "power_in_B"
-                            else:
-                                property_name = "power_in_" + phases
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            if phases == "1":
-                                property_name = "current_in_A"
-                            elif phases == "2":
-                                property_name = "current_in_B"
-                            else:
-                                property_name = "current_in_" + phases
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for ACLineSegment are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
-                    elif "LoadBreakSwitch" in conducting_equipment_type or "Recloser" in conducting_equipment_type or "Breaker" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "power_in_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "Pos":
-                            object_name = conducting_equipment_name
-                            property_name = "status"
-                        elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            property_name = "current_in_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\nmeasurement_type = {measurement_type}.")
-                    elif "EnergyConsumer" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases;
-                            else:
-                                property_name = "measured_power_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "A":
-                            object_name = connectivity_node;
-                            property_name = "measured_current_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for EnergyConsumer are VA, A, and PNV.\nmeasurement_type = {measurement_type}.")
-                    elif "PowerElectronicsConnection" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            if phases in ["1","2"]:
-                                property_name = "indiv_measured_power_" + phases;
-                            else:
-                                property_name = "measured_power_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = conducting_equipment_name;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "A":
-                            object_name = conducting_equipment_name;
-                            property_name = "measured_current_" + phases;
-                        elif measurement_type == "SoC":
-                            object_name = conducting_equipment_name
-                            property_name = "state_of_charge"
-                        else:
-                            raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and PNV.\nmeasurement_type = %s.".format(measurement_type))
-                    elif "SynchronousMachine" in conducting_equipment_type:
-                        if measurement_type == "VA":
-                            object_name = conducting_equipment_name;
-                            property_name = "measured_power_" + phases;
-                        elif measurement_type == "PNV":
-                            object_name = connectivity_node;
-                            property_name = "voltage_" + phases;
-                        elif measurement_type == "A":
-                            object_name = connectivity_node;
-                            property_name = "measured_current_" + phases;
-                        else:
-                            raise RuntimeError(f"_create_cim_object_map: The value of measurement_type is not a valid type.\nValid types for SynchronousMachine are VA, A, and PNV.\nmeasurement_type = {measurement_type}.")
-                    else:
-                        raise RuntimeError(f"_create_cim_object_map: The value of conducting_equipment_type is not a valid type.\nValid types for conducting_equipment_type are ACLineSegment, LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, EnergyConsumer, RatioTapChanger, and PowerTransformer.\nconducting_equipment_type = {conducting_equipment_type}.")
 
-                    property_dict = {
-                        "property" : property_name,
-                        "conducting_equipment_type" : conducting_equipment_type,
-                        "measurement_mrid" : measurement_mrid,
-                        "phases" : phases
-                    }
-                    if object_name in self._object_property_to_measurement_id.keys():
-                        self._object_property_to_measurement_id[object_name].append(property_dict)
-                    else:
-                        self._object_property_to_measurement_id[object_name] = []
-                        self._object_property_to_measurement_id[object_name].append(property_dict)
-                for y in capacitors:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "capacitor",
-                        "prefix" : "cap_"
-                    }
-                for y in regulators:
-                    object_mrids = y.get("mRID",[])
-                    object_name = y.get("bankName")
-                    object_phases = y.get("endPhase",[])
-                    for z in range(len(object_mrids)):
-                        self._object_mrid_to_name[object_mrids[z]] = {
-                            "name" : object_name,
-                            "phases" : object_phases[z],
-                            "total_phases" : "".join(object_phases),
-                            "type" : "regulator",
-                            "prefix" : "reg_"
+
+    def _create_cim_object_map(self, map_file_dir: Path = None):
+        self._object_property_to_measurement_id = {}
+        self._object_mrid_to_name = {}
+
+        try:
+            for modelMrid, graphModel in self._graphModels["distributionModels"].items():
+                map_file_dir = f"/tmp/gridappsd_tmp/{self._simulation_id}/{modelMrid}/model_dict.json"
+                with open(map_file_dir, "r", encoding="utf-8") as file_input_stream:
+                    file_dict = json.load(file_input_stream)
+                feeders = file_dict.get("feeders", [])
+                self._object_property_to_measurement_id[modelMrid] = {}
+                self._object_mrid_to_name[modelMrid] = {}
+                for x in feeders:
+                    self._model_mrid = x.get("mRID","")
+                    measurements = x.get("measurements",[])
+                    capacitors = x.get("capacitors",[])
+                    regulators = x.get("regulators",[])
+                    switches = x.get("switches",[])
+                    batteries = x.get("batteries", [])
+                    solarpanels = x.get("solarpanels",[])
+                    synchronousMachines = x.get("synchronousmachines", [])
+                    breakers = x.get("breakers", [])
+                    reclosers = x.get("reclosers", [])
+                    energy_consumers = x.get("energyconsumers", [])
+                    #TODO: add more object types to handle
+                    for y in measurements:
+                        measurement_type = y.get("measurementType")
+                        phases = y.get("phases")
+                        if phases == "s1":
+                            phases = "1"
+                        elif phases == "s2":
+                            phases = "2"
+                        conducting_equipment_type = y.get("name")
+                        conducting_equipment_name = y.get("SimObject")
+                        connectivity_node = y.get("ConnectivityNode")
+                        measurement_mrid = y.get("mRID")
+                        if "LinearShuntCompensator" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "shunt_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name;
+                                property_name = "switch" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = conducting_equipment_name;
+                                property_name = "voltage_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "PowerTransformer" in conducting_equipment_type \
+                                or "TransformerTank" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for PowerTransformer and TransformerTank are VA, "
+                                                f"PNV, and A.\nmeasurement_type = {measurement_type}.")
+                        elif "RatioTapChanger" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name;
+                                property_name = "tap_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for RatioTapChanger are VA, PNV, Pos, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "ACLineSegment" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases == "1":
+                                    property_name = "power_in_A"
+                                elif phases == "2":
+                                    property_name = "power_in_B"
+                                else:
+                                    property_name = "power_in_" + phases
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                if phases == "1":
+                                    property_name = "current_in_A"
+                                elif phases == "2":
+                                    property_name = "current_in_B"
+                                else:
+                                    property_name = "current_in_" + phases
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for ACLineSegment are VA, PNV, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "LoadBreakSwitch" in conducting_equipment_type \
+                                or "Recloser" in conducting_equipment_type \
+                                or "Breaker" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "power_in_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "Pos":
+                                object_name = conducting_equipment_name
+                                property_name = "status"
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "current_in_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "EnergyConsumer" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases in ["1","2"]:
+                                    property_name = "indiv_measured_power_" + phases;
+                                else:
+                                    property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = connectivity_node;
+                                property_name = "measured_current_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for EnergyConsumer are VA, A, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        elif "PowerElectronicsConnection" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                if phases in ["1","2"]:
+                                    property_name = "indiv_measured_power_" + phases;
+                                else:
+                                    property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = conducting_equipment_name;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = conducting_equipment_name;
+                                property_name = "measured_current_" + phases;
+                            elif measurement_type == "SoC":
+                                object_name = conducting_equipment_name
+                                property_name = "state_of_charge"
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and "
+                                                f"PNV.\nmeasurement_type = {measurement_type}")
+                        elif "SynchronousMachine" in conducting_equipment_type:
+                            if measurement_type == "VA":
+                                object_name = conducting_equipment_name;
+                                property_name = "measured_power_" + phases;
+                            elif measurement_type == "PNV":
+                                object_name = connectivity_node;
+                                property_name = "voltage_" + phases;
+                            elif measurement_type == "A":
+                                object_name = connectivity_node;
+                                property_name = "measured_current_" + phases;
+                            else:
+                                raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                                                "type.\nValid types for SynchronousMachine are VA, A, and PNV.\n"
+                                                f"measurement_type = {measurement_type}.")
+                        else:
+                            raise RuntimeError("_create_cim_object_map: The value of conducting_equipment_type is not a "
+                                            "valid type.\nValid types for conducting_equipment_type are ACLineSegment, "
+                                            "LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, "
+                                            "EnergyConsumer, RatioTapChanger, and PowerTransformer.\n"
+                                            f"conducting_equipment_type = {conducting_equipment_type}.")
+
+                        property_dict = {
+                            "property" : property_name,
+                            "conducting_equipment_type" : conducting_equipment_type,
+                            "measurement_mrid" : measurement_mrid,
+                            "phases" : phases
                         }
-                for y in switches:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "switch",
-                        "prefix" : "sw_"
-                    }
-                for y in solarpanels:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "pv",
-                        "prefix" : "pv_"
-                    }
-                for y in batteries:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "battery",
-                        "prefix" : "batt_"
-                    }
-                for y in synchronousMachines:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "diesel_dg",
-                        "prefix" : "dg_"
-                    }
-                for y in breakers:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "switch",
-                        "prefix" : "sw_"
-                    }
-                for y in reclosers:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "type" : "recloser",
-                        "prefix" : "sw_"
-                    }
-                for y in energy_consumers:
-                    self._object_mrid_to_name[y.get("mRID")] = {
-                        "name" : y.get("name"),
-                        "phases" : y.get("phases"),
-                        "total_phases" : y.get("phases"),
-                        "prefix" : "ld_"
-                    }
-                    if "s1" in self._object_mrid_to_name[y.get("mRID")]["phases"] or "s2" in self._object_mrid_to_name[y.get("mRID")]["phases"]:
-                        self._object_mrid_to_name[y.get("mRID")]["type"] = "triplex_load"
-                    else:
-                        self._object_mrid_to_name[y.get("mRID")]["type"] = "load"
+                        if object_name in self._object_property_to_measurement_id[modelMrid].keys():
+                            self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                        else:
+                            self._object_property_to_measurement_id[modelMrid][object_name] = []
+                            self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                    for y in capacitors:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "capacitor",
+                            "prefix" : "cap_"
+                        }
+                    for y in regulators:
+                        object_mrids = y.get("mRIDs",[])
+                        object_name = y.get("bankName")
+                        object_phases = y.get("endPhases",[])
+                        for z in range(len(object_mrids)):
+                            self._object_mrid_to_name[modelMrid][object_mrids[z]] = {
+                                "name" : object_name,
+                                "phases" : object_phases[z],
+                                "total_phases" : "".join(object_phases),
+                                "type" : "regulator",
+                                "prefix" : "xf_"
+                            }
+                    for y in switches:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "switch",
+                            "prefix" : "sw_"
+                        }
+                    for y in solarpanels:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "pv",
+                            "prefix" : "pv_"
+                        }
+                    for y in batteries:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "battery",
+                            "prefix" : "batt_"
+                        }
+                    for y in synchronousMachines:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "diesel_dg",
+                            "prefix" : "dg_"
+                        }
+                    for y in breakers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "switch",
+                            "prefix" : "sw_"
+                        }
+                    for y in reclosers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "type" : "recloser",
+                            "prefix" : "sw_"
+                        }
+                    for y in energy_consumers:
+                        self._object_mrid_to_name[modelMrid][y.get("mRID")] = {
+                            "name" : y.get("name"),
+                            "phases" : y.get("phases"),
+                            "total_phases" : y.get("phases"),
+                            "prefix" : "ld_"
+                        }
+                        if "s1" in self._object_mrid_to_name[modelMrid][y.get("mRID")]["phases"] \
+                                or "s2" in self._object_mrid_to_name[modelMrid][y.get("mRID")]["phases"]:
+                            self._object_mrid_to_name[modelMrid][y.get("mRID")]["type"] = "triplex_load"
+                        else:
+                            self._object_mrid_to_name[modelMrid][y.get("mRID")]["type"] = "load"
+                # measurements = {}
+                # measurements.update(graphModel.graph.get(cim.Analog, {}))
+                # measurements.update(graphModel.graph.get(cim.Discrete, {}))
+                # capacitors = graphModel.graph.get(cim.LinearShuntCompensator, {})
+                # xfmrs = graphModel.graph.get(cim.PowerTransformer, {})
+                # regulators = []
+                # for xfmr in xfmrs.values():
+                #     isRegulator = False
+                #     for powerTransformerEnd in xfmr.PowerTransformerEnd:
+                #         if powerTransformerEnd.RatioTapChanger:
+                #             isRegulator = True
+                #             break
+                #     for transformerTank in xfmr.TransformerTanks:
+                #         for transformerEnd in transformerTank.TransformerTankEnds:
+                #             if transformerEnd.RatioTapChanger:
+                #                 isRegulator = True
+                #                 break
+                #         if isRegulator:
+                #             break
+                #     if isRegulator:
+                #         regulators.append(xfmr)
+                # switches = {}
+                # switches.update(graphModel.graph.get(cim.LoadBreakSwitch,{}))
+                # switches.update(graphModel.graph.get(cim.Breaker,{}))
+                # switches.update(graphModel.graph.get(cim.Recloser,{}))
+                # inverters = graphModel.graph.get(cim.PowerElectronicsConnection, {})
+                # batteries = {}
+                # solarpanels = {}
+                # for objId, obj in inverters.items():
+                #     if isinstance(obj.PowerElectronicsUnit[0], cim.BatteryUnit):
+                #         batteries[objId] = obj
+                #     elif isinstance(obj.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
+                #         solarpanels[objId] = obj
+                # synchronousMachines = graphModel.graph.get(cim.SynchronousMachine, {})
+                # energy_consumers = graphModel.graph.get(cim.EnergyConsumer, {})
+                # #TODO: add more object types to handle
+                # for objMrid, obj in measurements.items():
+                #     measurement_type = obj.measurementType
+                #     phases = obj.phases.value
+                #     if phases == "s1":
+                #         phases = "1"
+                #     elif phases == "s2":
+                #         phases = "2"
+                #     powerSystemResource = obj.PowerSystemResource
+                #     terminal = obj.Terminal
+                #     if isinstance(powerSystemResource, cim.LinearShuntCompensator):
+                #         if measurement_type == "VA":
+                #             object_name = f"cap_{powerSystemResource.name}"
+                #             property_name = "shunt_" + phases
+                #         elif measurement_type == "Pos":
+                #             object_name = f"cap_{powerSystemResource.name}"
+                #             property_name = "switch" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                                "type.\nValid types for LinearShuntCompensators are VA, Pos, and PNV.\n"
+                #                                f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.PowerTransformer):
+                #         if measurement_type == "VA":
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "current_in_" + phases
+                #         elif measurement_type == "Pos" and powerSystemResource in regulators:
+                #             object_name = f"xf_{powerSystemResource.name}"
+                #             property_name = "tap_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                                "type.\nValid types for PowerTransformer are VA, PNV, A, and Pos.\n"
+                #                                f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.ACLineSegment):
+                #         if measurement_type == "VA":
+                #             object_name = f"line_{powerSystemResource.name}"
+                #             if phases == "1":
+                #                 property_name = "power_in_A"
+                #             elif phases == "2":
+                #                 property_name = "power_in_B"
+                #             else:
+                #                 property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"line_{powerSystemResource.name}"
+                #             if phases == "1":
+                #                 property_name = "current_in_A"
+                #             elif phases == "2":
+                #                 property_name = "current_in_B"
+                #             else:
+                #                 property_name = "current_in_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for ACLineSegment are VA, PNV, and A.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, (cim.Breaker, cim.LoadBreakSwitch, cim.Recloser)):
+                #         if measurement_type == "VA":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "power_in_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "Pos":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "status"
+                #         elif measurement_type == "A":
+                #             object_name = f"swt_{powerSystemResource.name}"
+                #             property_name = "current_in_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for LoadBreakSwitch are VA, PNV, and A.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.EnergyConsumer):
+                #         if measurement_type == "VA":
+                #             object_name = f"ld_{powerSystemResource.name}"
+                #             if phases in ["1","2"]:
+                #                 property_name = "indiv_measured_power_" + phases
+                #             else:
+                #                 property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_current_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for EnergyConsumer are VA, A, and PNV.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     elif isinstance(powerSystemResource, cim.PowerElectronicsConnection):
+                #         if isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.PhotovoltaicUnit):
+                #             suffix = "_pvmtr"
+                #         elif isinstance(powerSystemResource.PowerElectronicsUnit[0], cim.BatteryUnit):
+                #             suffix = "_stmtr"
+                #         else:
+                #             continue
+                #         if measurement_type == "VA":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             if phases in ["1","2"]:
+                #                 property_name = "indiv_measured_power_" + phases
+                #             else:
+                #                 property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = f"{terminal.ConnectivityNode.name}{suffix}"
+                #             property_name = "measured_current_" + phases
+                #         elif measurement_type == "SoC":
+                #             object_name = f"bat_{powerSystemResource.PowerElectronicsUnit[0].name}"
+                #             property_name = "state_of_charge"
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for PowerElectronicsConnection are VA, A, SoC, and "
+                #                             f"PNV.\nmeasurement_type = {measurement_type}")
+                #     elif isinstance(powerSystemResource, cim.SynchronousMachine):
+                #         if measurement_type == "VA":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_power_" + phases
+                #         elif measurement_type == "PNV":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "voltage_" + phases
+                #         elif measurement_type == "A":
+                #             object_name = terminal.ConnectivityNode.name
+                #             property_name = "measured_current_" + phases
+                #         else:
+                #             raise RuntimeError("_create_cim_object_map: The value of measurement_type is not a valid "
+                #                             "type.\nValid types for SynchronousMachine are VA, A, and PNV.\n"
+                #                             f"measurement_type = {measurement_type}.")
+                #     else:
+                #         raise RuntimeError("_create_cim_object_map: The PowerSystemResource of the measurement is not "
+                #                            "a supported class type.\nValid types are ACLineSegment, "
+                #                            "LinearShuntCompesator, LoadBreakSwitch, PowerElectronicsConnection, "
+                #                            "EnergyConsumer, RatioTapChanger, PowerTransformer, and SynchronousMachine."
+                #                            f"\npowerSystemResource = {type(powerSystemResource)}.")
+
+                #     property_dict = {
+                #         "property" : property_name,
+                #         "power_system_resource" : powerSystemResource,
+                #         "measurement_mrid" : obj.mRID,
+                #         "phases" : phases
+                #     }
+                #     if object_name in self._object_property_to_measurement_id[modelMrid].keys():
+                #         self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                #     else:
+                #         self._object_property_to_measurement_id[modelMrid][object_name] = []
+                #         self._object_property_to_measurement_id[modelMrid][object_name].append(property_dict)
+                # for obj in capacitors.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : f"{obj.name}",
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "capacitor",
+                #         "prefix" : "cap_"
+                #     }
+                # for y in regulators:
+                #     object_mrids = []
+                #     object_name = y.name
+                #     object_phases = []
+                #     for powerTransformerEnd in y.PowerTransformerEnd:
+                #         if powerTransformerEnd.RatioTapChanger:
+                #             self._object_mrid_to_name[modelMrid][powerTransformerEnd.RatioTapChanger.mRID] = {
+                #                 "name" : object_name,
+                #                 "phases" : "ABC",
+                #                 "total_phases" : "ABC",
+                #                 "type" : "regulator",
+                #                 "prefix" : "xf_"
+                #             }
+                #     for transformerTank in y.TransformerTanks:
+                #         for tankEnd in transformerTank.TransformerTankEnds:
+                #             if tankEnd.RatioTapChanger:
+                #                 object_mrids.append(tankEnd.RatioTapChanger.mRID)
+                #                 object_phases.append(tankEnd.orderedPhases.value)
+                #     for z in range(len(object_mrids)):
+                #         sortedPhases = deepcopy(object_phases)
+                #         sortedPhases.sort()
+                #         self._object_mrid_to_name[modelMrid][object_mrids[z]] = {
+                #             "name" : object_name,
+                #             "phases" : object_phases[z],
+                #             "total_phases" : "".join(sortedPhases),
+                #             "type" : "regulator",
+                #             "prefix" : "xf_"
+                #         }
+                # for obj in switches.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "switch",
+                #         "prefix" : "sw_"
+                #     }
+                # for obj in solarpanels.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "pv",
+                #         "prefix" : "inv_pv_"
+                #     }
+                # for obj in batteries.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "type" : "battery",
+                #         "prefix" : "inv_bat_"
+                #     }
+                # for obj in synchronousMachines.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : "ABC",
+                #         "total_phases" : "ABC",
+                #         "type" : "diesel_dg",
+                #         "prefix" : "dg_"
+                #     }
+                # for obj in energy_consumers.values():
+                #     self._object_mrid_to_name[modelMrid][obj.mRID] = {
+                #         "name" : obj.name,
+                #         "phases" : getEqPhases(obj),
+                #         "total_phases" : getEqPhases(obj),
+                #         "prefix" : "ld_"
+                #     }
+                #     if "s1" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"] \
+                #             or "s2" in self._object_mrid_to_name[modelMrid][obj.mRID]["phases"]:
+                #         self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "triplex_load"
+                #     else:
+                #         self._object_mrid_to_name[modelMrid][obj.mRID]["type"] = "load"
         except Exception as e:
-            log.error(f"The measurement map file, {map_file}, couldn't be translated.\nError:{traceback.format_exc()}")
-            self._gad_connection.send_simulation_status('STARTED', f"The measurement map file, {map_file}, couldn't be translated.\nError:{traceback.format_exc()}", 'ERROR')
-            
-            
-def _main(simulation_id, broker_port, simulation_request):
+            errStr = f"The cim object map couldn't be created.\nError:{traceback.format_exc()}"
+            print(errStr)
+            log.error(errStr)
+            self._gad_connection.send_simulation_status('STARTED', errStr, 'ERROR')
+
+
+    def _generate_cimgraph_models(self):
+        os.environ['CIMG_CIM_PROFILE'] = 'cimhub_2023'
+        os.environ['CIMG_URL'] = 'http://blazegraph:8080/bigdata/namespace/kb/sparql'
+        os.environ['CIMG_DATABASE'] = 'powergridmodel'
+        os.environ['CIMG_HOST'] = 'localhost'
+        os.environ['CIMG_PORT'] = '61613'
+        os.environ['CIMG_USERNAME'] = 'system'
+        os.environ['CIMG_PASSWORD'] = 'manager'
+        os.environ['CIMG_NAMESPACE'] = 'http://iec.ch/TC57/CIM100#'
+        os.environ['CIMG_IEC61970_301'] = '8'
+        os.environ['CIMG_USE_UNITS'] = 'False'
+        self._dbConnection = BlazegraphConnection()
+        self._graphModels = {"distributionModels": {}, "transmissionModels": {}}
+        for powerSystemConfig in self._simulation_request.get("power_system_configs", []):
+            modelContainer = self._dbConnection.get_object(mRID=powerSystemConfig["Line_name"])
+            if isinstance(modelContainer, cim.Feeder):
+                self._graphModels["distributionModels"][powerSystemConfig["Line_name"]] = FeederModel(
+                    connection=self._dbConnection,
+                    container=modelContainer,
+                    distributed=False)
+                cimUtils.get_all_data(self._graphModels["distributionModels"][powerSystemConfig["Line_name"]])
+
+def getEqPhases(cimObj: cim.PowerSystemResource) -> str:
+    if not isinstance(cimObj, cim.PowerSystemResource):
+        raise TypeError("Argument cimObj is not a child class of cim.PowerSystemResource. cimObj is of type "
+                        f"{type(cimObj)}")
+    phases = []
+    phaseStr = ""
+    if isinstance(cimObj, cim.LinearShuntCompensator):
+        for linearShuntCompensatorPhase in cimObj.ShuntCompensatorPhase:
+            if linearShuntCompensatorPhase.phase != cim.SinglePhaseKind.N:
+                phases.append(linearShuntCompensatorPhase.phase.value)
+        if len(phases) == 0:
+            phases = ["A", "B", "C"]
+    elif isinstance(cimObj, cim.Switch):
+        for switchPhase in cimObj.SwitchPhase:
+            if switchPhase.phaseSide1 != cim.SinglePhaseKind.N:
+                phases.append(switchPhase.phaseSide1.value)
+        if len(phases) == 0:
+            phases = ["A", "B", "C"]
+    elif isinstance(cimObj, cim.PowerElectronicsConnection):
+        for powerElectronicsPhase in cimObj.PowerElectronicsConnectionPhases:
+            if powerElectronicsPhase.phase != cim.SinglePhaseKind.N:
+                phases.append(powerElectronicsPhase.phase.value)
+        if len(phases) == 0:
+            phases = ["A", "B", "C"]
+    elif isinstance(cimObj, cim.EnergyConsumer):
+        for energyConsumerPhase in cimObj.EnergyConsumerPhase:
+            if energyConsumerPhase.phase != cim.SinglePhaseKind.N:
+                phases.append(energyConsumerPhase.phase.value)
+        if len(phases) == 0:
+            phases = ["A", "B", "C"]
+    else:
+        raise TypeError("The class type of cimObj is not supported by getEqPhases yet. cimObj is of type "
+                        f"{type(cimObj)}")
+    phases.sort()
+    phaseStr = "".join(phases)
+    return phaseStr
+
+
+def _getEquipmentContainer(cimMrid: str, dbConnection: BlazegraphConnection):
+    cimObj = dbConnection.get_object(cimMrid)
+    equipmentContainer = None
+    eqContainerMrid = None
+    if isinstance(cimObj, cim.Equipment):
+        equipmentContainer = cimObj.EquipmentContainer
+    if isinstance(equipmentContainer, cim.Feeder):
+        eqContainerMrid = equipmentContainer.mRID
+    return eqContainerMrid
+
+
+def _main(simulation_id, broker_port, simulation_request, detachedRun):
     os.environ["GRIDAPPSD_APPLICATION_ID"] = "helics_goss_bridge.py"
     bridge = HelicsGossBridge(simulation_id, broker_port, simulation_request)
     simulation_started = False
     simulation_stopped = False
     while not simulation_stopped:
-        sim_is_initialized = bridge.get_is_initialized()
-        start_sim = bridge.get_start_simulation()
+        if not detachedRun:
+            sim_is_initialized = bridge.get_is_initialized()
+            start_sim = bridge.get_start_simulation()
+        else:
+            sim_is_initialized = True
+            start_sim = True
         stop_sim = bridge.get_stop_simulation()
         sim_finished = bridge.get_simulation_finished()
         if stop_sim or sim_finished:
@@ -1411,6 +1921,7 @@ if __name__ == '__main__':
     parser.add_argument("simulation_id", help="The simulation id to use for responses on the message bus.")
     parser.add_argument("broker_port", help="The port the helics broker is running on.")
     parser.add_argument("simulation_request", help="The simulation request.")
+    parser.add_argument("-d", "--detachedRun", action="store_true", help="Run the bridge detached from the Platform")
     args = parser.parse_args()
     sim_request = json.loads(args.simulation_request.replace("\'",""))
-    _main(args.simulation_id, args.broker_port, sim_request)
+    _main(args.simulation_id, args.broker_port, sim_request, args.detachedRun)

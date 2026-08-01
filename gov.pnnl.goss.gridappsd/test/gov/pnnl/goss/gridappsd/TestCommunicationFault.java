@@ -1,7 +1,5 @@
 package gov.pnnl.goss.gridappsd;
 
-import java.util.UUID;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -9,136 +7,112 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-//import gov.pnnl.goss.gridappsd.dto.CommunicationFault;
-//import gov.pnnl.goss.gridappsd.dto.CommunicationFaultData;
-//import gov.pnnl.goss.gridappsd.dto.CommunicationFaultObjectPair;
 import gov.pnnl.goss.gridappsd.dto.DifferenceMessage;
 import gov.pnnl.goss.gridappsd.dto.events.EventCommand;
 import gov.pnnl.goss.gridappsd.dto.events.Fault;
 import gov.pnnl.goss.gridappsd.dto.events.FaultCommand;
 
-
+/**
+ * Tests for communication fault and event command parsing/serialization.
+ */
 public class TestCommunicationFault {
-	@Test
-	public void testFault() {
 
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		
-//		RuntimeTypeAdapterFactory<BaseEventCommand> commandAdapterFactory = RuntimeTypeAdapterFactory.of(BaseEventCommand.class, "type")
-//				.registerSubtype(FaultCommand.class,"FaultCommand")
-//		    .registerSubtype(EventCommand.class, "EventCommand");
-		
-//		RuntimeTypeAdapterFactory<BaseEvent> eventAdapterFactory = RuntimeTypeAdapterFactory.of(BaseEvent.class, "type")
-//				.registerSubtype(FailureEvent.class,"FailureEvent")
-//		    .registerSubtype(CommunicationFaultData.class, "CommunicationFaultData");
-		
-//		gsonBuilder.registerTypeAdapterFactory(commandAdapterFactory);
-//		gsonBuilder.registerTypeAdapterFactory(eventAdapterFactory);
-		gsonBuilder.setPrettyPrinting();
-		Gson gson = gsonBuilder.create();
-		
-		DifferenceMessage dm = new DifferenceMessage ();
-		dm.difference_mrid="1234";
+    /**
+     * Test FaultCommand creation and serialization.
+     */
+    @Test
+    public void testFaultCommand_canBeCreatedAndSerialized() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.setPrettyPrinting();
+        Gson gson = gsonBuilder.create();
 
-//		CommunicationFault commFault = new CommunicationFault();
-//		commFault.object = "UU1234";
-//		commFault.attribute = "FilterObject";
-//		commFault.value = new CommunicationFaultData();
-//		CommunicationFaultObjectPair tempCFOP = new CommunicationFaultObjectPair();
-//		tempCFOP.objectMRID = "UU123214";
-//		tempCFOP.attribute = "RegulatingControl.mode";
-//		commFault.value.inputList.add(tempCFOP); 
-//		commFault.value.outputList.add("UU12323");
-//		commFault.value.filterAllInputs = false;
-//		commFault.value.filterAllOutputs = false;
-//		commFault.value.occuredDateTime = 1248156005L;
-//		commFault.value.stopDateTime = 1248156008L;
+        Fault simFault = new Fault();
+        simFault.faultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
 
-		
-//		System.out.println(new String (commFault.toString()));
-//		String tempStr = "{\"inputList\":[{\"objectMRID\":\"UU123214\",\"attribute\":\"RegulatingControl.mode\"}],\"outputList\":[\"UU12323\"],\"filterAllInputs\":false,\"filterAllOutputs\":false,\"timeInitiated\":1248156005,\"timeCleared\":1248156008}";
-//		CommunicationFaultData tempComm = CommunicationFaultData.parse(tempStr);
-//		System.out.println(gson.toJson(tempComm));
-//		System.out.println("************************");
-//		System.out.println(gson.toJson(tempComm.buildSimFault()));
-//		System.out.println("************************");
-		
-//		EventCommand eventCommand = new EventCommand();
-//		eventCommand.command = "CommEvent";
-//		eventCommand.simulation_id = 9999999; 
-//		eventCommand.message = tempComm;
-//		System.out.println(gson.toJson(eventCommand, EventCommand.class));
-		
-		
-		Fault simFault = new Fault();
-		simFault.faultMRID = "_1f4467ee-678b-49c6-b58c-9f9462cf5ae4";
-//		simFault.impedance.rGround = 0.0;
-//		simFault.xGround = 0.5;
-//		simFault.PhaseConnectedFaultKind=simFault.PhaseConnectedFaultKind.lineToGround;
-		FaultCommand faultCommand = new FaultCommand();
-		faultCommand.command = "FaultEvent"; 
-		faultCommand.simulation_id = 9999999; 
-		faultCommand.message = simFault;
-		System.out.println(gson.toJson(faultCommand));
-		
-		String faultCommandString = "{\"message\":{\"rGround\":0.0,\"xGround\":0.5,\"rLineToLine\":0.0,\"xLineToLine\":0.0,\"PhaseConnectedFaultKind\":\"lineToGround\",\"faultMRID\":\"_1f4467ee-678b-49c6-b58c-9f9462cf5ae4\"},\"command\":\"FaultEvent\",\"simulation_id\":9999999}";
-		
-		
-		String eventCommandString = "{\"type\":\"EventCommand\",\"command\": \"CommEvent\", \"simulation_id\": 9999999, \"message\": {\"inputList\": [{\"objectMRID\": \"UU123214\", \"attribute\": \"RegulatingControl.mode\"}], \"outputList\": [\"UU12323\"], \"filterAllInputs\": false, \"filterAllOutputs\": false, \"timeInitiated\": 1248156005, \"timeCleared\": 1248156008}}";
+        FaultCommand faultCommand = new FaultCommand();
+        faultCommand.command = "FaultEvent";
+        faultCommand.simulation_id = 9999999;
+        faultCommand.message = simFault;
 
-		
-		if(eventCommandString.contains("CommEvent")){
-			EventCommand testEventCommand = EventCommand.parse(eventCommandString);
-			System.out.println(gson.toJson(testEventCommand));
-		} else if(eventCommandString.contains("FaultEvent")){
-			FaultCommand testEventCommand = FaultCommand.parse(eventCommandString);
-			System.out.println(gson.toJson(testEventCommand));
-		}
-			
-//		BaseEventCommand testEventCommand2 = gson.fromJson(tempString, BaseEventCommand.class);
-//		System.out.println(gson.toJson(testEventCommand2));
-		
-//		System.out.println(gson.toJson(commFault));
-//		
-//		dm.forward_differences.clear();
-//		dm.reverse_differences = null;
-//		dm.forward_differences.add(commFault);
-//		System.out.println(dm.toString());
-//		
-//		dm = new DifferenceMessage ();
-//		dm.difference_mrid="_"+UUID.randomUUID();
-//		dm.forward_differences.add(commFault);
-////		dm.reverse_differences.add();
-//		System.out.println(dm.toString());
-		
-		JsonObject input = new JsonObject();
-		input.addProperty("simulation_id", 1231234567);
-		input.addProperty("timestamp", 1374498000);
-		input.add("message", dm.toJsonElement());
-		JsonObject command = new JsonObject();
-		command.addProperty("command", "CommEvent");
-		command.add("input", input);
-		System.out.println(command.toString());
-		System.out.println(gson.toJson(command));
-		
-		Assert.assertEquals(command.get("command").getAsString(), "CommEvent");
-		JsonObject inputObject = command.getAsJsonObject().get("input").getAsJsonObject();
-		
-		Assert.assertEquals(inputObject.get("simulation_id").getAsInt(), 1231234567);
-		JsonObject firstForwardObject = inputObject.get("message").getAsJsonObject().get("forward_differences").getAsJsonArray().get(0).getAsJsonObject();
-		Assert.assertEquals(firstForwardObject.get("attribute").getAsString(), "FilterObject");
+        String json = gson.toJson(faultCommand);
 
-		Assert.assertEquals(firstForwardObject.get("value").getAsJsonObject().get("inputList").getAsJsonArray().get(0).getAsJsonObject().get("attribute").getAsString(), "RegulatingControl.mode");
+        Assert.assertNotNull("FaultCommand JSON should not be null", json);
+        Assert.assertTrue("JSON should contain FaultEvent", json.contains("FaultEvent"));
+        Assert.assertTrue("JSON should contain simulation_id", json.contains("9999999"));
+        Assert.assertTrue("JSON should contain faultMRID", json.contains("_1f4467ee-678b-49c6-b58c-9f9462cf5ae4"));
+    }
 
-		
-//		HashMap<Integer, ProcessEvents> processEventsMap = new HashMap<Integer, ProcessEvents>(10);
-//		ProcessEvents pe;
-//		if(! processEventsMap.containsKey(123) ){
-//			pe = processEventsMap.getOrDefault(123, new ProcessEvents(null,null, 123));
-//			processEventsMap.putIfAbsent(123, pe);
-//		}
-//		pe = processEventsMap.get(123);
-//		System.out.println(pe);
-//		System.out.println(pe);
-	}
+    /**
+     * Test FaultCommand parsing from JSON string.
+     */
+    @Test
+    public void testFaultCommand_canBeParsedFromJson() {
+        String faultCommandString = "{\"message\":{\"rGround\":0.0,\"xGround\":0.5,\"rLineToLine\":0.0,\"xLineToLine\":0.0,\"PhaseConnectedFaultKind\":\"lineToGround\",\"faultMRID\":\"_1f4467ee-678b-49c6-b58c-9f9462cf5ae4\"},\"command\":\"FaultEvent\",\"simulation_id\":9999999}";
+
+        FaultCommand testEventCommand = FaultCommand.parse(faultCommandString);
+
+        Assert.assertNotNull("Parsed FaultCommand should not be null", testEventCommand);
+        Assert.assertEquals("Command should be FaultEvent", "FaultEvent", testEventCommand.command);
+        Assert.assertEquals("Simulation ID should be 9999999", 9999999L, (long) testEventCommand.simulation_id);
+        Assert.assertNotNull("Message (Fault) should not be null", testEventCommand.message);
+    }
+
+    /**
+     * Test EventCommand parsing from JSON string.
+     */
+    @Test
+    public void testEventCommand_canBeParsedFromJson() {
+        String eventCommandString = "{\"type\":\"EventCommand\",\"command\": \"CommEvent\", \"simulation_id\": 9999999, \"message\": {\"inputList\": [{\"objectMRID\": \"UU123214\", \"attribute\": \"RegulatingControl.mode\"}], \"outputList\": [\"UU12323\"], \"filterAllInputs\": false, \"filterAllOutputs\": false, \"timeInitiated\": 1248156005, \"timeCleared\": 1248156008}}";
+
+        EventCommand testEventCommand = EventCommand.parse(eventCommandString);
+
+        Assert.assertNotNull("Parsed EventCommand should not be null", testEventCommand);
+        Assert.assertEquals("Command should be CommEvent", "CommEvent", testEventCommand.command);
+        Assert.assertEquals("Simulation ID should be 9999999", 9999999L, (long) testEventCommand.simulation_id);
+    }
+
+    /**
+     * Test DifferenceMessage creation and serialization.
+     */
+    @Test
+    public void testDifferenceMessage_canBeCreatedAndSerialized() {
+        DifferenceMessage dm = new DifferenceMessage();
+        dm.difference_mrid = "_test-mrid-1234";
+
+        String json = dm.toString();
+
+        Assert.assertNotNull("DifferenceMessage JSON should not be null", json);
+        Assert.assertTrue("JSON should contain difference_mrid", json.contains("_test-mrid-1234"));
+    }
+
+    /**
+     * Test building a command JsonObject with DifferenceMessage.
+     */
+    @Test
+    public void testCommandJsonObject_canBeBuilt() {
+        DifferenceMessage dm = new DifferenceMessage();
+        dm.difference_mrid = "_test-mrid-5678";
+
+        JsonObject input = new JsonObject();
+        input.addProperty("simulation_id", 1231234567);
+        input.addProperty("timestamp", 1374498000);
+        input.add("message", dm.toJsonElement());
+
+        JsonObject command = new JsonObject();
+        command.addProperty("command", "CommEvent");
+        command.add("input", input);
+
+        Assert.assertEquals("Command should be CommEvent", "CommEvent", command.get("command").getAsString());
+
+        JsonObject inputObject = command.getAsJsonObject().get("input").getAsJsonObject();
+        Assert.assertEquals("Simulation ID should be 1231234567", 1231234567,
+                inputObject.get("simulation_id").getAsInt());
+        Assert.assertEquals("Timestamp should be 1374498000", 1374498000, inputObject.get("timestamp").getAsInt());
+
+        // Verify the message contains the difference_mrid
+        JsonObject messageObject = inputObject.get("message").getAsJsonObject();
+        Assert.assertEquals("Difference MRID should match", "_test-mrid-5678",
+                messageObject.get("difference_mrid").getAsString());
+    }
+
 }

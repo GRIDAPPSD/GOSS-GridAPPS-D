@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# Build artifacts (except launcher which we need)
+build/generated/
+build/reports/
+build/test-results/
+build/tmp/
+**/bin/
+**/generated/
+
+# Gradle
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+
+# Documentation
+*.md
+!requirements.txt
+docs/
+
+# Test files
+**/test/
+**/tests/
+**/*Test.java
+**/*Tests.java
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*~
+temp.py
+
+# OS files
+.DS_Store
+Thumbs.db

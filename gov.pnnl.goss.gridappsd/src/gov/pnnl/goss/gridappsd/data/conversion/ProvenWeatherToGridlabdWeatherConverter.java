@@ -12,7 +12,8 @@ import gov.pnnl.goss.gridappsd.dto.TimeSeriesMeasurementResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesResult;
 import gov.pnnl.goss.gridappsd.dto.TimeSeriesRowResult;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
-import pnnl.goss.core.security.SecurityConfig;
+// TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+//import pnnl.goss.core.security.SecurityConfig;
 
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -24,232 +25,233 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.Activate;
 
-
-@Component
+@Component(service = DataFormatConverter.class)
 public class ProvenWeatherToGridlabdWeatherConverter implements DataFormatConverter {
-	protected static SimpleDateFormat sdfIn = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-	protected static SimpleDateFormat sdfOut = new SimpleDateFormat("MM:dd:HH:mm:ss");
-	
-	public static String INPUT_FORMAT = "PROVEN_WEATHER";
-	public static String OUTPUT_FORMAT = "GRIDLABD_WEATHER";
-	
-	
-	public static String SOLAR_DIFFUSE = "Diffuse";
-	public static String AVG_WIND_SPEED = "AvgWindSpeed";
-	public static String AVG_WIND_DIRECTION = "AvgWindDirection";
-	public static String HUMIDITY = "TowerRH";
-	public static String LONGITUDE = "long";
-	public static String LATITUDE = "lat";
-	public static String MST = "UTC";
-	public static String TEMPERATURE = "TowerDryBulbTemp";
-	public static String DATE = "DATE";
-	public static String TIME = "time";
-	public static String SOLAR_DIRECT = "DirectCH1";
-	public static String SOLAR_GLOBAL = "GlobalCM22";
-	public static String PLACE = "place";
-	
-	@ServiceDependency
-	private volatile DataManager dataManager;
-	@ServiceDependency 
-	private volatile LogManager logManager;
-	@ServiceDependency 
-	private volatile SecurityConfig securityConfig;
-	
-	/*static{
-	    sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
-		sdfOut.setTimeZone(TimeZone.getTimeZone("UTC"));
-	}*/
-	
-	public ProvenWeatherToGridlabdWeatherConverter(){}
-	public ProvenWeatherToGridlabdWeatherConverter(LogManager logManager, DataManager dataManager) {
-		this.logManager = logManager;
-		this.dataManager = dataManager;
-	}
-	
-	@Start
-	public void start(){
-		if(dataManager!=null) {
-			dataManager.registerConverter(INPUT_FORMAT, OUTPUT_FORMAT, this);
-		}
-		else { 
-			//TODO send log message and exception
-			if(logManager!=null){
-				//log.warn("No Data manager available for "+getClass());
-				logManager.warn(ProcessStatus.RUNNING, null, "No Data manager available for "+getClass());
-			}
-		}
-	}
-	
-	
-	@Override
-	public void convert(String inputContent, PrintWriter outputContent, RequestTimeseriesData request) throws Exception {
-		boolean headerPrinted = false;
-		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(inputContent);
-		//for(TimeSeriesKeyValuePair record: resultObj.getEntryMap()){
-			if(!headerPrinted){
-				printGLDHeader(resultObj.getData().get(0), outputContent);
-				headerPrinted = true;
-			}
-			convertRecord(resultObj, outputContent);
-		//}
-	}
+    protected static SimpleDateFormat sdfIn = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+    protected static SimpleDateFormat sdfOut = new SimpleDateFormat("MM:dd:HH:mm:ss");
 
-	@Override
-	public void convert(InputStream inputContent, PrintWriter outputContent, RequestTimeseriesData request)  throws Exception {
-		boolean headerPrinted = false;
-		
-		String strContent = IOUtils.toString(inputContent);
-		TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
-		//for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
-			if(!headerPrinted){
-				printGLDHeader(resultObj.getData().get(0), outputContent);
-				headerPrinted = true;
-			}
-			convertRecord(resultObj, outputContent);
-		//}
-	}
+    public static String INPUT_FORMAT = "PROVEN_WEATHER";
+    public static String OUTPUT_FORMAT = "GRIDLABD_WEATHER";
 
-	protected void printGLDHeader(HashMap<String,Object> map, PrintWriter outputContent){
-		//TODO this needs to come from data or tags within proven
-		String placeStr="", yearStr="", latlong = "";
-		
-		try{
-		placeStr = map.get(PLACE).toString();
-		placeStr = placeStr.replaceAll("\"", "");
-		latlong = map.get(LATITUDE)+","+map.get(LONGITUDE);
-		
-		String dateStr = map.get(DATE).toString();
-		String[] dateArr = StringUtils.split(dateStr,"/");
-		yearStr = dateArr[2];
-		}catch (Exception e) {
-			//TODO log warning
-		}
-		
-		outputContent.println("#"+placeStr+" ("+latlong+") file for "+yearStr);
-		outputContent.println("# data obtained from ...");
-		outputContent.println("$state_name=N/A");
-		outputContent.println("$city_name=N/A");
-		
-		outputContent.println("temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
-	}
-	
-	protected void convertRecord(TimeSeriesEntryResult record, PrintWriter outputContent){
-		//See https://github.com/gridlab-d/gridlab-d/blob/master/climate/climate.cpp for gridlabd format requirements
-		for(HashMap<String,Object> map: record.getData()){
-			//Map<String, Object> map = record.getData();
-			
-			//String dateStr = map.get(DATE);
-			//String timeStr = map.get(MST);
-			try {
-				
+    public static String SOLAR_DIFFUSE = "Diffuse";
+    public static String AVG_WIND_SPEED = "AvgWindSpeed";
+    public static String AVG_WIND_DIRECTION = "AvgWindDirection";
+    public static String HUMIDITY = "TowerRH";
+    public static String LONGITUDE = "long";
+    public static String LATITUDE = "lat";
+    public static String MST = "UTC";
+    public static String TEMPERATURE = "TowerDryBulbTemp";
+    public static String DATE = "DATE";
+    public static String TIME = "time";
+    public static String SOLAR_DIRECT = "DirectCH1";
+    public static String SOLAR_GLOBAL = "GlobalCM22";
+    public static String PLACE = "place";
 
-				Calendar c = Calendar.getInstance();
-				//For both the start and end time, set the year to the one that currently has data in the database
-				//TODO either we need more weather data in the database, or make this more flexible where we only have to search by month/day
-				long longTime = new Double(map.get(TIME).toString()).longValue();
-				c.setTime(new Date(longTime*1000));
-				c.set(Calendar.YEAR, 2013);
-				//Date datetime = sdfIn.parse(dateStr+" "+timeStr);
-				outputContent.print(sdfOut.format(c.getTime())+",");
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-				//todo throw exception
-			}
-			
+    @Reference
+    private volatile DataManager dataManager;
+    @Reference
+    private volatile LogManager logManager;
+    // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
+    // @Reference
+    // private volatile SecurityConfig securityConfig;
 
-			double temp_fahr = readDouble(map, TEMPERATURE, -100000000);
-			//we are already receiving it as fahrenhight
-			//print temperature in Fahrenheit and convert from celcius to Fahrenheit
-//			double temp_cel = readDouble(map, TEMPERATURE, -100000000);
-//			double temp_fahr = (temp_cel * 1.8) + 32;
-			outputContent.print(temp_fahr+",");
-			//print humidity 
-			double humidity = readDouble(map, HUMIDITY, 0);
-			outputContent.print(humidity/100+",");
-			//print wind_speed and no conversion necessary
-			double speed_m = readDouble(map, AVG_WIND_SPEED, 0);
-			outputContent.print(speed_m+",");
-			
-			//Solar readings have already been converted to feet
-			//print solar_direct and convert from watts/m^2 to watts/f^s
-//			double solar_direct_m = readDouble(map,SOLAR_DIRECT, 0);
-//			double solar_direct_f = solar_direct_m*(1/10.764);
-			double solar_direct_f = readDouble(map,SOLAR_DIRECT, 0);
-			outputContent.print(solar_direct_f+",");
-			//print solar_diffuse convert from watts/m^2 to watts/f^s
-//			double solar_diffuse_m = record.getIrradanceDiffuseHorizontal();
-//			double solar_diffuse_m = readDouble(map, SOLAR_DIFFUSE, 0);
-//			double solar_diffuse_f = solar_diffuse_m*(1/10.764);
-			double solar_diffuse_f = readDouble(map, SOLAR_DIFFUSE, 0);
-			outputContent.print(solar_diffuse_f+",");
-			//print solar_global convert from watts/m^2 to watts/f^s
-//			double solar_global_m = readDouble(map, SOLAR_GLOBAL, 0);
-//			double solar_global_f = solar_global_m*(1/10.764);
-			double solar_global_f = readDouble(map, SOLAR_GLOBAL, 0);
-			outputContent.print(solar_global_f+"");
-			outputContent.println();
-			outputContent.flush();
-		}
-	}
-	
-	protected double readDouble(Map<String, Object> map, String key, double minimumValue){
-		double result = 0;
-		if(map.containsKey(key)){
-			String strVal = map.get(key).toString();
-			try {
-				double res = new Double(strVal);
-				if(res<minimumValue){
-					return minimumValue;
-				}
-				else {
-					return res;
-				}
-			} catch (Exception e) {
-				System.out.println("Could not convert "+key+": "+strVal);
-			}
-		}
-		
-		return result;
-	}
-	
-	public static void main(String[] args) {
-//		01:01:00:01:00,  33.1,  0.31,  10.4,  0,  0,  0
-			try {
-//			ProvenWeatherRecord record = new ProvenWeatherRecord();
-//			record.setDateTime(sdfIn.parse("2009:01:01:00:01:00").getTime());
-//			record.setAmbientTemperature(.6112);
-//			record.setHumidity(0.31);
-//			record.setSpeed(10.4);
-//			record.setIrradanceGlobalHorizontal(0);
-//			record.setIrradanceDiffuseHorizontal(0);
-//			record.setIrradanceDirectNormal(0);
-//			
-//			String provenInput = record.toString();
-				
-			String provenInput = "{\"measurements\":[{\"name\":\"weather\",\"points\":[{\"row\":{\"entry\":[{\"key\":"
-					+ "\"Diffuse\",\"value\":\"40.006386875\"},{\"key\":\"AvgWindSpeed\",\"value\":\"88.0\"},{\"key\":"
-					+ "\"TowerRH\",\"value\":\"86.8\"},{\"key\":\"long\",\"value\":\"\\\"105.18 W\\\"\"},{\"key\":"
-					+ "\"MST\",\"value\":\"00:00\"},{\"key\":\"TowerDryBulbTemp\",\"value\":\"13.316\"},{\"key\":"
-					+ "\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":\"70.0402521765\"},{\"key\":"
-					+ "\"GlobalCM22\",\"value\":\"21.037676152399999996\"},{\"key\":\"AvgWindDirection\",\"value\":"
-					+ "\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.8Z\"},{\"key\":\"place\",\"value\":"
-					+ "\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\""
-					+ "}]}},{\"row\":{\"entry\":[{\"key\":\"Diffuse\",\"value\":\"30.005538233499999999\"},{\"key\":"
-					+ "\"AvgWindSpeed\",\"value\":\"44.0\"},{\"key\":\"TowerRH\",\"value\":\"86.9\"},{\"key\":\"long\","
-					+ "\"value\":\"\\\"105.18 W\\\"\"},{\"key\":\"MST\",\"value\":\"00:01\"},{\"key\":\"TowerDryBulbTemp\","
-					+ "\"value\":\"13.406\"},{\"key\":\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":"
-					+ "\"34.0395396335\"},{\"key\":\"GlobalCM22\",\"value\":\"55.0369521827\"},{\"key\":\"AvgWindDirection\","
-					+ "\"value\":\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.86Z\"},{\"key\":\"place\","
-					+ "\"value\":\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\"}]}}]}]}";
-			
-			new ProvenWeatherToGridlabdWeatherConverter().convert(provenInput, new PrintWriter(System.out), null);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-	}
+    /*
+     * static{ sdfIn.setTimeZone(TimeZone.getTimeZone("UTC"));
+     * sdfOut.setTimeZone(TimeZone.getTimeZone("UTC")); }
+     */
+
+    public ProvenWeatherToGridlabdWeatherConverter() {
+    }
+
+    public ProvenWeatherToGridlabdWeatherConverter(LogManager logManager, DataManager dataManager) {
+        this.logManager = logManager;
+        this.dataManager = dataManager;
+    }
+
+    @Activate
+    public void start() {
+        if (dataManager != null) {
+            dataManager.registerConverter(INPUT_FORMAT, OUTPUT_FORMAT, this);
+        } else {
+            // TODO send log message and exception
+            if (logManager != null) {
+                // log.warn("No Data manager available for "+getClass());
+                logManager.warn(ProcessStatus.RUNNING, null, "No Data manager available for " + getClass());
+            }
+        }
+    }
+
+    @Override
+    public void convert(String inputContent, PrintWriter outputContent, RequestTimeseriesData request)
+            throws Exception {
+        boolean headerPrinted = false;
+        TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(inputContent);
+        // for(TimeSeriesKeyValuePair record: resultObj.getEntryMap()){
+        if (!headerPrinted) {
+            printGLDHeader(resultObj.getData().get(0), outputContent);
+            headerPrinted = true;
+        }
+        convertRecord(resultObj, outputContent);
+        // }
+    }
+
+    @Override
+    public void convert(InputStream inputContent, PrintWriter outputContent, RequestTimeseriesData request)
+            throws Exception {
+        boolean headerPrinted = false;
+
+        String strContent = IOUtils.toString(inputContent, java.nio.charset.StandardCharsets.UTF_8);
+        TimeSeriesEntryResult resultObj = TimeSeriesEntryResult.parse(strContent);
+        // for(TimeSeriesMeasurementResult record: resultObj.getMeasurements()){
+        if (!headerPrinted) {
+            printGLDHeader(resultObj.getData().get(0), outputContent);
+            headerPrinted = true;
+        }
+        convertRecord(resultObj, outputContent);
+        // }
+    }
+
+    protected void printGLDHeader(HashMap<String, Object> map, PrintWriter outputContent) {
+        // TODO this needs to come from data or tags within proven
+        String placeStr = "", yearStr = "", latlong = "";
+
+        try {
+            placeStr = map.get(PLACE).toString();
+            placeStr = placeStr.replaceAll("\"", "");
+            latlong = map.get(LATITUDE) + "," + map.get(LONGITUDE);
+
+            String dateStr = map.get(DATE).toString();
+            String[] dateArr = StringUtils.split(dateStr, "/");
+            yearStr = dateArr[2];
+        } catch (Exception e) {
+            // TODO log warning
+        }
+
+        outputContent.println("#" + placeStr + " (" + latlong + ") file for " + yearStr);
+        outputContent.println("# data obtained from ...");
+        outputContent.println("$state_name=N/A");
+        outputContent.println("$city_name=N/A");
+
+        outputContent.println("temperature,humidity,wind_speed,solar_dir,solar_diff,solar_global");
+    }
+
+    protected void convertRecord(TimeSeriesEntryResult record, PrintWriter outputContent) {
+        // See https://github.com/gridlab-d/gridlab-d/blob/master/climate/climate.cpp
+        // for gridlabd format requirements
+        for (HashMap<String, Object> map : record.getData()) {
+            // Map<String, Object> map = record.getData();
+
+            // String dateStr = map.get(DATE);
+            // String timeStr = map.get(MST);
+            try {
+
+                Calendar c = Calendar.getInstance();
+                // For both the start and end time, set the year to the one that currently has
+                // data in the database
+                // TODO either we need more weather data in the database, or make this more
+                // flexible where we only have to search by month/day
+                long longTime = Double.valueOf(map.get(TIME).toString()).longValue();
+                c.setTime(new Date(longTime * 1000));
+                c.set(Calendar.YEAR, 2013);
+                // Date datetime = sdfIn.parse(dateStr+" "+timeStr);
+                outputContent.print(sdfOut.format(c.getTime()) + ",");
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+                // todo throw exception
+            }
+
+            double temp_fahr = readDouble(map, TEMPERATURE, -100000000);
+            // we are already receiving it as fahrenhight
+            // print temperature in Fahrenheit and convert from celcius to Fahrenheit
+            // double temp_cel = readDouble(map, TEMPERATURE, -100000000);
+            // double temp_fahr = (temp_cel * 1.8) + 32;
+            outputContent.print(temp_fahr + ",");
+            // print humidity
+            double humidity = readDouble(map, HUMIDITY, 0);
+            outputContent.print(humidity / 100 + ",");
+            // print wind_speed and no conversion necessary
+            double speed_m = readDouble(map, AVG_WIND_SPEED, 0);
+            outputContent.print(speed_m + ",");
+
+            // Solar readings have already been converted to feet
+            // print solar_direct and convert from watts/m^2 to watts/f^s
+            // double solar_direct_m = readDouble(map,SOLAR_DIRECT, 0);
+            // double solar_direct_f = solar_direct_m*(1/10.764);
+            double solar_direct_f = readDouble(map, SOLAR_DIRECT, 0);
+            outputContent.print(solar_direct_f + ",");
+            // print solar_diffuse convert from watts/m^2 to watts/f^s
+            // double solar_diffuse_m = record.getIrradanceDiffuseHorizontal();
+            // double solar_diffuse_m = readDouble(map, SOLAR_DIFFUSE, 0);
+            // double solar_diffuse_f = solar_diffuse_m*(1/10.764);
+            double solar_diffuse_f = readDouble(map, SOLAR_DIFFUSE, 0);
+            outputContent.print(solar_diffuse_f + ",");
+            // print solar_global convert from watts/m^2 to watts/f^s
+            // double solar_global_m = readDouble(map, SOLAR_GLOBAL, 0);
+            // double solar_global_f = solar_global_m*(1/10.764);
+            double solar_global_f = readDouble(map, SOLAR_GLOBAL, 0);
+            outputContent.print(solar_global_f + "");
+            outputContent.println();
+            outputContent.flush();
+        }
+    }
+
+    protected double readDouble(Map<String, Object> map, String key, double minimumValue) {
+        double result = 0;
+        if (map.containsKey(key)) {
+            String strVal = map.get(key).toString();
+            try {
+                double res = Double.parseDouble(strVal);
+                if (res < minimumValue) {
+                    return minimumValue;
+                } else {
+                    return res;
+                }
+            } catch (Exception e) {
+                System.out.println("Could not convert " + key + ": " + strVal);
+            }
+        }
+
+        return result;
+    }
+
+    public static void main(String[] args) {
+        // 01:01:00:01:00, 33.1, 0.31, 10.4, 0, 0, 0
+        try {
+            // ProvenWeatherRecord record = new ProvenWeatherRecord();
+            // record.setDateTime(sdfIn.parse("2009:01:01:00:01:00").getTime());
+            // record.setAmbientTemperature(.6112);
+            // record.setHumidity(0.31);
+            // record.setSpeed(10.4);
+            // record.setIrradanceGlobalHorizontal(0);
+            // record.setIrradanceDiffuseHorizontal(0);
+            // record.setIrradanceDirectNormal(0);
+            //
+            // String provenInput = record.toString();
+
+            String provenInput = "{\"measurements\":[{\"name\":\"weather\",\"points\":[{\"row\":{\"entry\":[{\"key\":"
+                    + "\"Diffuse\",\"value\":\"40.006386875\"},{\"key\":\"AvgWindSpeed\",\"value\":\"88.0\"},{\"key\":"
+                    + "\"TowerRH\",\"value\":\"86.8\"},{\"key\":\"long\",\"value\":\"\\\"105.18 W\\\"\"},{\"key\":"
+                    + "\"MST\",\"value\":\"00:00\"},{\"key\":\"TowerDryBulbTemp\",\"value\":\"13.316\"},{\"key\":"
+                    + "\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":\"70.0402521765\"},{\"key\":"
+                    + "\"GlobalCM22\",\"value\":\"21.037676152399999996\"},{\"key\":\"AvgWindDirection\",\"value\":"
+                    + "\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.8Z\"},{\"key\":\"place\",\"value\":"
+                    + "\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\""
+                    + "}]}},{\"row\":{\"entry\":[{\"key\":\"Diffuse\",\"value\":\"30.005538233499999999\"},{\"key\":"
+                    + "\"AvgWindSpeed\",\"value\":\"44.0\"},{\"key\":\"TowerRH\",\"value\":\"86.9\"},{\"key\":\"long\","
+                    + "\"value\":\"\\\"105.18 W\\\"\"},{\"key\":\"MST\",\"value\":\"00:01\"},{\"key\":\"TowerDryBulbTemp\","
+                    + "\"value\":\"13.406\"},{\"key\":\"DATE\",\"value\":\"1/1/2013\"},{\"key\":\"DirectCH1\",\"value\":"
+                    + "\"34.0395396335\"},{\"key\":\"GlobalCM22\",\"value\":\"55.0369521827\"},{\"key\":\"AvgWindDirection\","
+                    + "\"value\":\"0.0\"},{\"key\":\"time\",\"value\":\"1970-01-16T16:57:28.86Z\"},{\"key\":\"place\","
+                    + "\"value\":\"\\\"Solar Radiation Research Laboratory\\\"\"},{\"key\":\"lat\",\"value\":\"\\\"39.74 N\\\"\"}]}}]}]}";
+
+            new ProvenWeatherToGridlabdWeatherConverter().convert(provenInput, new PrintWriter(System.out), null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 }

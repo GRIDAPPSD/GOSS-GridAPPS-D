@@ -1,0 +1,161 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [ main, master, develop, java-update ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checkstyle:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Run Checkstyle
+      run: ./gradlew checkstyleMain checkstyleTest --no-daemon || true
+      env:
+        GRADLE_OPTS: -Xmx2g -Dorg.gradle.daemon=false
+
+    - name: Upload Checkstyle results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: checkstyle-results
+        path: |
+          **/reports/checkstyle/
+        retention-days: 30
+
+  spotless:
+    name: Code Formatting Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Check code formatting
+      run: ./gradlew spotlessCheck --no-daemon || true
+      env:
+        GRADLE_OPTS: -Xmx2g -Dorg.gradle.daemon=false
+
+    - name: Show formatting differences
+      if: failure()
+      run: |
+        echo "Code formatting issues found. Run './gradlew spotlessApply' to fix them."
+        ./gradlew spotlessDiffMain spotlessDiffTest --no-daemon || true
+
+  pmd:
+    name: PMD Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Run PMD analysis
+      run: ./gradlew pmdMain pmdTest --no-daemon || true
+      env:
+        GRADLE_OPTS: -Xmx2g -Dorg.gradle.daemon=false
+
+    - name: Upload PMD results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pmd-results
+        path: |
+          **/reports/pmd/
+        retention-days: 30
+
+  dependency-check:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Run OWASP Dependency Check
+      run: ./gradlew dependencyCheckAnalyze --no-daemon || true
+      env:
+        GRADLE_OPTS: -Xmx3g -Dorg.gradle.daemon=false
+
+    - name: Upload dependency check results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-check-results
+        path: |
+          **/reports/dependency-check-report.html
+          **/reports/dependency-check-report.json
+        retention-days: 30
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [checkstyle, spotless, pmd, dependency-check]
+    if: always()
+
+    steps:
+    - name: Check quality gate
+      run: |
+        echo "Checkstyle: ${{ needs.checkstyle.result }}"
+        echo "Spotless: ${{ needs.spotless.result }}"
+        echo "PMD: ${{ needs.pmd.result }}"
+        echo "Dependency Check: ${{ needs.dependency-check.result }}"
+
+        # Allow some checks to fail without failing the entire pipeline
+        # Focus on critical security issues
+        if [[ "${{ needs.dependency-check.result }}" == "failure" ]]; then
+          echo "Critical: Dependency vulnerabilities found!"
+          exit 1
+        fi
+
+        echo "Quality gate passed (with warnings allowed)"

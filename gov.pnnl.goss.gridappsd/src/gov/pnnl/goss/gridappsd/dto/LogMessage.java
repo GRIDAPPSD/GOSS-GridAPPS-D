@@ -46,102 +46,115 @@ import com.google.gson.JsonSyntaxException;
 
 public class LogMessage implements Serializable {
 
-	private static final long serialVersionUID = 3528865632052617983L;
+    private static final long serialVersionUID = 3528865632052617983L;
 
-	public enum LogLevel {
-		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
-	}
-	public enum ProcessStatus {
-		STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE, STOPPED, PAUSED
-	}
+    public enum LogLevel {
+        TRACE, DEBUG, INFO, WARN, ERROR, FATAL
+    }
 
-	String source;
-	String processId;
-	long timestamp;
-	String logMessage;
-	LogLevel logLevel;
-	ProcessStatus processStatus;
-	Boolean storeToDb = true;
-	String process_type;
+    public enum ProcessStatus {
+        STARTING, STARTED, RUNNING, ERROR, CLOSED, COMPLETE, STOPPED, PAUSED
+    }
 
-	public LogMessage(){}
+    String source;
+    String processId;
+    long timestamp;
+    String logMessage;
+    LogLevel logLevel;
+    ProcessStatus processStatus;
+    Boolean storeToDb = true;
+    String process_type;
 
-	public LogMessage(String source, String requestId, long timestamp, String logMessage, LogLevel logLevel, ProcessStatus processStatus, Boolean storeToDb, String process_type){
-		this.source = source;
-		this.processId = requestId;
-		this.timestamp = timestamp;
-		this.logLevel = logLevel;
-		this.logMessage = logMessage;
-		this.processStatus = processStatus;
-		this.storeToDb = storeToDb;
-		this.process_type = process_type;
-	}
+    public LogMessage() {
+    }
 
-	public String getSource() {
-		return source;
-	}
-	public void setSource(String source) {
-		this.source = source;
-	}
+    public LogMessage(String source, String requestId, long timestamp, String logMessage, LogLevel logLevel,
+            ProcessStatus processStatus, Boolean storeToDb, String process_type) {
+        this.source = source;
+        this.processId = requestId;
+        this.timestamp = timestamp;
+        this.logLevel = logLevel;
+        this.logMessage = logMessage;
+        this.processStatus = processStatus;
+        this.storeToDb = storeToDb;
+        this.process_type = process_type;
+    }
 
-	public String getProcessId() {
-		return processId;
-	}
+    public String getSource() {
+        return source;
+    }
 
-	public void setProcessId(String processId) {
-		this.processId = processId;
-	}
+    public void setSource(String source) {
+        this.source = source;
+    }
 
-	public long getTimestamp() {
-		return timestamp;
-	}
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
-	public String getLogMessage() {
-		return logMessage;
-	}
-	public void setLogMessage(String logMessage) {
-		this.logMessage = logMessage;
-	}
-	public LogLevel getLogLevel() {
-		return logLevel;
-	}
-	public void setLogLevel(LogLevel logLevel) {
-		this.logLevel = logLevel;
-	}
-	public ProcessStatus getProcessStatus() {
-		return processStatus;
-	}
-	public void setProcessStatus(ProcessStatus processStatus) {
-		this.processStatus = processStatus;
-	}
-	public Boolean getStoreToDb() {
-		return storeToDb;
-	}
-	public void setStoreToDb(Boolean storeToDb) {
-		this.storeToDb = storeToDb;
-	}
-	
-	public String getProcess_type() {
-		return process_type;
-	}
+    public String getProcessId() {
+        return processId;
+    }
 
-	public void setProcess_type(String process_type) {
-		this.process_type = process_type;
-	}
+    public void setProcessId(String processId) {
+        this.processId = processId;
+    }
 
-	public static LogMessage parse(String jsonString) throws JsonSyntaxException {
-		Gson  gson = new Gson();
-		LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
-		if(obj.logMessage==null)
-			throw new JsonSyntaxException("Expected attribute logMessage not found in "+jsonString);
-		return obj;
-	}
+    public long getTimestamp() {
+        return timestamp;
+    }
 
-	@Override
-	public String toString() {
-		Gson  gson = new Gson();
-		return gson.toJson(this);
-	}
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getLogMessage() {
+        return logMessage;
+    }
+
+    public void setLogMessage(String logMessage) {
+        this.logMessage = logMessage;
+    }
+
+    public LogLevel getLogLevel() {
+        return logLevel;
+    }
+
+    public void setLogLevel(LogLevel logLevel) {
+        this.logLevel = logLevel;
+    }
+
+    public ProcessStatus getProcessStatus() {
+        return processStatus;
+    }
+
+    public void setProcessStatus(ProcessStatus processStatus) {
+        this.processStatus = processStatus;
+    }
+
+    public Boolean getStoreToDb() {
+        return storeToDb;
+    }
+
+    public void setStoreToDb(Boolean storeToDb) {
+        this.storeToDb = storeToDb;
+    }
+
+    public String getProcess_type() {
+        return process_type;
+    }
+
+    public void setProcess_type(String process_type) {
+        this.process_type = process_type;
+    }
+
+    public static LogMessage parse(String jsonString) throws JsonSyntaxException {
+        Gson gson = new Gson();
+        LogMessage obj = gson.fromJson(jsonString, LogMessage.class);
+        if (obj.logMessage == null)
+            throw new JsonSyntaxException("Expected attribute logMessage not found in " + jsonString);
+        return obj;
+    }
+
+    @Override
+    public String toString() {
+        Gson gson = new Gson();
+        return gson.toJson(this);
+    }
 }

@@ -1,0 +1,135 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+description = 'Apache Jena Wrapper Bundle for GridAPPS-D - embeds all Jena dependencies'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    embed
+    implementation.extendsFrom(embed)
+}
+
+dependencies {
+    // Apache Jena core components
+    embed 'org.apache.jena:jena-core:3.7.0'
+    embed 'org.apache.jena:jena-arq:3.7.0'
+    embed 'org.apache.jena:jena-base:3.7.0'
+    embed 'org.apache.jena:jena-iri:3.7.0'
+    embed 'org.apache.jena:jena-shaded-guava:3.7.0'
+
+    // Jena transitive dependencies
+    embed 'org.apache.commons:commons-csv:1.5'  // Jena 3.7.0 uses 1.5
+    embed 'org.apache.thrift:libthrift:0.10.0'  // Jena 3.7.0 uses 0.10.0
+    embed 'com.github.andrewoma.dexx:collection:0.7'
+    embed 'com.github.jsonld-java:jsonld-java:0.12.0'  // Jena 3.7.0 uses 0.12.0
+    embed 'commons-codec:commons-codec:1.11'  // Jena 3.7.0 uses 1.11
+    embed 'org.apache.commons:commons-lang3:3.4'
+
+    // HTTP components for remote SPARQL endpoints
+    embed 'org.apache.httpcomponents:httpclient:4.5.5'
+    embed 'org.apache.httpcomponents:httpcore:4.4.9'
+
+    // Jackson for JSON parsing
+    embed 'com.fasterxml.jackson.core:jackson-core:2.9.5'
+    embed 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
+    embed 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
+
+    // Xerces for XML parsing (Jena needs it)
+    embed 'xerces:xercesImpl:2.11.0'
+    embed 'xml-apis:xml-apis:1.4.01'
+
+    // SLF4J API (don't embed implementation, let OSGi provide it)
+    compileOnly 'org.slf4j:slf4j-api:2.0.16'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+shadowJar {
+    archiveBaseName.set('gridappsd-jena')
+    archiveVersion.set('3.7.0')
+    archiveClassifier.set('')
+
+    // Relocate packages to avoid conflicts with other bundles
+    // Don't relocate org.apache.jena - we want to export it as-is
+    relocate 'org.apache.commons.csv', 'jena.shaded.commons.csv'
+    relocate 'org.apache.thrift', 'jena.shaded.thrift'
+    relocate 'com.github.andrewoma.dexx', 'jena.shaded.dexx'
+    relocate 'com.github.jsonldjava', 'jena.shaded.jsonldjava'
+    relocate 'org.apache.commons.codec', 'jena.shaded.commons.codec'
+    relocate 'com.fasterxml.jackson', 'jena.shaded.jackson'
+    relocate 'org.apache.xerces', 'jena.shaded.xerces'
+    // Note: Don't relocate org.apache.http as it might be needed by other bundles
+
+    // Merge service files for ServiceLoader
+    mergeServiceFiles()
+
+    // Generate OSGi manifest
+    manifest {
+        attributes(
+            'Bundle-ManifestVersion': '2',
+            'Bundle-SymbolicName': 'gridappsd-jena',
+            'Bundle-Name': 'Apache Jena Wrapper Bundle for GridAPPS-D',
+            'Bundle-Version': '3.7.0',
+            'Bundle-Vendor': 'PNNL',
+            // Export only the Jena packages that GridAPPS-D uses
+            'Export-Package': 'org.apache.jena.query;version="3.7.0",' +
+                             'org.apache.jena.rdf.model;version="3.7.0",' +
+                             'org.apache.jena.rdf.model.impl;version="3.7.0",' +
+                             'org.apache.jena.ontology;version="3.7.0",' +
+                             'org.apache.jena.util;version="3.7.0",' +
+                             'org.apache.jena.util.iterator;version="3.7.0",' +
+                             'org.apache.jena.graph;version="3.7.0",' +
+                             'org.apache.jena.graph.impl;version="3.7.0",' +
+                             'org.apache.jena.graph.compose;version="3.7.0",' +
+                             'org.apache.jena.datatypes;version="3.7.0",' +
+                             'org.apache.jena.datatypes.xsd;version="3.7.0",' +
+                             'org.apache.jena.riot;version="3.7.0",' +
+                             'org.apache.jena.shared;version="3.7.0",' +
+                             'org.apache.jena.sparql.core;version="3.7.0",' +
+                             'org.apache.jena.sparql.engine;version="3.7.0",' +
+                             'org.apache.jena.sparql.resultset;version="3.7.0"',
+            // Import SLF4J and JDK packages from OSGi environment
+            'Import-Package': 'org.slf4j;version="[1.7,3)",' +
+                             'javax.naming,' +
+                             'javax.naming.directory,' +
+                             'javax.naming.ldap,' +
+                             'javax.net,' +
+                             'javax.net.ssl,' +
+                             'javax.security.auth.x500,' +
+                             'javax.security.cert,' +
+                             'javax.crypto,' +
+                             'javax.crypto.spec,' +
+                             'javax.xml.parsers,' +
+                             'javax.xml.transform,' +
+                             'javax.xml.transform.dom,' +
+                             'javax.xml.transform.stream,' +
+                             'org.w3c.dom,' +
+                             'org.xml.sax,' +
+                             'org.xml.sax.helpers',
+            // Embed everything else
+            'Bundle-ClassPath': '.',
+            'Require-Capability': 'osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"'
+        )
+    }
+
+    // Exclude duplicate META-INF files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/NOTICE*'
+    exclude 'META-INF/LICENSE*'
+    exclude 'META-INF/DEPENDENCIES'
+    exclude 'META-INF/maven/**'
+}
+
+// Make shadow the default jar task
+jar.enabled = false
+assemble.dependsOn shadowJar

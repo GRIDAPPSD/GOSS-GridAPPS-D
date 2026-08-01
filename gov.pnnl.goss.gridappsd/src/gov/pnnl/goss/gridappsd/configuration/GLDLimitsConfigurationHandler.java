@@ -43,9 +43,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.Properties;
 
-import org.apache.felix.dm.annotation.api.Component;
-import org.apache.felix.dm.annotation.api.ServiceDependency;
-import org.apache.felix.dm.annotation.api.Start;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.Activate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,109 +65,132 @@ import gov.pnnl.goss.gridappsd.dto.SimulationContext;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 
-
-@Component
+@Component(service = ConfigurationHandler.class)
 public class GLDLimitsConfigurationHandler extends BaseConfigurationHandler implements ConfigurationHandler {
 
-	private static Logger log = LoggerFactory.getLogger(GLDLimitsConfigurationHandler.class);
-	Client client = null;
+    private static Logger log = LoggerFactory.getLogger(GLDLimitsConfigurationHandler.class);
+    Client client = null;
 
-	@ServiceDependency
-	private volatile ConfigurationManager configManager;
-	@ServiceDependency
-	private volatile PowergridModelDataManager powergridModelManager;
-	@ServiceDependency
-	private volatile SimulationManager simulationManager;
-	@ServiceDependency
-	volatile LogManager logManager;
-	@ServiceDependency
-	volatile DataManager dataManager;
+    @Reference
+    private volatile ConfigurationManager configManager;
+    @Reference
+    private volatile PowergridModelDataManager powergridModelManager;
+    @Reference
+    private volatile SimulationManager simulationManager;
+    @Reference
+    volatile LogManager logManager;
+    @Reference
+    volatile DataManager dataManager;
 
+    // Setter methods for manual dependency injection (workaround for SCR not
+    // loading components)
+    public void setConfigManager(ConfigurationManager configManager) {
+        this.configManager = configManager;
+    }
 
-	public static final String TYPENAME = "GridLAB-D Limits";
-	public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
-	public static final String MODELID = "model_id";
-	public static final String SIMULATIONID = "simulation_id";
-	public static final String cimhub_PREFIX = "model";
-	public static final String LIMITS_FILENAME = cimhub_PREFIX+"_limits.json";
+    public void setPowergridModelManager(PowergridModelDataManager powergridModelManager) {
+        this.powergridModelManager = powergridModelManager;
+    }
 
-	public GLDLimitsConfigurationHandler() {
-	}
+    public void setSimulationManager(SimulationManager simulationManager) {
+        this.simulationManager = simulationManager;
+    }
 
-	public GLDLimitsConfigurationHandler(LogManager logManager, DataManager dataManager) {
-		this.logManager = logManager;
-		this.dataManager = dataManager;
-	}
+    public void setLogManager(LogManager logManager) {
+        this.logManager = logManager;
+    }
 
-	@Override
-	@Start
-	public void start(){
-		if(configManager!=null) {
-			configManager.registerConfigurationHandler(TYPENAME, this);
-		}
-		else {
-			//TODO send log message and exception
-			log.warn("No Config manager avilable for "+getClass());
-		}
+    public void setDataManager(DataManager dataManager) {
+        this.dataManager = dataManager;
+    }
 
-		if(powergridModelManager == null){
-			//TODO send log message and exception
-		}
-	}
+    public static final String TYPENAME = "GridLAB-D Limits";
+    public static final String RANDOMIZEFRACTIONS = "randomize_zipload_fractions";
+    public static final String MODELID = "model_id";
+    public static final String SIMULATIONID = "simulation_id";
+    public static final String cimhub_PREFIX = "model";
+    public static final String LIMITS_FILENAME = cimhub_PREFIX + "_limits.json";
 
-	@Override
-	public void generateConfig(Properties parameters, PrintWriter out, String processId, String username) throws Exception {
-		
-		String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
-		File configFile = null;
-		if(simulationId!=null){
-			SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
-			if(simulationContext!=null){
-				configFile = new File(simulationContext.getSimulationDir()+File.separator+GLDLimitsConfigurationHandler.LIMITS_FILENAME);
-				//If the config file already has been created for this simulation then return it
-				if(configFile.exists()){
-					printFileToOutput(configFile, out);
-					logManager.info(ProcessStatus.RUNNING, processId,"Limits file for simulation "+simulationId+" already exists.");
-					return;
-				}
-			} else {
-				logManager.warn(ProcessStatus.RUNNING, processId,"No simulation context found for simulation_id: "+simulationId);
-			}
-		}
-		
-		logManager.info(ProcessStatus.RUNNING, processId,"Generating limits file using parameters: "+parameters);
+    public GLDLimitsConfigurationHandler() {
+    }
 
-		String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
-		if(modelId==null || modelId.trim().length()==0){
-			logManager.error(ProcessStatus.ERROR, processId,"No "+MODELID+" parameter provided");
-			throw new Exception("Missing parameter "+MODELID);
-		}
-		String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
-		if(bgHost==null || bgHost.trim().length()==0){
-			bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
-		}
-		
-		QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
-		queryHandler.addFeederSelection(modelId);
+    public GLDLimitsConfigurationHandler(LogManager logManager, DataManager dataManager) {
+        this.logManager = logManager;
+        this.dataManager = dataManager;
+    }
 
-		//cimhub utility uses
-		CIMImporter cimImporter = new CIMImporter();
-		
-		OperationalLimits oLimits = new OperationalLimits();
-		oLimits.BuildLimitMaps (cimImporter, queryHandler);
-		out.println("{\"limits\":{");
-		out.println("\"voltages\":[");
-		oLimits.VoltageMapToJSON (out);
-		out.println("],");
-		out.println("\"currents\":[");
-		oLimits.CurrentMapToJSON (out);
-		out.println("]");
-		out.println("}}");
-		out.close();
-				
-		logManager.info(ProcessStatus.RUNNING, processId,"Finished generating GridLAB-D limits file.");
+    @Override
+    @Activate
+    public void start() {
+        if (configManager != null) {
+            configManager.registerConfigurationHandler(TYPENAME, this);
+        } else {
+            // TODO send log message and exception
+            log.warn("No Config manager avilable for " + getClass());
+        }
 
-	}
+        if (powergridModelManager == null) {
+            // TODO send log message and exception
+        }
+    }
 
+    @Override
+    public void generateConfig(Properties parameters, PrintWriter out, String processId, String username)
+            throws Exception {
+
+        String simulationId = GridAppsDConstants.getStringProperty(parameters, SIMULATIONID, null);
+        File configFile = null;
+        if (simulationId != null) {
+            SimulationContext simulationContext = simulationManager.getSimulationContextForId(simulationId);
+            if (simulationContext != null) {
+                configFile = new File(simulationContext.getSimulationDir() + File.separator
+                        + GLDLimitsConfigurationHandler.LIMITS_FILENAME);
+                // If the config file already has been created for this simulation then return
+                // it
+                if (configFile.exists()) {
+                    printFileToOutput(configFile, out);
+                    logManager.info(ProcessStatus.RUNNING, processId,
+                            "Limits file for simulation " + simulationId + " already exists.");
+                    return;
+                }
+            } else {
+                logManager.warn(ProcessStatus.RUNNING, processId,
+                        "No simulation context found for simulation_id: " + simulationId);
+            }
+        }
+
+        logManager.info(ProcessStatus.RUNNING, processId, "Generating limits file using parameters: " + parameters);
+
+        String modelId = GridAppsDConstants.getStringProperty(parameters, MODELID, null);
+        if (modelId == null || modelId.trim().length() == 0) {
+            logManager.error(ProcessStatus.ERROR, processId, "No " + MODELID + " parameter provided");
+            throw new Exception("Missing parameter " + MODELID);
+        }
+        String bgHost = configManager.getConfigurationProperty(GridAppsDConstants.BLAZEGRAPH_HOST_PATH);
+        if (bgHost == null || bgHost.trim().length() == 0) {
+            bgHost = BlazegraphQueryHandler.DEFAULT_ENDPOINT;
+        }
+
+        QueryHandler queryHandler = new BlazegraphQueryHandler(bgHost, logManager, processId, username);
+        queryHandler.addFeederSelection(modelId);
+
+        // cimhub utility uses
+        CIMImporter cimImporter = new CIMImporter();
+
+        OperationalLimits oLimits = new OperationalLimits();
+        oLimits.BuildLimitMaps(cimImporter, queryHandler);
+        out.println("{\"limits\":{");
+        out.println("\"voltages\":[");
+        oLimits.VoltageMapToJSON(out);
+        out.println("],");
+        out.println("\"currents\":[");
+        oLimits.CurrentMapToJSON(out);
+        out.println("]");
+        out.println("}}");
+        out.close();
+
+        logManager.info(ProcessStatus.RUNNING, processId, "Finished generating GridLAB-D limits file.");
+
+    }
 
 }
