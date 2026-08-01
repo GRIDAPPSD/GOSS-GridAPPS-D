@@ -54,7 +54,7 @@ jobs:
         r = g.get_response('goss.gridappsd.process.request.status.platform', '{}', timeout=5)
         g.disconnect()
         assert r is not None
-        " 2>/dev/null; then
+        "; then
             echo "Platform is ready after ${i} attempts"
             exit 0
           fi
@@ -62,7 +62,7 @@ jobs:
           sleep 10
         done
         echo "Platform did not become ready in time"
-        docker logs gridappsd --tail 50
+        docker logs gridappsd
         exit 1
       timeout-minutes: 6
 
@@ -79,7 +79,7 @@ jobs:
 
     - name: Show container logs on failure
       if: failure()
-      run: docker logs gridappsd --tail 100
+      run: docker logs gridappsd
 
     - name: Stop containers
       if: always()

@@ -73,7 +73,7 @@ The `config.properties` file controls the Felix framework and GridAPPS-D setting
 
 ```properties
 # OSGi framework storage
-org.osgi.framework.storage=felix-cache
+org.osgi.framework.storage=/gridappsd/felix-cache
 org.osgi.framework.storage.clean=onFirstInit
 
 # Bundle directory

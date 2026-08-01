@@ -86,8 +86,7 @@ dist:
 clean:
 	./gradlew clean
 	rm -rf build/launcher
-	rm -rf felix-cache
-	rm -rf */felix-cache
+	rm -rf /gridappsd/felix-cache
 
 # Test targets
 # Run all tests (unit tests always run, integration tests skip if services unavailable)
@@ -188,6 +187,9 @@ test-check:
 
 # Run STOMP topic prefix tests inside Docker container
 # Verifies that /topic/ prefix is required for STOMP pub/sub messaging
+# The test file lives under services/helicsgossbridge/tests/, which the image
+# .dockerignore strips (**/tests/), so copy it in at test time like
+# test-stomp-token and test-blazegraph do rather than expecting it baked in.
 test-stomp-topics:
 	@echo "Running STOMP topic prefix tests..."
 	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
@@ -195,7 +197,9 @@ test-stomp-topics:
 		echo "Start containers with: make docker-up"; \
 		exit 1; \
 	fi
-	docker exec gridappsd bash -c "cd /gridappsd/services/helicsgossbridge && python -m pytest tests/test_stomp_topic_prefix.py -v"
+	docker exec gridappsd pip install -q --root-user-action=ignore "stomp.py>=8.2.0"
+	docker cp services/helicsgossbridge/tests/test_stomp_topic_prefix.py gridappsd:/tmp/test_stomp_topic_prefix.py
+	docker exec gridappsd python -m pytest /tmp/test_stomp_topic_prefix.py -v
 
 # Run STOMP token auth tests inside the Docker container
 # Verifies JWT token request/response and token-based authentication
@@ -257,7 +261,7 @@ test-simulation-python:
 
 # Run with Docker config (foreground)
 run: dist
-	@rm -rf build/launcher/felix-cache
+	@rm -rf /gridappsd/felix-cache
 	cd build/launcher && java -jar gridappsd-launcher.jar
 
 # Run in background with logging
@@ -270,7 +274,7 @@ run-bg: dist
 		echo "Use 'make run-stop' to stop it first"; \
 		exit 1; \
 	fi
-	@rm -rf build/launcher/felix-cache
+	@rm -rf /gridappsd/felix-cache
 	@echo "Starting GridAPPS-D in background..."
 	@echo "Log file: $(GRIDAPPSD_LOG)"
 	@nohup sh -c 'cd build/launcher && exec java -jar gridappsd-launcher.jar' > $(GRIDAPPSD_LOG) 2>&1 & \

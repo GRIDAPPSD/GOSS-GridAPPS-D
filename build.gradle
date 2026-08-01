@@ -178,6 +178,27 @@ task copyConfig(type: Copy) {
     }
 }
 
+// Task to delete the bundle directory before collectBundles repopulates it.
+// collectBundles places jars two ways: declarative Copy specs (from(...)) and
+// raw file I/O in a doFirst block (the felixDeps Maven downloads below). A plain
+// Copy task, or even a type: Sync task, only reconciles the declarative specs;
+// it cannot see the felixDeps jars and would either leave stale versions behind
+// (Copy) or delete jars that are not covered by any from() spec (Sync). Wiring
+// this as an upstream dependency guarantees the directory is empty before either
+// writer runs, on every collectBundles/dist invocation, with or without a prior
+// make clean.
+//
+// felixDeps are downloaded into a separate persistent cache
+// ($buildDir/felixDepsCache, see the collectBundles doFirst block below) and
+// copied into this directory on every run, so wiping this directory here does
+// not force a re-download of the ~98 Maven Central jars on a warm rebuild.
+task cleanBundleDir(type: Delete) {
+    group = 'GridAPPS-D'
+    description = 'Deletes the launcher bundle directory so collectBundles cannot leave stale, differently-versioned bundles behind on a no-clean rebuild'
+
+    delete "$buildDir/launcher/bundle"
+}
+
 // Task to collect all bundle JARs
 task collectBundles(type: Copy) {
     group = 'GridAPPS-D'
@@ -190,6 +211,7 @@ task collectBundles(type: Copy) {
     dependsOn ':gridappsd-poi:shadowJar'
     dependsOn assembleLauncher
     dependsOn copyConfig
+    dependsOn cleanBundleDir
 
     into "$buildDir/launcher/bundle"
 
@@ -457,7 +479,16 @@ task collectBundles(type: Copy) {
         def destDir = file("$buildDir/launcher/bundle")
         destDir.mkdirs()
 
-        // Download Maven dependencies
+        // Downloaded jars live in a cache directory outside build/launcher/bundle,
+        // so cleanBundleDir (which wipes build/launcher/bundle on every
+        // collectBundles run to remove stale versioned GOSS-Core bundles, see
+        // above) does not also force these ~98 fixed-version Maven Central jars
+        // to re-download on every rebuild. The cache survives across `dist`
+        // invocations; only `clean` (which deletes the whole $buildDir) empties it.
+        def cacheDir = file("$buildDir/felixDepsCache")
+        cacheDir.mkdirs()
+
+        // Download Maven dependencies (cached), then copy into the bundle dir
         felixDeps.each { dep ->
             def parts = dep.split(':')
             def group = parts[0].replace('.', '/')
@@ -465,16 +496,20 @@ task collectBundles(type: Copy) {
             def version = parts[2]
             def jarName = "${artifact}-${version}.jar"
             def url = "https://repo1.maven.org/maven2/${group}/${artifact}/${version}/${jarName}"
-            def destFile = new File(destDir, jarName)
+            def cacheFile = new File(cacheDir, jarName)
 
-            if (!destFile.exists()) {
+            if (!cacheFile.exists()) {
                 println "Downloading ${jarName}..."
                 new URL(url).withInputStream { input ->
-                    destFile.withOutputStream { output ->
+                    cacheFile.withOutputStream { output ->
                         output << input
                     }
                 }
             }
+
+            def destFile = new File(destDir, jarName)
+            java.nio.file.Files.copy(cacheFile.toPath(), destFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         }
     }
 
