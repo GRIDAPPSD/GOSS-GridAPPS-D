@@ -359,19 +359,18 @@ public class SimulationContainerTest {
     }
 
     /**
-     * Captures the messages received on one simulation's own per-simulation
-     * output and log topics, for the topic-isolation assertions in
+     * Captures the messages received on one simulation's own per-simulation output
+     * and log topics, for the topic-isolation assertions in
      * {@link #testRunTwoConcurrentSimulationsWithTopicIsolation()}.
      *
-     * The isolation property under test: a message arriving on THIS
-     * simulation's topic subscription must carry THIS simulation's id in its
-     * own JSON payload ("simulation_id" for output messages, "processId" for
-     * log messages, per LogMessage's Gson serialization), never the other
-     * concurrently-running simulation's id. Bucketing happens by which literal
-     * topic string the platform routed the message to (i.e. which watcher's
-     * dedicated subscription received it), not by the payload's own id field,
-     * so a cross-wired topic bug is actually detectable rather than
-     * tautologically bucketed away.
+     * The isolation property under test: a message arriving on THIS simulation's
+     * topic subscription must carry THIS simulation's id in its own JSON payload
+     * ("simulation_id" for output messages, "processId" for log messages, per
+     * LogMessage's Gson serialization), never the other concurrently-running
+     * simulation's id. Bucketing happens by which literal topic string the platform
+     * routed the message to (i.e. which watcher's dedicated subscription received
+     * it), not by the payload's own id field, so a cross-wired topic bug is
+     * actually detectable rather than tautologically bucketed away.
      */
     private static final class SimulationTopicWatcher {
         final String label;
@@ -408,9 +407,9 @@ public class SimulationContainerTest {
 
         /**
          * subscribe() callbacks always arrive wrapped in a DataResponse envelope
-         * (DefaultClientListener.onMessage wraps every TextMessage/ObjectMessage
-         * this way, unlike getResponse() which unwraps to the raw text). The
-         * actual published JSON payload (LogMessage or the Python bridge's
+         * (DefaultClientListener.onMessage wraps every TextMessage/ObjectMessage this
+         * way, unlike getResponse() which unwraps to the raw text). The actual
+         * published JSON payload (LogMessage or the Python bridge's
          * simulation_id-carrying output message) is DataResponse.getData(), not
          * response.toString() itself, which stringifies the whole envelope
          * (destination, username, id, ...).
@@ -458,17 +457,16 @@ public class SimulationContainerTest {
     }
 
     /**
-     * Sends one simulation request on its own dedicated client connection and,
-     * as soon as the platform-assigned simulation ID is known, immediately
-     * subscribes that same client to the simulation's own output and log
-     * topics. This is the earliest point at which the exact per-simulation
-     * topic string can be built: the ID is server-assigned, so there is no way
-     * to subscribe to the exact topic before the ID exists. Subscribing
-     * synchronously, in the same thread, right after getResponse() returns
-     * minimizes the race window before the platform's async config-processing
-     * pipeline starts publishing (empirically, the earliest per-simulation log
-     * messages are still several seconds out at that point; see the GADP-061
-     * report for the container-log evidence).
+     * Sends one simulation request on its own dedicated client connection and, as
+     * soon as the platform-assigned simulation ID is known, immediately subscribes
+     * that same client to the simulation's own output and log topics. This is the
+     * earliest point at which the exact per-simulation topic string can be built:
+     * the ID is server-assigned, so there is no way to subscribe to the exact topic
+     * before the ID exists. Subscribing synchronously, in the same thread, right
+     * after getResponse() returns minimizes the race window before the platform's
+     * async config-processing pipeline starts publishing (empirically, the earliest
+     * per-simulation log messages are still several seconds out at that point; see
+     * the GADP-061 report for the container-log evidence).
      */
     private String startSimulationAndSubscribe(Client simClient, String request, SimulationTopicWatcher watcher)
             throws Exception {
@@ -511,34 +509,33 @@ public class SimulationContainerTest {
      * Test: Run two simulations CONCURRENTLY and prove per-simulation topic
      * isolation.
      *
-     * This guards the regression fixed in commit faa2d4e0 (PR 1758, 2024):
-     * before that fix, SimulationManager and helics_goss_bridge published to
-     * one shared topic across simulations, so concurrent instances corrupted
-     * each other's status. The fix suffixes every per-simulation topic with
-     * "." + simulationId (SimulationManagerImpl.java:224, SimulationProcess.
-     * java:217,232,255,290, helics_goss_bridge.py:440,642,681). This test does
-     * not exercise those exact four call sites directly: in this environment
-     * SimulationProcess never starts at all (see the completion-baseline
-     * evidence in the GADP-061 report: Proven has no seeded load-schedule
-     * timeseries data, so GLDZiploadScheduleConfigurationHandler throws before
+     * This guards the regression fixed in commit faa2d4e0 (PR 1758, 2024): before
+     * that fix, SimulationManager and helics_goss_bridge published to one shared
+     * topic across simulations, so concurrent instances corrupted each other's
+     * status. The fix suffixes every per-simulation topic with "." + simulationId
+     * (SimulationManagerImpl.java:224, SimulationProcess. java:217,232,255,290,
+     * helics_goss_bridge.py:440,642,681). This test does not exercise those exact
+     * four call sites directly: in this environment SimulationProcess never starts
+     * at all (see the completion-baseline evidence in the GADP-061 report: Proven
+     * has no seeded load-schedule timeseries data, so
+     * GLDZiploadScheduleConfigurationHandler throws before
      * SimulationManagerImpl.startSimulation() is ever reached). What it does
      * exercise reliably, for every simulation regardless of that gap, is the
-     * identical architectural pattern one layer up: LogManagerImpl.log()
-     * building topic_simulationLog + processId per message
-     * (gov.pnnl.goss.gridappsd.log.LogManagerImpl:297-298), fed by log calls
-     * that fire from the earliest, always-executed phase of request
-     * processing (ProcessNewSimulationRequest / GLDAllConfigurationHandler).
+     * identical architectural pattern one layer up: LogManagerImpl.log() building
+     * topic_simulationLog + processId per message
+     * (gov.pnnl.goss.gridappsd.log.LogManagerImpl:297-298), fed by log calls that
+     * fire from the earliest, always-executed phase of request processing
+     * (ProcessNewSimulationRequest / GLDAllConfigurationHandler).
      *
-     * How this fails if the suffix regresses:
-     * - If a per-simulation topic suffix is dropped entirely (shared topic),
-     * this test's exact-topic subscriptions (built with the suffix) no longer
-     * match anything the platform publishes, so the "received >= 1 message"
-     * assertions fail outright.
-     * - If the suffix is present but the wrong/shared id is used (the
-     * "concurrent instances corrupted each other's status" failure mode),
-     * a message meant for the other simulation is delivered onto this
-     * simulation's subscription, and the per-message processId/simulation_id
-     * equality assertions fail with the mismatched id visible in the message.
+     * How this fails if the suffix regresses: - If a per-simulation topic suffix is
+     * dropped entirely (shared topic), this test's exact-topic subscriptions (built
+     * with the suffix) no longer match anything the platform publishes, so the
+     * "received >= 1 message" assertions fail outright. - If the suffix is present
+     * but the wrong/shared id is used (the "concurrent instances corrupted each
+     * other's status" failure mode), a message meant for the other simulation is
+     * delivered onto this simulation's subscription, and the per-message
+     * processId/simulation_id equality assertions fail with the mismatched id
+     * visible in the message.
      */
     @Test
     void testRunTwoConcurrentSimulationsWithTopicIsolation() throws Exception {
