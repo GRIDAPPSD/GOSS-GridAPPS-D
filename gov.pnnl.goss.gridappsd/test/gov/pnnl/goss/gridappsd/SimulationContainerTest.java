@@ -2,8 +2,14 @@ package gov.pnnl.goss.gridappsd;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,6 +31,7 @@ import com.google.gson.JsonParser;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
+import pnnl.goss.core.DataResponse;
 import pnnl.goss.core.GossResponseEvent;
 import pnnl.goss.core.Request.RESPONSE_FORMAT;
 import pnnl.goss.core.client.ClientServiceFactory;
@@ -69,6 +76,14 @@ public class SimulationContainerTest {
 
     // Timeout for test (simulation duration + overhead for startup/shutdown)
     private static final int TEST_TIMEOUT_SECONDS = SIMULATION_DURATION + 180;
+
+    // Timeout budget for the two-concurrent-simulation test. Two simulations
+    // competing for the same platform config-processing resources plausibly take
+    // a bit longer to each surface their first status message than a lone
+    // simulation does, so this adds a modest extra buffer over the
+    // single-simulation TEST_TIMEOUT_SECONDS margin rather than assuming
+    // concurrency is free.
+    private static final int TWO_SIM_TIMEOUT_SECONDS = SIMULATION_DURATION + 240;
 
     @BeforeEach
     void setUp() {
@@ -341,6 +356,327 @@ public class SimulationContainerTest {
         // measurements");
 
         log.info("=== Container-based Simulation Run Test PASSED ===");
+    }
+
+    /**
+     * Captures the messages received on one simulation's own per-simulation
+     * output and log topics, for the topic-isolation assertions in
+     * {@link #testRunTwoConcurrentSimulationsWithTopicIsolation()}.
+     *
+     * The isolation property under test: a message arriving on THIS
+     * simulation's topic subscription must carry THIS simulation's id in its
+     * own JSON payload ("simulation_id" for output messages, "processId" for
+     * log messages, per LogMessage's Gson serialization), never the other
+     * concurrently-running simulation's id. Bucketing happens by which literal
+     * topic string the platform routed the message to (i.e. which watcher's
+     * dedicated subscription received it), not by the payload's own id field,
+     * so a cross-wired topic bug is actually detectable rather than
+     * tautologically bucketed away.
+     */
+    private static final class SimulationTopicWatcher {
+        final String label;
+        volatile String expectedSimulationId;
+        final List<JsonObject> outputMessages = new CopyOnWriteArrayList<>();
+        final List<JsonObject> logMessages = new CopyOnWriteArrayList<>();
+        final ConcurrentLinkedQueue<String> unparseableMessages = new ConcurrentLinkedQueue<>();
+        final CountDownLatch firstOutputMessage = new CountDownLatch(1);
+        final CountDownLatch firstLogMessage = new CountDownLatch(1);
+
+        SimulationTopicWatcher(String label) {
+            this.label = label;
+        }
+
+        GossResponseEvent outputListener() {
+            return response -> {
+                JsonObject parsed = parseOrRecord(response);
+                if (parsed != null) {
+                    outputMessages.add(parsed);
+                    firstOutputMessage.countDown();
+                }
+            };
+        }
+
+        GossResponseEvent logListener() {
+            return response -> {
+                JsonObject parsed = parseOrRecord(response);
+                if (parsed != null) {
+                    logMessages.add(parsed);
+                    firstLogMessage.countDown();
+                }
+            };
+        }
+
+        /**
+         * subscribe() callbacks always arrive wrapped in a DataResponse envelope
+         * (DefaultClientListener.onMessage wraps every TextMessage/ObjectMessage
+         * this way, unlike getResponse() which unwraps to the raw text). The
+         * actual published JSON payload (LogMessage or the Python bridge's
+         * simulation_id-carrying output message) is DataResponse.getData(), not
+         * response.toString() itself, which stringifies the whole envelope
+         * (destination, username, id, ...).
+         */
+        private JsonObject parseOrRecord(Serializable response) {
+            String text;
+            if (response instanceof DataResponse) {
+                Serializable data = ((DataResponse) response).getData();
+                text = data == null ? "" : data.toString();
+            } else {
+                text = response == null ? "" : response.toString();
+            }
+            try {
+                return JsonParser.parseString(text).getAsJsonObject();
+            } catch (Exception e) {
+                unparseableMessages.add("[" + label + "] " + text);
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Extracts the simulation ID from a getResponse() reply to
+     * topic_requestSimulation. Mirrors the parsing already inline in
+     * {@link #testRunSimulationWithContainers()}, factored out here so the new
+     * concurrent test does not duplicate raw parsing logic; the existing test's
+     * inline copy is intentionally left untouched.
+     */
+    private String extractSimulationId(Serializable simResponse) {
+        if (simResponse == null) {
+            return null;
+        }
+        String simResponseStr = simResponse.toString();
+        try {
+            JsonObject responseObj = JsonParser.parseString(simResponseStr).getAsJsonObject();
+            if (responseObj.has("simulationId")) {
+                return responseObj.get("simulationId").getAsString();
+            } else if (responseObj.has("simulation_id")) {
+                return responseObj.get("simulation_id").getAsString();
+            }
+            return null;
+        } catch (Exception e) {
+            return simResponseStr.replaceAll("\"", "").trim();
+        }
+    }
+
+    /**
+     * Sends one simulation request on its own dedicated client connection and,
+     * as soon as the platform-assigned simulation ID is known, immediately
+     * subscribes that same client to the simulation's own output and log
+     * topics. This is the earliest point at which the exact per-simulation
+     * topic string can be built: the ID is server-assigned, so there is no way
+     * to subscribe to the exact topic before the ID exists. Subscribing
+     * synchronously, in the same thread, right after getResponse() returns
+     * minimizes the race window before the platform's async config-processing
+     * pipeline starts publishing (empirically, the earliest per-simulation log
+     * messages are still several seconds out at that point; see the GADP-061
+     * report for the container-log evidence).
+     */
+    private String startSimulationAndSubscribe(Client simClient, String request, SimulationTopicWatcher watcher)
+            throws Exception {
+        Serializable simResponse = simClient.getResponse(request, GridAppsDConstants.topic_requestSimulation,
+                RESPONSE_FORMAT.JSON);
+        String simulationId = extractSimulationId(simResponse);
+        if (simulationId == null) {
+            return null;
+        }
+        watcher.expectedSimulationId = simulationId;
+
+        String outputTopic = GridAppsDConstants.topic_simulationOutput + "." + simulationId;
+        String logTopic = GridAppsDConstants.topic_simulationLog + simulationId;
+
+        log.info("[{}] Simulation ID: {}. Subscribing to output topic: {}", watcher.label, simulationId,
+                outputTopic);
+        simClient.subscribe(outputTopic, watcher.outputListener());
+        log.info("[{}] Subscribing to log topic: {}", watcher.label, logTopic);
+        simClient.subscribe(logTopic, watcher.logListener());
+
+        return simulationId;
+    }
+
+    private static long remainingNanos(long deadlineNanos) {
+        return Math.max(deadlineNanos - System.nanoTime(), 0L);
+    }
+
+    private void closeQuietly(Client c, String label) {
+        if (c == null) {
+            return;
+        }
+        try {
+            c.close();
+        } catch (Exception e) {
+            log.warn("[{}] Error closing simulation client: {}", label, e.getMessage());
+        }
+    }
+
+    /**
+     * Test: Run two simulations CONCURRENTLY and prove per-simulation topic
+     * isolation.
+     *
+     * This guards the regression fixed in commit faa2d4e0 (PR 1758, 2024):
+     * before that fix, SimulationManager and helics_goss_bridge published to
+     * one shared topic across simulations, so concurrent instances corrupted
+     * each other's status. The fix suffixes every per-simulation topic with
+     * "." + simulationId (SimulationManagerImpl.java:224, SimulationProcess.
+     * java:217,232,255,290, helics_goss_bridge.py:440,642,681). This test does
+     * not exercise those exact four call sites directly: in this environment
+     * SimulationProcess never starts at all (see the completion-baseline
+     * evidence in the GADP-061 report: Proven has no seeded load-schedule
+     * timeseries data, so GLDZiploadScheduleConfigurationHandler throws before
+     * SimulationManagerImpl.startSimulation() is ever reached). What it does
+     * exercise reliably, for every simulation regardless of that gap, is the
+     * identical architectural pattern one layer up: LogManagerImpl.log()
+     * building topic_simulationLog + processId per message
+     * (gov.pnnl.goss.gridappsd.log.LogManagerImpl:297-298), fed by log calls
+     * that fire from the earliest, always-executed phase of request
+     * processing (ProcessNewSimulationRequest / GLDAllConfigurationHandler).
+     *
+     * How this fails if the suffix regresses:
+     * - If a per-simulation topic suffix is dropped entirely (shared topic),
+     * this test's exact-topic subscriptions (built with the suffix) no longer
+     * match anything the platform publishes, so the "received >= 1 message"
+     * assertions fail outright.
+     * - If the suffix is present but the wrong/shared id is used (the
+     * "concurrent instances corrupted each other's status" failure mode),
+     * a message meant for the other simulation is delivered onto this
+     * simulation's subscription, and the per-message processId/simulation_id
+     * equality assertions fail with the mismatched id visible in the message.
+     */
+    @Test
+    void testRunTwoConcurrentSimulationsWithTopicIsolation() throws Exception {
+        Assumptions.assumeTrue(connected, "Could not connect to GridAPPS-D, skipping test");
+
+        log.info("=== Starting Two Concurrent Simulations Topic Isolation Test ===");
+        log.info("Duration: {} seconds each, Timeout: {} seconds", SIMULATION_DURATION, TWO_SIM_TIMEOUT_SECONDS);
+
+        // Independent client connections per simulation. Client.getResponse()
+        // shares one JMS Session per Client to create its temporary reply
+        // destination and consumer, and a JMS Session is not safe for concurrent
+        // use by more than one thread at a time; two truly concurrent requests
+        // need two independent connections, not one Client juggling two logical
+        // simulations. This also better matches the real-world scenario the
+        // original defect was about: independent client sessions racing on a
+        // shared topic.
+        Client clientA = clientFactory.create(PROTOCOL.OPENWIRE, new UsernamePasswordCredentials(USERNAME, PASSWORD));
+        Client clientB = clientFactory.create(PROTOCOL.OPENWIRE, new UsernamePasswordCredentials(USERNAME, PASSWORD));
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            SimulationTopicWatcher watcherA = new SimulationTopicWatcher("A");
+            SimulationTopicWatcher watcherB = new SimulationTopicWatcher("B");
+
+            // Same feeder model (ieee123 / TEST_FEEDER_MRID) for both simulations,
+            // confirmed present in blazegraph via SPARQL (see GADP-061 report).
+            // Using the same model twice is the simpler, still-sufficient choice:
+            // isolation is a topic-naming property, not a model property.
+            String requestA = buildSimulationRequest(TEST_FEEDER_MRID, SIMULATION_DURATION, false);
+            String requestB = buildSimulationRequest(TEST_FEEDER_MRID, SIMULATION_DURATION, false);
+
+            Future<String> futureA = executor.submit(() -> startSimulationAndSubscribe(clientA, requestA, watcherA));
+            Future<String> futureB = executor.submit(() -> startSimulationAndSubscribe(clientB, requestB, watcherB));
+
+            String simulationIdA = futureA.get(60, TimeUnit.SECONDS);
+            String simulationIdB = futureB.get(60, TimeUnit.SECONDS);
+
+            assertNotNull(simulationIdA, "Simulation A should receive a simulation ID from its concurrent request");
+            assertNotNull(simulationIdB, "Simulation B should receive a simulation ID from its concurrent request");
+            assertNotEquals(simulationIdA, simulationIdB,
+                    "Two concurrently-requested simulations must be assigned distinct simulation IDs");
+            log.info("Simulation A ID: {}, Simulation B ID: {}", simulationIdA, simulationIdB);
+
+            // Wait, bounded by a single shared deadline, for at least one log-topic
+            // message per simulation. The log topic is the load-bearing signal: it
+            // fires from the earliest, always-executed phase of simulation request
+            // processing regardless of whether the deeper GridLAB-D/HELICS pipeline
+            // (SimulationProcess) ever starts. The output topic depends on that
+            // deeper pipeline and is checked best-effort further below, not relied
+            // on here.
+            long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(TWO_SIM_TIMEOUT_SECONDS);
+            boolean logAReceived = watcherA.firstLogMessage.await(remainingNanos(deadlineNanos), TimeUnit.NANOSECONDS);
+            boolean logBReceived = watcherB.firstLogMessage.await(remainingNanos(deadlineNanos), TimeUnit.NANOSECONDS);
+
+            assertTrue(logAReceived, "Simulation A should receive at least one message on its own log topic ("
+                    + GridAppsDConstants.topic_simulationLog + simulationIdA + ") within " + TWO_SIM_TIMEOUT_SECONDS
+                    + "s. This is the assertion that fails if the per-simulation topic suffix is dropped: with no "
+                    + "suffix, this subscription never matches the platform's publish topic at all.");
+            assertTrue(logBReceived, "Simulation B should receive at least one message on its own log topic ("
+                    + GridAppsDConstants.topic_simulationLog + simulationIdB + ") within " + TWO_SIM_TIMEOUT_SECONDS
+                    + "s.");
+
+            assertFalse(watcherA.logMessages.isEmpty(),
+                    "Simulation A's log-topic message list should be non-empty once its latch has counted down");
+            assertFalse(watcherB.logMessages.isEmpty(),
+                    "Simulation B's log-topic message list should be non-empty once its latch has counted down");
+
+            // The core isolation assertion: every message that arrived on A's own
+            // log-topic subscription must carry A's own simulation ID in its
+            // payload, never B's, and vice versa. A cross-wired topic bug (the
+            // simulation ID reused or shared between the two concurrent requests)
+            // would deliver a message stamped with the other simulation's ID onto
+            // this subscription; this assertion catches that even though the
+            // suffix itself is still present, unlike the "suffix dropped entirely"
+            // case checked above.
+            for (JsonObject message : watcherA.logMessages) {
+                assertTrue(message.has("processId"), "Log message on A's topic should carry a processId field: "
+                        + message);
+                String actualId = message.get("processId").getAsString();
+                assertEquals(simulationIdA, actualId, "Log message received on simulation A's topic ("
+                        + GridAppsDConstants.topic_simulationLog + simulationIdA
+                        + ") carried a mismatched processId. Full message: " + message);
+                assertNotEquals(simulationIdB, actualId,
+                        "Log message on A's topic must never carry B's simulation ID");
+            }
+            for (JsonObject message : watcherB.logMessages) {
+                assertTrue(message.has("processId"), "Log message on B's topic should carry a processId field: "
+                        + message);
+                String actualId = message.get("processId").getAsString();
+                assertEquals(simulationIdB, actualId, "Log message received on simulation B's topic ("
+                        + GridAppsDConstants.topic_simulationLog + simulationIdB
+                        + ") carried a mismatched processId. Full message: " + message);
+                assertNotEquals(simulationIdA, actualId,
+                        "Log message on B's topic must never carry A's simulation ID");
+            }
+
+            // Output-topic isolation: best-effort. The single-simulation baseline
+            // run for this card showed GridLAB-D/HELICS never starts in this
+            // environment (see the class-level javadoc above), so the output topic
+            // reliably receives zero messages here regardless of whether the
+            // suffix code is correct. If that infra gap is ever closed, this still
+            // checks the same isolation property on whichever side (or both)
+            // produced output; it just does not fail the test when neither does.
+            long outputDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            watcherA.firstOutputMessage.await(remainingNanos(outputDeadlineNanos), TimeUnit.NANOSECONDS);
+            watcherB.firstOutputMessage.await(remainingNanos(outputDeadlineNanos), TimeUnit.NANOSECONDS);
+
+            log.info("Output messages observed - A: {}, B: {} (0/0 is expected in this environment; see report)",
+                    watcherA.outputMessages.size(), watcherB.outputMessages.size());
+
+            for (JsonObject message : watcherA.outputMessages) {
+                assertTrue(message.has("simulation_id"), "Output message on A's topic should carry simulation_id: "
+                        + message);
+                assertEquals(simulationIdA, message.get("simulation_id").getAsString(),
+                        "Output message received on simulation A's topic carried a mismatched simulation_id. "
+                                + "Full message: " + message);
+            }
+            for (JsonObject message : watcherB.outputMessages) {
+                assertTrue(message.has("simulation_id"), "Output message on B's topic should carry simulation_id: "
+                        + message);
+                assertEquals(simulationIdB, message.get("simulation_id").getAsString(),
+                        "Output message received on simulation B's topic carried a mismatched simulation_id. "
+                                + "Full message: " + message);
+            }
+
+            assertTrue(watcherA.unparseableMessages.isEmpty(),
+                    "Simulation A's topics should only carry parseable JSON payloads. Unparseable: "
+                            + watcherA.unparseableMessages);
+            assertTrue(watcherB.unparseableMessages.isEmpty(),
+                    "Simulation B's topics should only carry parseable JSON payloads. Unparseable: "
+                            + watcherB.unparseableMessages);
+
+            log.info("=== Two Concurrent Simulations Topic Isolation Test PASSED ===");
+        } finally {
+            executor.shutdownNow();
+            closeQuietly(clientA, "A");
+            closeQuietly(clientB, "B");
+        }
     }
 
     /**
