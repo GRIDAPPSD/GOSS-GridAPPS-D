@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -497,5 +498,108 @@ public class TopologyRequestProcessTest {
         Mockito.verify(client, Mockito.times(1)).getResponse(Mockito.any(),
                 Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC), Mockito.eq(RESPONSE_FORMAT.JSON),
                 Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS));
+    }
+
+    // --- Success signal (GADP-051 phase-1 verification follow-up): a working
+    // topology query and a silently broken one must not look identical in the
+    // logs. These tests assert the one-line success signal and the per-attempt
+    // visibility line, both logged at INFO (the existing failure paths already
+    // covered warn/error). ---
+
+    @Test
+    public void everyAttemptLogsAtInfoRegardlessOfOutcomeIncludingACleanNullTimeout() throws Exception {
+        // Two clean (non-throwing) null timeouts, then success on the third
+        // attempt. Before this change, a clean null timeout produced NO log at
+        // all (only the exception-throwing catch block logged anything), so a
+        // zero-retry and a two-retry cold start were indistinguishable.
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(null, null, dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-per-attempt-visibility", client,
+                logManager);
+        TopologyRequest request = new TopologyRequest();
+        request.mRID = "mrid-per-attempt-visibility";
+
+        process.requestTopologyWithRetry(request);
+
+        ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(logManager, Mockito.times(3)).info(Mockito.eq(ProcessStatus.RUNNING), Mockito.isNull(),
+                messages.capture());
+        assertTrue("attempt 1 must be logged with the attempt number and the bound",
+                messages.getAllValues().get(0).contains("attempt 1/" + process.effectiveMaxAttempts));
+        assertTrue("attempt 2 (the clean null-timeout retry) must be logged even though it never threw",
+                messages.getAllValues().get(1).contains("attempt 2/" + process.effectiveMaxAttempts));
+        assertTrue("attempt 3 (the eventual success) must also be logged",
+                messages.getAllValues().get(2).contains("attempt 3/" + process.effectiveMaxAttempts));
+    }
+
+    @Test
+    public void successfulRunLogsOneInfoLineWithMridAttemptsElapsedTimeAndResponseShape() throws Exception {
+        String topologyJson = "{\"DistributionArea\":{\"@id\":\"da-success\",\"@type\":\"area\","
+                + "\"Substations\":[]}}";
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        Mockito.when(dataResponse.getData()).thenReturn(topologyJson);
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-success-signal", client, logManager);
+
+        // run() is exercised synchronously (not via start()) so the test stays a
+        // plain unit test with no live thread/timing flake; run() itself is a
+        // normal method and this is the seam that actually emits the success
+        // log (handleTopologyResponse alone does not carry attempt count or
+        // elapsed time).
+        process.run();
+
+        ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(logManager, Mockito.atLeastOnce()).info(Mockito.eq(ProcessStatus.RUNNING), Mockito.isNull(),
+                messages.capture());
+        String successLine = messages.getAllValues().stream()
+                .filter(m -> m.contains("Topology request succeeded"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull("a success line must be logged at INFO once the response parses", successLine);
+        assertTrue("success line must name the requested field model mrid",
+                successLine.contains("mrid-success-signal"));
+        assertTrue("success line must report attempts taken against the bound",
+                successLine.contains("after 1/" + process.effectiveMaxAttempts + " attempt(s)"));
+        assertTrue("success line must report elapsed time in ms", successLine.contains("ms;"));
+        assertTrue("success line must report response shape (size and substation count) so an "
+                + "empty-but-successful response is distinguishable from a populated one",
+                successLine.contains("response size=") && successLine.contains("substations=0"));
+        // No warning is logged on the success path (mirrors the existing
+        // validDataResponseParsesRootTree assertion).
+        Mockito.verify(logManager, Mockito.never()).warn(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void successSignalReportsMultipleAttemptsWhenRetryWasNeeded() throws Exception {
+        String topologyJson = "{\"DistributionArea\":{\"@id\":\"da-retried\",\"@type\":\"area\","
+                + "\"Substations\":[]}}";
+        DataResponse dataResponse = Mockito.mock(DataResponse.class);
+        Mockito.when(dataResponse.getData()).thenReturn(topologyJson);
+        // First attempt times out cleanly (null, no exception); second succeeds.
+        Mockito.when(client.getResponse(Mockito.any(), Mockito.eq(TopologyRequestProcess.TOPOLOGY_REQUEST_TOPIC),
+                Mockito.eq(RESPONSE_FORMAT.JSON), Mockito.eq(TopologyRequestProcess.TOPOLOGY_RESPONSE_TIMEOUT_MS)))
+                .thenReturn(null, dataResponse);
+
+        TopologyRequestProcess process = new TopologyRequestProcess("mrid-success-after-retry", client, logManager);
+
+        process.run();
+
+        ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(logManager, Mockito.atLeastOnce()).info(Mockito.eq(ProcessStatus.RUNNING), Mockito.isNull(),
+                messages.capture());
+        String successLine = messages.getAllValues().stream()
+                .filter(m -> m.contains("Topology request succeeded"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(successLine);
+        assertTrue("the success line must reflect that it took 2 attempts, not just 1, "
+                + "so a cold-start retry is distinguishable from an immediate success",
+                successLine.contains("after 2/" + process.effectiveMaxAttempts + " attempt(s)"));
     }
 }
