@@ -500,6 +500,14 @@ class TopologyRequestProcess extends Thread {
     // pre-existing 3-arg constructor's behavior exactly).
     final int effectiveMaxAttempts;
 
+    // Number of attempts requestTopologyWithRetry actually made on its most
+    // recent run, set once the loop exits (success, exhaustion, or an early
+    // non-retryable break). Threaded through to the success log in
+    // logTopologySuccess so "how many attempts it took" is part of the
+    // one-line success signal, without changing handleTopologyResponse's
+    // existing test-facing signature.
+    private volatile int attemptsMade;
+
     public TopologyRequestProcess(String fieldModelMrid, Client client, LogManager logManager) {
         this(fieldModelMrid, client, logManager, null);
     }
@@ -596,6 +604,7 @@ class TopologyRequestProcess extends Thread {
             TopologyRequest request = new TopologyRequest();
             request.mRID = fieldModelMrid;
 
+            long requestStartTimeMs = System.currentTimeMillis();
             Serializable topoResponse = requestTopologyWithRetry(request);
 
             // Null-idle fail-safe (GADP-005): when the topology service never answers,
@@ -603,6 +612,7 @@ class TopologyRequestProcess extends Thread {
             // rather than dereferencing null. Parse and downstream measurement lookup
             // run only when the response actually populated root.
             if (handleTopologyResponse(topoResponse)) {
+                logTopologySuccess(requestStartTimeMs, topoResponse);
                 this.getFieldMeasurementIds(fieldModelMrid);
             }
 
@@ -674,6 +684,7 @@ class TopologyRequestProcess extends Thread {
             attempt++;
             topoResponse = attemptTopologyRequest(request, attempt);
         }
+        attemptsMade = attempt;
         return topoResponse;
     }
 
@@ -689,6 +700,19 @@ class TopologyRequestProcess extends Thread {
     // return, and after Client.getResponse's core-api signature added a
     // declared JMSException alongside SystemException.
     private Serializable attemptTopologyRequest(TopologyRequest request, int attempt) {
+        // Per-attempt visibility (observability gap): logged unconditionally, on
+        // every attempt, at a level visible in the default configuration,
+        // independent of whether this attempt throws, times out cleanly, or
+        // succeeds. Before this line, a clean per-attempt timeout (getResponse
+        // returns null with no exception) produced NO log at all, so a
+        // zero-retry cold start and a four-retry cold start were
+        // indistinguishable after the fact; the catch block below only ever
+        // logged the exception-throwing case.
+        if (logManager != null) {
+            logManager.info(ProcessStatus.RUNNING, null,
+                    "Topology request attempt " + attempt + "/" + effectiveMaxAttempts
+                            + " for field model mrid " + sanitizeForLog(fieldModelMrid) + ".");
+        }
         try {
             Serializable result = client.getResponse(request.toString(), TOPOLOGY_REQUEST_TOPIC,
                     RESPONSE_FORMAT.JSON, TOPOLOGY_RESPONSE_TIMEOUT_MS);
@@ -777,6 +801,36 @@ class TopologyRequestProcess extends Thread {
             root = gson.fromJson(topoResponse.toString(), Root.class);
         }
         return root != null;
+    }
+
+    // Success signal (observability gap this change closes): the ONLY log line
+    // emitted when a topology request succeeds end to end. Before this, a
+    // working topology query and a silently broken one (idle, root stays null)
+    // looked identical in the logs: the warn-on-failure path above already
+    // covers the broken case, this covers the working one. Logged at INFO with
+    // the facts a human needs to answer "did it work, and how hard was it" in
+    // one grep: the field model mrid requested, how many attempts it took
+    // against the configured bound, the elapsed time from the first request to
+    // success, and the response shape (payload size and substation count) so an
+    // empty-but-successful response is distinguishable from a populated one
+    // (GADP-050: Python received 74KB where Java received null).
+    private void logTopologySuccess(long requestStartTimeMs, Serializable topoResponse) {
+        if (logManager == null) {
+            return;
+        }
+        long elapsedMs = System.currentTimeMillis() - requestStartTimeMs;
+        String payload;
+        if (topoResponse instanceof DataResponse) {
+            payload = ((DataResponse) topoResponse).getData().toString();
+        } else {
+            payload = topoResponse == null ? "" : topoResponse.toString();
+        }
+        int substationCount = (root != null && root.DistributionArea != null
+                && root.DistributionArea.Substations != null) ? root.DistributionArea.Substations.size() : 0;
+        logManager.info(ProcessStatus.RUNNING, null,
+                "Topology request succeeded for field model mrid " + sanitizeForLog(fieldModelMrid)
+                        + " after " + attemptsMade + "/" + effectiveMaxAttempts + " attempt(s) in " + elapsedMs
+                        + "ms; response size=" + payload.length() + " chars, substations=" + substationCount + ".");
     }
 
     public void getFieldMeasurementIds(String fieldModelMrid) {
