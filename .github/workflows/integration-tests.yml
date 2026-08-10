@@ -77,6 +77,10 @@ jobs:
       timeout-minutes: 12
       continue-on-error: true
 
+    - name: Run container integration tests
+      run: make test-simulation-container
+      timeout-minutes: 20
+
     - name: Show container logs on failure
       if: failure()
       run: docker logs gridappsd
