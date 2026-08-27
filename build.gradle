@@ -314,20 +314,20 @@ task collectBundles(type: Copy) {
             'org.apache.felix:org.apache.felix.metatype:1.2.4',
 
             // Jetty 11.x WebSocket support (required by ActiveMQ 6.2.0 for ws:// transport)
-            'org.eclipse.jetty.websocket:websocket-jetty-server:11.0.24',
-            'org.eclipse.jetty.websocket:websocket-jetty-api:11.0.24',
-            'org.eclipse.jetty.websocket:websocket-jetty-common:11.0.24',
-            'org.eclipse.jetty.websocket:websocket-core-server:11.0.24',
-            'org.eclipse.jetty.websocket:websocket-core-common:11.0.24',
-            'org.eclipse.jetty.websocket:websocket-servlet:11.0.24',
-            'org.eclipse.jetty:jetty-servlet:11.0.24',
-            'org.eclipse.jetty:jetty-server:11.0.24',
-            'org.eclipse.jetty:jetty-http:11.0.24',
-            'org.eclipse.jetty:jetty-io:11.0.24',
-            'org.eclipse.jetty:jetty-util:11.0.24',
-            'org.eclipse.jetty:jetty-security:11.0.24',
-            'org.eclipse.jetty:jetty-webapp:11.0.24',
-            'org.eclipse.jetty:jetty-xml:11.0.24',
+            'org.eclipse.jetty.websocket:websocket-jetty-server:12.0.33',
+            'org.eclipse.jetty.websocket:websocket-jetty-api:12.0.33',
+            'org.eclipse.jetty.websocket:websocket-jetty-common:12.0.33',
+            'org.eclipse.jetty.websocket:websocket-core-server:12.0.33',
+            'org.eclipse.jetty.websocket:websocket-core-common:12.0.33',
+            'org.eclipse.jetty.websocket:websocket-servlet:12.0.33',
+            'org.eclipse.jetty:jetty-servlet:12.0.33',
+            'org.eclipse.jetty:jetty-server:12.0.33',
+            'org.eclipse.jetty:jetty-http:12.0.33',
+            'org.eclipse.jetty:jetty-io:12.0.33',
+            'org.eclipse.jetty:jetty-util:12.0.33',
+            'org.eclipse.jetty:jetty-security:12.0.33',
+            'org.eclipse.jetty:jetty-webapp:12.0.33',
+            'org.eclipse.jetty:jetty-xml:12.0.33',
 
             // Pax Logging (OSGi-native logging framework)
             // Provides SLF4J 2.x API + Log4j2 backend with properties-based configuration
@@ -345,9 +345,9 @@ task collectBundles(type: Copy) {
             'org.ow2.asm:asm-util:9.7',
 
             // Jackson (GridAPPS-D requires 2.18.1+ per bnd.bnd)
-            'com.fasterxml.jackson.core:jackson-core:2.18.1',
-            'com.fasterxml.jackson.core:jackson-databind:2.18.1',
-            'com.fasterxml.jackson.core:jackson-annotations:2.18.1',
+            'com.fasterxml.jackson.core:jackson-core:2.18.6',
+            'com.fasterxml.jackson.core:jackson-databind:2.18.6',
+            'com.fasterxml.jackson.core:jackson-annotations:2.18.6',
 
             // GSON (GOSS uses 2.11.0 per bnd.bnd)
             'com.google.code.gson:gson:2.11.0',
@@ -362,16 +362,16 @@ task collectBundles(type: Copy) {
             'org.fusesource.stompjms:stompjms-client:1.19',
 
             // Shiro 2.0.0 (required by ActiveMQ 6.2.0 and GOSS for Jakarta EE support)
-            'org.apache.shiro:shiro-core:2.0.0',
-            'org.apache.shiro:shiro-lang:2.0.0',
-            'org.apache.shiro:shiro-web:2.0.0',
-            'org.apache.shiro:shiro-cache:2.0.0',
-            'org.apache.shiro:shiro-event:2.0.0',
-            'org.apache.shiro:shiro-crypto-core:2.0.0',
-            'org.apache.shiro:shiro-crypto-hash:2.0.0',
-            'org.apache.shiro:shiro-crypto-cipher:2.0.0',
-            'org.apache.shiro:shiro-config-core:2.0.0',
-            'org.apache.shiro:shiro-config-ogdl:2.0.0',
+            'org.apache.shiro:shiro-core:2.2.1',
+            'org.apache.shiro:shiro-lang:2.2.1',
+            'org.apache.shiro:shiro-web:2.2.1',
+            'org.apache.shiro:shiro-cache:2.2.1',
+            'org.apache.shiro:shiro-event:2.2.1',
+            'org.apache.shiro:shiro-crypto-core:2.2.1',
+            'org.apache.shiro:shiro-crypto-hash:2.2.1',
+            'org.apache.shiro:shiro-crypto-cipher:2.2.1',
+            'org.apache.shiro:shiro-config-core:2.2.1',
+            'org.apache.shiro:shiro-config-ogdl:2.2.1',
 
             // Commons BeanUtils (required by Shiro config-ogdl)
             'commons-beanutils:commons-beanutils:1.9.4',
@@ -387,9 +387,9 @@ task collectBundles(type: Copy) {
             'org.apache.httpcomponents:httpcore-osgi:4.4.16',
 
             // Commons libraries (GOSS versions per bnd.bnd)
-            'commons-io:commons-io:2.16.1',
+            'commons-io:commons-io:2.14.0',
             'commons-lang:commons-lang:2.6',
-            'org.apache.commons:commons-lang3:3.17.0',
+            'org.apache.commons:commons-lang3:3.18.0',
             'commons-pool:commons-pool:1.6',
             'org.apache.commons:commons-pool2:2.12.0',
             'commons-dbcp:commons-dbcp:1.4',
