@@ -3,6 +3,8 @@ package gov.pnnl.goss.gridappsd.dto;
 import java.io.Serializable;
 import java.util.List;
 
+import gov.pnnl.goss.gridappsd.dto.field.AgentDetails;
+
 public class PlatformStatus implements Serializable {
 
     private static final long serialVersionUID = 285312877963778626L;
@@ -12,6 +14,7 @@ public class PlatformStatus implements Serializable {
     List<AppInstance> appInstances;
     List<ServiceInstance> serviceInstances;
     String fieldModelMrid;
+    List<AgentDetails> fieldAgents;
 
     public PlatformStatus() {
     }
@@ -63,4 +66,11 @@ public class PlatformStatus implements Serializable {
 
     }
 
+	public List<AgentDetails> getFieldAgents() {
+		return fieldAgents;
+	}
+
+	public void setFieldAgents(List<AgentDetails> fieldAgents) {
+		this.fieldAgents = fieldAgents;
+	}
 }

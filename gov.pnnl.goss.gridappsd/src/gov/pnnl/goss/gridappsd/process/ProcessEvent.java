@@ -405,6 +405,8 @@ public class ProcessEvent implements GossResponseEvent {
                     platformStatus.setServiceInstances(serviceManager.listRunningServices());
                 if (request.isField())
                     platformStatus.setField(fieldBusManager.getFieldModelMrid());
+                if (request.isField())
+                    platformStatus.setFieldAgents(fieldBusManager.getFieldAgents());
                 if (event.getReplyDestination() != null) {
                     client.publish(event.getReplyDestination(), platformStatus);
                 } else {
