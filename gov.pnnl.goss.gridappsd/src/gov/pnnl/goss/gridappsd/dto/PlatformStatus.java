@@ -66,11 +66,11 @@ public class PlatformStatus implements Serializable {
 
     }
 
-	public List<AgentDetails> getFieldAgents() {
-		return fieldAgents;
-	}
+    public List<AgentDetails> getFieldAgents() {
+        return fieldAgents;
+    }
 
-	public void setFieldAgents(List<AgentDetails> fieldAgents) {
-		this.fieldAgents = fieldAgents;
-	}
+    public void setFieldAgents(List<AgentDetails> fieldAgents) {
+        this.fieldAgents = fieldAgents;
+    }
 }

@@ -54,16 +54,16 @@ public class RequestPlatformStatus implements Serializable {
     public void setField(boolean field) {
         this.field = field;
     }
-    
+
     public boolean isAgents() {
-		return agents;
-	}
+        return agents;
+    }
 
-	public void setAgents(boolean agents) {
-		this.agents = agents;
-	}
+    public void setAgents(boolean agents) {
+        this.agents = agents;
+    }
 
-	public static RequestPlatformStatus parse(String jsonString) {
+    public static RequestPlatformStatus parse(String jsonString) {
         Gson gson = new Gson();
         RequestPlatformStatus obj = gson.fromJson(jsonString, RequestPlatformStatus.class);
         if (!obj.appInstances & !obj.services & !obj.applications & !obj.serviceInstances & !obj.field & !obj.agents) {

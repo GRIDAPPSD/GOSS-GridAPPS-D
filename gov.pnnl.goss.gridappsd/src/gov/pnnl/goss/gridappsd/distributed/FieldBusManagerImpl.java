@@ -79,8 +79,8 @@ public class FieldBusManagerImpl implements FieldBusManager {
     String fieldModelId = null;
 
     // FileWriter writer = null;
-    
-    List <AgentDetails> agents_list = new ArrayList<AgentDetails>();
+
+    List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
 
     public FieldBusManagerImpl() {
         System.out.println("Starting FieldBusManager");
@@ -222,14 +222,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
             return "Publishing Started";
         } else if (requestField.request_type.equals("register_agent")) {
-        	
-        		AgentDetails agentDetails = AgentDetails.parse(request.toString());
-        		agents_list.add(agentDetails);
-        		
-        		
-        		
-        		
-        		
+
+            AgentDetails agentDetails = AgentDetails.parse(request.toString());
+            agents_list.add(agentDetails);
+            return "Agent Registered";
+
         }
 
         return null;
@@ -397,10 +394,10 @@ public class FieldBusManagerImpl implements FieldBusManager {
     private boolean isTopologyFullyInitialized() {
         return isTopologyReady() && topology.root.DistributionArea != null;
     }
-    
+
     public List<AgentDetails> getFieldAgents() {
-    	
-    		return agents_list;
+
+        return agents_list;
     }
 
 }
