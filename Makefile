@@ -1,7 +1,7 @@
 # GridAPPS-D Makefile
 # Common build and development tasks
 
-.PHONY: help build clean dist test test-unit test-integration test-simulation test-simulation-python test-container test-stomp-topics test-blazegraph \
+.PHONY: help build clean dist test test-unit test-integration test-simulation test-simulation-python test-container test-simulation-container test-stomp-topics test-blazegraph \
         run run-bg run-stop run-log docker docker-local-goss goss-build should-version-bump docker-build docker-up docker-down docker-clean docker-shell docker-logs docker-status docker-versions \
         cache-clear show-dependencies update-dependencies commit push version release snapshot \
         check-api bump-patch bump-minor bump-major next-snapshot \
@@ -23,12 +23,12 @@ help:
 	@echo "  format             Format all Java files (Spotless)"
 	@echo "  format-check       Check formatting without changes"
 	@echo ""
-	@echo "DOCKER — Build"
+	@echo "DOCKER - Build"
 	@echo "  docker             Build Docker image (gridappsd/gridappsd:local)"
 	@echo "  docker-local-goss  Build local GOSS + GridAPPS-D Docker image"
 	@echo "                       Options: GOSS_DIR=/path/to/GOSS"
 	@echo ""
-	@echo "DOCKER — Run"
+	@echo "DOCKER - Run"
 	@echo "  docker-up          Start all containers (auto-runs GridAPPS-D)"
 	@echo "                       Options: AUTOSTART=0  (wait mode, don't auto-run)"
 	@echo "                                VERSION=v2025.09.0  (pin dependency versions)"
@@ -39,14 +39,15 @@ help:
 	@echo "  docker-status      Show container status"
 	@echo "  docker-versions    List available Docker Hub versions"
 	@echo ""
-	@echo "TEST — Local  (no Docker needed)"
+	@echo "TEST - Local  (no Docker needed)"
 	@echo "  test               Run all tests"
 	@echo "  test-unit          Unit tests only (no external dependencies)"
 	@echo "  test-integration   Integration tests (requires MySQL, Blazegraph)"
 	@echo "  test-container     Container-based tests via Testcontainers (auto-starts Docker)"
 	@echo "  test-check         Check if integration services are available"
 	@echo ""
-	@echo "TEST — Requires running containers  (make docker-up first)"
+	@echo "TEST - Requires running containers  (make docker-up first)"
+	@echo "  test-simulation-container  JUnit container simulation tests (externally-started stack)"
 	@echo "  test-simulation         Simulation test (runs in container)"
 	@echo "  test-simulation-python  30s simulation test (runs in container)"
 	@echo "  test-stomp-topics       STOMP topic prefix tests (runs in container)"
@@ -169,15 +170,35 @@ test-container:
 	@echo "Container tests complete."
 	@echo "Note: Containers may still be running for reuse. Use 'docker compose down' to stop them."
 
+# Run the JUnit container-based simulation tests that expect an EXTERNALLY
+# started stack (GridAppsDTestEnvironment port-checks localhost; it does not
+# manage container lifecycle itself). This selects only classes tagged
+# "simulation" (currently SimulationContainerTest), so it does not collide
+# with test-container's self-managing GridAppsDContainerTest, which starts
+# its own Testcontainers-managed stack on the same fixed ports.
+# Prerequisites:
+#   - Containers already running: make docker-up
+test-simulation-container:
+	@echo "Running JUnit container-based simulation tests (requires: make docker-up first)..."
+	@echo ""
+	@if ! docker ps --format '{{.Names}}' | grep -q '^gridappsd$$'; then \
+		echo "Error: gridappsd container is not running."; \
+		echo "Start containers with: make docker-up"; \
+		exit 1; \
+	fi
+	./gradlew :gov.pnnl.goss.gridappsd:simulationTest
+	@echo ""
+	@echo "Simulation container tests complete."
+
 # Check if integration test services are available
 test-check:
 	@echo "Checking integration test dependencies..."
 	@echo ""
 	@echo "MySQL (localhost:3306):"
-	@(timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/3306' 2>/dev/null) && echo "  ✓ MySQL port is open" || echo "  ✗ MySQL port is NOT reachable"
+	@(timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/3306' 2>/dev/null) && echo "  [x] MySQL port is open" || echo "  [ ] MySQL port is NOT reachable"
 	@echo ""
 	@echo "Blazegraph (localhost:8889):"
-	@curl -s --connect-timeout 2 http://localhost:8889/bigdata/namespace >/dev/null 2>&1 && echo "  ✓ Blazegraph is reachable" || echo "  ✗ Blazegraph is NOT reachable"
+	@curl -s --connect-timeout 2 http://localhost:8889/bigdata/namespace >/dev/null 2>&1 && echo "  [x] Blazegraph is reachable" || echo "  [ ] Blazegraph is NOT reachable"
 	@echo ""
 	@echo "Docker containers:"
 	@docker ps --format "  {{.Names}}: {{.Status}}" 2>/dev/null | grep -E "mysql|blazegraph|influxdb|proven|gridappsd" || echo "  No relevant containers found"
@@ -367,7 +388,7 @@ should-version-bump:
 	@LOCAL_VER=$$(grep -m1 'Bundle-Version:' "$(GOSS_BUILD_DIR)/pnnl.goss.core/core-api.bnd" 2>/dev/null | sed 's/.*: *//'); \
 	if [ -z "$$LOCAL_VER" ]; then exit 0; fi; \
 	if echo "$$LOCAL_VER" | grep -q 'SNAPSHOT'; then \
-		echo "GOSS version: $$LOCAL_VER (snapshot — OK)"; \
+		echo "GOSS version: $$LOCAL_VER (snapshot - OK)"; \
 		exit 0; \
 	fi; \
 	if [ -d "$(GOSS_REPO_DIR)/release/pnnl.goss.core.core-api" ] && \
@@ -379,7 +400,7 @@ should-version-bump:
 		echo "    cd $(GOSS_BUILD_DIR) && make next-snapshot"; \
 		echo ""; \
 	else \
-		echo "GOSS version: $$LOCAL_VER (not yet released — OK)"; \
+		echo "GOSS version: $$LOCAL_VER (not yet released - OK)"; \
 	fi
 
 docker-build:
