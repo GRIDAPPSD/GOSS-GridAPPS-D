@@ -223,8 +223,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             return "Publishing Started";
         } else if (requestField.request_type.equals("register_agent")) {
 
-            AgentDetails agentDetails = AgentDetails.parse(request.toString());
-            agents_list.add(agentDetails);
+            agents_list.add(requestField.agent);
             return "Agent Registered";
 
         }
@@ -398,6 +397,15 @@ public class FieldBusManagerImpl implements FieldBusManager {
     public List<AgentDetails> getFieldAgents() {
 
         return agents_list;
+    }
+
+    public static void main(String[] args) {
+
+        List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
+        String str = "{'request_type': 'register_agent', 'agent': {'agent_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983.context_manager', 'app_id': 'context_manager', 'description': 'This agent provides topological context information like neighboring agents and devices to other distributed agents', 'upstream_message_bus_id': '4021f7cf-340c-45e3-841f-e7b5fe8b93be', 'downstream_message_bus_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983'}}";
+        AgentDetails agentDetails = AgentDetails.parse(str.toString());
+        agents_list.add(agentDetails);
+
     }
 
 }
