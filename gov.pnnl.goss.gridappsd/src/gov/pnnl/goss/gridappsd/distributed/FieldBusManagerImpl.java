@@ -80,7 +80,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
     // FileWriter writer = null;
 
-    List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
+    Map<String,AgentDetails> agents_list = new HashMap<String, AgentDetails>();
 
     public FieldBusManagerImpl() {
         System.out.println("Starting FieldBusManager");
@@ -223,7 +223,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
             return "Publishing Started";
         } else if (requestField.request_type.equals("register_agent")) {
 
-            agents_list.add(requestField.agent);
+            agents_list.put(requestField.agent.agent_id, requestField.agent);
             return "Agent Registered";
 
         }
@@ -394,20 +394,10 @@ public class FieldBusManagerImpl implements FieldBusManager {
         return isTopologyReady() && topology.root.DistributionArea != null;
     }
 
-    public List<AgentDetails> getFieldAgents() {
+    public Map<String, AgentDetails> getFieldAgents() {
 
         return agents_list;
     }
-
-    public static void main(String[] args) {
-
-        List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
-        String str = "{'request_type': 'register_agent', 'agent': {'agent_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983.context_manager', 'app_id': 'context_manager', 'description': 'This agent provides topological context information like neighboring agents and devices to other distributed agents', 'upstream_message_bus_id': '4021f7cf-340c-45e3-841f-e7b5fe8b93be', 'downstream_message_bus_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983'}}";
-        AgentDetails agentDetails = AgentDetails.parse(str.toString());
-        agents_list.add(agentDetails);
-
-    }
-
 }
 
 class TopologyRequest implements Serializable {
