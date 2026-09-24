@@ -9,11 +9,11 @@ public class AgentDetails implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    String agent_id;
-    String app_id;
-    String description;
-    String upstream_message_bus_id;
-    String downstream_message_bus_id;
+    public String agent_id;
+    public String app_id;
+    public String description;
+    public String upstream_message_bus_id;
+    public String downstream_message_bus_id;
 
     public static AgentDetails parse(String jsonString) throws JsonSyntaxException {
         Gson gson = new Gson();
