@@ -80,7 +80,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
 
     // FileWriter writer = null;
 
-    Map<String,AgentDetails> agents_list = new HashMap<String, AgentDetails>();
+    Map<String, AgentDetails> agents_list = new HashMap<String, AgentDetails>();
 
     public FieldBusManagerImpl() {
         System.out.println("Starting FieldBusManager");
