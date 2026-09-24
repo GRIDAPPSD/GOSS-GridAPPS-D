@@ -1,7 +1,5 @@
 package gov.pnnl.goss.gridappsd.distributed;
 
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -10,27 +8,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.northconcepts.exception.SystemException;
-
-import jakarta.jms.JMSException;
 
 import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
 import gov.pnnl.goss.gridappsd.dto.LogMessage.ProcessStatus;
 import gov.pnnl.goss.gridappsd.dto.ServiceInfo;
+import gov.pnnl.goss.gridappsd.dto.field.AgentDetails;
 import gov.pnnl.goss.gridappsd.dto.field.FieldObject;
 import gov.pnnl.goss.gridappsd.dto.field.NormalEnergizedFeeder;
 import gov.pnnl.goss.gridappsd.dto.field.RequestField;
@@ -39,6 +35,7 @@ import gov.pnnl.goss.gridappsd.dto.field.SecondaryArea;
 import gov.pnnl.goss.gridappsd.dto.field.Substation;
 import gov.pnnl.goss.gridappsd.dto.field.SwitchArea;
 import gov.pnnl.goss.gridappsd.utils.GridAppsDConstants;
+import jakarta.jms.JMSException;
 import pnnl.goss.core.Client;
 import pnnl.goss.core.Client.PROTOCOL;
 import pnnl.goss.core.ClientFactory;
@@ -82,6 +79,8 @@ public class FieldBusManagerImpl implements FieldBusManager {
     String fieldModelId = null;
 
     // FileWriter writer = null;
+
+    List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
 
     public FieldBusManagerImpl() {
         System.out.println("Starting FieldBusManager");
@@ -222,6 +221,11 @@ public class FieldBusManagerImpl implements FieldBusManager {
             }
 
             return "Publishing Started";
+        } else if (requestField.request_type.equals("register_agent")) {
+
+            agents_list.add(requestField.agent);
+            return "Agent Registered";
+
         }
 
         return null;
@@ -254,7 +258,7 @@ public class FieldBusManagerImpl implements FieldBusManager {
                 }
 
                 JsonObject tempObj = simOutputJsonObj.getAsJsonObject("message");
-                Map<String, JsonElement> expectedOutputMap = tempObj.getAsJsonObject("Measurements").entrySet().stream()
+                Map<String, JsonElement> expectedOutputMap = tempObj.getAsJsonObject("measurements").entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()));
 
                 try {
@@ -388,6 +392,20 @@ public class FieldBusManagerImpl implements FieldBusManager {
     // a root shell.
     private boolean isTopologyFullyInitialized() {
         return isTopologyReady() && topology.root.DistributionArea != null;
+    }
+
+    public List<AgentDetails> getFieldAgents() {
+
+        return agents_list;
+    }
+
+    public static void main(String[] args) {
+
+        List<AgentDetails> agents_list = new ArrayList<AgentDetails>();
+        String str = "{'request_type': 'register_agent', 'agent': {'agent_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983.context_manager', 'app_id': 'context_manager', 'description': 'This agent provides topological context information like neighboring agents and devices to other distributed agents', 'upstream_message_bus_id': '4021f7cf-340c-45e3-841f-e7b5fe8b93be', 'downstream_message_bus_id': '4396f6fc-5231-4af1-a2a6-d5b9e0836983'}}";
+        AgentDetails agentDetails = AgentDetails.parse(str.toString());
+        agents_list.add(agentDetails);
+
     }
 
 }
