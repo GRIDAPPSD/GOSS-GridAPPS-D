@@ -29,6 +29,7 @@ shared.runrequires: \
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-server-api)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.goss-core-security)',\
 	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.security-propertyfile)',\
+	osgi.identity;filter:='(osgi.identity=pnnl.goss.core.security-system)',\
 	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.runtime)(version>=1.1.0))',\
 	osgi.identity;filter:='(&(osgi.identity=org.apache.felix.gogo.shell)(version>=1.1.0))',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\

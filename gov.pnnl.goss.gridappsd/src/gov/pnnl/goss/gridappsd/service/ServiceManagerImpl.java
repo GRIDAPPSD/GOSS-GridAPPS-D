@@ -57,10 +57,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.Activate;
 
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.ServiceManager;
@@ -77,10 +78,8 @@ import pnnl.goss.core.ClientFactory;
 // TODO: Security removed in GOSS Java 21 upgrade - needs reimplementation
 //import pnnl.goss.core.security.SecurityConfig;
 
-@Component(service = ServiceManager.class)
+@Component(service = ServiceManager.class, configurationPid = "pnnl.goss.gridappsd", immediate = true)
 public class ServiceManagerImpl implements ServiceManager {
-
-    private static final String CONFIG_PID = "pnnl.goss.gridappsd";
 
     @Reference
     LogManager logManager;
@@ -94,7 +93,10 @@ public class ServiceManagerImpl implements ServiceManager {
 
     private HashMap<String, ServiceInfo> services = new HashMap<String, ServiceInfo>();
 
-    private Dictionary<String, ?> configurationProperties;
+    // Config delivery path: populated via the DS @Activate entry point at
+    // activation
+    // and re-applied via @Modified when ConfigAdmin updates the PID at runtime.
+    private volatile Map<String, Object> configurationMap = new HashMap<>();
 
     private HashMap<String, ServiceInstance> serviceInstances = new HashMap<String, ServiceInstance>();
 
@@ -128,9 +130,11 @@ public class ServiceManagerImpl implements ServiceManager {
      *
      */
     @Activate
-    public void start() {
-        // statusReporter.reportStatus(String.format("Starting %s",
-        // this.getClass().getName()));
+    public void start(Map<String, Object> config) {
+        // DS delivers the pnnl.goss.gridappsd ConfigAdmin properties here at
+        // activation. Apply them before scanning so getServiceConfigDirectory()
+        // and getFieldModelMrid() observe the configured values.
+        applyConfig(config);
         try {
             logManager.info(ProcessStatus.RUNNING, null, "Starting " + this.getClass().getName());
 
@@ -138,7 +142,8 @@ public class ServiceManagerImpl implements ServiceManager {
 
             logManager.info(ProcessStatus.RUNNING, null, String.format("Found %s services", services.size()));
         } catch (Exception e) {
-            e.printStackTrace();
+            logManager.error(ProcessStatus.ERROR, null,
+                    "ServiceManager activation failed: " + e.getMessage());
         }
     }
 
@@ -197,12 +202,8 @@ public class ServiceManagerImpl implements ServiceManager {
      * @return
      */
     public String getConfigurationProperty(String key) {
-        if (this.configurationProperties != null) {
-            Object value = this.configurationProperties.get(key);
-            if (value != null)
-                return value.toString();
-        }
-        return null;
+        Object value = configurationMap.get(key);
+        return value != null ? value.toString() : null;
     }
 
     /**
@@ -333,7 +334,13 @@ public class ServiceManagerImpl implements ServiceManager {
                     }
                 } else {
                     if (staticArg.contains("(field_model_mrid")) {
-                        staticArg = staticArg.replace("(field_model_mrid)", this.getFieldModelMrid());
+                        String mrid = this.getFieldModelMrid();
+                        if (mrid != null) {
+                            staticArg = staticArg.replace("(field_model_mrid)", mrid);
+                        } else {
+                            logManager.warn(ProcessStatus.RUNNING, simulationId,
+                                    "field.model.mrid not configured; (field_model_mrid) placeholder not substituted in service arg");
+                        }
                     }
                 }
                 commands.add(staticArg);
@@ -480,11 +487,39 @@ public class ServiceManagerImpl implements ServiceManager {
 
     }
 
-    // TODO: @ConfigurationDependency migration - This method may need refactoring
-    // to use OSGi DS configuration
-    // Original: @ConfigurationDependency(pid=CONFIG_PID)
+    // Deliver (or re-deliver) ConfigAdmin properties to this manager.
+    // Invoked by the DS @Activate entry point at activation and by @Modified when
+    // ConfigAdmin updates the PID at runtime. Stores config so getFieldModelMrid()
+    // and getConfigurationProperty() return the correct values when services are
+    // launched. Synchronized because this is a public read-modify-write path that
+    // could be reached off the SCR-serialized DS thread (M1).
+    public synchronized void applyConfig(Map<String, Object> config) {
+        if (config == null || config.isEmpty()) {
+            return;
+        }
+        this.configurationMap = new HashMap<>(config);
+        logManager.info(ProcessStatus.RUNNING, null,
+                "ServiceManager config updated; field.model.mrid=" + getFieldModelMrid());
+    }
+
+    @Modified
+    public void modified(Map<String, Object> config) {
+        // DS invokes this when ConfigAdmin updates PID pnnl.goss.gridappsd at runtime.
+        applyConfig(config);
+    }
+
+    // Legacy Dictionary-based path. Kept for backward compatibility.
+    // Delegates to applyConfig() so logging and contract match the @Modified path.
     public synchronized void updated(Dictionary<String, ?> config) {
-        this.configurationProperties = config;
+        if (config != null) {
+            Map<String, Object> map = new HashMap<>();
+            java.util.Enumeration<String> keys = config.keys();
+            while (keys.hasMoreElements()) {
+                String k = keys.nextElement();
+                map.put(k, config.get(k));
+            }
+            applyConfig(map);
+        }
     }
 
     private void watch(final ServiceInstance serviceInstance, String simulationId) {
@@ -527,12 +562,8 @@ public class ServiceManagerImpl implements ServiceManager {
     }
 
     public String getFieldModelMrid() {
-        if (this.configurationProperties != null) {
-            Object value = this.configurationProperties.get("field.model.mrid");
-            if (value != null)
-                return value.toString();
-        }
-        return null;
+        Object value = configurationMap.get("field.model.mrid");
+        return value != null ? value.toString() : null;
     }
 
 }

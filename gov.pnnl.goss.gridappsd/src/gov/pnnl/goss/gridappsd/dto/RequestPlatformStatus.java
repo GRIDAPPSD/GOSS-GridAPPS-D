@@ -13,6 +13,7 @@ public class RequestPlatformStatus implements Serializable {
     boolean appInstances = false;
     boolean serviceInstances = false;
     boolean field = false;
+    boolean agents = false;
 
     public boolean isApplications() {
         return applications;
@@ -54,15 +55,24 @@ public class RequestPlatformStatus implements Serializable {
         this.field = field;
     }
 
+    public boolean isAgents() {
+        return agents;
+    }
+
+    public void setAgents(boolean agents) {
+        this.agents = agents;
+    }
+
     public static RequestPlatformStatus parse(String jsonString) {
         Gson gson = new Gson();
         RequestPlatformStatus obj = gson.fromJson(jsonString, RequestPlatformStatus.class);
-        if (!obj.appInstances & !obj.services & !obj.applications & !obj.serviceInstances & !obj.field) {
+        if (!obj.appInstances & !obj.services & !obj.applications & !obj.serviceInstances & !obj.field & !obj.agents) {
             obj.applications = true;
             obj.services = true;
             obj.appInstances = true;
             obj.serviceInstances = true;
             obj.field = true;
+            obj.agents = true;
         }
         return obj;
     }

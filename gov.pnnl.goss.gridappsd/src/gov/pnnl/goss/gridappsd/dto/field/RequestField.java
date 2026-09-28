@@ -14,6 +14,7 @@ public class RequestField implements Serializable {
     public String start_time = null;
     public String end_time = null;
     public int interval_seconds = 15;
+    public AgentDetails agent = null;
 
     public static RequestField parse(String jsonString) throws JsonSyntaxException {
         Gson gson = new Gson();

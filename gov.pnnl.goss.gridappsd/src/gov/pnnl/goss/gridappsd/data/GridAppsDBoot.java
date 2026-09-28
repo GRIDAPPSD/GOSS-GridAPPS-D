@@ -24,7 +24,6 @@ import pnnl.goss.core.server.ServerControl;
 import gov.pnnl.goss.gridappsd.api.AppManager;
 import gov.pnnl.goss.gridappsd.api.ConfigurationManager;
 import gov.pnnl.goss.gridappsd.api.DataManager;
-import gov.pnnl.goss.gridappsd.api.FieldBusManager;
 import gov.pnnl.goss.gridappsd.api.LogDataManager;
 import gov.pnnl.goss.gridappsd.api.LogManager;
 import gov.pnnl.goss.gridappsd.api.PowergridModelDataManager;
@@ -37,10 +36,8 @@ import gov.pnnl.goss.gridappsd.app.AppManagerImpl;
 import gov.pnnl.goss.gridappsd.configuration.ConfigurationManagerImpl;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenLoadScheduleToGridlabdLoadScheduleConverter;
 import gov.pnnl.goss.gridappsd.data.conversion.ProvenWeatherToGridlabdWeatherConverter;
-import gov.pnnl.goss.gridappsd.distributed.FieldBusManagerImpl;
 import gov.pnnl.goss.gridappsd.log.LogManagerImpl;
 import gov.pnnl.goss.gridappsd.role.RoleManagerImpl;
-import gov.pnnl.goss.gridappsd.service.ServiceManagerImpl;
 import gov.pnnl.goss.gridappsd.simulation.SimulationManagerImpl;
 import gov.pnnl.goss.gridappsd.testmanager.TestManagerImpl;
 
@@ -59,13 +56,18 @@ import org.osgi.framework.Bundle;
 /**
  * Bootstrap component for GridAPPS-D services.
  *
- * This component is placed in the data/ package because Felix SCR has a bug
- * where it only loads components from certain packages (data/ and process/).
- * This bootstrap manually instantiates and registers all the missing manager
- * components that SCR fails to load.
+ * This bootstrap manually instantiates and registers a set of manager
+ * components and wires their cross-dependencies.
  *
- * This is a workaround for: Felix SCR only loading 8 of 31 components from the
- * gridappsd bundle.
+ * Note on ServiceManager and FieldBusManager: these are NOT bootstrapped here.
+ * They are delayed DS components (now immediate=true) with acyclic @Reference
+ * graphs, and ProcessManagerImpl (immediate) mandatorily @References both, so
+ * SCR activates and registers them on its own. They previously had manual
+ * instances here that shadowed the DS-owned components; that was the root cause
+ * of issue 1859 (the field.model.mrid config never reaching the live instance).
+ * The earlier "Felix SCR only loads certain packages" rationale was a
+ * misdiagnosis of normal DS delayed-versus-immediate activation. The remaining
+ * managers below are still bootstrapped manually pending their own migration.
  */
 @Component(immediate = true)
 public class GridAppsDBoot {
@@ -102,10 +104,8 @@ public class GridAppsDBoot {
     private ConfigurationManagerImpl configurationManager;
     private SimulationManagerImpl simulationManager;
     private AppManagerImpl appManager;
-    private ServiceManagerImpl serviceManager;
     private TestManagerImpl testManager;
     private RoleManagerImpl roleManager;
-    private FieldBusManagerImpl fieldBusManager;
 
     @Activate
     public void activate(BundleContext context) {
@@ -159,19 +159,18 @@ public class GridAppsDBoot {
         registrations.add(bundleContext.registerService(AppManager.class, appManager, new Hashtable<>()));
         log.info("Registered AppManagerImpl");
 
-        // Create ServiceManager - depends on LogManager, ClientFactory
-        serviceManager = new ServiceManagerImpl();
-        serviceManager.setClientFactory(clientFactory);
-        serviceManager.setLogManager(logManager);
-        serviceManager.start();
-        registrations.add(bundleContext.registerService(ServiceManager.class, serviceManager, new Hashtable<>()));
-        log.info("Registered ServiceManagerImpl");
+        // ServiceManager is NOT bootstrapped here anymore. It is a delayed DS
+        // component (now immediate=true) whose @Reference graph is acyclic, so SCR
+        // activates and registers it on its own. The manual instance was shadowing
+        // the DS-owned one (issue 1859). SimulationManager's ServiceManager reference
+        // is bound from the service registry in lateBindDependencies() below.
 
-        // Create SimulationManager - depends on LogManager, ServiceManager, AppManager
+        // Create SimulationManager - depends on LogManager, ServiceManager, AppManager.
+        // ServiceManager is late-bound (see lateBindDependencies); it is used lazily
+        // in startSimulation(), not at SimulationManager activation.
         simulationManager = new SimulationManagerImpl();
         simulationManager.setClientFactory(clientFactory);
         simulationManager.setLogManager(logManager);
-        simulationManager.setServiceManager(serviceManager);
         simulationManager.setAppManager(appManager);
         try {
             simulationManager.start();
@@ -218,14 +217,12 @@ public class GridAppsDBoot {
         registrations.add(bundleContext.registerService(TestManager.class, testManager, new Hashtable<>()));
         log.info("Registered TestManagerImpl");
 
-        // Create FieldBusManager - depends on LogManager, ServiceManager, ClientFactory
-        fieldBusManager = new FieldBusManagerImpl();
-        fieldBusManager.setClientFactory(clientFactory);
-        fieldBusManager.setLogManager(logManager);
-        fieldBusManager.setServiceManager(serviceManager);
-        fieldBusManager.start();
-        registrations.add(bundleContext.registerService(FieldBusManager.class, fieldBusManager, new Hashtable<>()));
-        log.info("Registered FieldBusManagerImpl");
+        // FieldBusManager is NOT bootstrapped here anymore. Like ServiceManager it is
+        // a delayed DS component (now immediate=true) with an acyclic @Reference graph,
+        // so SCR activates and registers it on its own. ProcessManagerImpl (immediate)
+        // mandatorily @References both managers, which drives their DS activation. The
+        // manual instance was shadowing the DS-owned one (issue 1859). Config now
+        // arrives natively via the component's configurationPid (@Activate/@Modified).
     }
 
     /**
@@ -277,8 +274,29 @@ public class GridAppsDBoot {
                 if (pm != null) {
                     configurationManager.setPowergridModelManager(pm);
                     log.info("Late-bound PowergridModelDataManager (from lookup) to ConfigurationManager");
+                    bundleContext.ungetService(pmRef);
                 }
             }
+        }
+
+        // Bind the DS-owned ServiceManager into the manually bootstrapped
+        // SimulationManager. ServiceManager is no longer created here (it is a DS
+        // component now); SimulationManager uses it lazily in startSimulation(), so
+        // binding it on this late-bind thread is in time for the first simulation run.
+        ServiceReference<ServiceManager> smRef = bundleContext.getServiceReference(ServiceManager.class);
+        if (smRef != null) {
+            ServiceManager sm = bundleContext.getService(smRef);
+            if (sm != null) {
+                if (simulationManager != null) {
+                    simulationManager.setServiceManager(sm);
+                    log.info("Late-bound DS-owned ServiceManager to SimulationManager");
+                }
+                bundleContext.ungetService(smRef);
+            }
+        } else {
+            log.warn("ServiceManager not yet registered by SCR; SimulationManager will lack a "
+                    + "ServiceManager until one is bound. A simulation started before this binding "
+                    + "would fail.");
         }
 
         // Load configuration from ConfigAdmin (populated by FileInstall from
@@ -319,6 +337,7 @@ public class GridAppsDBoot {
             java.lang.reflect.Method getConfig = configAdmin.getClass()
                     .getMethod("getConfiguration", String.class, String.class);
             Object configuration = getConfig.invoke(configAdmin, "pnnl.goss.gridappsd", null);
+            bundleContext.ungetService(caRef); // release reference; configAdmin no longer needed
 
             if (configuration != null) {
                 java.lang.reflect.Method getProps = configuration.getClass().getMethod("getProperties");
@@ -337,6 +356,10 @@ public class GridAppsDBoot {
                     if (!configMap.isEmpty()) {
                         configurationManager.start(configMap);
                         log.info("Loaded {} configuration properties from ConfigAdmin", configMap.size());
+                        // ServiceManager and FieldBusManager no longer receive config here.
+                        // They are DS components bound to configurationPid pnnl.goss.gridappsd,
+                        // so SCR delivers field.model.mrid to their @Activate/@Modified methods
+                        // natively (issue 1859).
                     } else {
                         log.warn("ConfigAdmin has empty configuration for pnnl.goss.gridappsd");
                     }

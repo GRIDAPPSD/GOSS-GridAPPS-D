@@ -39,6 +39,7 @@
  ******************************************************************************/
 package gov.pnnl.goss.gridappsd;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -118,14 +119,17 @@ public class ServiceManagerTests {
         File currentDir = new File(f.getAbsolutePath());
         File parentDir = currentDir.getParentFile();
 
-        Hashtable<String, String> props = new Hashtable<String, String>();
-        props.put("applications.path", parentDir.getAbsolutePath() + File.separator + "applications");
-        props.put("services.path", parentDir.getAbsolutePath() + File.separator + "services");
+        java.util.Map<String, Object> config = new java.util.HashMap<String, Object>();
+        config.put("applications.path", parentDir.getAbsolutePath() + File.separator + "applications");
+        config.put("services.path", parentDir.getAbsolutePath() + File.separator + "services");
 
-        serviceManager.updated(props);
-        serviceManager.start();
+        // DS @Activate entry point now receives the config map directly.
+        serviceManager.start(config);
 
-        assertTrue("ServiceManager should start without errors", true);
+        // Config must be retained after start: assert a supplied key equals its value.
+        assertEquals("services.path must be stored after start(config)",
+                parentDir.getAbsolutePath() + File.separator + "services",
+                serviceManager.getConfigurationProperty("services.path"));
     }
 
     /**
